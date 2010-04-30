@@ -1,0 +1,13 @@
+%ripped from slemph.sty, which isn't in texlive-full on ubuntu/debian
+\newcommand\slswitch {}
+\DeclareRobustCommand\slswitch {%
+  \@nomath\slswitch
+  \def\reserved@a{sl}%
+  \ifx\f@shape\reserved@a
+    \upshape
+  \else
+    \slshape
+  \fi
+}
+\let\em\slswitch
+
