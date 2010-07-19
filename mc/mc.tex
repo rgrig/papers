@@ -1,0 +1,126 @@
+%{{{ prelude latex
+%{{{ TeX settings
+\tracingmacros=0
+\overfullrule=5pt
+\showboxdepth=10
+\showboxbreadth=100
+%}}}
+\documentclass[a4paper]{article}
+
+%{{{ packages
+\usepackage[colorlinks]{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{rgalg}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{hyperref}  % solves pdfTeX warning (ext4)?
+\usepgflibrary{arrows}
+\usepgflibrary{shapes.geometric}
+%}}}
+%{{{ metadata and PDF settings
+\title{Checking Safety with Separation Logic}
+\author{Dino Distefano \and Radu Grigore}
+\definecolor{darkblue}{rgb}{0,0,0.4}
+\definecolor{verylightgray}{rgb}{0.9,0.9,0.9}
+% comment the next line for printing
+\hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
+\hypersetup{
+  pdftitle={Checking Safety with Separation Logic},
+  pdfauthor={Dino Distefano and Radu Grigore}}
+%}}}
+%{{{ package customization
+\lstset{
+  basicstyle=\scriptsize,
+  identifierstyle=\itshape,
+  stringstyle=\footnotesize\ttfamily,
+  commentstyle=\textup,
+  columns=fullflexible,
+  numbers=left,
+  numberstyle=\tiny,
+  mathescape=true,
+  boxpos=t,
+}
+%}}}
+%{{{ new commands 
+\def\fb#1{{\bf #1}}
+\newcommand{\dd}[1]{\todo{dd}{#1}}
+\newcommand{\fls}{\bot}
+\newcommand{\hoare}[3]{\{#1\}\>\text{#2}\>\{#3\}}
+\newcommand{\limp}{\rightarrow}
+\newcommand{\rg}[1]{\todo{rg}{#1}}
+\newcommand{\todo}[2]{{\small [\textcolor{red}{#1}: #2]}}
+\newcommand{\tru}{\top}
+
+%pairs
+\newcommand{\startgrammar}{
+  \begingroup
+  \def\is{$\>\to$&}
+  \def\|{$\mid$}
+  \def\b##1{\textbf{##1}}
+  \def\i##1{\textsl{##1}}
+  \def\?{$^?$}
+  \def\*{$^\ast$}
+  \begin{figure}
+  \centering
+  \scriptsize
+  \begin{tabular}{rl}
+}
+\newcommand{\stopgrammar}[2]{
+  \end{tabular}
+  \caption{#1}\label{#2}
+  \end{figure}
+  \endgroup
+}
+
+\newcommand{\bc}{\begin{figure}\centering\begin{tabular}{c}} % begin codebox
+\newcommand{\ec}[2]{\end{tabular}\caption{#1}\label{#2}\end{figure}} % end codebox
+%}}}
+%{{{ new environments (and theorems)
+\newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
+\theoremstyle{slanted}
+\newtheorem{problem}{Problem}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+%}}}
+%}}}
+
+\begin{document}
+\maketitle
+
+\section{Prior Work}
+
+In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
+Four of the five accepted contributions focused on variations of the following property:
+It is forbidden to modify a collection that is being iterated.
+Most argued informally that their specification technique can be automated.
+Bierhoff and Aldrich materialized the promise in a later paper~\cite{bierhoff2007}.
+Their solution involves typestates~\cite{strom1986,deline2004}.
+\rg{Second approach is seplogic, first HO (Krish...), then normal (Haack). Third approach is JML, non-temporal (Leavens) and temporal (Huisman). Which brings us to...}
+
+\section{Background}
+
+\section{Example}
+
+\section{Theory}
+
+\section{Implementation}
+
+\bibliographystyle{plain}
+\bibliography{mc}
+
+\end{document}
+% vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
+
