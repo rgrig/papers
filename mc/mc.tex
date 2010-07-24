@@ -100,15 +100,39 @@
 \begin{document}
 \maketitle
 
-\section{Prior Work}
+\section{Prior Work and Motivation}
 
 In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
 Four of the five accepted contributions focused on variations of the following property:
 It is forbidden to modify a collection that is being iterated.
-Most argued informally that their specification technique can be automated.
-Bierhoff and Aldrich materialized the promise in a later paper~\cite{bierhoff2007}.
-Their solution involves typestates~\cite{strom1986,deline2004}.
-\rg{Second approach is seplogic, first HO (Krish...), then normal (Haack). Third approach is JML, non-temporal (Leavens) and temporal (Huisman). Which brings us to...}
+The solutions~\cite{cok2006,weide2006,bierhoff2006,krishnaswami2006} vary in the specification language used, degree of automation, expressiveness, and subsequent research they generated.
+
+All solutions used existing specification languages:
+Cok used JML~\cite{jml}, Weide used Resolve~\cite{resolve}, Bierhoff used typestates for object-oriented languages~\cite{deline2004}, and Krishnaswami used higher-order separation logic~\cite{biering2007}.
+
+Cok's solution benefits from the existence of a tool, ESC/Java~\cite{escjava}, that statically checks programs annotated using a large subset of JML\null.
+It is not completely clear, as far as we are aware, exactly which subset of JML is handled automatically and soundly by ESC/Java, but Cok demonstrates that a few iterator clients are handled properly.
+Weide and Bierhoff argue informally that it should be possible to automate their respective approaches;
+Krishnaswami argues informally that it should be hard to automate his approach.
+
+No solution is very friendly to programmers. 
+Weide's solution works in the setting of a fictitious language, it requires programmers to use at most one iterator at a time, and it requires uses of iterators to be signposted by calls to fictitious methods.
+Cok and Bierhoff encode automata in JML and linear logic~\cite{girard1987}, respectively, leaving the burden of decoding the annotations into automata on the code's maintainer.
+Krishnaswami uses mathematical concepts and notations that are bound to look unfamiliar to imperative programmers.
+
+There are two important later developments. First, Bierhoff and Aldrich~\cite{bierhoff2007} showed that it is indeed possible to automate the approach based on typestates. Second, Haack and Hurlin~\cite{haack2009} showed how to use first-order separation logic, thereby moving closer to automation as compared to Krishnaswami~\cite{krishnaswami2006}.
+
+There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties.
+To see why this is relevant, note that what we want is to forbid executions that contain a sequence of calls $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$.
+Trentelman and Huisman show by example how safety properties expressed in their extension can be formulated, more verbosely, in standard JML\null.
+In a sense, Cok~\cite{cok2006} gave another example of a safety property that can be expressed in JML\null.
+Unfortunately, we are not aware of any algorithm that translates arbitrary safety properties into JML specifications.
+Even if such algorithms are found, the problem of automatically checking JML remains:
+The subset of JML that is handled automatically varies from tool to tool, and the descriptions of these subsets tend to be either missing, so complicated that no one can be expected to remember them, or hard to find.
+Therefore it makes sense to search for an algorithm whose target is a very small subset of JML, such that the chances of it being handled by tools are maximized.
+
+An alternative, which we pursue in this article, is to find a translation from safety properties to separation logic, which is a much simpler specification language than JML and also more rigorously defined~\cite{todo}. 
+As a result we obtain (1)~a way to turn any checker for separation logic into a model checker for safety properties and (2)~a very natural and simple way of specifying the Iterator pattern.
 
 \section{Background}
 
