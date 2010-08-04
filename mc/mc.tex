@@ -35,15 +35,15 @@
 %}}}
 %{{{ package customization
 \lstset{
+  language=Java,
   basicstyle=\scriptsize,
   identifierstyle=\itshape,
   stringstyle=\footnotesize\ttfamily,
   commentstyle=\textup,
   columns=fullflexible,
-  numbers=left,
-  numberstyle=\tiny,
   mathescape=true,
   boxpos=t,
+  morekeywords={Object}
 }
 %}}}
 %{{{ new commands 
@@ -110,8 +110,9 @@ The solutions~\cite{cok2006,weide2006,bierhoff2006,krishnaswami2006} vary in the
 All solutions used existing specification languages:
 Cok used JML~\cite{jml}, Weide used Resolve~\cite{resolve}, Bierhoff used typestates for object-oriented languages~\cite{deline2004}, and Krishnaswami used higher-order separation logic~\cite{biering2007}.
 
-Cok's solution benefits from the existence of a tool, ESC/Java~\cite{escjava}, that statically checks programs annotated using a large subset of JML\null.
-It is not completely clear, as far as we are aware, exactly which subset of JML is handled automatically and soundly by ESC/Java, but Cok demonstrates that a few iterator clients are handled properly.
+Cok's solution benefits from the existence of a tool, ESC/Java~\cite{escjava}, that statically checks programs annotated with JML\null.
+It is not completely clear, as far as we are aware, exactly which subset of JML is handled automatically and soundly by ESC/Java.
+However, Cok shows examples of clients of his specification that are handled properly by the tool.
 Weide and Bierhoff argue informally that it should be possible to automate their respective approaches;
 Krishnaswami argues informally that it should be hard to automate his approach.
 
@@ -122,19 +123,60 @@ Krishnaswami uses mathematical concepts and notations that are bound to look unf
 
 There are two important later developments. First, Bierhoff and Aldrich~\cite{bierhoff2007} showed that it is indeed possible to automate the approach based on typestates. Second, Haack and Hurlin~\cite{haack2009} showed how to use first-order separation logic, thereby moving closer to automation as compared to Krishnaswami~\cite{krishnaswami2006}.
 
-There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties.
-To see why this is relevant, note that what we want is to forbid executions that contain a sequence of calls $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$.
-Trentelman and Huisman show by example how safety properties expressed in their extension can be formulated, more verbosely, in standard JML\null.
-In a sense, Cok~\cite{cok2006} gave another example of a safety property that can be expressed in JML\null.
+There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties~\cite{pnueli1977}.
+To see why this is relevant, note that what we want is to forbid executions that contain a sequence of calls $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
+Trentelman and Huisman show by example how safety properties expressed in their extension can also be formulated, more verbosely, in standard JML\null.
+In a sense, Cok's solution is another example of expressing a safety property in JML\null.
 Unfortunately, we are not aware of any algorithm that translates arbitrary safety properties into JML specifications.
 Even if such algorithms are found, the problem of automatically checking JML remains:
 The subset of JML that is handled automatically varies from tool to tool, and the descriptions of these subsets tend to be either missing, so complicated that no one can be expected to remember them, or hard to find.
-Therefore it makes sense to search for an algorithm whose target is a very small subset of JML, such that the chances of it being handled by tools are maximized.
+Therefore, it makes sense to search for an algorithm whose target is a very small subset of JML, such that the chances of it being handled by tools are maximized.
 
-An alternative, which we pursue in this article, is to find a translation from safety properties to separation logic, which is a much simpler specification language than JML and also more rigorously defined~\cite{todo}. 
-As a result we obtain (1)~a way to turn any checker for separation logic into a model checker for safety properties and (2)~a very natural and simple way of specifying the Iterator pattern.
+An alternative, which we pursue in this article, is to find a translation from safety properties to separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
+As a result, \emph{we obtain a way to turn program verifiers based on separation logic into model checkers of safety properties}.
+
 
 \section{Background}
+
+\subsection{The Iterator Pattern}
+
+Java collections contain objects.
+The call $c.\mathit{contains}(o)$ returns whether the collection~$c$ contains the object~$o$.
+The methods \textit{toArray} and \textit{iterator} allow the content to be inspected as an array and as a stream, respectively.
+The optional methods \textit{add} and \textit{remove} modify the collection.
+
+\begin{lstlisting}
+interface Collection {
+  boolean contains(Object o);
+  Object[] toArray();
+  Iterator iterator();
+  void add(Object o) throws NotSupported;
+  void remove(Object o) throws NotSupported;
+}
+interface Iterator {
+  Object next();
+  void remove() throws NotSupported;
+}
+\end{lstlisting}
+
+The state of a collection~$c$ may be modeled by a set~$C$.
+The call $c.\mathit{contains}(o)$ corresponds to $o\in C$, the call $c.\mathit{add}(o)$ changes the state from~$C$ to $C\cup\{o\}$, the call $c.\mathit{remove}(o)$ may change the state from~$C$ to $C-\{o\}$.
+[Not quite true because of \textit{equals} versus $==$.]
+If $i$~is the result of $c.\mathit{iterator}()$ and $o$~is the result of $i.\mathit{next}()$, then $o\in C$.
+Some implementations may strengthen the guarantee by saying how many times an object will be returned by \textit{next}, or by saying in which order objects are returned by \textit{next}.
+In this paper we will not tackle such specific properties, so for most purposes we may regard collections as sets.
+Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textbf{true}, so it is sometimes important to distinguish between a Java collection~$c$ and its state~$C$ used in the mathematical model.
+
+If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
+
+
+\subsection{Separation Logic}
+
+% basics of seplogic and jstar
+
+\subsection{Model Checking}
+
+% LTL, safety, mc idea
 
 \section{Example}
 
