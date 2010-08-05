@@ -138,9 +138,15 @@ As a result, \emph{we obtain a way to turn program verifiers based on separation
 
 \section{Background}
 
+\subsection{Separation Logic}
+
+% basics of seplogic and jstar
+
 \subsection{The Iterator Pattern}
 
-Java collections contain objects.
+% you can use seplogic to explain the pattern
+
+Java collections contain Java objects.
 The call $c.\mathit{contains}(o)$ returns whether the collection~$c$ contains the object~$o$.
 The methods \textit{toArray} and \textit{iterator} allow the content to be inspected as an array and as a stream, respectively.
 The optional methods \textit{add} and \textit{remove} modify the collection.
@@ -159,8 +165,15 @@ interface Iterator {
 }
 \end{lstlisting}
 
-The state of a collection~$c$ may be modeled by a set~$C$.
-The call $c.\mathit{contains}(o)$ corresponds to $o\in C$, the call $c.\mathit{add}(o)$ changes the state from~$C$ to $C\cup\{o\}$, the call $c.\mathit{remove}(o)$ may change the state from~$C$ to $C-\{o\}$.
+In a first approximation, Java collections behave like mathematical sets.
+
+One may think that a Java collection~$c$ behaves like a set:
+The call $c.\mathit{contains}(o)$ corresponds to $o\in c$, the call $c.\mathit{add}(o)$ changes the state from~$c$ to $c\cup\{o\}$, the call $c.\mathit{remove}(o)$ may change the state from~$c$ to $c-\{o\}$.
+However, this is not quite true.
+
+
+
+
 [Not quite true because of \textit{equals} versus $==$.]
 If $i$~is the result of $c.\mathit{iterator}()$ and $o$~is the result of $i.\mathit{next}()$, then $o\in C$.
 Some implementations may strengthen the guarantee by saying how many times an object will be returned by \textit{next}, or by saying in which order objects are returned by \textit{next}.
@@ -169,10 +182,6 @@ Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textb
 
 If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
 
-
-\subsection{Separation Logic}
-
-% basics of seplogic and jstar
 
 \subsection{Model Checking}
 
