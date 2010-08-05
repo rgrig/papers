@@ -1,4 +1,8 @@
-\def\e#1:{\par\noindent{\bf#1:}\quad}
+\def\e#1: {%
+  \setbox0=\hbox{\bf#1:}%
+  \dimen0=5em%
+  \advance\dimen0 by -\wd0%
+  \par\penalty-200\hangindent=6em\noindent\hskip\dimen0\box0\quad}
 
 \e p2, f1.1, l14: \& should be \&\&
 \e p2: The discussion assumes implicitly that indices are over 
@@ -8,7 +12,26 @@
 \e p5: Might need to add {\tt\char`\\null} after C.
 \e p6: The core of hol provers is {\it supposed\/} to be small.
 \e p7: ``that was exceptions'' should be ``that has exceptions''
+\e p12: ``variable'' on lhs should be ``variable-declaration''
+\e p13, f2.5: the rule [asgn] should {\it not\/} handle parallel assignments
+\e p13: ``$1$, $2$, $3$ \dots'' should be ``$1$, $2$, $3$, \dots''
+\e p19: ``log file'' should be ``{\bf l}og {\bf f}ile''
+\e p19: ``The result of the whole run is'' should be ``FreeBoogie prints''
+\e p21: ``all transformations in FreeBoogie, except loop handling,''
+  should be ``all transformations in FreeBoogie are complete, except
+  loop handling.''
+\e p22, f3.4: Core Boogie does {\it not\/} have parallel assignments.
+\e p23, f3.5: ``text'' should be ``{\sl text\/}''
+\e p23: ``between generated classes'' should be ``in the generated code''
+\e p24: ``Terminal classess, those that have no subclass declared in the
+  abstract grammar'' should be ``Terminal classes, which are those without
+  subclasses''. Also, remove ``that initializes those fields''.
+\e p27: ``The initial call $u_1.u_1(u_2,\ldots,u_n)$''
+  should be ``The initial call $u_1.m_1(u_2,\ldots,u_n)$''
+\e p30: ``reference-paths'' should be ``reference-path''
+\e p30: after ``safeguard against bugs'' add ``in FreeBoogie''
 \e p126: ``the set of booleans $\{\cdots\}$'' should be ``the set $\{\cdots\}$
   of booleans''
+\e p128: ``microsoft'' should be ``Microsoft''
 
 \bye

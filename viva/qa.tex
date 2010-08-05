@@ -4,6 +4,14 @@
 
 \Q Can we use FreeBoogie instead of Boogie already?
 
+\A No. There are unfortunatelly many wrinkles that need to be straightened.
+A particularly annoying one is that the implementation of loop cutting has
+a soundness bug. A complete list of known issues appears on FreeBoogie's
+site at Google Code. So far, the development of FreeBoogie happened in
+coding sprints. There was one in 2007, one in 2008, and one in 2009, each
+about six weeks in length. The one for 2010 is overdue. It {\it must\/}
+happen before Christmas, preferably earlier.
+
 \Q What is the main contribution of your PhD?
 
 \Q What is the main {\it theoretical\/} contribution of your PhD?
@@ -11,12 +19,14 @@
 \Q Does FreeBoogie handle loops?
 
 \A [Note: Don't forget to compare with symbolic execution and abstract
-interpretation.]
+interpretation.] [Note: Explain how cutting {\it should\/} be done.]
 
 \Q Did you describe FreeBoogie's design in a peer-reviewed paper?
 
 \Q Should verification condition generators use weakest precondition or
 strongest postcondition?
+
+\A [Note: Mention the triggers gotcha.]
 
 \Q The comparion between different types of semantics is pretty standard,
 isn't it?
@@ -25,10 +35,10 @@ isn't it?
 that simplify verification conditions. What exactly are the properties an
 algorithm needs in order to be able to apply this proof technique?
 
-\Q Does FreeBoogie handle the Boogie's polymorphic types?
+\Q Does FreeBoogie handle Boogie's polymorphic types?
 
 \Q Isn't it cheating to assume that loops have been dealt with when you
-address code reachiability?
+address code reachability?
 
 \Q Your reachability analysis identifies four very different types of
 problems.  Are these problems distinguished in error messages? If no, then
@@ -41,7 +51,7 @@ ought to be able'' to handle ``in the future''?
 \Q You suggest that the front-end of program verifiers is uninteresting.
 Why?
 
-\Q You say that `insights' lead to simpler and moreefficient
+\Q You say that `insights' lead to simpler and more efficient
 implementations.  Which insight leads to which efficiency gain? Which
 insight leads to which simplification?
 
@@ -56,7 +66,7 @@ insight leads to which simplification?
 
 \Q How does Boogie compare to Why?
 
-\Q How does ACSL compare with JML?
+\Q How does ACSL compare to JML?
 
 \Q There is a standard command language for SMT provers. Why do you say
 this is prover dependent?
@@ -78,7 +88,7 @@ say this is {\it unfortunate}, because any set of articles with unimportant
 contributions from some area of research can be described in the same way.
 So, how is your thesis different from a set of unimportant articles glued
 together, which are `related' only because they fit roughly the same
-research are?
+research area?
 
 \Q What are the important design decisions and how did they affect
 FreeBoogie?
@@ -86,6 +96,46 @@ FreeBoogie?
 \Q On what kind of formulas does {\it prune\/} work well?
 
 \Q Why develop FreeBoogie when the Boogie tool from MSR is open source?
+
+\Q Is parallel assignment in core Boogie? The grammar in Figure~2.2 says
+``no,'' the typing rule in Figure~2.5 says ``yes.''
+
+\A Parallel assignment is not handles by the semantics explicitly. The
+typing rule is too optimistic.
+
+\Q You say that ``Boogie does not facilitate reasoning about termination.''
+What kind of features would make it easy to reason about termination?
+
+\Q You say that FreeBoogie adds prover-dependent axioms. Does it use
+multiple provers? Can you give an example of an axiom that is sent in one
+way to one prover and another way to another prover?
+
+\Q Does FreeBoogie handle triggers? Aren't the benchmarks for wp/sp
+meaningless in the absence of triggers?
+
+\Q The `unsharing' algorithm seems to be a very heavyweight solution to a
+problem that has a simple engineering solution: communicate with the prover
+using its API. How do you comment?
+
+\Q Chapter~3 is very different from the others and makes the dissertation
+heterogenous. Is there any reason it should stay?
+
+\Q Aren't there too many jokes?
+
+\Q Is AstGen a contribution of you thesis? It seems that you simply
+describe in too much detail some engineering effort.
+
+\A [Note: Mention research on similar tools. Yes, it is a contribution, but
+not central.]
+
+\Q Why did you waste time developing AstGen instead of using some existing
+infrastructure for developing compilers?
+
+\Q You describe a very general type of visitors, which makes the
+description hard to follow. Moreover, you only use `normal' visitors, so
+the general description is not needed. Why did you do it?
+
+\Q Is there anything novel about the way you use visitors?
 
 \bye
 % vim:textwidth=75:

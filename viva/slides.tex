@@ -1,3 +1,4 @@
+%{{{ prelude
 \documentclass{beamer}
 \usepackage[T1]{fontenc}
 \usepackage[math]{iwona}
@@ -5,6 +6,7 @@
 \usepackage{pgfpages}
 \usepackage{tikz}
 \usepackage{graphicx}
+\usepackage{xspace}
 
 \setbeamertemplate{navigation symbols}{}
 \setbeamercolor{normal text}{bg=black,fg=white}
@@ -21,14 +23,15 @@
 
 \title{\titletext}
 \author{Radu Grigore}
-\subtitle{FreeBoogie}
+\subtitle{\url{http://code.google.com/p/freeboogie}}
 \date{23 August 2010}
 
+\newcommand{\specsharp}{Spec$^\sharp$\xspace}
 \def\,#1{{\lineskiplimit=0pt \oalign{\relax#1\crcr\hidewidth,\hidewidth}}}
 
 \begin{document}
 \maketitle
-
+%{{{ plan
 % Audience: Rustan and Henry.
 % Principles:
 %   - give a good overview
@@ -41,7 +44,7 @@
 %   - 
 % Extra slides (for answering questions):
 %   - TODO 
-
+%}}}
 %{{{ motivation
 \begin{frame}
   \frametitle{program verifiers}
@@ -65,8 +68,42 @@
   \end{itemize}
   \end{block}
 \end{frame}
+%}}}
+%{{{ FreeBoogie
+\begin{frame}
+  \frametitle{FreeBoogie}
+  \begin{block}{\specsharp architecture}
+  \begin{itemize}
+  \item \specsharp compiler 
+  \item Boogie language
+  \item Boogie tool 
+  \end{itemize}
+  \end{block}
+  \begin{block}{FreeBoogie}
+  \begin{itemize}
+  \item partial correctness analysis
+  \item \alert{reachability analysis}
+  \end{itemize}
+  \end{block}
+\end{frame}
+
 
 \begin{frame}
+  \frametitle{Contributions}
+  \begin{itemize}
+  \item semantics for core Boogie: operational, Hoare, wp, sp, relation
+  \item novel use of Visitors, and the supporting tool AstGen; there's
+    also a discussion of the overall design
+  \item precise definition of passivation (also by Vogels, Jacobs, Pissens)
+  \item study of the complexity of the passivation problem
+  \item experimental comparison of wp vs sp
+  \item algorithm for unsharing expression dags
+  \item proof technique for algorithms that simplify verification conditions
+  \item heuristic for detecting common parts of expression trees
+  \item why is reachability analysis useful (in addition to correctness
+    and termination)
+  \item heuristics that make reachability analysis practical 
+  \end{itemize}
 \end{frame}
 %}}}
 %{{{ old
@@ -140,7 +177,7 @@
       \item encoding Boogie2 types
       \end{itemize}
     \end{itemize}
-  \item \url{http://code.google.com/p/freeboogie}
+  \item 
   \end{itemize}
 \end{frame}
 %}}}
