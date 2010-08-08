@@ -1,6 +1,7 @@
 \def\para#1{\medskip\penalty-250\noindent{\bf#1}\quad}
 \def\A{\para{A:}}
 \def\Q{\para{Q:}}
+\def\limp{\Rightarrow}
 
 \Q Can we use FreeBoogie instead of Boogie already?
 
@@ -118,7 +119,7 @@ problem that has a simple engineering solution: communicate with the prover
 using its API. How do you comment?
 
 \Q Chapter~3 is very different from the others and makes the dissertation
-heterogenous. Is there any reason it should stay?
+heterogeneous. Is there any reason it should stay?
 
 \Q Aren't there too many jokes?
 
@@ -176,6 +177,36 @@ form?
 
 \A [See Theorem 2 and Conjecture 1.]
 
+\Q Did you make any progress on the open problems related to passivation?
+Is anyone else interested in these problems?
+
+\Q The thesis seems more concerned with solving cute toy problems, rather
+than solving real problems. Isn't this a waste of energy?
+
+\Q How do {\it passive forms\/} relate to {\it dynamic single assignment\/}?
+
+\Q Can you describe, briefly, how matching algorithms work?
+
+\Q Why is the weakest precondition method complete? And the strongest
+postcondition method?
+
+\Q On page~72 you derive the strongest postcondition of {\bf assert}~$q$.
+The precondition is~$a$, and every OK postcondition~$b$ must make $a\limp
+(q\land b)$ valid. There is no solution unless $|a\limp q|$.  When there
+are solutions, the strongest one is $a$, which is equivalent to~$a\land q$.
+Why do you use the latter, more complicated expression in~(5.14)?
+
+\A [Fewer cases in~(5.21).]
+
+\Q Can you explain why $(v\gets q)\;p\not\equiv(v=q)\limp p$?
+
+\Q Can you prove that $$|(v\gets q)\;p|=|(v\limp q)\limp p|$$ when $p$~is
+monotonic in~$v$?
+
+\Q You argue that ${\it vc}_{\rm sp}$ is ``especially amenable'' to
+splitting because it is a big conjunction. However, this seems like a
+superficial advantage, because the conjoined parts do have lots of shared
+subparts.  Is there any merit in your appreciation?
 
 
 \bye
