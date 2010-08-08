@@ -21,6 +21,11 @@
   pdfauthor={Radu Grigore},
   pdftitle={\titletext}}
 
+\tikzset{statement/.style={
+  rectangle,
+  draw,thick,
+  inner sep=2pt,minimum height=3ex}}
+
 \title{\titletext}
 \author{Radu Grigore}
 \subtitle{\url{http://code.google.com/p/freeboogie}}
@@ -71,22 +76,42 @@
 %}}}
 %{{{ FreeBoogie
 \begin{frame}
-  \frametitle{FreeBoogie}
   \begin{block}{\specsharp architecture}
   \begin{itemize}
   \item \specsharp compiler 
   \item Boogie language
   \item Boogie tool 
+    \begin{itemize}
+    \item \emph{verification condition generator}
+    \item SMT prover
+    \end{itemize}
   \end{itemize}
   \end{block}
-  \begin{block}{FreeBoogie}
+  \begin{block}{improvements}
   \begin{itemize}
-  \item partial correctness analysis
-  \item \alert{reachability analysis}
+  \item \alert{configurable method}
+    \begin{itemize}
+    \item weakest precondition
+    \item strongest postcondition
+    \end{itemize}
+  \item analyzes
+    \begin{itemize}
+    \item partial correctness
+    \item \alert{reachability}
+    \end{itemize}
+  \item \alert{incremental}
   \end{itemize}
   \end{block}
 \end{frame}
-
+%}}}
+%{{{ Boogie example
+\begin{frame}
+\begin{center}
+\begin{tikzpicture}
+  \node[statement] (0) at (0,0) {$i:=0$};
+\end{tikzpicture}
+\end{center}
+\end{frame}
 
 \begin{frame}
   \frametitle{Contributions}
