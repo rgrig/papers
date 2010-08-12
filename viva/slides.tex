@@ -25,10 +25,11 @@
   rectangle,
   draw,thick,
   inner sep=2pt,minimum height=3ex}}
+\tikzset{>=latex}
+\tikzset{shorten >=1pt}
 
 \title{\titletext}
 \author{Radu Grigore}
-\subtitle{\url{http://code.google.com/p/freeboogie}}
 \date{23 August 2010}
 
 \newcommand{\specsharp}{Spec$^\sharp$\xspace}
@@ -44,32 +45,35 @@
 %     - mention all the contributions explicitly
 %   - go in depth into one subject (say, reachability)
 % Plan
-%   - motivation
-%   - design and overview
+%   - here's the field and why it's interesting
+%   - here's what I did and why it's important
+%   - here's some clever details
 %   - 
 % Extra slides (for answering questions):
 %   - TODO 
 %}}}
 %{{{ motivation
 \begin{frame}
-  \frametitle{program verifiers}
-  \begin{block}{goals}
+  \begin{block}{formal methods}
   \begin{itemize}
-  \item
-    \emph{significantly} improve the quality of programs 
-    \emph{without} requiring much work from programmers
-  \item 
-    check \emph{automatically} that \emph{efficient} programs do
-    \emph{what they should}
-  \item
-    easy to use, fast, \dots
+  \item use mathematics to improve the quality of software
+  \item appealing because
+    \begin{itemize}
+    \item potentially very useful
+    \item many small beautiful problems
+    \end{itemize}
+  \item directions
+    \begin{itemize}
+    \item how should humans think about programs
+    \item how should machines think about programs
+    \end{itemize}
   \end{itemize}
   \end{block}
 
-  \begin{block}{guts}
+  \begin{block}{program verifiers}
   \begin{itemize}
-  \item compiler-like
-  \item programming language theory and algorithms
+  \item high quality new code
+  \item fix problems in old code
   \end{itemize}
   \end{block}
 \end{frame}
@@ -78,12 +82,11 @@
 \begin{frame}
   \begin{block}{\specsharp architecture}
   \begin{itemize}
-  \item \specsharp compiler 
-  \item Boogie language
-  \item Boogie tool 
+  \item \specsharp compiler (frontend)
+  \item Boogie tool (backend)
     \begin{itemize}
     \item \emph{verification condition generator}
-    \item SMT prover
+    \item SMT solver
     \end{itemize}
   \end{itemize}
   \end{block}
@@ -105,13 +108,96 @@
 \end{frame}
 %}}}
 %{{{ Boogie example
+\newcommand{\sequentialsearch}[1]{
+  \begin{tikzpicture}[x={(2.25cm,0cm)},y={(0cm,-1cm)}]
+    \def\prop##1{\ifnum#1=##1yellow\fi}
+    \foreach \n/\p/\l in {
+        0/{(0,0)}/{$i:=0$},
+        1/{(-1,1)}/{\textbf{assume} $i<n\land v[i]\ne u$},
+        2/{(-1,2)}/{$i:=i+1$},
+        3/{(1,1)}/{\textbf{assume} $i\ge n\lor v[i]=u)$},
+        4/{(1,2)}/{\textbf{assert} $v[i]=u$},
+        5/{(1,3)}/{\textbf{return}}}
+      \node[statement,\prop\n] (\n) at \p {\l};
+    \draw[->] (2) .. controls (-2.3,4.5) and (-2.3,-1.5) ..  (1);
+    \foreach \m/\n in {0/1,0/3,1/2,2/3,3/4,4/5}
+      \draw[->] (\m)--(\n);
+  \end{tikzpicture}}
+
 \begin{frame}
+\begin{align*}
+\\
+\end{align*}
 \begin{center}
-\begin{tikzpicture}
-  \node[statement] (0) at (0,0) {$i:=0$};
-\end{tikzpicture}
+  \sequentialsearch9
 \end{center}
 \end{frame}
+
+\begin{frame}
+\begin{align*}
+\\
+  \alert{\sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch0
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch1
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch2
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_2=[i\mapsto1,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch3
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_2=[i\mapsto1,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch4
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_2=[i\mapsto1,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch5
+\end{center}
+\end{frame}
+
 
 \begin{frame}
   \frametitle{Contributions}

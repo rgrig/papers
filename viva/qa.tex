@@ -1,4 +1,7 @@
-\def\para#1{\medskip\penalty-250\noindent{\bf#1}\quad}
+\def\para#1{%
+  \medskip\penalty-250%
+  \setbox0=\hbox{\bf#1}\dimen0=\parindent\advance\dimen0 by -\wd0%
+  \noindent\box0\hskip\dimen0}
 \def\A{\para{A:}}
 \def\Q{\para{Q:}}
 \def\limp{\Rightarrow}
@@ -229,6 +232,42 @@ point of getting rid of decorated names if the decoration is needed?
 convenient way to explain (and implement) how the answer of the prover is
 interpreted. In a way, we maintain that convenience, without sacrificing
 speed.]
+
+\Q The `proof technique' of Chapter~6 is straightforward. Why is it
+presented as an important contribution of the dissertation?
+
+\A [The first thing you'd try is different. Maybe the `proof technique' is
+obvious only with hindsight?]
+
+\Q Could you clarify what is the idea of `edit\&verify' and what is
+implemented? Could you clarify what you hope may be achieved by
+implementing the idea fully? Why did you not do so?
+
+\Q You say that prunning is not worthwhile for easy queries. But how do you
+know which queries are easy?
+
+\A [(1)~You remember previous response times. (2)~I hope it's good on
+average.]
+
+\Q Is efficiency a primary goal of FreeBoogie or not? On one hand you choose
+to typecheck the Boogie AST several time, on the other you run after small
+improvements in speed in several chapters.
+
+\A [It is, but it comes after correctness. The idea is to keep its code
+as obviously correct as possible, by doing plenty of sanity checks, by
+splitting tasks into very small subtasks, by tackling incrementality in
+{\it one\/} place only, etc.]
+
+\Q How does your work on edit\&verify compare with the work of Beckert and
+Klebanov?
+
+\Q Is edit\&verify useless if identifiers aren't decorated (say, because of
+an expressive SMT command language)?
+
+\Q The experiments were done using several tools---Spec$^\sharp$, ESC/Java,
+FreeBoogie, Fx7, Simplify. Is there any place in the dissertation that
+describes the relations between these? Is there a reason you didn't stick
+to one or two tools?
 
 \bye
 % vim:textwidth=75:
