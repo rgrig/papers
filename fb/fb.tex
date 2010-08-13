@@ -170,12 +170,17 @@
 \maketitle
 % {{{ abstract
 \begin{abstract}
-FreeBoogie is a verification condition generator.
 
-This chapter is rather dense. A cursory read will show
-how the later, more theoretical chapters fit together in the
-context of a real program; a careful read will serve as a guide
-to FreeBoogie's source code for new developers.
+There are many verification condition generators, each with its own design.
+This article documents the main design decisions of FreeBoogie.
+It is 
+
+Researchers often implement VCGENs (\fb verification \fb condition
+\textbf{gen}erators) as part of their experiments. Certain design
+principles keep being rediscovered. This article summarizes a few lessons
+that the authors learned by developing one VCGEN and by studying many
+others.
+
 \end{abstract}
 % }}} abstract
 %{{{ run
@@ -1603,4 +1608,4 @@ needed.
 \bibliography{fb}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
-
+% vim:textwidth=75
