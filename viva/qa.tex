@@ -269,5 +269,35 @@ FreeBoogie, Fx7, Simplify. Is there any place in the dissertation that
 describes the relations between these? Is there a reason you didn't stick
 to one or two tools?
 
+\Q In Figure~7.7 you give a flowgraph in which all non-initial nodes are
+direct children of the initial node. If the postcondition of the initial
+node is satisfiable, then all nodes are semantically reachable. Therefore,
+one prover query is enough to establish that we are indeed in the common
+case with no bugs. However, the algorithm in Figure~7.9, despite being
+designed to be fast in the common case with no bugs, will make one query
+for each non-initial node. What is the problem?
+
+\A [We also want to detect doomed code.]
+
+\Q What kind of doomed assertions did you find in JavaFE (see page~120)?
+
+\Q It is bothersome that 1-out-of-5 warnings given by reachability analysis
+have no known cause. What makes you confident that the problem isn't
+reachability analysis itself?
+
+\Q Why not use abstract interpretation or symbolic execution to detect
+semantically unreachable code?
+
+\A [Separation of concerns: loops first, then other problems. Since loops
+are such a central problem, I'm not really convinced that such separation
+of concerns is a good idea, but I've inherited it from ESC/Java. I do plan
+to do semantic reachability analysis in jStar.]
+
+\Q What exactly is the relation between {\it unreachable code\/} and {\it
+doomed code\/} on one hand and Lermer's {\it dead paths\/} and {\it dead
+commands\/} on the other hand?
+
+\Q What do you mean by ``well-founded specification'' (see page~121)?
+
 \bye
 % vim:textwidth=75:

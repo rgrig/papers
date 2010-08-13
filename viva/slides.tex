@@ -33,7 +33,9 @@
 \date{23 August 2010}
 
 \newcommand{\specsharp}{Spec$^\sharp$\xspace}
-\def\,#1{{\lineskiplimit=0pt \oalign{\relax#1\crcr\hidewidth,\hidewidth}}}
+\newcommand{\limp}{\Rightarrow}
+\newcommand{\tru}{\top}
+%}}} prelude
 
 \begin{document}
 \maketitle
@@ -117,7 +119,7 @@
         2/{(-1,2)}/{$i:=i+1$},
         3/{(1,1)}/{\textbf{assume} $i\ge n\lor v[i]=u)$},
         4/{(1,2)}/{\textbf{assert} $v[i]=u$},
-        5/{(1,3)}/{\textbf{return}}}
+        5/{(1,3)}/{\textbf{return}} }
       \node[statement,\prop\n] (\n) at \p {\l};
     \draw[->] (2) .. controls (-2.3,4.5) and (-2.3,-1.5) ..  (1);
     \foreach \m/\n in {0/1,0/3,1/2,2/3,3/4,4/5}
@@ -198,7 +200,139 @@
 \end{center}
 \end{frame}
 
+\begin{frame}
+\begin{align*}
+\\
+  \alert{\sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch0
+\end{center}
+\end{frame}
 
+\begin{frame}
+\begin{align*}
+  \sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]
+\\
+  \alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto3,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch3
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+\\
+  \alert{\sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch0
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  \sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]
+\\
+  \alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch3
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  &\sigma_0=[i\mapsto7,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]
+\\
+  &\alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]}
+\end{align*}
+\begin{center}
+  \sequentialsearch4
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{align*}
+  &\alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]}
+\\
+  &\textit{\textcolor{red}{error}}
+\end{align*}
+\begin{center}
+  \sequentialsearch9
+\end{center}
+\end{frame}
+%}}} Boogie example
+% {{{ Boogie semantics
+\begin{frame}
+\begin{align*}
+  &\langle\sigma_0,x_0\rangle\leadsto
+  \langle\sigma_1,x_1\rangle\leadsto
+  \langle\sigma_2,x_2\rangle\leadsto
+  \cdots\leadsto
+  \langle\sigma_n,x_n\rangle
+\\
+  &\langle\sigma_0,x_0\rangle\leadsto
+  \langle\sigma_1,x_1\rangle\leadsto
+  \langle\sigma_2,x_2\rangle\leadsto
+  \cdots\leadsto
+  \langle\sigma_n,x_n\rangle\leadsto
+  \mathit{error}
+\end{align*}
+
+\pause
+$$\frac
+  {\text{$x$ is $v:=e$}\quad x\to x'\quad \sigma'=(v\gets e)\;\sigma}
+  {\langle\sigma,x\rangle\leadsto\langle\sigma',x'\rangle}$$
+$$\frac
+  {\text{$x$ is \textbf{assert}~$q$}\quad x\to x'\quad q(\sigma)}
+  {\langle\sigma,x\rangle\leadsto\langle\sigma,x'\rangle}$$
+\end{frame}
+
+\begin{frame}
+a Boogie program is \alert{correct}
+$$\iff$$
+it has no execution that \alert{goes wrong}
+$$\iff$$
+it is possible to attach a precondition~$a_x$ and a postcondition~$b_x$
+to each statement~$x$ such that
+\begin{itemize}
+\item $a_0\equiv\tru$,
+\item $\{a_x\}\;x\;\{b_x\}$ for all statements~$x$, and
+\item $|b_x\limp a_y|$ if $x\to y$.
+\end{itemize}
+
+where
+\begin{align*}
+\{p\}\;\textbf{assert~$q$}\;\{r\} &= \bigl|p\limp(q\land r)\bigr| \\
+\{p\}\;\textbf{assume~$q$}\;\{r\} &= \bigl|(p\land q)\limp r\bigr| \\
+\end{align*}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{\textbf{return} $x|1$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\mathbf{true}\}\;\textbf{assume}\>\mathbf{true}\;\{\mathbf{true}\}},
+      1/{(-1,1)}/{\{\mathbf{true}\}\;\textbf{assume}\>\mathit{odd}(x)\;\{\mathit{odd}(x)\}},
+      2/{(-1,3)}/{\{\mathit{odd}(x)\}\;\textbf{assume}\>x'=x\;\{\mathit{odd}(x)\land x'=x\}},
+      3/{(1,2)}/{\{\mathbf{true}\}\;\textbf{assume}\>\mathit{even}(x)\{x'=x+1\limp\mathit{odd}(x')\}},
+      4/{(1,4)}/{\{\mathit{even}(x)\}\;\textbf{assume}\>x'=x+1\;\{\mathit{odd}(x')\}},
+      5/{(0,5)}/{\{\mathit{odd}(x')\}\;\textbf{assert}\>\mathit{odd}(x')\;\{\mathbf{true}\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2,2/5}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4,4/5}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+% }}} Boogie semantics
+%{{{ old
 \begin{frame}
   \frametitle{Contributions}
   \begin{itemize}
@@ -216,8 +350,7 @@
   \item heuristics that make reachability analysis practical 
   \end{itemize}
 \end{frame}
-%}}}
-%{{{ old
+
 \begin{frame}
   \frametitle{Reachability Analysis for Annotated Code}
   coauthors: Mikol\'a\v{s} Janota and Micha{\l} Moskal\bigskip
