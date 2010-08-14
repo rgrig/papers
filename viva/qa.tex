@@ -1,9 +1,11 @@
+\tracingmacros=1
+\parindent=3em
 \def\para#1{%
   \medskip\penalty-250%
-  \setbox0=\hbox{\bf#1}\dimen0=\parindent\advance\dimen0 by -\wd0%
-  \noindent\box0\hskip\dimen0}
-\def\A{\para{A:}}
-\def\Q{\para{Q:}}
+  \noindent\hbox to\parindent{\hss\bf#1 }}
+\newcount\qcnt\qcnt=0
+\def\A{\para{A\number\qcnt:}}
+\def\Q{\advance\qcnt by1\para{Q\number\qcnt:}}
 \def\limp{\Rightarrow}
 
 \Q Can we use FreeBoogie instead of Boogie already?
@@ -18,7 +20,29 @@ happen before Christmas, preferably earlier.
 
 \Q What is the main contribution of your PhD?
 
-\Q What is the main {\it theoretical\/} contribution of your PhD?
+\A I believe that the main contribution of the thesis is the formal
+development of several concepts (flowgraph of a Boogie program, weakest
+precondition, etc.)\ that naturally leads to solutions of several problems
+related to verification condition generation. None of these concepts is
+new, and there are many textbooks that discuss them. However, I have not
+seen any comprehensive treatment that relates flowgraphs, operational
+semantics, Hoare logic, and predicate transformers in the way it is done in
+my dissertation.  I believe it is this synthesis that led to `obvious'
+solutions to several problems.
+
+Let me be more explicit about the problems I'm talking about.  One problem
+is how to analyse a program for semantic reachability.  Chapter~7 shows how
+to do this faster than checking partial correctness.  This result should
+have the greatest practical impact, if properly disseminated. Another
+problem is finding the complexity of finding a passive form. The proof that
+finding copy-optimal increasing-version passive forms is the most
+technically difficult part of the dissertation. Yet another problem is
+doing incremental verification, with a very fine granularity.
+
+Finally, I want to mention that my PhD work resulted in a dissertation {\it
+and\/} a tool, FreeBoogie. Its goal is to be a drop-in replacement for
+MSR's Boogie tool, which is easier to maintain and build upon.
+
 
 \Q Does FreeBoogie handle loops?
 

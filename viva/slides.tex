@@ -59,15 +59,15 @@
   \begin{block}{formal methods}
   \begin{itemize}
   \item use mathematics to improve the quality of software
-  \item appealing because
-    \begin{itemize}
-    \item potentially very useful
-    \item many small beautiful problems
-    \end{itemize}
   \item directions
     \begin{itemize}
     \item how should humans think about programs
     \item how should machines think about programs
+    \end{itemize}
+  \item appealing because
+    \begin{itemize}
+    \item potentially very useful
+    \item many small beautiful problems
     \end{itemize}
   \end{itemize}
   \end{block}
@@ -255,9 +255,9 @@
 
 \begin{frame}
 \begin{align*}
-  &\alert{\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]}
+  &\sigma_1=[i\mapsto0,v\mapsto[9,8,6],n\mapsto0,u\mapsto8]
 \\
-  &\textit{\textcolor{red}{error}}
+  &\alert{\textit{error}}
 \end{align*}
 \begin{center}
   \sequentialsearch9
@@ -291,14 +291,14 @@ $$\frac
 \end{frame}
 
 \begin{frame}
-a Boogie program is \alert{correct}
+a Boogie program is \alert{partially correct}
 $$\iff$$
 it has no execution that \alert{goes wrong}
 $$\iff$$
 it is possible to attach a precondition~$a_x$ and a postcondition~$b_x$
 to each statement~$x$ such that
 \begin{itemize}
-\item $a_0\equiv\tru$,
+\item $|a_0|$,
 \item $\{a_x\}\;x\;\{b_x\}$ for all statements~$x$, and
 \item $|b_x\limp a_y|$ if $x\to y$.
 \end{itemize}
@@ -331,7 +331,179 @@ where
 \end{center}
 \end{frame}
 
+\begin{frame}
+  \begin{block}{weakest precondition}
+  \begin{align*}
+  b_x &\equiv \textstyle\bigwedge_{x\to y} a_y \\
+  a_x &\equiv 
+    \begin{cases}
+    q_x\limp b_x & \text{if $x$ is \textbf{assume} $q_x$} \\
+    q_x\land b_x & \text{if $x$ is \textbf{assert} $q_x$}
+    \end{cases}\\
+  \mathit{vc} &\equiv a_0
+  \end{align*}
+  \end{block}
+  \begin{block}{strongest postcondition}
+  \begin{align*}
+  a_y &\equiv
+    \begin{cases}
+    \tru & \text{if $y$ is the initial statement} \\
+    \bigvee_{x\to y} b_x & \text{otherwise}
+    \end{cases} \\
+  b_y &\equiv a_y \land q_y \qquad\text{where $y$ is \textbf{assume/assert} $q_y$} \\
+  \mathit{vc} &\equiv \textstyle\bigwedge_\text{$y$ is an assertion} (a_y\limp b_y)
+  \end{align*}
+  \end{block}
+\end{frame}
+
+% {{{ wp example
+\begin{frame}
+  \frametitle{weakest precondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      1/{(-1,1)}/{x<0},
+      2/{(-1,3)}/{x'=-x},
+      3/{(1,2)}/{x\ge 0},
+      4/{(1,4)}/{x'=x}}
+    \node[statement] (\n) at \p {$\{\mathbf{true}\}\;\mathbf{assume}\>\l\;\{\mathbf{true}\}$};
+  \node [statement] (0) at (0,0) {$\{\alert{\mathbf{true}}\}\;\mathbf{assume}\>x>0\;\{\mathbf{true}\}$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{weakest precondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\alert{x\le0}\}\;\mathbf{assume}\>x>0\;\{\mathbf{false}\}},
+      1/{(-1,1)}/{\{\mathbf{false}\}\;\mathbf{assert}\>\mathbf{false}\;\{\mathbf{true}\}},
+      2/{(-1,3)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x'=-x\;\{\mathbf{true}\}},
+      3/{(1,2)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x\ge 0\;\{\mathbf{true}\}},
+      4/{(1,4)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x'=x\;\{\mathbf{true}\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{weakest precondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\alert{x>0\limp x\ge0}\}\;\mathbf{assume}\>x>0\;\{x\ge0\}},
+      1/{(-1,1)}/{\{x\ge0\}\;\mathbf{assume}\>x<0\;\{\mathbf{false}\}},
+      2/{(-1,3)}/{\{\mathbf{false}\}\;\mathbf{assert}\>\mathbf{false}\;\{\mathbf{true}\}},
+      3/{(1,2)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x\ge 0\;\{\mathbf{true}\}},
+      4/{(1,4)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x'=x\;\{\mathbf{true}\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+% }}} wp example
+% {{{ sp example
+\begin{frame}
+  \frametitle{strongest postcondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x>0\;\{x>0\}},
+      1/{(-1,1)}/{\{x>0\}\;\mathbf{assume}\>x<0\;\{\mathbf{false}\}},
+      2/{(-1,3)}/{\{\mathbf{false}\}\;\mathbf{assume}\>x'=-x\;\{\mathbf{false}\}},
+      3/{(1,2)}/{\{x>0\}\;\mathbf{assume}\>x\ge 0\;\{x>0\}},
+      4/{(1,4)}/{\{x>0\}\;\mathbf{assume}\>x'=x\;\{x'=x>0\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+
+$$\alert{\mathit{vc}\equiv\tru}$$
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{strongest postcondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x>0\;\{x>0\}},
+      1/{(-1,1)}/{\{\alert{x>0}\}\;\mathbf{assert}\>\alert{\mathbf{false}}\;\{\mathbf{false}\}},
+      2/{(-1,3)}/{\{\mathbf{false}\}\;\mathbf{assume}\>x'=-x\;\{\mathbf{false}\}},
+      3/{(1,2)}/{\{x>0\}\;\mathbf{assume}\>x\ge 0\;\{x>0\}},
+      4/{(1,4)}/{\{x>0\}\;\mathbf{assume}\>x'=x\;\{x'=x>0\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+
+$$\alert{\mathit{vc}\equiv x\le0}$$
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{strongest postcondition for $\mathbf{return}\>\mathit{abs}(x)$}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\mathbf{true}\}\;\mathbf{assume}\>x>0\;\{x>0\}},
+      1/{(-1,1)}/{\{x>0\}\;\mathbf{assume}\>x<0\;\{\mathbf{false}\}},
+      2/{(-1,3)}/{\{\alert{\mathbf{false}}\}\;\mathbf{assert}\>\alert{\mathbf{false}}\;\{\mathbf{false}\}},
+      3/{(1,2)}/{\{x>0\}\;\mathbf{assume}\>x\ge 0\;\{x>0\}},
+      4/{(1,4)}/{\{x>0\}\;\mathbf{assume}\>x'=x\;\{x'=x>0\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+
+$$\alert{\mathit{vc}\equiv\tru}$$
+\end{center}
+\end{frame}
+% }}} sp example
+\begin{frame}
+  \frametitle{reachability queries}
+\begin{center}
+\begin{tikzpicture}[x={(1.6cm,0cm)},y={(0cm,-1cm)}]
+  \foreach \n/\p/\l in {
+      0/{(0,0)}/{\{\alert{\mathbf{true}}\}\;\mathbf{assume}\>x>0\;\{x>0\}},
+      1/{(-1,1)}/{\{\alert{x>0}\}\;\mathbf{assume}\>x<0\;\{\mathbf{false}\}},
+      2/{(-1,3)}/{\{\alert{\mathbf{false}}\}\;\mathbf{assume}\>x'=-x\;\{\mathbf{false}\}},
+      3/{(1,2)}/{\{\alert{x>0}\}\;\mathbf{assume}\>x\ge 0\;\{x>0\}},
+      4/{(1,4)}/{\{\alert{x>0}\}\;\mathbf{assume}\>x'=x\;\{x'=x>0\}} }
+    \node[statement] (\n) at \p {$\l$};
+  \foreach \m/\n in {0/1,1/2}
+    \draw[->] (\m.south west) -- (\n.north west);
+  \foreach \m/\n in {0/3,3/4}
+    \draw[->] (\m.south east) -- (\n.north east);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+
 % }}} Boogie semantics
+%{{{ Q&A
+\begin{frame}
+\centerline{\Huge Q\&A}
+\end{frame}
+%}}}
 %{{{ old
 \begin{frame}
   \frametitle{Contributions}
@@ -423,11 +595,6 @@ where
     \end{itemize}
   \item 
   \end{itemize}
-\end{frame}
-%}}}
-%{{{ Q&A
-\begin{frame}
-\centerline{\Huge Q\&A}
 \end{frame}
 %}}}
 \end{document}
