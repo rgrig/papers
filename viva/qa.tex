@@ -1,11 +1,8 @@
-\tracingmacros=1
 \parindent=3em
-\def\para#1{%
-  \medskip\penalty-250%
-  \noindent\hbox to\parindent{\hss\bf#1 }}
+\def\para#1{\noindent\hbox to\parindent{\hss\bf#1 }}
 \newcount\qcnt\qcnt=0
-\def\A{\para{A\number\qcnt:}}
-\def\Q{\advance\qcnt by1\para{Q\number\qcnt:}}
+\def\A{\medskip\para{A\number\qcnt:}}
+\def\Q{\bigskip\penalty-250\advance\qcnt by1\para{Q\number\qcnt:}}
 \def\limp{\Rightarrow}
 
 \Q Can we use FreeBoogie instead of Boogie already?
@@ -46,31 +43,156 @@ MSR's Boogie tool, which is easier to maintain and build upon.
 
 \Q Does FreeBoogie handle loops?
 
-\A [Note: Don't forget to compare with symbolic execution and abstract
-interpretation.] [Note: Explain how cutting {\it should\/} be done.]
+\A The current implementation simply cuts back-edges (for {\it some\/}
+depth-first traversal), which is unsound. I am not sure what is the best
+way to handle loops. MSR's Boogie uses abstract interpretation to infer
+loop invariants. These are inserted at loop heads when back-edges are cut,
+and these operations assume reducible flowgraphs. FreeBoogie could take the
+same approach. Non-reducible graphs may be handled with some care. First,
+one needs to pick a definition for `loop' (there is not only {\it one\/}
+natural definition, as is the case for reducible flowgraphs); second, it
+seems that one needs to duplicate the body of loops in order to handle the
+`generic' and nested loops. This may lead to poor performance in the common
+case that the flowgraph {\it is\/} reducible.
+
+This potential performance problem is {\it not\/} why I'm unsure that this
+is the best solution. What nags me is that loop handling seems such a
+fundamental problem that it is hard to consider it as orthogonal to the
+others (handling assignments, checking partial correctness, checking
+semantic reachability). To put it plainly, it may be better for FreeBoogie
+to do symbolic execution rather than verification condition generation.
+There could be to flavours of symbolic execution, one going forward and one
+backwards, corresponding to the two methods used for computing the
+verification condition. Only forwards execution would be suitable for
+semantic reachability analysis.
+
+Does the unsound treatment of loops invalidate the results of experiments
+carried out with FreeBoogie? I believe this is not the case for to reasons.
+First, many programs (implementations) in the Boogie benchmark do not have
+loops. Second, even if they do have loops, these are cut in the same way,
+so the {\it comparison\/} between the two VCGEN methods stands.
+
 
 \Q Did you describe FreeBoogie's design in a peer-reviewed paper?
+
+\A No. There is one in preparation now, based on Chapter~3.
 
 \Q Should verification condition generators use weakest precondition or
 strongest postcondition?
 
-\A [Note: Mention the triggers gotcha.]
+\A Preferably, they should use both methods in parallel, if the machine has
+at least two processing units. Otherwise, there doesn't seem to be much
+difference from the point of view of performance, but it makes sense to
+have the strongest postcondition method implemented if one wants to
+eventually check for semantic reachability.
+
+These observations are based mainly on experiments on the Boogie benchmark
+that used FreeBoogie as a verification condition generator and Simplify as
+an SMT solver. As such, there are a few caveats. First, it is not clear how
+representative of real programs the Boogie benchmark is. Second, the
+benchmark is further biased by FreeBoogie's unsound treatment of loops.
+Third, FreeBoogie forgets triggers which significantly affect the prover
+performance. Again, I believe both VCs should be affected in a similar way,
+but this is far from clear.  Fourth, better SMT solvers may behave wildly
+different than Simplify.
+
+In any case, if memory accesses from two instances of the prover are
+known to be truly concurrent (which may be the case if there are multiple
+CPUs, but usually isn't the case with multiple cores), then having the two
+methods run in parallel is a good idea.
 
 \Q The comparison between different types of semantics is pretty standard,
 isn't it?
+
+\A It seems that is {\it should\/} be. The textbook I used for these things
+is Hesselink, {\sl Programming and Recursion}, which is fairly recent. The
+semantics there is defined in terms of~${\it wp}$. When Hoare triples (and
+`annotations' in general) are introduced they are related to~${\it wp}$.
+Later, operational semantics are briefly mentioned and they too are related
+to~${\it wp}$. In summary, Hoare triples are related to~${\it wp}$, which
+is related to operational semantics. That textbook states that the relation
+it gives between ${\it wp}$ and operational semantics is new, arguing that
+`axiomatic' people and `operational' people tend to dislike each-other
+methods.
+
+In my dissertation, operational semantics define the Boogie language, and
+Hoare triples occupy a central place, being related to the other types of
+semantics. To my knowledge, this approach to relating operational semantics
+to~${\it wp}$ is new. It may turn out that the connection was already
+described explicitly in these terms. Even if it wasn't, since such basic
+concepts are involved, it is likely that it was `floating in the air' as a
+sort of folklore knowledge that was never made quite explicit. If this is
+the case, then I'm happy to have written down in detail.
 
 \Q You present a proof technique for showing the correctness of algorithms
 that simplify verification conditions. What exactly are the properties an
 algorithm needs in order to be able to apply this proof technique?
 
+\A The technique handles algorithms that are implementations of a predicate
+transformer ${\it prune}$ that takes an old OK predicate~$p$ and a new
+predicate~$q$ and returns a simplified version of~$q$. A rather unimportant
+technical point is that the text that presents this technique assumes that
+``$p$~is OK'' means $|\lnot p|$ rather than~$|p|$, so ``simplified
+version'' above means ``equisatisfiable''. Intuitively, the technique says
+that you should check that ${\it prune}$ always returns a predicate whose
+validity/satisfiability is between that of~$p$ and that of~$q$.
+
 \Q Does FreeBoogie handle Boogie's polymorphic types?
+
+\A It type-checks, but does not encode the meaning in logic, which is known
+to be sometimes necessary. (In other words, it is known that just erasing
+types is unsound.)
 
 \Q Isn't it cheating to assume that loops have been dealt with when you
 address code reachability?
 
+\A The cheeky answer is ``yes, but it's not {\it my\/} cheating''. I hope
+the answer will seem less cheeky once I explain what I mean. Let me first
+explain why it {\it is\/} cheating. A Boogie program can be seen as a way
+to specify a set of executions. If edges are simply cut to eliminate loops,
+then the set of executions is reduced, and it is possible for wrong
+executions to be trimmed out. In other words, simply cutting edges is
+unsound. To enlarge the set of executions we may forget what we know about
+some variable at certain points (think of loop heads). If the variable
+is~$x$, we do this by simply using~$x'$ in subsequent statements. That way,
+whatever we knew about~$x$ does not apply to~$x'$. So that we don't
+introduce too many new execution we may relate $x'$ to~$x$ using an
+assumption. The relation is weaker than $x'=x$. Loop invariants play
+exactly this role. Anyway, the point is that coming up with invariants is
+hard, and often you must settle for the possibility that the loop-less
+program has {\it more\/} executions than the loop-full program it is
+supposed to be equivalent to. One problem is that wrong executions may be
+introduced. Another problem, relevant here, is that statements that were
+semantically unreachable may become semantically reachable.  So, assuming
+that loops have been dealt with is cheating because (1)~we know that for
+any method of handling loops there are programs where truly unreachable
+statements are turned in reachable statements, and (2)~if you study
+reachability it seems strange to ignore which exactly is the method used to
+handle loops.
+
+Now here's why it is {\it not\/} cheating. The {\it same\/} problem holds
+for VC generation in general, as explained above. One may argue that it is
+strange to talk about the wp or the sp method of generating VCs and
+ignoring the precise method used to handle loops, given that any such
+method {\it will\/} introduce wrong executions for {\it some\/} correct
+input programs. Should this stop us from using VC generation completely and
+settle for symbolic execution? It is certainly a serious reason, but it is
+not that clear cut that the engineering advantages gained from separating
+the concern of handling loops aren't more important.
+
 \Q Your reachability analysis identifies four very different types of
 problems.  Are these problems distinguished in error messages? If no, then
 how can it be done?
+
+\A First, the implementation in ESC/Java does not look for blockers as
+described in the dissertation. (It does not split nodes in two as is done
+on line~1 of Figure~7.9.) So there is no error message that points to
+doomed code. When some code is unreachable, then ESC/Java distinguishes
+between preconditions, postconditions, and assertions. This distinction
+does {\it not\/} directly map to the more useful categories identified in
+the dissertation (inconsistent specs, soundness bugs, dead code, and so
+on).  It's still an open problem how to identify these categories
+automatically, and it may be the case that some guesswork will be needed.
 
 \Q The example you give in the introduction is quite algorithmic in nature.
 Why do you think this is the kind of problems that ``program verifiers
