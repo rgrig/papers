@@ -80,7 +80,7 @@
   \end{block}
 \end{frame}
 %}}}
-%{{{ FreeBoogie
+%{{{ contributions
 \begin{frame}
   \begin{block}{\specsharp architecture}
   \begin{itemize}
@@ -94,6 +94,8 @@
   \end{block}
   \begin{block}{improvements}
   \begin{itemize}
+  \item \alert{incremental}
+  \item \alert{analysis} of finding a passive form
   \item \alert{configurable method}
     \begin{itemize}
     \item weakest precondition
@@ -104,7 +106,6 @@
     \item partial correctness
     \item \alert{reachability}
     \end{itemize}
-  \item \alert{incremental}
   \end{itemize}
   \end{block}
 \end{frame}
@@ -351,7 +352,7 @@ where
     \bigvee_{x\to y} b_x & \text{otherwise}
     \end{cases} \\
   b_y &\equiv a_y \land q_y \qquad\text{where $y$ is \textbf{assume/assert} $q_y$} \\
-  \mathit{vc} &\equiv \textstyle\bigwedge_\text{$y$ is an \textbf{assert} $q_y$} (a_y\limp q_y)
+  \mathit{vc} &\equiv \textstyle\bigwedge_\text{$y$ is \textbf{assert} $q_y$} (a_y\limp q_y)
   \end{align*}
   \end{block}
 \end{frame}
@@ -504,14 +505,14 @@ $$\alert{\mathit{vc}\equiv\tru}$$
 \centerline{\Huge Q\&A}
 \end{frame}
 %}}}
-%{{{ old
+%{{{ extra
 \begin{frame}
   \frametitle{Contributions}
   \begin{itemize}
   \item semantics for core Boogie: operational, Hoare, wp, sp, relation
   \item novel use of Visitors, and the supporting tool AstGen; there's
     also a discussion of the overall design
-  \item precise definition of passivation (also by Vogels, Jacobs, Pissens)
+  \item precise definition of passivation 
   \item study of the complexity of the passivation problem
   \item experimental comparison of wp vs sp
   \item algorithm for unsharing expression dags
@@ -520,80 +521,7 @@ $$\alert{\mathit{vc}\equiv\tru}$$
   \item why is reachability analysis useful (in addition to correctness
     and termination)
   \item heuristics that make reachability analysis practical 
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Reachability Analysis for Annotated Code}
-  coauthors: Mikol\'a\v{s} Janota and Micha{\l} Moskal\bigskip
-  \begin{itemize}
-  \item We present a general technique to catch
-    \begin{itemize}
-    \item \emph{dead code},
-    \item bugs (or intended unsoundness) in the VC generator,
-    \item inconsistent axiomatizations or specifications, and
-    \item assertions that always fail (doomed code).
-    \end{itemize}
-  \item The technique is simple because
-    \begin{itemize}
-    \item we rely on a previous stage to cut loops and
-    \item we use strongest postcondition (instead of wp).
-    \end{itemize}
-  \item The naive implementation is unusably slow, as it calls
-    the prover once per program point. I sped that up to $<2$
-    calls to the prover per method on average, which made it 
-    usable.
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Edit and Verify}
-  coauthor: Micha{\l} Moskal\bigskip
-  \begin{itemize}
-  \item Idea: If the program and specs changed a little since
-    the last verification, then don't redo all the work!
-  \item proof of concept implementation in Fx7
-    \begin{itemize}
-    \item keep the last prover query
-    \item preprocess the new query, using the previous one
-    \end{itemize}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Strongest Postcondition of Unstructured Programs}
-  coauthors: Julien Charles, Fintan Fairmichael, Joseph Kiniry
-  \bigskip
-  \begin{enumerate}
-  \item semantics
-    \begin{itemize}
-    \item correctness of a flowgraph
-    \item Hoare triples vs WP vs SP
-    \end{itemize}
-  \item algorithms
-    \begin{itemize}
-    \item \emph{definition of passive form}
-    \item complexity of finding an optimal passive form
-    \end{itemize}
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}
-  \frametitle{FreeBoogie}
-  \begin{itemize}
-  \item Java clone of MSR's Boogie
-  \item platform for some research
-  \item status
-    \begin{itemize}
-    \item after a major change that is not quite finished:
-      BoogiePL$\to$Boogie2
-    \item main missing parts:
-      \begin{itemize}
-      \item invariants inference
-      \item encoding Boogie2 types
-      \end{itemize}
-    \end{itemize}
-  \item 
+  \item FreeBoogie
   \end{itemize}
 \end{frame}
 %}}}
