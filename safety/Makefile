@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=mc
+MAIN=safety
 INP=.:../lib:
 
 build:
