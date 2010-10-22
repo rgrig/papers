@@ -193,8 +193,14 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 %}}}
 %}}}
 %{{{ example
-\section{Example}
+\section{Examples}
 
+%{{{ iterator
+%}}}
+%{{{ locking
+%}}}
+%{{{ file handles
+%}}}
 %}}}
 %{{{ theory
 \section{Theory}
@@ -214,8 +220,55 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 \section{Conclusions}
 
 %}}}
+%{{{ notes
+\section{Notes}
+
+%{{{ initial idea
+\subsection{Initial idea}
+
+``An \textit{unlock} not preceded by a \textit{lock} is an error.''
+Such a property is naturally captured by an automaton~$A$.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{x} = \mathit{makeLock}()\\
+1\to\epsilon&: \mathit{unlock}(x)\\
+1\to2&: \mathit{lock}(x)\\
+2\to1&: \mathit{unlock}(x)
+\end{aligned}
+\end{equation}
+The input to this automaton is the string of method calls from an execution of a program.
+Statements that are not method calls are ignored, and so are calls to methods other than \textit{makeLock}, \textit{lock}, and \textit{unlock}.
+
+When the first call to \textit{makeLock} is seen, the automaton variable~$x$ is bound to the return value.
+If next comes a call $\mathit{unlock}(y)$, then the automaton checks whether its variable~$x$ holds the same value as that denoted by the Java expression~$y$.
+If it fails to decide, then it emits a warning; if it decides that $x=y$, then it takes transition~$1\to\epsilon$, thus signaling an error; if it decides that $x\ne y$, then it stays in state~$1$.
+
+``Double locking is an error:''
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathit{lock}(\mathbf x)\\
+1\to0&: \mathit{unlock}(x)\\
+1\to\epsilon&: \mathit{lock}(x)
+\end{aligned}
+\end{equation}
+Here we need not care about \textit{makeLock}.
+The reason we did mention it in the previous example is that both sequences $(\mathit{unlock}; \mathit{unlock})$ and $(\mathit{makeLock}; \mathit{unlock})$ are wrong.
+
+``A collection should not be changed while it is being iterated.''
+In other words, don't use an iterator after modifying its collection.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
+1\to2&: \mathit{add}(c, \mathbf{e}) \\
+2\to\epsilon&: \mathbf{e} = \mathit{next}(i)
+\end{aligned}
+\end{equation}
+
+%}}}
+%}}}
+
 \bibliographystyle{plain}
-\bibliography{mc}
+\bibliography{safety}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 
