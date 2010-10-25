@@ -263,6 +263,23 @@ In other words, don't use an iterator after modifying its collection.
 2\to\epsilon&: \mathbf{e} = \mathit{next}(i)
 \end{aligned}
 \end{equation}
+Edges~$1\to2$ should capture all the ways to modify collection~$c$.
+It is easy to add edges for methods like $\mathit{Collection}.\mathit{remove}$, but collections may be changed also by $\mathit{Iterator}.\mathit{remove}$.
+The iterator~$i$ should not be used further if a call~$\mathit{remove}(j)$ is made with~$i\ne j$.
+An automaton with a different structure is better suited for capturing this aspect.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
+1\to2&: \mathbf{j} = \mathit{iterator}(c)\\
+2\to3&: \mathit{remove}(i)\\
+3\to\epsilon&: \mathbf{e} = \mathit{next}(j)\\
+2\to4&: \mathit{remove}(j)\\
+4\to\epsilon&: \mathit{next}(i)
+\end{aligned}
+\end{equation}
+
+We saw that a property is sometimes easy to express with more than one automaton.
+\rg{how to combine}
 
 %}}}
 %}}}
