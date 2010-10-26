@@ -96,10 +96,9 @@
 \newtheorem{remark}{Remark}
 %}}}
 %}}}
-
 \begin{document}
 \maketitle
-
+%{{{ motivation
 \section{Prior Work and Motivation}
 
 In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
@@ -124,7 +123,7 @@ Krishnaswami uses mathematical concepts and notations that are bound to look unf
 There are two important later developments. First, Bierhoff and Aldrich~\cite{bierhoff2007} showed that it is indeed possible to automate the approach based on typestates. Second, Haack and Hurlin~\cite{haack2009} showed how to use first-order separation logic, thereby moving closer to automation as compared to Krishnaswami~\cite{krishnaswami2006}.
 
 There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties~\cite{pnueli1977}.
-To see why this is relevant, note that what we want is to forbid executions that contain a sequence of calls $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
+To see why this is relevant, note that what we want is to forbid executions that contain a call $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
 Trentelman and Huisman show by example how safety properties expressed in their extension can also be formulated, more verbosely, in standard JML\null.
 In a sense, Cok's solution is another example of expressing a safety property in JML\null.
 Unfortunately, we are not aware of any algorithm that translates arbitrary safety properties into JML specifications.
@@ -132,16 +131,19 @@ Even if such algorithms are found, the problem of automatically checking JML rem
 The subset of JML that is handled automatically varies from tool to tool, and the descriptions of these subsets tend to be either missing, so complicated that no one can be expected to remember them, or hard to find.
 Therefore, it makes sense to search for an algorithm whose target is a very small subset of JML, such that the chances of it being handled by tools are maximized.
 
-An alternative, which we pursue in this article, is to find a translation from safety properties to separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
+An alternative, which we pursue in this article, is to find a translation of safety properties into separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
 As a result, \emph{we obtain a way to turn program verifiers based on separation logic into model checkers of safety properties}.
 
-
+%}}}
+%{{{ background
 \section{Background}
 
-\subsection{Separation Logic}
+%{{{ jstar
+\subsection{Separation Logic and jStar}
 
 % basics of seplogic and jstar
-
+%}}}
+%{{{ iterator
 \subsection{The Iterator Pattern}
 
 % you can use seplogic to explain the pattern
@@ -167,7 +169,7 @@ interface Iterator {
 
 In a first approximation, Java collections behave like mathematical sets.
 
-One may think that a Java collection~$c$ behaves like a set:
+A Java collection~$c$ behaves almost like a set:
 The call $c.\mathit{contains}(o)$ corresponds to $o\in c$, the call $c.\mathit{add}(o)$ changes the state from~$c$ to $c\cup\{o\}$, the call $c.\mathit{remove}(o)$ may change the state from~$c$ to $c-\{o\}$.
 However, this is not quite true.
 
@@ -182,20 +184,108 @@ Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textb
 
 If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
 
-
+%}}}
+%{{{ model checking
 \subsection{Model Checking}
 
 % LTL, safety, mc idea
 
-\section{Example}
+%}}}
+%}}}
+%{{{ example
+\section{Examples}
 
+%{{{ iterator
+%}}}
+%{{{ locking
+%}}}
+%{{{ file handles
+%}}}
+%}}}
+%{{{ theory
 \section{Theory}
 
+%}}}
+%{{{ implementation
 \section{Implementation}
 
-\bibliographystyle{plain}
-\bibliography{mc}
+%}}}
+%{{{ related work
+\section{More Related Work}
 
+\rg{SLAM}
+
+%}}}
+%{{{ conclusions
+\section{Conclusions}
+
+%}}}
+%{{{ notes
+\section{Notes}
+
+%{{{ initial idea
+\subsection{Initial idea}
+
+``An \textit{unlock} not preceded by a \textit{lock} is an error.''
+Such a property is naturally captured by an automaton~$A$.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{x} = \mathit{makeLock}()\\
+1\to\epsilon&: \mathit{unlock}(x)\\
+1\to2&: \mathit{lock}(x)\\
+2\to1&: \mathit{unlock}(x)
+\end{aligned}
+\end{equation}
+The input to this automaton is the string of method calls from an execution of a program.
+Statements that are not method calls are ignored, and so are calls to methods other than \textit{makeLock}, \textit{lock}, and \textit{unlock}.
+
+When the first call to \textit{makeLock} is seen, the automaton variable~$x$ is bound to the return value.
+If next comes a call $\mathit{unlock}(y)$, then the automaton checks whether its variable~$x$ holds the same value as that denoted by the Java expression~$y$.
+If it fails to decide, then it emits a warning; if it decides that $x=y$, then it takes transition~$1\to\epsilon$, thus signaling an error; if it decides that $x\ne y$, then it stays in state~$1$.
+
+``Double locking is an error:''
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathit{lock}(\mathbf x)\\
+1\to0&: \mathit{unlock}(x)\\
+1\to\epsilon&: \mathit{lock}(x)
+\end{aligned}
+\end{equation}
+Here we need not care about \textit{makeLock}.
+The reason we did mention it in the previous example is that both sequences $(\mathit{unlock}; \mathit{unlock})$ and $(\mathit{makeLock}; \mathit{unlock})$ are wrong.
+
+``A collection should not be changed while it is being iterated.''
+In other words, don't use an iterator after modifying its collection.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
+1\to2&: \mathit{add}(c, \mathbf{e}) \\
+2\to\epsilon&: \mathbf{e} = \mathit{next}(i)
+\end{aligned}
+\end{equation}
+Edges~$1\to2$ should capture all the ways to modify collection~$c$.
+It is easy to add edges for methods like $\mathit{Collection}.\mathit{remove}$, but collections may be changed also by $\mathit{Iterator}.\mathit{remove}$.
+The iterator~$i$ should not be used further if a call~$\mathit{remove}(j)$ is made with~$i\ne j$.
+An automaton with a different structure is better suited for capturing this aspect.
+\begin{equation}
+\begin{aligned}
+0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
+1\to2&: \mathbf{j} = \mathit{iterator}(c)\\
+2\to3&: \mathit{remove}(i)\\
+3\to\epsilon&: \mathbf{e} = \mathit{next}(j)\\
+2\to4&: \mathit{remove}(j)\\
+4\to\epsilon&: \mathit{next}(i)
+\end{aligned}
+\end{equation}
+
+We saw that a property is sometimes easy to express with more than one automaton.
+\rg{how to combine}
+
+%}}}
+%}}}
+
+\bibliographystyle{plain}
+\bibliography{safety}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 
