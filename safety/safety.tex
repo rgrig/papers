@@ -1,13 +1,13 @@
-%{{{ prelude latex
-%{{{ TeX settings
+% prelude {{{1
+% TeX {{{2
 \tracingmacros=0
 \overfullrule=5pt
 \showboxdepth=10
 \showboxbreadth=100
-%}}}
+% LaTeX {{{2
 \documentclass[a4paper]{article}
 
-%{{{ packages
+% packages {{{3
 \usepackage[colorlinks]{hyperref}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -20,9 +20,8 @@
 \usepackage{xspace}
 \usepackage{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
-\usepgflibrary{shapes.geometric}
-%}}}
-%{{{ metadata and PDF settings
+\usepgflibrary{shapes.geometric}  % not supported by ancient TikZ
+% metadata and PDF settings {{{3
 \title{Checking Safety with Separation Logic}
 \author{Dino Distefano \and Radu Grigore}
 \definecolor{darkblue}{rgb}{0,0,0.4}
@@ -32,8 +31,7 @@
 \hypersetup{
   pdftitle={Checking Safety with Separation Logic},
   pdfauthor={Dino Distefano and Radu Grigore}}
-%}}}
-%{{{ package customization
+% package customization {{{3
 \lstset{
   language=Java,
   basicstyle=\scriptsize,
@@ -45,8 +43,7 @@
   boxpos=t,
   morekeywords={Object}
 }
-%}}}
-%{{{ new commands 
+% new commands {{{3
 \def\fb#1{{\bf #1}}
 \newcommand{\dd}[1]{\todo{dd}{#1}}
 \newcommand{\fls}{\bot}
@@ -79,8 +76,7 @@
 
 \newcommand{\bc}{\begin{figure}\centering\begin{tabular}{c}} % begin codebox
 \newcommand{\ec}[2]{\end{tabular}\caption{#1}\label{#2}\end{figure}} % end codebox
-%}}}
-%{{{ new environments (and theorems)
+% new environments (and theorems) {{{3
 \newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
 \theoremstyle{slanted}
 \newtheorem{problem}{Problem}
@@ -94,11 +90,11 @@
 \newtheorem{example}{Example}
 \theoremstyle{remark}
 \newtheorem{remark}{Remark}
-%}}}
-%}}}
+
+% body {{{1
 \begin{document}
 \maketitle
-%{{{ motivation
+% motivation {{{2
 \section{Prior Work and Motivation}
 
 In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
@@ -134,16 +130,14 @@ Therefore, it makes sense to search for an algorithm whose target is a very smal
 An alternative, which we pursue in this article, is to find a translation of safety properties into separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
 As a result, \emph{we obtain a way to turn program verifiers based on separation logic into model checkers of safety properties}.
 
-%}}}
-%{{{ background
+% background {{{2
 \section{Background}
 
-%{{{ jstar
+% jstar {{{3
 \subsection{Separation Logic and jStar}
 
 % basics of seplogic and jstar
-%}}}
-%{{{ iterator
+% iterator {{{3
 \subsection{The Iterator Pattern}
 
 % you can use seplogic to explain the pattern
@@ -184,50 +178,36 @@ Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textb
 
 If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
 
-%}}}
-%{{{ model checking
+% model checking {{{3
 \subsection{Model Checking}
 
 % LTL, safety, mc idea
 
-%}}}
-%}}}
-%{{{ example
+% example {{{2
 \section{Examples}
 
-%{{{ iterator
-%}}}
-%{{{ locking
-%}}}
-%{{{ file handles
-%}}}
-%}}}
-%{{{ theory
+% iterator {{{3
+% locking {{{3
+% file handles {{{3
+% theory {{{3
 \section{Theory}
 
-%}}}
-%{{{ implementation
+% implementation {{{2
 \section{Implementation}
 
-%}}}
-%{{{ related work
+% related work {{{2
 \section{More Related Work}
 
 \rg{SLAM}
 
-%}}}
-%{{{ conclusions
+% conclusions {{{2
 \section{Conclusions}
 
-%}}}
-%{{{ notes
+% notes {{{2
 \section{Notes}
 
-%{{{ initial idea
-\subsection{Initial idea}
-
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
-Such a property is naturally captured by an automaton~$A$.
+Such a property is naturally captured by an automaton.
 \begin{equation}
 \begin{aligned}
 0\to1&: \mathbf{x} = \mathit{makeLock}()\\
@@ -243,7 +223,7 @@ When the first call to \textit{makeLock} is seen, the automaton variable~$x$ is 
 If next comes a call $\mathit{unlock}(y)$, then the automaton checks whether its variable~$x$ holds the same value as that denoted by the Java expression~$y$.
 If it fails to decide, then it emits a warning; if it decides that $x=y$, then it takes transition~$1\to\epsilon$, thus signaling an error; if it decides that $x\ne y$, then it stays in state~$1$.
 
-``Double locking is an error:''
+``Locking twice is an error:''
 \begin{equation}
 \begin{aligned}
 0\to1&: \mathit{lock}(\mathbf x)\\
@@ -256,34 +236,60 @@ The reason we did mention it in the previous example is that both sequences $(\m
 
 ``A collection should not be changed while it is being iterated.''
 In other words, don't use an iterator after modifying its collection.
-\begin{equation}
+\begin{equation}\label{eq:iter1}
 \begin{aligned}
 0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
 1\to2&: \mathit{add}(c, \mathbf{e}) \\
-2\to\epsilon&: \mathbf{e} = \mathit{next}(i)
+2\to\epsilon&: \mathit{next}(i)
 \end{aligned}
 \end{equation}
 Edges~$1\to2$ should capture all the ways to modify collection~$c$.
 It is easy to add edges for methods like $\mathit{Collection}.\mathit{remove}$, but collections may be changed also by $\mathit{Iterator}.\mathit{remove}$.
 The iterator~$i$ should not be used further if a call~$\mathit{remove}(j)$ is made with~$i\ne j$.
 An automaton with a different structure is better suited for capturing this aspect.
-\begin{equation}
+\begin{equation}\label{eq:iter2}
 \begin{aligned}
 0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
 1\to2&: \mathbf{j} = \mathit{iterator}(c)\\
 2\to3&: \mathit{remove}(i)\\
-3\to\epsilon&: \mathbf{e} = \mathit{next}(j)\\
 2\to4&: \mathit{remove}(j)\\
+3\to\epsilon&: \mathit{next}(j)\\
 4\to\epsilon&: \mathit{next}(i)
 \end{aligned}
 \end{equation}
 
-We saw that a property is sometimes easy to express with more than one automaton.
-\rg{how to combine}
+\rg{I need to fix the terminology below. It's confusing.}
 
-%}}}
-%}}}
+We want to check automatically whether a program violates properties specified by such automatons.
+To do so, we symbolically execute the automaton in parallel with the program.
+The notation $a(1, x\to y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
+We say that $a(1,x\to y)$ is an \emph{extended state} of automaton~$a$.
+A set of extended states of automatons is attached to a \emph{symbolic state} of a symbolic interpreter to form an \emph{extended symbolic state}.
+The \emph{extended symbolic interpreter} knows how to update extended symbolic states, not only simple symbolic states.
+We need only a few hooks inside a symbolic interpreter in order to be able to extend it.
+We require that the symbolic interpreter (or executioner, if you prefer) implements the following operations.
+\begin{align}
+\mathit{join} &: \mathit{State} \to \mathit{State} \to \mathit{State} \\
+\mathit{execute} &: \mathit{Statement} \to \mathit{State} \to \mathit{State} \\
+\mathit{abstract} &: \mathit{State} \to \mathit{State}
+\end{align}
+In jStar, for example, \textit{join} is logic disjunction, \textit{execute} amounts to doing frame inference and applying the frame rule, and \textit{abstract} applies a set of custom rewrite rules.
+The extended versions of these operations have similar types, except that \textit{State} is replaced by \textit{ExtendedState}.
 
+For \textit{join}, we simply take the union of the sets of automaton extended states.
+  \[ \mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2)=
+    (\mathit{join}\;\sigma_1\;\sigma_2, S_1\cup S_2) \]
+
+When we execute a statement that labels automaton edges we must also execute those automaton edges.
+Here we have the most interesting interaction between the program state and the automaton state.
+Take the edge $4\to\epsilon:\mathit{next}(i)$ from~\eqref{eq:iter2}.
+Suppose one of the extended automaton states is $a(4,i\to x)$ and the statement to execute is $\mathit{next}(y)$.
+The edge is taken if and only if $x=y$.
+We therefore need a black box to which we feed the (normal) program state and equality queries.
+The black box should answer with `yes', `no', or `I do not know'.
+In jStar's case, this black box is the separation logic prover.
+
+% ending {{{2
 \bibliographystyle{plain}
 \bibliography{safety}
 \end{document}
