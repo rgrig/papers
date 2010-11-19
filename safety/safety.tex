@@ -288,6 +288,21 @@ The edge is taken if and only if $x=y$.
 We therefore need a black box to which we feed the (normal) program state and equality queries.
 The black box should answer with `yes', `no', or `I do not know'.
 In jStar's case, this black box is the separation logic prover.
+If the answer is `yes', then $a(4,i\to x)$ is replaced by $a(\epsilon)$;
+if the answer is `I do not know', then $a(4,i\to x)$ is removed and the user is warned that the tool cannot decide if the property is satisfied;
+if the answer is `no', then no further action is taken.
+\rg{We need to discuss when equalities between program expressions are decidable.}
+
+One more thing needs to be done.
+Consider a typical specification of the assignment statement.
+  \[ \{\mathbf p\}\quad
+  \mathbf x:=\mathbf e
+  \quad\{\exists x'\;x=e * (x\gets x')\;p\}\]
+The substitution $(x\gets x')$ is applied because the variable~$x$ from annotations corresponds to the \emph{value} of the program variable~$x$, which changed.
+The program expressions to which automaton variables are bound should be transformed similarly.
+\rg{Continue here, and discuss what to do about the quantifiers, and what should be done in general for \textit{execute}.}
+
+
 
 % ending {{{2
 \bibliographystyle{plain}
