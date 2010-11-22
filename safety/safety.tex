@@ -20,7 +20,7 @@
 \usepackage{xspace}
 \usepackage{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
-\usepgflibrary{shapes.geometric}  % not supported by ancient TikZ
+%\usepgflibrary{shapes.geometric}  % not supported by ancient TikZ
 % metadata and PDF settings {{{3
 \title{Checking Safety with Separation Logic}
 \author{Dino Distefano \and Radu Grigore}
@@ -208,7 +208,7 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
 Such a property is naturally captured by an automaton.
-\begin{equation}
+\begin{equation}\label{eq:unlockunlock}
 \begin{aligned}
 0\to1&: \mathbf{x} = \mathit{makeLock}()\\
 1\to\epsilon&: \mathit{unlock}(x)\\
@@ -262,10 +262,53 @@ An automaton with a different structure is better suited for capturing this aspe
 
 We want to check automatically whether a program violates properties specified by such automatons.
 To do so, we symbolically execute the automaton in parallel with the program.
-The notation $a(1, x\to y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
-We say that $a(1,x\to y)$ is an \emph{extended state} of automaton~$a$.
+The notation $a(1, x\mapsto y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
+We say that $a(1,x\mapsto y)$ is an \emph{extended state} of automaton~$a$.
 A set of extended states of automatons is attached to a \emph{symbolic state} of a symbolic interpreter to form an \emph{extended symbolic state}.
 The \emph{extended symbolic interpreter} knows how to update extended symbolic states, not only simple symbolic states.
+
+The following are two possible representations for the same symbolic state.
+\begin{align}
+& x\mapsto y * y = 2 * a(1, z\mapsto x) * a(2) 
+  \label{eq:state_rep.star} \\
+& \bigl(x\mapsto y * y = 2, \{a(1,z\mapsto x), a(2)\}\bigr)
+  \label{eq:state_rep.pair}
+\end{align}
+Using the first representation, we can treat $a$ as any other predicate when, say, we execute an assignment on the stack.
+  \[ \{\mathbf p\}\quad
+  \mathbf x:=\mathbf e
+  \quad\{\exists x'\;x=e * (x\gets x')\;p\}.\]
+The state after $x:=3$ would be
+  \[ \exists x'\; x = 3 * x'\mapsto y * y = 2 * a(1, z\mapsto x') * a(2). \]
+Using the second representation, we may write
+  \[ \bigl(x=3 * x'\mapsto y * y=2, \{a(1,z\mapsto x'), a(2)\}\bigr) \]
+and agree that primed variables are implicitly existentially quantified.
+Until now, \eqref{eq:state_rep.pair} looks less desirable, but there are reasons to prefer it. 
+First, it makes explicit that we track the state of a non-deterministic automaton.
+Second, it turns out to be difficult to simulate the automaton using the first representation.
+Suppose that we go for the uniform representation.
+A natural impulse is to encode transitions in method contracts.
+\rg{This is what \href{http://amazones.gforge.inria.fr/aorai/aorai-manual.pdf}{Aora\"\i} seems to do; check why they don't encounter the problems that follow here.}
+For example, because \eqref{eq:iter1} tells us that a call $\mathit{next}(i)$ transitions the automaton from~$2$ to the error state we are tempted to use the precondition $a(2,i\mapsto\mathbf{x}, \ldots)$ and the postcondition $a(\epsilon,i\mapsto x,\ldots)$.
+However, the automaton is nondeterministic, which means that it could be in the state $a(2,i\mapsto x) * a(2,i\mapsto y)$.
+The proposed contract would lead to $a(\epsilon,i\mapsto x) * a(2,i\mapsto y)$ or $a(2,i\mapsto x) * a(\epsilon,i\mapsto y)$, but \emph{not} $a(\epsilon,i\mapsto x) * a(\epsilon,i\mapsto y)$.
+To fix this, remember how symbolic execution achieves convergence:
+From time to time the symbolic state is enlarged according to some abstraction algorithm.
+So, a second attempt would be to use abstraction rewrite rules.
+In this case, the rule $a(2,i\mapsto\mathbf{x})\leadsto a(\epsilon,i\mapsto x)$ would work.
+However, we run into trouble when consecutive automaton transitions are labeled by the same method.
+How do we ensure that one call does not trigger the traversal of both transitions?
+The simple answer is to ditch the uniform representation and stick with the representation that separates the extended automaton state.
+
+
+\rg{continue here}
+
+
+The extended symbolic state
+  \[ (\sigma, \{a(1,x\to y), a(2,x\to 2y)\}) \]
+is the same as the 
+
+
 We need only a few hooks inside a symbolic interpreter in order to be able to extend it.
 We require that the symbolic interpreter (or executioner, if you prefer) implements the following operations.
 \begin{align}
@@ -274,30 +317,50 @@ We require that the symbolic interpreter (or executioner, if you prefer) impleme
 \mathit{abstract} &: \mathit{State} \to \mathit{State}
 \end{align}
 In jStar, for example, \textit{join} is logic disjunction, \textit{execute} amounts to doing frame inference and applying the frame rule, and \textit{abstract} applies a set of custom rewrite rules.
-The extended versions of these operations have similar types, except that \textit{State} is replaced by \textit{ExtendedState}.
+We extend these operations, by figuring out what $S'$ should be in each case below.
+\begin{align}
+\mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2) &=
+    (\mathit{join}\;\sigma_1\;\sigma_2, S') \\
+\mathit{execute}'\;(p,q)\;(\sigma,S) &=
+    \bigl(\mathit{execute}\;(p,q)\;\sigma,S'\bigr) \\
+\mathit{abstract}'\;(\sigma,S) &=
+    (\mathit{abstract}\;\sigma,S')
+\end{align}
+Statements are specified by pairs~$(p,q)$ of a precondition~$p$ and a postcondition~$q$.
+For example, the specification for an assignment is
+  \[ \{\mathbf p\}\quad
+  \mathbf x:=\mathbf e
+  \quad\{x=e * (x\gets x')\;p\}.\]
+The post-state should start with $\exists x'$, but it is convenient here to keep the quantifier implicit.
+As usual, the existential variable~$x'$ must be fresh.
 
-For \textit{join}, we simply take the union of the sets of automaton extended states.
+
+\rg{Scrap what follows?}
+
+For \textit{join}, we take the union of the sets of automaton extended states.
   \[ \mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2)=
     (\mathit{join}\;\sigma_1\;\sigma_2, S_1\cup S_2) \]
 
+Similarly,
+  \[ \mathit{execute}'\;(p,q)\;(\sigma,S)=
+    \bigl(\mathit{execute}\;(p,q)\;\sigma,S'), \]
+for an $S'$ still to be determined.
+
 When we execute a statement that labels automaton edges we must also execute those automaton edges.
 Here we have the most interesting interaction between the program state and the automaton state.
-Take the edge $4\to\epsilon:\mathit{next}(i)$ from~\eqref{eq:iter2}.
+Consider the edge $4\to\epsilon:\mathit{next}(i)$ from~\eqref{eq:iter2}.
 Suppose one of the extended automaton states is $a(4,i\to x)$ and the statement to execute is $\mathit{next}(y)$.
 The edge is taken if and only if $x=y$.
-We therefore need a black box to which we feed the (normal) program state and equality queries.
-The black box should answer with `yes', `no', or `I do not know'.
+We therefore require a black box that attempts to decide equalities, given a symbolic state.
 In jStar's case, this black box is the separation logic prover.
-If the answer is `yes', then $a(4,i\to x)$ is replaced by $a(\epsilon)$;
-if the answer is `I do not know', then $a(4,i\to x)$ is removed and the user is warned that the tool cannot decide if the property is satisfied;
-if the answer is `no', then no further action is taken.
+If $x=y$, then $a(4,i\to x)$ is replaced by $a(\epsilon)$;
+if $x\ne y$, then $a(4,i\to x)$ is left unchanged;
+if the prover fails to decide, then $a(4,i\to x)$ is removed and the user is warned.
 \rg{We need to discuss when equalities between program expressions are decidable.}
-
-One more thing needs to be done.
-Consider a typical specification of the assignment statement.
+Now consider a typical specification of the assignment statement, where primed variables are implicitly existentially quantified.
   \[ \{\mathbf p\}\quad
   \mathbf x:=\mathbf e
-  \quad\{\exists x'\;x=e * (x\gets x')\;p\}\]
+  \quad\{x=e * (x\gets x')\;p\}\]
 The substitution $(x\gets x')$ is applied because the variable~$x$ from annotations corresponds to the \emph{value} of the program variable~$x$, which changed.
 The program expressions to which automaton variables are bound should be transformed similarly.
 \rg{Continue here, and discuss what to do about the quantifiers, and what should be done in general for \textit{execute}.}
