@@ -1,13 +1,14 @@
-% prelude {{{1
-% TeX {{{2
+% prelude {{{
+% TeX {{{
 \tracingmacros=0
 \overfullrule=5pt
 \showboxdepth=10
 \showboxbreadth=100
+% }}}
 % LaTeX {{{2
 \documentclass[a4paper]{article}
 
-% packages {{{3
+% packages {{{
 \usepackage[colorlinks]{hyperref}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -21,7 +22,8 @@
 \usepackage{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
 %\usepgflibrary{shapes.geometric}  % not supported by ancient TikZ
-% metadata and PDF settings {{{3
+% }}}
+% metadata and PDF settings {{{
 \title{Checking Safety with Separation Logic}
 \author{Dino Distefano \and Radu Grigore}
 \definecolor{darkblue}{rgb}{0,0,0.4}
@@ -31,7 +33,8 @@
 \hypersetup{
   pdftitle={Checking Safety with Separation Logic},
   pdfauthor={Dino Distefano and Radu Grigore}}
-% package customization {{{3
+% }}}
+% package customization {{{
 \lstset{
   language=Java,
   basicstyle=\scriptsize,
@@ -43,7 +46,8 @@
   boxpos=t,
   morekeywords={Object}
 }
-% new commands {{{3
+% }}}
+% new commands {{{
 \def\fb#1{{\bf #1}}
 \newcommand{\dd}[1]{\todo{dd}{#1}}
 \newcommand{\fls}{\bot}
@@ -90,11 +94,13 @@
 \newtheorem{example}{Example}
 \theoremstyle{remark}
 \newtheorem{remark}{Remark}
-
-% body {{{1
+% }}}
+% }}}
+% }}}
+% body {{{
 \begin{document}
 \maketitle
-% motivation {{{2
+% motivation {{{
 \section{Prior Work and Motivation}
 
 In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
@@ -119,7 +125,7 @@ Krishnaswami uses mathematical concepts and notations that are bound to look unf
 There are two important later developments. First, Bierhoff and Aldrich~\cite{bierhoff2007} showed that it is indeed possible to automate the approach based on typestates. Second, Haack and Hurlin~\cite{haack2009} showed how to use first-order separation logic, thereby moving closer to automation as compared to Krishnaswami~\cite{krishnaswami2006}.
 
 There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties~\cite{pnueli1977}.
-To see why this is relevant, note that what we want is to forbid executions that contain a call $\iota=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
+To see why this is relevant, note that what we want is to forbid executions that contain a call $\iota:=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
 Trentelman and Huisman show by example how safety properties expressed in their extension can also be formulated, more verbosely, in standard JML\null.
 In a sense, Cok's solution is another example of expressing a safety property in JML\null.
 Unfortunately, we are not aware of any algorithm that translates arbitrary safety properties into JML specifications.
@@ -130,14 +136,15 @@ Therefore, it makes sense to search for an algorithm whose target is a very smal
 An alternative, which we pursue in this article, is to find a translation of safety properties into separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
 As a result, \emph{we obtain a way to turn program verifiers based on separation logic into model checkers of safety properties}.
 
-% background {{{2
+% }}}
+% background {{{
 \section{Background}
 
-% jstar {{{3
+% jstar {{{
 \subsection{Separation Logic and jStar}
-
+% }}}
 % basics of seplogic and jstar
-% iterator {{{3
+% iterator {{{
 \subsection{The Iterator Pattern}
 
 % you can use seplogic to explain the pattern
@@ -177,40 +184,47 @@ In this paper we will not tackle such specific properties, so for most purposes 
 Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textbf{true}, so it is sometimes important to distinguish between a Java collection~$c$ and its state~$C$ used in the mathematical model.
 
 If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
+% }}}
 
-% model checking {{{3
+% model checking {{{
 \subsection{Model Checking}
 
 % LTL, safety, mc idea
-
-% example {{{2
+% }}}
+% }}}
+% examples {{{
 \section{Examples}
 
-% iterator {{{3
-% locking {{{3
-% file handles {{{3
-% theory {{{3
+% iterator {{{
+% }}}
+% locking {{{
+% }}}
+% file handles {{{
+% }}}
+% theory {{{
 \section{Theory}
-
-% implementation {{{2
+% }}}
+% }}}
+% implementation {{{
 \section{Implementation}
 
-% related work {{{2
+% }}}
+% related work {{{
 \section{More Related Work}
 
 \rg{SLAM}
-
-% conclusions {{{2
+% }}}
+% conclusions {{{
 \section{Conclusions}
-
-% notes {{{2
+% }}}
+% notes {{{
 \section{Notes}
 
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
 Such a property is naturally captured by an automaton.
 \begin{equation}\label{eq:unlockunlock}
 \begin{aligned}
-0\to1&: \mathbf{x} = \mathit{makeLock}()\\
+0\to1&: \mathbf{x} := \mathit{makeLock}()\\
 1\to\epsilon&: \mathit{unlock}(x)\\
 1\to2&: \mathit{lock}(x)\\
 2\to1&: \mathit{unlock}(x)
@@ -222,6 +236,7 @@ Statements that are not method calls are ignored, and so are calls to methods ot
 When the first call to \textit{makeLock} is seen, the automaton variable~$x$ is bound to the return value.
 If next comes a call $\mathit{unlock}(y)$, then the automaton checks whether its variable~$x$ holds the same value as that denoted by the Java expression~$y$.
 If it fails to decide, then it emits a warning; if it decides that $x=y$, then it takes transition~$1\to\epsilon$, thus signaling an error; if it decides that $x\ne y$, then it stays in state~$1$.
+\rg{We need to discuss when are equalities decidable.}
 
 ``Locking twice is an error:''
 \begin{equation}
@@ -238,7 +253,7 @@ The reason we did mention it in the previous example is that both sequences $(\m
 In other words, don't use an iterator after modifying its collection.
 \begin{equation}\label{eq:iter1}
 \begin{aligned}
-0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
+0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c})\\
 1\to2&: \mathit{add}(c, \mathbf{e}) \\
 2\to\epsilon&: \mathit{next}(i)
 \end{aligned}
@@ -249,8 +264,8 @@ The iterator~$i$ should not be used further if a call~$\mathit{remove}(j)$ is ma
 An automaton with a different structure is better suited for capturing this aspect.
 \begin{equation}\label{eq:iter2}
 \begin{aligned}
-0\to1&: \mathbf{i} = \mathit{iterator}(\mathbf{c})\\
-1\to2&: \mathbf{j} = \mathit{iterator}(c)\\
+0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c})\\
+1\to2&: \mathbf{j} := \mathit{iterator}(c)\\
 2\to3&: \mathit{remove}(i)\\
 2\to4&: \mathit{remove}(j)\\
 3\to\epsilon&: \mathit{next}(j)\\
@@ -289,7 +304,7 @@ Second, it turns out to be difficult to simulate the automaton using the first r
 Suppose that we go for the uniform representation.
 A natural impulse is to encode transitions in method contracts.
 \rg{This is what \href{http://amazones.gforge.inria.fr/aorai/aorai-manual.pdf}{Aora\"\i} seems to do; check why they don't encounter the problems that follow here.}
-For example, because \eqref{eq:iter1} tells us that a call $\mathit{next}(i)$ transitions the automaton from~$2$ to the error state we are tempted to use the precondition $a(2,i\mapsto\mathbf{x}, \ldots)$ and the postcondition $a(\epsilon,i\mapsto x,\ldots)$.
+For example, because \eqref{eq:iter1} tells us that a call $\mathit{next}(i)$ transitions the automaton from~$2$ to the error state we are tempted to use the precondition $a(2,i\mapsto\mathbf{x})$ and the postcondition $a(\epsilon,i\mapsto x)$.
 However, the automaton is nondeterministic, which means that it could be in the state $a(2,i\mapsto x) * a(2,i\mapsto y)$.
 The proposed contract would lead to $a(\epsilon,i\mapsto x) * a(2,i\mapsto y)$ or $a(2,i\mapsto x) * a(\epsilon,i\mapsto y)$, but \emph{not} $a(\epsilon,i\mapsto x) * a(\epsilon,i\mapsto y)$.
 To fix this, remember how symbolic execution achieves convergence:
@@ -298,19 +313,11 @@ So, a second attempt would be to use abstraction rewrite rules.
 In this case, the rule $a(2,i\mapsto\mathbf{x})\leadsto a(\epsilon,i\mapsto x)$ would work.
 However, we run into trouble when consecutive automaton transitions are labeled by the same method.
 How do we ensure that one call does not trigger the traversal of both transitions?
-The simple answer is to ditch the uniform representation and stick with the representation that separates the extended automaton state.
+The simple answer is to ditch the uniform representation and track the extended automaton state explicitly.
 
-
-\rg{continue here}
-
-
-The extended symbolic state
-  \[ (\sigma, \{a(1,x\to y), a(2,x\to 2y)\}) \]
-is the same as the 
-
-
-We need only a few hooks inside a symbolic interpreter in order to be able to extend it.
-We require that the symbolic interpreter (or executioner, if you prefer) implements the following operations.
+We need a few hooks inside a symbolic interpreter in order to extend it.
+We require that it implements the following operations.
+\rg{Actually, we also need abduction; either discuss it later, or add it here.}
 \begin{align}
 \mathit{join} &: \mathit{State} \to \mathit{State} \to \mathit{State} \\
 \mathit{execute} &: \mathit{Statement} \to \mathit{State} \to \mathit{State} \\
@@ -321,55 +328,24 @@ We extend these operations, by figuring out what $S'$ should be in each case bel
 \begin{align}
 \mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2) &=
     (\mathit{join}\;\sigma_1\;\sigma_2, S') \\
-\mathit{execute}'\;(p,q)\;(\sigma,S) &=
-    \bigl(\mathit{execute}\;(p,q)\;\sigma,S'\bigr) \\
+\mathit{execute}'\;s\;(\sigma,S) &=
+    \bigl(\mathit{execute}\;s\;\sigma,S'\bigr) \\
 \mathit{abstract}'\;(\sigma,S) &=
     (\mathit{abstract}\;\sigma,S')
 \end{align}
 Statements are specified by pairs~$(p,q)$ of a precondition~$p$ and a postcondition~$q$.
-For example, the specification for an assignment is
-  \[ \{\mathbf p\}\quad
-  \mathbf x:=\mathbf e
-  \quad\{x=e * (x\gets x')\;p\}.\]
-The post-state should start with $\exists x'$, but it is convenient here to keep the quantifier implicit.
-As usual, the existential variable~$x'$ must be fresh.
 
+For \textit{join}, we take $S'=S_1\cup S_2$.
+For \textit{execute}, we look inside the statement~$s$ and single out the precondition~$p$, the postcondition~$q$, the name~$m$ of the called method, the arguments $a_1$,~$a_2$, \dots,~$a_n$, and the variable~$x$ that holds the result.
+\[ s \equiv \bigl(\{p\}\quad x := m(a_1,\ldots,a_n)\quad \{q\}\bigr) \]
+(If the statement is not a method call, then we ignore it, so $S'=S$.)
 
-\rg{Scrap what follows?}
-
-For \textit{join}, we take the union of the sets of automaton extended states.
-  \[ \mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2)=
-    (\mathit{join}\;\sigma_1\;\sigma_2, S_1\cup S_2) \]
-
-Similarly,
-  \[ \mathit{execute}'\;(p,q)\;(\sigma,S)=
-    \bigl(\mathit{execute}\;(p,q)\;\sigma,S'), \]
-for an $S'$ still to be determined.
-
-When we execute a statement that labels automaton edges we must also execute those automaton edges.
-Here we have the most interesting interaction between the program state and the automaton state.
-Consider the edge $4\to\epsilon:\mathit{next}(i)$ from~\eqref{eq:iter2}.
-Suppose one of the extended automaton states is $a(4,i\to x)$ and the statement to execute is $\mathit{next}(y)$.
-The edge is taken if and only if $x=y$.
-We therefore require a black box that attempts to decide equalities, given a symbolic state.
-In jStar's case, this black box is the separation logic prover.
-If $x=y$, then $a(4,i\to x)$ is replaced by $a(\epsilon)$;
-if $x\ne y$, then $a(4,i\to x)$ is left unchanged;
-if the prover fails to decide, then $a(4,i\to x)$ is removed and the user is warned.
-\rg{We need to discuss when equalities between program expressions are decidable.}
-Now consider a typical specification of the assignment statement, where primed variables are implicitly existentially quantified.
-  \[ \{\mathbf p\}\quad
-  \mathbf x:=\mathbf e
-  \quad\{x=e * (x\gets x')\;p\}\]
-The substitution $(x\gets x')$ is applied because the variable~$x$ from annotations corresponds to the \emph{value} of the program variable~$x$, which changed.
-The program expressions to which automaton variables are bound should be transformed similarly.
-\rg{Continue here, and discuss what to do about the quantifiers, and what should be done in general for \textit{execute}.}
-
-
-
-% ending {{{2
+% }}}
+% ending {{{
 \bibliographystyle{plain}
 \bibliography{safety}
 \end{document}
+% }}}
+% }}}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 
