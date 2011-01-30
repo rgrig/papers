@@ -220,6 +220,8 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 % notes {{{
 \section{Notes}
 
+\subsection{Properties}\label{sec:properties} % {{{
+
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
 Such a property is naturally captured by an automaton.
 \begin{equation}\label{eq:unlockunlock}
@@ -254,8 +256,8 @@ In other words, don't use an iterator after modifying its collection.
 \begin{equation}\label{eq:iter1}
 \begin{aligned}
 0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c})\\
-1\to2&: \mathit{add}(c, \mathbf{e}) \\
-2\to\epsilon&: \mathit{next}(i)
+1\to2&: \mathit{add}(c, \mathbf{e}), \mathit{remove}(c, \mathbf{e}), \ldots \\
+2\to\epsilon&: \mathit{next}(i), \mathit{hasNext(i)}, \ldots
 \end{aligned}
 \end{equation}
 Edges~$1\to2$ should capture all the ways to modify collection~$c$.
@@ -273,14 +275,87 @@ An automaton with a different structure is better suited for capturing this aspe
 \end{aligned}
 \end{equation}
 
-\rg{I need to fix the terminology below. It's confusing.}
+``An iterator is not advanced past the end of its collection.''
+This property involves the constant \textit{true}.
+\begin{equation}\label{eq:iter3}
+\begin{aligned}
+0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c}) \\
+1\to2&: \mathit{true} := \mathit{hasNext}(i) \\
+1\to\epsilon&: \mathit{next}(i) \\
+2\to1&: \mathit{next}(i), \ldots
+\end{aligned}
+\end{equation}
+The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
+It stays in state~$2$ until the first non-pure method is called.
 
-We want to check automatically whether a program violates properties specified by such automatons.
+In general, we want to check automatically whether a program violates properties specified by such automatons.
 To do so, we symbolically execute the automaton in parallel with the program.
 The notation $a(1, x\mapsto y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
 We say that $a(1,x\mapsto y)$ is an \emph{extended state} of automaton~$a$.
 A set of extended states of automatons is attached to a \emph{symbolic state} of a symbolic interpreter to form an \emph{extended symbolic state}.
 The \emph{extended symbolic interpreter} knows how to update extended symbolic states, not only simple symbolic states.
+
+% }}}
+
+\subsection{Stuck States}\label{sec:stuck} % {{{
+
+The properties are similar to typestates.
+Indeed, here is how we would check properties \eqref{eq:iter1}~and~\eqref{eq:iter3} on an example from~\cite{bierhoff2007}.
+{\def\a#1{a_\text{\ref{eq:iter#1}} }
+\begin{lstlisting}
+Collection c = new ArrayList();
+Iterator i = c.iterator();
+// $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+while (i.hasNext() && $\ldots\,$) {
+  // $\a1(1, i\mapsto i, c\mapsto c), \a3(2, i\mapsto i)$
+  Object o = i.next();
+  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+  Iterator j = c.iterator();
+  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(1, i\mapsto j))$
+  while (j.hasNext()) {
+    // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(2, i\mapsto j))$
+    p = j.next();
+    // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(1, i\mapsto j))$
+  }
+  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+}
+// $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+if (i.hasNext()) {
+  // $\a1(1, i\mapsto i, c\mapsto c), \a3(2, i\mapsto i)$
+  c.remove(i.next());
+  // $\a1(2, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+  if (i.hasNext()) {
+    // $\a1(\epsilon), \a3(1, i\mapsto i)$
+    $\ldots$
+  }
+}
+\end{lstlisting}
+At every step we also have $\a1(0)$ and $\a3(0)$, which are not written above, for brevity.}
+Similarly, the (non-extended) symbolic state is omitted.
+The check of \eqref{eq:iter2} is trivial, because the \textit{remove} method of iterators is never called, so the associated automaton never reaches states 3~and~4.
+
+The interesting part of this example is the abstraction taking place at the end of the outer loop.
+In general, it is unsound to forget automaton states.
+Here, however, it is necessary to reach a fix-point.
+Luckily, it is also sound.
+Look at state~$a_\text{\ref{eq:iter3}}(1, i\mapsto j)$.
+All paths from~$1$ to~$\epsilon$ need to compare $j$ with some other program expression.
+(That is why the binding $i\mapsto j$ is remembered, otherwise it could be optimized away as it was done with the mapping of~$c$.)
+But $j$ goes out of scope at the end of the loop and it has no alias, so the state~$a_\text{\ref{eq:iter3}}(1, i\mapsto j)$ can never reach $a_\text{\ref{eq:iter3}}(\epsilon)$.
+
+From an implementation point of view, it might be convenient to avoid introducing the notion of scope.
+We would still notice that $j$ becomes unreachable when, in the next iteration, the value of the variable is over-written.
+Then we $j$ will become the existentially quantified variable $j'$ and we could prove that it is not aliased by any non-quantified variable.
+\rg{Fill in details; Matko says he implemented a quick conservative check exactly for this.}
+
+In general, a state is stuck and may be forgotten if we can prove that the program expressions to which its relevant automaton variables are bound cannot possibly equal any program expression built out of non-quantified variables. An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
+
+% }}}
+
+\subsection{Alternatives}
+
+\rg{Rewrite this as ``by the way, you may object that this other representation
+is better.'' Or remove completely.}
 
 The following are two possible representations for the same symbolic state.
 \begin{align}
