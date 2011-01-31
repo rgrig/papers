@@ -49,13 +49,10 @@
 % }}}
 % new commands {{{
 \def\fb#1{{\bf #1}}
-\newcommand{\dd}[1]{\todo{dd}{#1}}
-\newcommand{\fls}{\bot}
-\newcommand{\hoare}[3]{\{#1\}\>\text{#2}\>\{#3\}}
-\newcommand{\limp}{\rightarrow}
-\newcommand{\rg}[1]{\todo{rg}{#1}}
+
 \newcommand{\todo}[2]{{\small [\textcolor{red}{#1}: #2]}}
-\newcommand{\tru}{\top}
+\newcommand{\dd}[1]{\todo{dd}{#1}}
+\newcommand{\rg}[1]{\todo{rg}{#1}}
 
 %pairs
 \newcommand{\startgrammar}{
@@ -288,15 +285,16 @@ This property involves the constant \textit{true}.
 The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
 It stays in state~$2$ until the first non-pure method is called.
 
+\paragraph{Definitions}
 In general, we want to check automatically whether a program violates properties specified by such automatons.
 To do so, we symbolically execute the automaton in parallel with the program.
 The notation $a(1, x\mapsto y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
-We say that $a(1,x\mapsto y)$ is an \emph{extended state} of automaton~$a$.
-A set of extended states of automatons is attached to a \emph{symbolic state} of a symbolic interpreter to form an \emph{extended symbolic state}.
-The \emph{extended symbolic interpreter} knows how to update extended symbolic states, not only simple symbolic states.
+We say that $a(1,x\mapsto y)$ is a \emph{deterministic extended state} of automaton~$a$.
+A \emph{nondeterministic extended state} is a set of deterministic extended states, not necessarily of the same automaton;
+sometimes we abbreviate to nondeterministic state.
+An \emph{extended symbolic state} is a pair formed of a symbolic (program) state and a nondeterministic (automaton) state.
 
 % }}}
-
 \subsection{Stuck States}\label{sec:stuck} % {{{
 
 The properties are similar to typestates.
@@ -333,6 +331,7 @@ if (i.hasNext()) {
 At every step we also have $\a1(0)$ and $\a3(0)$, which are not written above, for brevity.}
 Similarly, the (non-extended) symbolic state is omitted.
 The check of \eqref{eq:iter2} is trivial, because the \textit{remove} method of iterators is never called, so the associated automaton never reaches states 3~and~4.
+\rg{Update the example to use generics}
 
 The interesting part of this example is the abstraction taking place at the end of the outer loop.
 In general, it is unsound to forget automaton states.
@@ -351,8 +350,71 @@ Then we $j$ will become the existentially quantified variable $j'$ and we could 
 In general, a state is stuck and may be forgotten if we can prove that the program expressions to which its relevant automaton variables are bound cannot possibly equal any program expression built out of non-quantified variables. An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
 
 % }}}
+\subsection{Executing One Statement}\label{sec:execute} % {{{
 
-\subsection{Alternatives}
+Let us now look in more detail at how executing one statement affects the extended symbolic state.
+
+\paragraph{An Example}
+Suppose we are checking~\eqref{eq:iter3} and the statement we are about to execute is
+\begin{equation}\label{eq:execute.statement}
+\mathit{hn}:=j.\mathit{hasNext}().
+\end{equation}
+We are given the contract
+\begin{equation}\label{eq:execute.spec}
+\{\,\mathit{iter}(x, \mathbf{n})*n>0\,\}
+  \quad \mathbf{r} := \mathbf{x}.\mathit{hasNext}()
+  \quad \{\,\mathit{iter}(x, n-1)*r=\mathit{true}\,\}
+\end{equation}
+which tracks how many elements are left using the predicate \textit{iter}.
+We are also given the symbolic state 
+\begin{equation}\label{eq:execute.start.sep}
+i=j*\mathit{iter}(i,3).
+\end{equation}
+Normal symbolic execution proceeds as follows.
+First, we find the substitutions $r\mapsto\mathit{hn}$ and $x\mapsto j$ by matching~\eqref{eq:execute.statement} against~\eqref{eq:execute.spec}.
+Second, we instantiate~\eqref{eq:execute.spec} with these substitutions obtaining
+\begin{equation}\label{eq:execute.spec2}
+\{\,\mathit{iter}(j, \mathbf{n})*n>0\,\}
+  \quad \cdots
+  \quad \{\,\mathit{iter}(j, n-1)*\mathit{hn}=\mathit{true}\,\}.
+\end{equation}
+Third, we find the substitution $n\mapsto3$ by comparing~\eqref{eq:execute.start.sep} with~\eqref{eq:execute.spec2}.
+\rg{Clarify how exactly this ``comparison'' is done.}
+Fourth, we apply this substitution to~\eqref{eq:execute.spec2}, obtaining
+\begin{equation}
+\{\,\mathit{iter}(j, 3),\}
+  \quad \cdots
+  \quad \{\,\mathit{iter}(j, 2)*\mathit{hn}=\mathit{true}\,\}.
+\end{equation}
+Fifth, the separation logic prover is asked for a formula~$h$ such that
+\begin{equation}
+i=j*\mathit{iter(i,3)} \,\vdash\, \mathit{iter}(j,3) * \mathbf{h}
+\end{equation}
+holds.
+The prover (we hope) answers $h\mapsto i=j$.
+Finally, we apply this substitution to
+\begin{equation}
+\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}*h
+\end{equation}
+obtaining the new symbolic state
+\begin{equation}
+i=j*\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}
+\end{equation}
+
+The \textbf{bold} and \textit{italic} notation is used in a similar way for automaton transitions.
+\rg{CONTINUE here.}
+
+\paragraph{The Algorithm}
+TODO.
+
+% }}}
+
+\subsection{Iterator}\label{sec:iterator} % {{{
+
+\rg{Full example.}
+
+% }}}  
+\subsection{Alternatives} % {{{
 
 \rg{Rewrite this as ``by the way, you may object that this other representation
 is better.'' Or remove completely.}
@@ -414,6 +476,8 @@ For \textit{join}, we take $S'=S_1\cup S_2$.
 For \textit{execute}, we look inside the statement~$s$ and single out the precondition~$p$, the postcondition~$q$, the name~$m$ of the called method, the arguments $a_1$,~$a_2$, \dots,~$a_n$, and the variable~$x$ that holds the result.
 \[ s \equiv \bigl(\{p\}\quad x := m(a_1,\ldots,a_n)\quad \{q\}\bigr) \]
 (If the statement is not a method call, then we ignore it, so $S'=S$.)
+
+% }}}
 
 % }}}
 % ending {{{
