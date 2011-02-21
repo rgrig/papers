@@ -53,44 +53,11 @@
 \newcommand{\todo}[2]{{\small [\textcolor{red}{#1}: #2]}}
 \newcommand{\dd}[1]{\todo{dd}{#1}}
 \newcommand{\rg}[1]{\todo{rg}{#1}}
+\newcommand{\pmap}{\rightharpoonup}
 
-%pairs
-\newcommand{\startgrammar}{
-  \begingroup
-  \def\is{$\>\to$&}
-  \def\|{$\mid$}
-  \def\b##1{\textbf{##1}}
-  \def\i##1{\textsl{##1}}
-  \def\?{$^?$}
-  \def\*{$^\ast$}
-  \begin{figure}
-  \centering
-  \scriptsize
-  \begin{tabular}{rl}
-}
-\newcommand{\stopgrammar}[2]{
-  \end{tabular}
-  \caption{#1}\label{#2}
-  \end{figure}
-  \endgroup
-}
-
-\newcommand{\bc}{\begin{figure}\centering\begin{tabular}{c}} % begin codebox
-\newcommand{\ec}[2]{\end{tabular}\caption{#1}\label{#2}\end{figure}} % end codebox
-% new environments (and theorems) {{{3
-\newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
-\theoremstyle{slanted}
-\newtheorem{problem}{Problem}
-\newtheorem{conjecture}{Conjecture}
-\newtheorem{lemma}{Lemma}
-\newtheorem{proposition}{Proposition}
-\newtheorem{theorem}{Theorem}
-\newtheorem{corollary}{Corollary}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}
-\newtheorem{example}{Example}
 \theoremstyle{remark}
-\newtheorem{remark}{Remark}
+\newtheorem*{notation}{Notation}
+
 % }}}
 % }}}
 % }}}
@@ -217,6 +184,20 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 % notes {{{
 \section{Notes}
 
+% Plan {{{
+%  - properties --- what is checked
+%  - Aldrich example - how it's checked, what symbolic execution does
+%  - example of executing a statement whose contract is known
+%    - program state, show how existential variables are handled
+%    - automaton state
+%  - abduction for automata, adding transitions to automata
+%  - formal description of executing a generic call
+%  - desugaring other statements into call
+%  - optimizations
+%    - constraints on no path to ERROR are forgotten
+%    - constraints on all paths to ERROR may prune the automaton state
+%  - bigger, more realistic example
+% }}}
 \subsection{Properties}\label{sec:properties} % {{{
 
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
@@ -285,17 +266,17 @@ This property involves the constant \textit{true}.
 The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
 It stays in state~$2$ until the first non-pure method is called.
 
-\paragraph{Definitions}
-In general, we want to check automatically whether a program violates properties specified by such automatons.
-To do so, we symbolically execute the automaton in parallel with the program.
-The notation $a(1, x\mapsto y)$ means that automaton~$a$ is in state~$1$ and the automaton variable~$x$ is bound to the program expression~$y$.
-We say that $a(1,x\mapsto y)$ is a \emph{deterministic extended state} of automaton~$a$.
-A \emph{nondeterministic extended state} is a set of deterministic extended states, not necessarily of the same automaton;
-sometimes we abbreviate to nondeterministic state.
-An \emph{extended symbolic state} is a pair formed of a symbolic (program) state and a nondeterministic (automaton) state.
+%}}}
+\subsection{Overview}\label{sec:overview} % {{{
+
+We check that a program satisfies certain properties by symbolically executing it in parallel with the automaton representations of the properties.
+We write $a(2,[e/x,f/y])$ to mean that automaton~$a$ is in state~$2$ with its variable~$x$ bound to the program expression~$e$ and with its variable~$y$ bound to program expression~$f$.
+The symbolic interpretor keeps track of a symbolic heap, bit also keeps track of sets like $\{a_1(1,[e/x]), a_1(1,[f/x]), a_2(3)\}$ that record which automaton reached which states and with which bindings.
 
 % }}}
-\subsection{Stuck States}\label{sec:stuck} % {{{
+\subsection{Property Checking}\label{sec:property_checking} % {{{
+
+\rg{Explain that Java's $x.y(z)$ and $y(x, z)$ are used interchangeably.}
 
 The properties are similar to typestates.
 Indeed, here is how we would check properties \eqref{eq:iter1}~and~\eqref{eq:iter3} on an example from~\cite{bierhoff2007}.
@@ -303,27 +284,27 @@ Indeed, here is how we would check properties \eqref{eq:iter1}~and~\eqref{eq:ite
 \begin{lstlisting}
 Collection c = new ArrayList();
 Iterator i = c.iterator();
-// $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+// $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
 while (i.hasNext() && $\ldots\,$) {
-  // $\a1(1, i\mapsto i, c\mapsto c), \a3(2, i\mapsto i)$
+  // $\a1(1, [i/i, c/c]), \a3(2, [i/i])$
   Object o = i.next();
-  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+  // $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
   Iterator j = c.iterator();
-  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(1, i\mapsto j))$
+  // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(1, [j/i])$
   while (j.hasNext()) {
-    // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(2, i\mapsto j))$
+    // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(2, [j/i])$
     p = j.next();
-    // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i), \a1(1, i\mapsto j, c\mapsto c), \a3(1, i\mapsto j))$
+    // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(1, [j/i])$
   }
-  // $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+  // $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
 }
-// $\a1(1, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+// $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
 if (i.hasNext()) {
-  // $\a1(1, i\mapsto i, c\mapsto c), \a3(2, i\mapsto i)$
+  // $\a1(1, [i/i, c/c]), \a3(2, [i/i])$
   c.remove(i.next());
-  // $\a1(2, i\mapsto i, c\mapsto c), \a3(1, i\mapsto i)$
+  // $\a1(2, [i/i, c/c]), \a3(1, [i/i])$
   if (i.hasNext()) {
-    // $\a1(\epsilon), \a3(1, i\mapsto i)$
+    // $\a1(\epsilon), \a3(1, [i/i])$
     $\ldots$
   }
 }
@@ -337,148 +318,150 @@ The interesting part of this example is the abstraction taking place at the end 
 In general, it is unsound to forget automaton states.
 Here, however, it is necessary to reach a fix-point.
 Luckily, it is also sound.
-Look at state~$a_\text{\ref{eq:iter3}}(1, i\mapsto j)$.
+Look at state~$a_\text{\ref{eq:iter3}}(1, [j/i])$.
 All paths from~$1$ to~$\epsilon$ need to compare $j$ with some other program expression.
-(That is why the binding $i\mapsto j$ is remembered, otherwise it could be optimized away as it was done with the mapping of~$c$.)
-But $j$ goes out of scope at the end of the loop and it has no alias, so the state~$a_\text{\ref{eq:iter3}}(1, i\mapsto j)$ can never reach $a_\text{\ref{eq:iter3}}(\epsilon)$.
+But $j$ goes out of scope at the end of the loop and it has no alias, so the state~$a_\text{\ref{eq:iter3}}(1, [j/i])$ can never reach $a_\text{\ref{eq:iter3}}(\epsilon)$.
 
 From an implementation point of view, it might be convenient to avoid introducing the notion of scope.
 We would still notice that $j$ becomes unreachable when, in the next iteration, the value of the variable is over-written.
-Then we $j$ will become the existentially quantified variable $j'$ and we could prove that it is not aliased by any non-quantified variable.
+When $j$ turns into the existentially quantified variable $j'$ we can prove that it is not aliased by any non-quantified variable.
 \rg{Fill in details; Matko says he implemented a quick conservative check exactly for this.}
 
-In general, a state is stuck and may be forgotten if we can prove that the program expressions to which its relevant automaton variables are bound cannot possibly equal any program expression built out of non-quantified variables. An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
+\paragraph{Definitions}
+In general, a state is \emph{stuck} and may be forgotten if the program expressions to which its relevant automaton variables are bound cannot possibly equal any program expression built out of non-quantified variables.
+An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
+
+% }}}
+\subsection{Operational Semantics and Hoare Triples}\label{sec:opsem} % {{{
+
+Since we execute the automaton as a checker in parallel with the program, we include its state in the semantics.
+\begin{align}
+\mathsf{State}&=\mathsf{ProgramState}\times\mathsf{AutomatonState} \\
+\mathsf{ProgramState}&=\mathsf{Stack}\times\mathsf{Heap} \\
+\mathsf{AutomatonState}&=
+  (\mathsf{Identifier}\times\mathsf{Stack})\to\mathsf{2} \\
+\mathsf{Stack}&=\mathsf{Identifier}\pmap\mathsf{Value} \\
+\mathsf{Heap}&=\mathsf{Address}\pmap\mathsf{Value}
+\end{align}
+
+\begin{notation}
+The notation $\mathsf A\to\mathsf B$ stands for the set of total functions from \textsf A to \textsf B.
+The notation $\mathsf A\pmap\mathsf B$ stands for the set of finite partial functions from~$\mathsf A$ to~$\mathsf B$: 
+The domain of these functions is a finite subset of~$\mathsf A$.
+The notation \textsf 2 stands for the set of booleans, so $\mathsf A\to\mathsf 2$ is (isomorphic to) the power set of~\textsf A.
+\end{notation}
+
+Unlike stacks, heaps are indexed by values.
+\begin{gather}
+\mathsf{Identifier}\cap\mathsf{Value}=\emptyset \\
+\mathsf{Address}\subset\mathsf{Value}
+\end{gather}
+
+We write $\pi,\tau\vDash P,T$ to mean that $(\pi,\tau)$ is in the subset of \textsf{State} described by~$(P,T)$, where $P$~is a separation logic formula and $T$ is an automaton state.
+We say that $(\pi,\tau)$ satisfies $(P,T)$.
+\begin{equation}
+\pi, \tau \vDash P, T 
+  \qquad\text{iff}\qquad
+\pi \vDash P
+  \quad\text{and}\quad
+\tau\supseteq T
+\end{equation}
+We write $\{P,T\}\;C\;\{P',T'\}$ to mean that if the state before executing~$C$ satisfies $(P,T)$ then the state after executing~$C$ satisfies~$(P',T')$.
 
 % }}}
 \subsection{Executing One Statement}\label{sec:execute} % {{{
 
-Let us now look in more detail at how executing one statement affects the extended symbolic state.
-
-\paragraph{An Example}
-Suppose we are checking~\eqref{eq:iter3} and the statement we are about to execute is
+Let us see in detail how the symbolic interpreter executes a particular statement
 \begin{equation}\label{eq:execute.statement}
-\mathit{hn}:=j.\mathit{hasNext}().
+\mathit{hn}:=j.\mathit{hasNext}()
 \end{equation}
-We are given the contract
+when it starts with a particular symbolic heap
+\begin{equation}\label{eq:execute.heap}
+i=j * \mathit{iter}(i,3) * \mathit{hn} = \mathit{false}
+\end{equation}
+and a particular set of reached automaton states with their bindings
+\begin{equation}\label{eq:execute.props}
+\{a_5(1,[i/i]), a_3(2,[k/i])\}.
+\end{equation}
+Suppose further that the symbolic interpreter is given the contract
 \begin{equation}\label{eq:execute.spec}
 \{\,\mathit{iter}(x, \mathbf{n})*n>0\,\}
   \quad \mathbf{r} := \mathbf{x}.\mathit{hasNext}()
-  \quad \{\,\mathit{iter}(x, n-1)*r=\mathit{true}\,\}
+  \quad \{\,\mathit{iter}(x, n-1)*r=\mathit{true}\,\}.
 \end{equation}
-which tracks how many elements are left using the predicate \textit{iter}.
-We are also given the symbolic state 
-\begin{equation}\label{eq:execute.start.sep}
-i=j*\mathit{iter}(i,3).
-\end{equation}
-Normal symbolic execution proceeds as follows.
-First, we find the substitutions $r\mapsto\mathit{hn}$ and $x\mapsto j$ by matching~\eqref{eq:execute.statement} against~\eqref{eq:execute.spec}.
-Second, we instantiate~\eqref{eq:execute.spec} with these substitutions obtaining
-\begin{equation}\label{eq:execute.spec2}
+
+\paragraph{The Symbolic Heap} % {{{
+
+The bindings $[\mathit{hn}/r,j/x]$ are found by matching syntactically \eqref{eq:execute.statement} with the statement in~\eqref{eq:execute.spec}, and then the contract is instantiated.
+\begin{equation}\label{eq:execute.spec'}
 \{\,\mathit{iter}(j, \mathbf{n})*n>0\,\}
-  \quad \cdots
+  \quad \mathit{hn} := j.\mathit{hasNext}()
   \quad \{\,\mathit{iter}(j, n-1)*\mathit{hn}=\mathit{true}\,\}.
 \end{equation}
-Third, we find the substitution $n\mapsto3$ by comparing~\eqref{eq:execute.start.sep} with~\eqref{eq:execute.spec2}.
-\rg{Clarify how exactly this ``comparison'' is done.}
-Fourth, we apply this substitution to~\eqref{eq:execute.spec2}, obtaining
-\begin{equation}
-\{\,\mathit{iter}(j, 3),\}
-  \quad \cdots
-  \quad \{\,\mathit{iter}(j, 2)*\mathit{hn}=\mathit{true}\,\}.
+The substitution $[\mathit{hn}'/\mathit{hn}]$ replaces the variable to which a new value is assigned with a variable that is implicitly existentially quantified.
+In general, this substitution is applied to the symbolic heap and also to all program expressions to which automaton variables are bound.
+In our case, though, \textit{hn} occurs only in the symbolic heap, which becomes
+\begin{equation}\label{eq:execute.heap'}
+i=j * \mathit{iter}(i,3) * \mathit{hn} = \mathit{false}.
 \end{equation}
-Fifth, the separation logic prover is asked for a formula~$h$ such that
-\begin{equation}
-i=j*\mathit{iter(i,3)} \,\vdash\, \mathit{iter}(j,3) * \mathbf{h}
+Now the (single candidate) binding~$[3/n]$ is found by matching the arguments of \textit{iter} in~\eqref{eq:execute.heap'} and in the precondition of~\eqref{eq:execute.spec'}, and the contract is further specialized.
+\begin{equation}\label{eq:execute.spec''}
+\{\,\mathit{iter}(j,3)*3>0\,\}\cdots
+\{\,\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}\,\}
 \end{equation}
-holds.
-The prover (we hope) answers $h\mapsto i=j$.
-Finally, we apply this substitution to
-\begin{equation}
-\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}*h
+At this point, the symbolic interpreter asks the separation logic prover a frame inference question.
+Precisely, it asks for a (preferably specific) symbolic heap~$h$ that satisfies
+\begin{equation}\label{eq:execute:frame_question}
+i=j*\mathit{iter}(i,3)*\mathit{hn}'=\mathit{false}
+\;\vdash\;
+\mathbf{h}*\mathit{iter}(j,3)*3>0.
 \end{equation}
-obtaining the new symbolic state
-\begin{equation}
-i=j*\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}
+Suppose the prover replies with $[(i=j*\mathit{hn}'=\mathit{false})/h]$.
+The frame~$h$ is $*$-joined to the postcondition of~\eqref{eq:execute.spec''}.
+\begin{equation}\label{eq:execute.heap''}
+i=j*\mathit{hn}'=\mathit{false}*\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}
 \end{equation}
-
-The \textbf{bold} and \textit{italic} notation is used in a similar way for automaton transitions.
-\rg{CONTINUE here.}
-
-\paragraph{The Algorithm}
-TODO.
+This is the symbolic heap after \eqref{eq:execute.statement}~is executed.
 
 % }}}
+\paragraph{The Automatons} % {{{
 
-\subsection{Iterator}\label{sec:iterator} % {{{
+\rg{On the same example.}
 
-\rg{Full example.}
+% }}}
+% }}}
+\subsection{Inferring Contracts}\label{sec:infer} % {{{
+
+\rg{Explain how transitions are added to the automatons.}
+
+% }}}
+\subsection{Symbolic Execution with Automatons}\label{sec:formal} % {{{
+
+\rg{Present formally what was in the previous sections.}
+
+%}}}
+\subsection{Optimizations}\label{sec:optimizations} % {{{
+
+\rg{Explain how some automaton bindings may be dropped.}
+\rg{Explain how some deterministic automaton states must be dropped for convergence.}
+
+% }}}
+\subsection{Examples}\label{sec:example} % {{{
+
+\rg{Aldrich example}
+\rg{lists of uniformly locked mutexes}
+\rg{modify list with one iterator, advance with the other}
+\rg{others}
 
 % }}}  
-\subsection{Alternatives} % {{{
+\subsection{Issues}\label{sec:issues} % {{{
 
-\rg{Rewrite this as ``by the way, you may object that this other representation
-is better.'' Or remove completely.}
-
-The following are two possible representations for the same symbolic state.
-\begin{align}
-& x\mapsto y * y = 2 * a(1, z\mapsto x) * a(2) 
-  \label{eq:state_rep.star} \\
-& \bigl(x\mapsto y * y = 2, \{a(1,z\mapsto x), a(2)\}\bigr)
-  \label{eq:state_rep.pair}
-\end{align}
-Using the first representation, we can treat $a$ as any other predicate when, say, we execute an assignment on the stack.
-  \[ \{\mathbf p\}\quad
-  \mathbf x:=\mathbf e
-  \quad\{\exists x'\;x=e * (x\gets x')\;p\}.\]
-The state after $x:=3$ would be
-  \[ \exists x'\; x = 3 * x'\mapsto y * y = 2 * a(1, z\mapsto x') * a(2). \]
-Using the second representation, we may write
-  \[ \bigl(x=3 * x'\mapsto y * y=2, \{a(1,z\mapsto x'), a(2)\}\bigr) \]
-and agree that primed variables are implicitly existentially quantified.
-Until now, \eqref{eq:state_rep.pair} looks less desirable, but there are reasons to prefer it. 
-First, it makes explicit that we track the state of a non-deterministic automaton.
-Second, it turns out to be difficult to simulate the automaton using the first representation.
-Suppose that we go for the uniform representation.
-A natural impulse is to encode transitions in method contracts.
-\rg{This is what \href{http://amazones.gforge.inria.fr/aorai/aorai-manual.pdf}{Aora\"\i} seems to do; check why they don't encounter the problems that follow here.}
-For example, because \eqref{eq:iter1} tells us that a call $\mathit{next}(i)$ transitions the automaton from~$2$ to the error state we are tempted to use the precondition $a(2,i\mapsto\mathbf{x})$ and the postcondition $a(\epsilon,i\mapsto x)$.
-However, the automaton is nondeterministic, which means that it could be in the state $a(2,i\mapsto x) * a(2,i\mapsto y)$.
-The proposed contract would lead to $a(\epsilon,i\mapsto x) * a(2,i\mapsto y)$ or $a(2,i\mapsto x) * a(\epsilon,i\mapsto y)$, but \emph{not} $a(\epsilon,i\mapsto x) * a(\epsilon,i\mapsto y)$.
-To fix this, remember how symbolic execution achieves convergence:
-From time to time the symbolic state is enlarged according to some abstraction algorithm.
-So, a second attempt would be to use abstraction rewrite rules.
-In this case, the rule $a(2,i\mapsto\mathbf{x})\leadsto a(\epsilon,i\mapsto x)$ would work.
-However, we run into trouble when consecutive automaton transitions are labeled by the same method.
-How do we ensure that one call does not trigger the traversal of both transitions?
-The simple answer is to ditch the uniform representation and track the extended automaton state explicitly.
-
-We need a few hooks inside a symbolic interpreter in order to extend it.
-We require that it implements the following operations.
-\rg{Actually, we also need abduction; either discuss it later, or add it here.}
-\begin{align}
-\mathit{join} &: \mathit{State} \to \mathit{State} \to \mathit{State} \\
-\mathit{execute} &: \mathit{Statement} \to \mathit{State} \to \mathit{State} \\
-\mathit{abstract} &: \mathit{State} \to \mathit{State}
-\end{align}
-In jStar, for example, \textit{join} is logic disjunction, \textit{execute} amounts to doing frame inference and applying the frame rule, and \textit{abstract} applies a set of custom rewrite rules.
-We extend these operations, by figuring out what $S'$ should be in each case below.
-\begin{align}
-\mathit{join}'\;(\sigma_1, S_1)\;(\sigma_2,S_2) &=
-    (\mathit{join}\;\sigma_1\;\sigma_2, S') \\
-\mathit{execute}'\;s\;(\sigma,S) &=
-    \bigl(\mathit{execute}\;s\;\sigma,S'\bigr) \\
-\mathit{abstract}'\;(\sigma,S) &=
-    (\mathit{abstract}\;\sigma,S')
-\end{align}
-Statements are specified by pairs~$(p,q)$ of a precondition~$p$ and a postcondition~$q$.
-
-For \textit{join}, we take $S'=S_1\cup S_2$.
-For \textit{execute}, we look inside the statement~$s$ and single out the precondition~$p$, the postcondition~$q$, the name~$m$ of the called method, the arguments $a_1$,~$a_2$, \dots,~$a_n$, and the variable~$x$ that holds the result.
-\[ s \equiv \bigl(\{p\}\quad x := m(a_1,\ldots,a_n)\quad \{q\}\bigr) \]
-(If the statement is not a method call, then we ignore it, so $S'=S$.)
+\begin{itemize}
+\item \rg{Make it easy to say ``automaton state doesn't change'' in Hoare triples.}
+\item \rg{abduction}
+\end{itemize}
 
 % }}}
-
 % }}}
 % ending {{{
 \bibliographystyle{plain}
@@ -487,4 +470,3 @@ For \textit{execute}, we look inside the statement~$s$ and single out the precon
 % }}}
 % }}}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
-

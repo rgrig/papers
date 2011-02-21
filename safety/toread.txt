@@ -1,1 +1,12 @@
+18055192572130172105 CUTE and jCUTE: Concolic unit testing and explicit path model-checking tools
+4940371988555595835 JPF–SE: A Symbolic Execution Extension to Java PathFinder
+14137178067653980835 Symbolic execution with separation logic
+16421828170332751485 Generalized symbolic execution for model checking and testing
+12396960312068443292 A decidable fragment of separation logic
 2546522654584413005 Static specification mining using automata-based abstractions
+7161110519102220021 Symbolic model checking: 10^{20} States and beyond
+7897782226010080353 Unbounded, fully symbolic model checking of timed automata using Boolean methods
+12735469722320994414 Model checking and abstraction
+11604959752567229745 A hybrid SAT-based decision procedure for separation logic with uninterpreted functions
+8861337254277566499 Types, bytes, and separation logic
+6928652731255469724 Enhancing modular OO verification with separation logic
