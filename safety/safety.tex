@@ -67,91 +67,26 @@
 % motivation {{{
 \section{Prior Work and Motivation}
 
-In 2006, SAVCBS organizers challenged participants to specify and verify the Iterator pattern.
-Four of the five accepted contributions focused on variations of the following property:
-It is forbidden to modify a collection that is being iterated.
-The solutions~\cite{cok2006,weide2006,bierhoff2006,krishnaswami2006} vary in the specification language used, degree of automation, expressiveness, and subsequent research they generated.
+\rg{Bigger context: temporal properties, model checking, typestates, session types.}
 
-All solutions used existing specification languages:
-Cok used JML~\cite{jml}, Weide used Resolve~\cite{resolve}, Bierhoff used typestates for object-oriented languages~\cite{deline2004}, and Krishnaswami used higher-order separation logic~\cite{biering2007}.
+\rg{In SAVCBS \cite{cok2006,bierhoff2006} basically encode automata in various way. This shows that automata are a natural way to express properties of the Iterator pattern, so it would be nice if users could use automata directly and the encoding would be automatic.}
 
-Cok's solution benefits from the existence of a tool, ESC/Java~\cite{escjava}, that statically checks programs annotated with JML\null.
-It is not completely clear, as far as we are aware, exactly which subset of JML is handled automatically and soundly by ESC/Java.
-However, Cok shows examples of clients of his specification that are handled properly by the tool.
-Weide and Bierhoff argue informally that it should be possible to automate their respective approaches;
-Krishnaswami argues informally that it should be hard to automate his approach.
+\rg{\cite{bierhoff2006} and \cite{haack2009} use a fancy implication in linear logic and, respectively, separation logic. \cite{cok2006} uses ghost variables in JML. \cite{trentelman2002} gives a few encodings in JML of temporal properties too. None of these translations from automata are automatic. \cite{krishnaswami2006} does not seem to use automata---check---but the higher order approach is probably not automizable.}
 
-No solution is very friendly to programmers. 
-Weide's solution works in the setting of a fictitious language, it requires programmers to use at most one iterator at a time, and it requires uses of iterators to be signposted by calls to fictitious methods.
-Cok and Bierhoff encode automata in JML and linear logic~\cite{girard1987}, respectively, leaving the burden of decoding the annotations into automata on the code's maintainer.
-Krishnaswami uses mathematical concepts and notations that are bound to look unfamiliar to imperative programmers.
+\rg{The frama-c plugin Aroa\"\i verifies LTL properties of C programs, but I don't know how it works.}
 
-There are two important later developments. First, Bierhoff and Aldrich~\cite{bierhoff2007} showed that it is indeed possible to automate the approach based on typestates. Second, Haack and Hurlin~\cite{haack2009} showed how to use first-order separation logic, thereby moving closer to automation as compared to Krishnaswami~\cite{krishnaswami2006}.
+\rg{Model checkers for Java: Pathfinder, $\ldots$ How do they compare?}
 
-There is also an important earlier development, namely the proposal of Trentelman and Huisman~\cite{trentelman2002} to enrich JML with temporal properties~\cite{pnueli1977}.
-To see why this is relevant, note that what we want is to forbid executions that contain a call $\iota:=\alpha.\mathit{iterator}()$ later followed by $\alpha.\mathit{add}()$ later followed by $\iota.\mathit{next}()$, for some iterator~$\iota$ and some collection~$\alpha$, which clearly has a temporal flavor.
-Trentelman and Huisman show by example how safety properties expressed in their extension can also be formulated, more verbosely, in standard JML\null.
-In a sense, Cok's solution is another example of expressing a safety property in JML\null.
-Unfortunately, we are not aware of any algorithm that translates arbitrary safety properties into JML specifications.
-Even if such algorithms are found, the problem of automatically checking JML remains:
-The subset of JML that is handled automatically varies from tool to tool, and the descriptions of these subsets tend to be either missing, so complicated that no one can be expected to remember them, or hard to find.
-Therefore, it makes sense to search for an algorithm whose target is a very small subset of JML, such that the chances of it being handled by tools are maximized.
+\rg{I think we can use the current encoding with Boogie too, which is cool. (Except Boogie doesn't have contract inference, as done by abduction.)}
 
-An alternative, which we pursue in this article, is to find a translation of safety properties into separation logic, which is a much simpler specification language than JML, and also more rigorously defined~\cite{reynolds2002}. 
-As a result, \emph{we obtain a way to turn program verifiers based on separation logic into model checkers of safety properties}.
+\rg{``A way to turn program verifiers based on separation logic into model checkers of safety properties.'' ?}
 
 % }}}
 % background {{{
 \section{Background}
-
-% jstar {{{
-\subsection{Separation Logic and jStar}
+\subsection{Separation Logic and jStar} % {{{
 % }}}
-% basics of seplogic and jstar
-% iterator {{{
-\subsection{The Iterator Pattern}
-
-% you can use seplogic to explain the pattern
-
-Java collections contain Java objects.
-The call $c.\mathit{contains}(o)$ returns whether the collection~$c$ contains the object~$o$.
-The methods \textit{toArray} and \textit{iterator} allow the content to be inspected as an array and as a stream, respectively.
-The optional methods \textit{add} and \textit{remove} modify the collection.
-
-\begin{lstlisting}
-interface Collection {
-  boolean contains(Object o);
-  Object[] toArray();
-  Iterator iterator();
-  void add(Object o) throws NotSupported;
-  void remove(Object o) throws NotSupported;
-}
-interface Iterator {
-  Object next();
-  void remove() throws NotSupported;
-}
-\end{lstlisting}
-
-In a first approximation, Java collections behave like mathematical sets.
-
-A Java collection~$c$ behaves almost like a set:
-The call $c.\mathit{contains}(o)$ corresponds to $o\in c$, the call $c.\mathit{add}(o)$ changes the state from~$c$ to $c\cup\{o\}$, the call $c.\mathit{remove}(o)$ may change the state from~$c$ to $c-\{o\}$.
-However, this is not quite true.
-
-
-
-
-[Not quite true because of \textit{equals} versus $==$.]
-If $i$~is the result of $c.\mathit{iterator}()$ and $o$~is the result of $i.\mathit{next}()$, then $o\in C$.
-Some implementations may strengthen the guarantee by saying how many times an object will be returned by \textit{next}, or by saying in which order objects are returned by \textit{next}.
-In this paper we will not tackle such specific properties, so for most purposes we may regard collections as sets.
-Note, however, that $c.\mathit{contains}(c)$ is not constrained to return \textbf{true}, so it is sometimes important to distinguish between a Java collection~$c$ and its state~$C$ used in the mathematical model.
-
-If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of $i.\mathit{next}()$, then $i.\mathit{remove}()$ behaves almost like $c.\mathit{remove}(o)$.
-% }}}
-
-% model checking {{{
-\subsection{Model Checking}
+\subsection{Model Checking} % {{{
 
 % LTL, safety, mc idea
 % }}}
@@ -159,45 +94,6 @@ If $i$ is the result of $c.\mathit{iterator}()$ and $o$ is the (last) result of 
 % examples {{{
 \section{Examples}
 
-% iterator {{{
-% }}}
-% locking {{{
-% }}}
-% file handles {{{
-% }}}
-% theory {{{
-\section{Theory}
-% }}}
-% }}}
-% implementation {{{
-\section{Implementation}
-
-% }}}
-% related work {{{
-\section{More Related Work}
-
-\rg{SLAM}
-% }}}
-% conclusions {{{
-\section{Conclusions}
-% }}}
-% notes {{{
-\section{Notes}
-
-% Plan {{{
-%  - properties --- what is checked
-%  - Aldrich example - how it's checked, what symbolic execution does
-%  - example of executing a statement whose contract is known
-%    - program state, show how existential variables are handled
-%    - automaton state
-%  - abduction for automata, adding transitions to automata
-%  - formal description of executing a generic call
-%  - desugaring other statements into call
-%  - optimizations
-%    - constraints on no path to ERROR are forgotten
-%    - constraints on all paths to ERROR may prune the automaton state
-%  - bigger, more realistic example
-% }}}
 \subsection{Properties}\label{sec:properties} % {{{
 
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
@@ -266,14 +162,26 @@ This property involves the constant \textit{true}.
 The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
 It stays in state~$2$ until the first non-pure method is called.
 
-%}}}
-\subsection{Overview}\label{sec:overview} % {{{
-
-We check that a program satisfies certain properties by symbolically executing it in parallel with the automaton representations of the properties.
-We write $a(2,[e/x,f/y])$ to mean that automaton~$a$ is in state~$2$ with its variable~$x$ bound to the program expression~$e$ and with its variable~$y$ bound to program expression~$f$.
-The symbolic interpretor keeps track of a symbolic heap, bit also keeps track of sets like $\{a_1(1,[e/x]), a_1(1,[f/x]), a_2(3)\}$ that record which automaton reached which states and with which bindings.
+% }}}
+% }}}
+\section{Theory} % {{{
 
 % }}}
+\section{Implementation} % {{{
+
+\rg{optimizations}
+
+% }}}
+% related work {{{
+\section{More Related Work}
+
+\rg{SLAM}
+% }}}
+% conclusions {{{
+\section{Conclusions}
+
+% }}}
+\section{Notes} % {{{
 \subsection{Property Checking}\label{sec:property_checking} % {{{
 
 \rg{Explain that Java's $x.y(z)$ and $y(x, z)$ are used interchangeably.}
@@ -333,6 +241,8 @@ An automaton variable is \emph{relevant} when it is involved in some check on ev
 
 % }}}
 \subsection{Operational Semantics and Hoare Triples}\label{sec:opsem} % {{{
+
+\rg{Simplify this according to discussion with Hongseok.}
 
 Since we execute the automaton as a checker in parallel with the program, we include its state in the semantics.
 \begin{align}
