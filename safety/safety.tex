@@ -53,7 +53,10 @@
 \newcommand{\todo}[2]{{\small [\textcolor{red}{#1}: #2]}}
 \newcommand{\dd}[1]{\todo{dd}{#1}}
 \newcommand{\rg}[1]{\todo{rg}{#1}}
+
+\newcommand{\pat}{\underline}
 \newcommand{\pmap}{\rightharpoonup}
+\newcommand{\new}[1]{\text{\textbf{new} \textit{#1}}}
 
 \theoremstyle{remark}
 \newtheorem*{notation}{Notation}
@@ -64,88 +67,77 @@
 % body {{{
 \begin{document}
 \maketitle
-% motivation {{{
-\section{Prior Work and Motivation}
+\section{Introduction} % {{{ aka motivation
 
 \rg{Bigger context: temporal properties, model checking, typestates, session types.}
 
-\rg{In SAVCBS \cite{cok2006,bierhoff2006} basically encode automata in various way. This shows that automata are a natural way to express properties of the Iterator pattern, so it would be nice if users could use automata directly and the encoding would be automatic.}
+\rg{In SAVCBS, \cite{cok2006,bierhoff2006} basically encode automata in various way. This shows that automata are a natural way to express properties of the Iterator pattern, so it would be nice if users could use automata directly and the encoding would be automatic.}
 
 \rg{\cite{bierhoff2006} and \cite{haack2009} use a fancy implication in linear logic and, respectively, separation logic. \cite{cok2006} uses ghost variables in JML. \cite{trentelman2002} gives a few encodings in JML of temporal properties too. None of these translations from automata are automatic. \cite{krishnaswami2006} does not seem to use automata---check---but the higher order approach is probably not automizable.}
-
-\rg{The frama-c plugin Aroa\"\i verifies LTL properties of C programs, but I don't know how it works.}
-
-\rg{Model checkers for Java: Pathfinder, $\ldots$ How do they compare?}
 
 \rg{I think we can use the current encoding with Boogie too, which is cool. (Except Boogie doesn't have contract inference, as done by abduction.)}
 
 \rg{``A way to turn program verifiers based on separation logic into model checkers of safety properties.'' ?}
 
 % }}}
-% background {{{
-\section{Background}
-\subsection{Separation Logic and jStar} % {{{
-% }}}
-\subsection{Model Checking} % {{{
-
-% LTL, safety, mc idea
-% }}}
-% }}}
-% examples {{{
-\section{Examples}
-
+\section{Examples} % {{{
 \subsection{Properties}\label{sec:properties} % {{{
 
 ``An \textit{unlock} not preceded by a \textit{lock} is an error.''
 Such a property is naturally captured by an automaton.
 \begin{equation}\label{eq:unlockunlock}
 \begin{aligned}
-0\to1&: \mathbf{x} := \mathit{makeLock}()\\
-1\to\epsilon&: \mathit{unlock}(x)\\
-1\to2&: \mathit{lock}(x)\\
-2\to1&: \mathit{unlock}(x)
+&\mathrm{initial}\to\mathit{unlocked}: &&\pat\alpha := \new{Lock}()\\
+&\mathit{unlocked}\to\mathrm{error}: &&\alpha.\mathit{unlock}()\\
+&\mathit{unlocked}\to\mathit{locked}: &&\alpha.\mathit{lock}()\\
+&\mathit{locked}\to\mathit{unlocked}: &&\alpha.\mathit{unlock}()
 \end{aligned}
 \end{equation}
-The input to this automaton is the string of method calls from an execution of a program.
-Statements that are not method calls are ignored, and so are calls to methods other than \textit{makeLock}, \textit{lock}, and \textit{unlock}.
-
-When the first call to \textit{makeLock} is seen, the automaton variable~$x$ is bound to the return value.
-If next comes a call $\mathit{unlock}(y)$, then the automaton checks whether its variable~$x$ holds the same value as that denoted by the Java expression~$y$.
-If it fails to decide, then it emits a warning; if it decides that $x=y$, then it takes transition~$1\to\epsilon$, thus signaling an error; if it decides that $x\ne y$, then it stays in state~$1$.
-\rg{We need to discuss when are equalities decidable.}
+This is a nondeterministic automaton: 
+The initial state is always active.
+The nondeterminism is demonic:
+If there is a way to activate the error state the automaton will find it.
+When a lock is created its reference is stored in~$\alpha$.
+Statement $x.\mathit{lock}()$ triggers its transition if $x=\alpha$;
+similarly for $x.\mathit{unlock}()$.
 
 ``Locking twice is an error:''
 \begin{equation}
 \begin{aligned}
-0\to1&: \mathit{lock}(\mathbf x)\\
-1\to0&: \mathit{unlock}(x)\\
-1\to\epsilon&: \mathit{lock}(x)
+&\mathrm{initial}\to\mathit{locked}: &&\pat\alpha.\mathit{lock}()\\
+&\mathit{locked}\to\mathrm{initial}: &&\alpha.\mathit{unlock}()\\
+&\mathit{locked}\to\mathrm{error}: &&\alpha.\mathit{lock}()
 \end{aligned}
 \end{equation}
-Here we need not care about \textit{makeLock}.
-The reason we did mention it in the previous example is that both sequences $(\mathit{unlock}; \mathit{unlock})$ and $(\mathit{makeLock}; \mathit{unlock})$ are wrong.
 
 ``A collection should not be changed while it is being iterated.''
 In other words, don't use an iterator after modifying its collection.
 \begin{equation}\label{eq:iter1}
 \begin{aligned}
-0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c})\\
-1\to2&: \mathit{add}(c, \mathbf{e}), \mathit{remove}(c, \mathbf{e}), \ldots \\
-2\to\epsilon&: \mathit{next}(i), \mathit{hasNext(i)}, \ldots
+&\mathrm{initial}\to\mathit{iterating}: 
+  &&\pat\alpha := \pat\gamma.\mathit{iterator}()\\
+&\mathit{iterating}\to\mathit{modified}:
+  &&\gamma.\mathit{add}(\pat\ ), 
+    \gamma.\mathit{remove}(\pat\ ), \ldots \\
+&\mathit{modified}\to\mathrm{error}: 
+  &&\alpha.\mathit{next}(), \alpha.\mathit{hasNext}(), \ldots
 \end{aligned}
 \end{equation}
-Edges~$1\to2$ should capture all the ways to modify collection~$c$.
-It is easy to add edges for methods like $\mathit{Collection}.\mathit{remove}$, but collections may be changed also by $\mathit{Iterator}.\mathit{remove}$.
-The iterator~$i$ should not be used further if a call~$\mathit{remove}(j)$ is made with~$i\ne j$.
-An automaton with a different structure is better suited for capturing this aspect.
+To check that the collection is not modified through a concurrent iterator we use the following automaton.
 \begin{equation}\label{eq:iter2}
 \begin{aligned}
-0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c})\\
-1\to2&: \mathbf{j} := \mathit{iterator}(c)\\
-2\to3&: \mathit{remove}(i)\\
-2\to4&: \mathit{remove}(j)\\
-3\to\epsilon&: \mathit{next}(j)\\
-4\to\epsilon&: \mathit{next}(i)
+&\mathrm{initial}\to\mathit{gotOne}: 
+  && \pat\alpha := \pat\gamma.\mathit{iterator}() \\
+&\mathit{gotOne}\to\mathit{iterating}: 
+  && \pat\beta := \gamma.\mathit{iterator}() \\
+&\mathit{iterating}\to\mathit{firstModified}: 
+  &&\alpha.\mathit{remove}()\\
+&\mathit{firstModified}\to\mathrm{error}: 
+  &&\beta.\mathit{next}()\\
+&\mathit{iterating}\to\mathit{secondModified}: 
+  &&\beta.\mathit{remove}()\\
+&\mathit{secondModified}\to\mathrm{error}: 
+  &&\alpha.\mathit{next}()
 \end{aligned}
 \end{equation}
 
@@ -153,74 +145,59 @@ An automaton with a different structure is better suited for capturing this aspe
 This property involves the constant \textit{true}.
 \begin{equation}\label{eq:iter3}
 \begin{aligned}
-0\to1&: \mathbf{i} := \mathit{iterator}(\mathbf{c}) \\
-1\to2&: \mathit{true} := \mathit{hasNext}(i) \\
-1\to\epsilon&: \mathit{next}(i) \\
-2\to1&: \mathit{next}(i), \ldots
+&\mathrm{initial}\to\mathit{iterating}: 
+  && \pat\alpha := \pat\gamma.\mathit{iterator}() \\
+&\mathit{iterating}\to\mathit{hasNext}: 
+  &&\mathit{true} := \alpha.\mathit{hasNext}() \\
+&\mathit{hasNext}\to\mathit{iterating}: 
+  &&\alpha.\mathit{next}() \\
+&\mathit{iterating}\to\mathrm{error}: 
+  &&\alpha.\mathit{next}() 
 \end{aligned}
 \end{equation}
 The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
 It stays in state~$2$ until the first non-pure method is called.
 
-% }}}
-% }}}
-\section{Theory} % {{{
+\rg{Lists of locks are homogeneous. Or, lists of locks always have
+some prefix in state \textit{locked} and the rest is \textit{unlocked}.}
 
 % }}}
-\section{Implementation} % {{{
-
-\rg{optimizations}
-
-% }}}
-% related work {{{
-\section{More Related Work}
-
-\rg{SLAM}
-% }}}
-% conclusions {{{
-\section{Conclusions}
-
-% }}}
-\section{Notes} % {{{
 \subsection{Property Checking}\label{sec:property_checking} % {{{
-
-\rg{Explain that Java's $x.y(z)$ and $y(x, z)$ are used interchangeably.}
 
 The properties are similar to typestates.
 Indeed, here is how we would check properties \eqref{eq:iter1}~and~\eqref{eq:iter3} on an example from~\cite{bierhoff2007}.
-{\def\a#1{a_\text{\ref{eq:iter#1}} }
 \begin{lstlisting}
-Collection c = new ArrayList();
-Iterator i = c.iterator();
-// $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
+Collection<Integer> c = new ArrayList<Integer>();
+Iterator<Integer> i = c.iterator();
+// $\mathit{state}=\mathit{iterating}\land\gamma=c\land\alpha=i$
 while (i.hasNext() && $\ldots\,$) {
-  // $\a1(1, [i/i, c/c]), \a3(2, [i/i])$
-  Object o = i.next();
-  // $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
-  Iterator j = c.iterator();
-  // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(1, [j/i])$
+  // $(\mathit{state}=\mathit{iterating}\lor\mathit{state}=\mathit{hasNext})\land\gamma=c\land\alpha=i$
+  Integer x = i.next();
+  // $\mathit{state}=\mathit{iterating}\land\gamma=c\land\alpha=i$
+  Iterator<Integer> j = c.iterator();
+  // $\mathit{state}=\mathit{iterating}\land\gamma=c\land(\alpha=i\lor\alpha=j)$
   while (j.hasNext()) {
-    // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(2, [j/i])$
+    // $\gamma=c\land\bigl(\bigl(\mathit{state}=\mathit{iterating}\land(\alpha=i\lor\alpha=j)\bigr)\lor\bigl(\mathit{state}=\mathit{hasNext}\land\alpha=j\bigr)\bigr)$
     p = j.next();
-    // $\a1(1, [i/i, c/c]), \a3(1, [i/i]), \a1(1, [j/i, c/c]), \a3(1, [j/i])$
+    // $\mathit{state}=\mathit{iterating}\land\gamma=c\land(\alpha=i\lor\alpha=j)$
   }
-  // $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
+  // $\mathit{state}=\mathit{iterating}\land\gamma=c\land\alpha=i$
 }
-// $\a1(1, [i/i, c/c]), \a3(1, [i/i])$
+// $\mathit{state}=\mathit{iterating}\land\gamma=c\land\alpha=i$
 if (i.hasNext()) {
-  // $\a1(1, [i/i, c/c]), \a3(2, [i/i])$
+  // $(\mathit{state}=\mathit{iterating}\lor\mathit{state}=\mathit{hasNext})\land\gamma=c\land\alpha=i$
   c.remove(i.next());
-  // $\a1(2, [i/i, c/c]), \a3(1, [i/i])$
+  // $(\mathit{state}=\mathit{iterating}\lor\mathit{state}=\mathit{modified})\land\alpha=i$
   if (i.hasNext()) {
-    // $\a1(\epsilon), \a3(1, [i/i])$
+    // $(\mathit{state}=\mathrm{error}\lor\mathit{state}=\mathit{hasNext})\land\alpha=i$
     $\ldots$
   }
 }
 \end{lstlisting}
-At every step we also have $\a1(0)$ and $\a3(0)$, which are not written above, for brevity.}
-Similarly, the (non-extended) symbolic state is omitted.
+\rg{assume states are distinct}
+\rg{Should be $\mathit{state}=\mathrm{initial}\lor\cdots$ but it's long.}
+\rg{Add points-to.}
 The check of \eqref{eq:iter2} is trivial, because the \textit{remove} method of iterators is never called, so the associated automaton never reaches states 3~and~4.
-\rg{Update the example to use generics}
 
 The interesting part of this example is the abstraction taking place at the end of the outer loop.
 In general, it is unsound to forget automaton states.
@@ -240,6 +217,16 @@ In general, a state is \emph{stuck} and may be forgotten if the program expressi
 An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
 
 % }}}
+\subsection{Others} % {{{
+
+\rg{Aldrich example}
+\rg{lists of uniformly locked mutexes}
+\rg{modify list with one iterator, advance with the other}
+\rg{others}
+ 
+% }}}
+% }}}
+\section{Theory} % {{{
 \subsection{Operational Semantics and Hoare Triples}\label{sec:opsem} % {{{
 
 \rg{Simplify this according to discussion with Hongseok.}
@@ -248,18 +235,10 @@ Since we execute the automaton as a checker in parallel with the program, we inc
 \begin{align}
 \mathsf{State}&=\mathsf{ProgramState}\times\mathsf{AutomatonState} \\
 \mathsf{ProgramState}&=\mathsf{Stack}\times\mathsf{Heap} \\
-\mathsf{AutomatonState}&=
-  (\mathsf{Identifier}\times\mathsf{Stack})\to\mathsf{2} \\
+\mathsf{AutomatonState}&=\mathsf{Identifier}\times\mathsf{Stack} \\
 \mathsf{Stack}&=\mathsf{Identifier}\pmap\mathsf{Value} \\
 \mathsf{Heap}&=\mathsf{Address}\pmap\mathsf{Value}
 \end{align}
-
-\begin{notation}
-The notation $\mathsf A\to\mathsf B$ stands for the set of total functions from \textsf A to \textsf B.
-The notation $\mathsf A\pmap\mathsf B$ stands for the set of finite partial functions from~$\mathsf A$ to~$\mathsf B$: 
-The domain of these functions is a finite subset of~$\mathsf A$.
-The notation \textsf 2 stands for the set of booleans, so $\mathsf A\to\mathsf 2$ is (isomorphic to) the power set of~\textsf A.
-\end{notation}
 
 Unlike stacks, heaps are indexed by values.
 \begin{gather}
@@ -274,104 +253,38 @@ We say that $(\pi,\tau)$ satisfies $(P,T)$.
   \qquad\text{iff}\qquad
 \pi \vDash P
   \quad\text{and}\quad
-\tau\supseteq T
+\tau\in T
 \end{equation}
 We write $\{P,T\}\;C\;\{P',T'\}$ to mean that if the state before executing~$C$ satisfies $(P,T)$ then the state after executing~$C$ satisfies~$(P',T')$.
 
 % }}}
-\subsection{Executing One Statement}\label{sec:execute} % {{{
+\subsection{Other Stuff} % {{{
 
-Let us see in detail how the symbolic interpreter executes a particular statement
-\begin{equation}\label{eq:execute.statement}
-\mathit{hn}:=j.\mathit{hasNext}()
-\end{equation}
-when it starts with a particular symbolic heap
-\begin{equation}\label{eq:execute.heap}
-i=j * \mathit{iter}(i,3) * \mathit{hn} = \mathit{false}
-\end{equation}
-and a particular set of reached automaton states with their bindings
-\begin{equation}\label{eq:execute.props}
-\{a_5(1,[i/i]), a_3(2,[k/i])\}.
-\end{equation}
-Suppose further that the symbolic interpreter is given the contract
-\begin{equation}\label{eq:execute.spec}
-\{\,\mathit{iter}(x, \mathbf{n})*n>0\,\}
-  \quad \mathbf{r} := \mathbf{x}.\mathit{hasNext}()
-  \quad \{\,\mathit{iter}(x, n-1)*r=\mathit{true}\,\}.
-\end{equation}
-
-\paragraph{The Symbolic Heap} % {{{
-
-The bindings $[\mathit{hn}/r,j/x]$ are found by matching syntactically \eqref{eq:execute.statement} with the statement in~\eqref{eq:execute.spec}, and then the contract is instantiated.
-\begin{equation}\label{eq:execute.spec'}
-\{\,\mathit{iter}(j, \mathbf{n})*n>0\,\}
-  \quad \mathit{hn} := j.\mathit{hasNext}()
-  \quad \{\,\mathit{iter}(j, n-1)*\mathit{hn}=\mathit{true}\,\}.
-\end{equation}
-The substitution $[\mathit{hn}'/\mathit{hn}]$ replaces the variable to which a new value is assigned with a variable that is implicitly existentially quantified.
-In general, this substitution is applied to the symbolic heap and also to all program expressions to which automaton variables are bound.
-In our case, though, \textit{hn} occurs only in the symbolic heap, which becomes
-\begin{equation}\label{eq:execute.heap'}
-i=j * \mathit{iter}(i,3) * \mathit{hn} = \mathit{false}.
-\end{equation}
-Now the (single candidate) binding~$[3/n]$ is found by matching the arguments of \textit{iter} in~\eqref{eq:execute.heap'} and in the precondition of~\eqref{eq:execute.spec'}, and the contract is further specialized.
-\begin{equation}\label{eq:execute.spec''}
-\{\,\mathit{iter}(j,3)*3>0\,\}\cdots
-\{\,\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}\,\}
-\end{equation}
-At this point, the symbolic interpreter asks the separation logic prover a frame inference question.
-Precisely, it asks for a (preferably specific) symbolic heap~$h$ that satisfies
-\begin{equation}\label{eq:execute:frame_question}
-i=j*\mathit{iter}(i,3)*\mathit{hn}'=\mathit{false}
-\;\vdash\;
-\mathbf{h}*\mathit{iter}(j,3)*3>0.
-\end{equation}
-Suppose the prover replies with $[(i=j*\mathit{hn}'=\mathit{false})/h]$.
-The frame~$h$ is $*$-joined to the postcondition of~\eqref{eq:execute.spec''}.
-\begin{equation}\label{eq:execute.heap''}
-i=j*\mathit{hn}'=\mathit{false}*\mathit{iter}(j,2)*\mathit{hn}=\mathit{true}
-\end{equation}
-This is the symbolic heap after \eqref{eq:execute.statement}~is executed.
-
-% }}}
-\paragraph{The Automatons} % {{{
-
-\rg{On the same example.}
+\rg{language for describing automata}
+\rg{soundness of translating automata in Hoare triples?}
+\rg{inferring contracts (abduction)}
+\rg{Must discuss what happens with equalities that can't be decided.}
 
 % }}}
 % }}}
-\subsection{Inferring Contracts}\label{sec:infer} % {{{
-
-\rg{Explain how transitions are added to the automatons.}
-
-% }}}
-\subsection{Symbolic Execution with Automatons}\label{sec:formal} % {{{
-
-\rg{Present formally what was in the previous sections.}
-
-%}}}
-\subsection{Optimizations}\label{sec:optimizations} % {{{
+\section{Implementation} % {{{
 
 \rg{Explain how some automaton bindings may be dropped.}
 \rg{Explain how some deterministic automaton states must be dropped for convergence.}
+\rg{error traces?}
 
 % }}}
-\subsection{Examples}\label{sec:example} % {{{
+\section{Related Work} % {{{
 
-\rg{Aldrich example}
-\rg{lists of uniformly locked mutexes}
-\rg{modify list with one iterator, advance with the other}
-\rg{others}
-
-% }}}  
-\subsection{Issues}\label{sec:issues} % {{{
-
-\begin{itemize}
-\item \rg{Make it easy to say ``automaton state doesn't change'' in Hoare triples.}
-\item \rg{abduction}
-\end{itemize}
+\rg{SLAM}
+\rg{session types}
+\rg{Jules' communicating automata}
+\rg{Java Pathfinder?}
+\rg{Frama-C's Aroa\"\i}
 
 % }}}
+\section{Conclusions} % {{{
+
 % }}}
 % ending {{{
 \bibliographystyle{plain}
