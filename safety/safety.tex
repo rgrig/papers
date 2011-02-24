@@ -63,7 +63,6 @@
 
 % }}}
 % }}}
-% }}}
 % body {{{
 \begin{document}
 \maketitle
@@ -75,7 +74,7 @@
 
 \rg{\cite{bierhoff2006} and \cite{haack2009} use a fancy implication in linear logic and, respectively, separation logic. \cite{cok2006} uses ghost variables in JML. \cite{trentelman2002} gives a few encodings in JML of temporal properties too. None of these translations from automata are automatic. \cite{krishnaswami2006} does not seem to use automata---check---but the higher order approach is probably not automizable.}
 
-\rg{I think we can use the current encoding with Boogie too, which is cool. (Except Boogie doesn't have contract inference, as done by abduction.)}
+\rg{I think we can use the current encoding with Boogie too, which is cool. (Except Boogie doesn't have contract inference, as done by abduction. But it could be done globally.)}
 
 \rg{``A way to turn program verifiers based on separation logic into model checkers of safety properties.'' ?}
 
@@ -93,7 +92,7 @@ Such a property is naturally captured by an automaton.
 &\mathit{locked}\to\mathit{unlocked}: &&\alpha.\mathit{unlock}()
 \end{aligned}
 \end{equation}
-This is a nondeterministic automaton: 
+This is a nondeterministic automaton:
 The initial state is always active.
 The nondeterminism is demonic:
 If there is a way to activate the error state the automaton will find it.
@@ -114,29 +113,29 @@ similarly for $x.\mathit{unlock}()$.
 In other words, don't use an iterator after modifying its collection.
 \begin{equation}\label{eq:iter1}
 \begin{aligned}
-&\mathrm{initial}\to\mathit{iterating}: 
+&\mathrm{initial}\to\mathit{iterating}:
   &&\pat\alpha := \pat\gamma.\mathit{iterator}()\\
 &\mathit{iterating}\to\mathit{modified}:
-  &&\gamma.\mathit{add}(\pat\ ), 
+  &&\gamma.\mathit{add}(\pat\ ),
     \gamma.\mathit{remove}(\pat\ ), \ldots \\
-&\mathit{modified}\to\mathrm{error}: 
+&\mathit{modified}\to\mathrm{error}:
   &&\alpha.\mathit{next}(), \alpha.\mathit{hasNext}(), \ldots
 \end{aligned}
 \end{equation}
 To check that the collection is not modified through a concurrent iterator we use the following automaton.
 \begin{equation}\label{eq:iter2}
 \begin{aligned}
-&\mathrm{initial}\to\mathit{gotOne}: 
+&\mathrm{initial}\to\mathit{gotOne}:
   && \pat\alpha := \pat\gamma.\mathit{iterator}() \\
-&\mathit{gotOne}\to\mathit{iterating}: 
+&\mathit{gotOne}\to\mathit{iterating}:
   && \pat\beta := \gamma.\mathit{iterator}() \\
-&\mathit{iterating}\to\mathit{firstModified}: 
+&\mathit{iterating}\to\mathit{firstModified}:
   &&\alpha.\mathit{remove}()\\
-&\mathit{firstModified}\to\mathrm{error}: 
+&\mathit{firstModified}\to\mathrm{error}:
   &&\beta.\mathit{next}()\\
-&\mathit{iterating}\to\mathit{secondModified}: 
+&\mathit{iterating}\to\mathit{secondModified}:
   &&\beta.\mathit{remove}()\\
-&\mathit{secondModified}\to\mathrm{error}: 
+&\mathit{secondModified}\to\mathrm{error}:
   &&\alpha.\mathit{next}()
 \end{aligned}
 \end{equation}
@@ -145,14 +144,14 @@ To check that the collection is not modified through a concurrent iterator we us
 This property involves the constant \textit{true}.
 \begin{equation}\label{eq:iter3}
 \begin{aligned}
-&\mathrm{initial}\to\mathit{iterating}: 
+&\mathrm{initial}\to\mathit{iterating}:
   && \pat\alpha := \pat\gamma.\mathit{iterator}() \\
-&\mathit{iterating}\to\mathit{hasNext}: 
+&\mathit{iterating}\to\mathit{hasNext}:
   &&\mathit{true} := \alpha.\mathit{hasNext}() \\
-&\mathit{hasNext}\to\mathit{iterating}: 
+&\mathit{hasNext}\to\mathit{iterating}:
   &&\alpha.\mathit{next}() \\
-&\mathit{iterating}\to\mathrm{error}: 
-  &&\alpha.\mathit{next}() 
+&\mathit{iterating}\to\mathrm{error}:
+  &&\alpha.\mathit{next}()
 \end{aligned}
 \end{equation}
 The automaton goes in the safe state~$2$ only when \textit{hasNext} returns~\textit{true}.
@@ -178,7 +177,7 @@ while (i.hasNext() && $\ldots\,$) {
   // $\mathit{state}=\mathit{iterating}\land\gamma=c\land(\alpha=i\lor\alpha=j)$
   while (j.hasNext()) {
     // $\gamma=c\land\bigl(\bigl(\mathit{state}=\mathit{iterating}\land(\alpha=i\lor\alpha=j)\bigr)\lor\bigl(\mathit{state}=\mathit{hasNext}\land\alpha=j\bigr)\bigr)$
-    p = j.next();
+    Integer y = j.next();
     // $\mathit{state}=\mathit{iterating}\land\gamma=c\land(\alpha=i\lor\alpha=j)$
   }
   // $\mathit{state}=\mathit{iterating}\land\gamma=c\land\alpha=i$
@@ -190,31 +189,17 @@ if (i.hasNext()) {
   // $(\mathit{state}=\mathit{iterating}\lor\mathit{state}=\mathit{modified})\land\alpha=i$
   if (i.hasNext()) {
     // $(\mathit{state}=\mathrm{error}\lor\mathit{state}=\mathit{hasNext})\land\alpha=i$
-    $\ldots$
   }
 }
 \end{lstlisting}
-\rg{assume states are distinct}
-\rg{Should be $\mathit{state}=\mathrm{initial}\lor\cdots$ but it's long.}
-\rg{Add points-to.}
-The check of \eqref{eq:iter2} is trivial, because the \textit{remove} method of iterators is never called, so the associated automaton never reaches states 3~and~4.
+Comment $p$ abbreviates the symbolic state $(p\lor\mathit{state}=\mathrm{initial})\land q$, where $q$ is the program state.
+For example, after the first two statements, $q$ might be $c\mapsto-*i\mapsto-$.
+If the prover cannot show that a symbolic state implies $\mathit{state}\ne\mathrm{error}$ (given that the possible values of the automaton \textit{state} are distinct), then a warning is printed.
 
-The interesting part of this example is the abstraction taking place at the end of the outer loop.
-In general, it is unsound to forget automaton states.
-Here, however, it is necessary to reach a fix-point.
-Luckily, it is also sound.
-Look at state~$a_\text{\ref{eq:iter3}}(1, [j/i])$.
-All paths from~$1$ to~$\epsilon$ need to compare $j$ with some other program expression.
-But $j$ goes out of scope at the end of the loop and it has no alias, so the state~$a_\text{\ref{eq:iter3}}(1, [j/i])$ can never reach $a_\text{\ref{eq:iter3}}(\epsilon)$.
-
-From an implementation point of view, it might be convenient to avoid introducing the notion of scope.
-We would still notice that $j$ becomes unreachable when, in the next iteration, the value of the variable is over-written.
-When $j$ turns into the existentially quantified variable $j'$ we can prove that it is not aliased by any non-quantified variable.
-\rg{Fill in details; Matko says he implemented a quick conservative check exactly for this.}
-
-\paragraph{Definitions}
-In general, a state is \emph{stuck} and may be forgotten if the program expressions to which its relevant automaton variables are bound cannot possibly equal any program expression built out of non-quantified variables.
-An automaton variable is \emph{relevant} when it is involved in some check on every path to the error state.
+Observe that a new iterator~$j$ is allocated at each iteration of the outer loop.
+In order to reach a fix-point, the symbolic state keeps track only of the~$j$ of the current iteration.
+This is sound only because the iterators allocated in previous iterations are unreachable, so they cannot be advanced.
+In general, to reach a fix-point we will occasionally need to strengthen the symbolic state and we will need to show under what circumstances it is safe to do so.
 
 % }}}
 \subsection{Others} % {{{
@@ -223,13 +208,15 @@ An automaton variable is \emph{relevant} when it is involved in some check on ev
 \rg{lists of uniformly locked mutexes}
 \rg{modify list with one iterator, advance with the other}
 \rg{others}
- 
+
 % }}}
 % }}}
 \section{Theory} % {{{
 \subsection{Operational Semantics and Hoare Triples}\label{sec:opsem} % {{{
 
 \rg{Simplify this according to discussion with Hongseok.}
+
+\rg{Two opsems; encoding; soundness and trick with $\lor$ in post; reaching a fixpoint}
 
 Since we execute the automaton as a checker in parallel with the program, we include its state in the semantics.
 \begin{align}
@@ -249,7 +236,7 @@ Unlike stacks, heaps are indexed by values.
 We write $\pi,\tau\vDash P,T$ to mean that $(\pi,\tau)$ is in the subset of \textsf{State} described by~$(P,T)$, where $P$~is a separation logic formula and $T$ is an automaton state.
 We say that $(\pi,\tau)$ satisfies $(P,T)$.
 \begin{equation}
-\pi, \tau \vDash P, T 
+\pi, \tau \vDash P, T
   \qquad\text{iff}\qquad
 \pi \vDash P
   \quad\text{and}\quad
