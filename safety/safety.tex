@@ -202,6 +202,11 @@ This is sound only because the iterators allocated in previous iterations are un
 In general, to reach a fix-point we will occasionally need to strengthen the symbolic state and we will need to show under what circumstances it is safe to do so.
 
 % }}}
+\subsection{Encoding} % {{{
+
+
+
+%}}}
 \subsection{Others} % {{{
 
 \rg{Aldrich example}
@@ -212,39 +217,39 @@ In general, to reach a fix-point we will occasionally need to strengthen the sym
 % }}}
 % }}}
 \section{Theory} % {{{
-\subsection{Operational Semantics and Hoare Triples}\label{sec:opsem} % {{{
 
-\rg{Simplify this according to discussion with Hongseok.}
+We start with a simple language and a simple execution model, close to the ones usually used with separation logic.
+We continue with the syntax and semantics of our automatons.
+Finally, we give a sound encoding of automatons into the basic execution model.
 
-\rg{Two opsems; encoding; soundness and trick with $\lor$ in post; reaching a fixpoint}
+\subsection{Programming Language and Execution Model} % {{{
 
-Since we execute the automaton as a checker in parallel with the program, we include its state in the semantics.
+The program's state is determined by the content of the memory.
 \begin{align}
-\mathsf{State}&=\mathsf{ProgramState}\times\mathsf{AutomatonState} \\
 \mathsf{ProgramState}&=\mathsf{Stack}\times\mathsf{Heap} \\
-\mathsf{AutomatonState}&=\mathsf{Identifier}\times\mathsf{Stack} \\
 \mathsf{Stack}&=\mathsf{Identifier}\pmap\mathsf{Value} \\
 \mathsf{Heap}&=\mathsf{Address}\pmap\mathsf{Value}
 \end{align}
-
 Unlike stacks, heaps are indexed by values.
 \begin{gather}
 \mathsf{Identifier}\cap\mathsf{Value}=\emptyset \\
 \mathsf{Address}\subset\mathsf{Value}
 \end{gather}
-
-We write $\pi,\tau\vDash P,T$ to mean that $(\pi,\tau)$ is in the subset of \textsf{State} described by~$(P,T)$, where $P$~is a separation logic formula and $T$ is an automaton state.
-We say that $(\pi,\tau)$ satisfies $(P,T)$.
+Statements may be nondeterministic.
 \begin{equation}
-\pi, \tau \vDash P, T
-  \qquad\text{iff}\qquad
-\pi \vDash P
-  \quad\text{and}\quad
-\tau\in T
+\mathsf{Statement}\subseteq\mathsf{ProgramState}\times\mathsf{ProgramState}
 \end{equation}
-We write $\{P,T\}\;C\;\{P',T'\}$ to mean that if the state before executing~$C$ satisfies $(P,T)$ then the state after executing~$C$ satisfies~$(P',T')$.
 
 % }}}
+
+\subsection{Automaton Syntax and Semantics} % {{{
+
+% }}}
+
+\subsection{Encoding and Soundness} % {{{
+
+% }}}
+
 \subsection{Other Stuff} % {{{
 
 \rg{language for describing automata}
