@@ -4,6 +4,14 @@
 \overfullrule=5pt
 \showboxdepth=10
 \showboxbreadth=100
+
+\def\grammar#1{{
+  \footnotesize
+  \def\b##1{{\bf##1}}\def\*{$^*$}\def\?{$^?$}
+  \smallskip
+  \hbox to\hsize{\hfil\vbox{\halign{\hfil\it##&$\;::=\;$\it##\hfil&\qquad\rm##\hfil\cr#1}}\hfil}
+  \smallskip
+}}
 % }}}
 % LaTeX {{{
 \documentclass[a4paper]{article}
@@ -222,7 +230,33 @@ We start with a simple language and a simple execution model, close to the ones 
 We continue with the syntax and semantics of our automatons.
 Finally, we give a sound encoding of automatons into the basic execution model.
 
-\subsection{Programming Language and Execution Model} % {{{
+\subsection{Programming Language} % {{{
+
+The program is a list of classes.
+Each class contains fields and methods.
+
+\grammar{
+  Program& Class\*\cr
+  Class& id \b\{ Member\* \b\}\cr
+  Member& TypeAndId& field\cr
+  Member& TypeAndId \b( FormalArgs \b) body& method\cr
+  Member& TypeAndId \b( FormalArgs \b)& abstract method\cr
+  TypeAndId& id id\cr
+  Body& \b\{ Statement\* \b\}\cr
+}
+
+\noindent There are five basic statements and two composed statements.
+
+\grammar{
+  Statement& \b{return} Var\cr
+  Statement& Var \b{:=} Var& stack assignment\cr
+  Statement& Var \b{:=} Var \b. id& heap assignment\cr
+  Statement& Var \b{:=} Var \b. id Args& method call\cr
+  Statement& Var \b{:=} \b{new} id& memory allocation\cr
+  Statement& \b{while} Body\? Condition Body\?& loop\cr
+  Statement& \b{if} Condition Body& branching\cr
+}
+
 
 The program's state is determined by the content of the memory.
 \begin{align}
@@ -241,15 +275,12 @@ Statements may be nondeterministic.
 \end{equation}
 
 % }}}
-
 \subsection{Automaton Syntax and Semantics} % {{{
 
 % }}}
-
 \subsection{Encoding and Soundness} % {{{
 
 % }}}
-
 \subsection{Other Stuff} % {{{
 
 \rg{language for describing automata}
