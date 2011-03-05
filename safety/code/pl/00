@@ -1,40 +1,23 @@
-Unit {}
-Boolean {}
-Object {}
+class Unit {}
+class Boolean {}
+class Object {}
 
-Standard {
-  Boolean not(Boolean x)
-  Boolean equal(Object x, Object y)
-  Unit assume(Boolean x)
-}
-
-Iterator {
+class Iterator
   Boolean hasNext()
   Object next()
   Unit remove()
-}
 
-Collection {
+class Collection
   Iterator iterator()
-}
 
+Unit unit
 
-User {
-  Unit unit
-  Iterator x
-  Standard standard
+class User
+  Iterator i
 
-  Unit remove(Collection c, Object x) {
-      i := c.iterator()
-    while {
-      hasNext := i.hasNext()
-    } (hasNext) {
+  Unit remove(Collection c, Object x)
+    i := c.iterator()
+    while { hasNext := i.hasNext() }  (hasNext)
       y := i.next()
-      equal := standard.equal(x, y)
-      if (equal) {
-        i.remove()
-      }
-    }
+      if x == y { i.remove() }
     return unit
-  }
-}

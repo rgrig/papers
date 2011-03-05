@@ -1,5 +1,5 @@
 all:
-	ocamlbuild -use-menhir interp.native
+	ocamlbuild -cflag -annot -use-menhir -yaccflag --explain interp.native
 
 clean:
 	ocamlbuild -clean
