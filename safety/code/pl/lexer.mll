@@ -16,7 +16,20 @@
       Lexing.pos_bol = lcp.Lexing.pos_cnum - n
     };
     r n
-  
+ 
+  let keyword_table = Hashtbl.create 53
+  let _ = List.iter (fun (k, v) -> Hashtbl.add keyword_table k v)
+    [ "and", AND
+    ; "class", CLASS
+    ; "else", ELSE
+    ; "if", IF
+    ; "main", MAIN
+    ; "new", NEW
+    ; "or", OR
+    ; "return", RETURN
+    ; "this", THIS
+    ; "var", VAR
+    ; "while", WHILE ]
 }
 
 rule tok1 = parse
@@ -24,30 +37,23 @@ rule tok1 = parse
   | ((' '* '\n')+ as x) (' '* as y)
             { new_line x y lexbuf }
   | ' '+    { tok1 lexbuf }
-  | "/\\" | "&&" | "and"
+  | "/\\" | "&&" 
             { l AND }
   | ":="    { l ASGN }
-  | "class" { l CLASS }
   | ','     { l COMMA }
   | '.'     { l DOT }
-  | "else"  { l ELSE }
   | "=="    { l EQ }
-  | "if"    { l IF }
   | '{'     { l LB }
   | '('     { l LP }
   | "!="    { l NE }
-  | "new"   { l NEW }
   | "¬" | "!"
             { l NOT }
-  | "\\/" | "||" | "or"
+  | "\\/" | "||"
             { l OR }
   | '}'     { l RB }
-  | "return"{ l RETURN }
   | ')'     { l RP }
-  | "this"  { l THIS }
-  | "while" { l WHILE }
   | ['a'-'z' 'A'-'Z']+ as id
-            { l (ID id) }
+            { l (try Hashtbl.find keyword_table id with Not_found -> ID id) }
   | eof     { l EOF }
   | _       { raise Error }
 

@@ -10,14 +10,20 @@ class Iterator
 class Collection
   Iterator iterator()
 
-Unit unit
+var Unit unit
 
 class User
-  Iterator i
-
   Unit remove(Collection c, Object x)
-    i := c.iterator()
+    var Iterator i := c.iterator()
     while { hasNext := i.hasNext() }  (hasNext)
       y := i.next()
       if x == y { i.remove() }
     return unit
+
+main
+  unit := new
+  var User u := new
+  var Collection c := new
+  var Object o := new
+  c.add(o)
+  u.remove(c, o)
