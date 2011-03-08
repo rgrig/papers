@@ -2,11 +2,13 @@
   open Ast
   open Format
 
-  type body_member = S of statement | D of declaration
+  type ('a, 'b) either = Left of 'a | Right of 'b
+  let either a b = function Left x -> a x | Right x -> b x
 
   let from_option a = function None -> a | Some a -> a
 %}
 
+(* tokens and precedences {{{ *)
 %token <string> ID
 %token AND
 %token ASGN
@@ -35,29 +37,40 @@
 %left OR AND
 %nonassoc NOT
 %left DOT
+(* }}} *)
 
-%start <unit> program
+%start <Ast.program> program
 
 %%
 
 program: 
-    global* main global* EOF
-      { failwith "TODO" }
+    a=global* m=main b=global* EOF
+      { let f x = [x] in
+        let g x = [] in
+        let get f g x = List.concat (List.map (either f g) x) in
+        { program_classes = get f g a @ get f g b
+        ; program_globals = get g f a @ get g f b
+        ; program_main = m } }
 
 global:
-    CLASS ID LB member* RB 
-  | VAR type_id 
-      { failwith "todo" }
+    CLASS c=ID LB m=member* RB 
+      { Left(c, m) }
+  | VAR d=type_id 
+      { Right d }
 
 main: 
-    MAIN body 
-      { failwith "todo" }
+    MAIN b=body 
+      { b }
 
 member:
     VAR d=type_id 
       { Field d }
-  | type_id LP separated_list(COMMA, type_id) RP body? 
-      { failwith "todo" }
+  | d=type_id LP a=separated_list(COMMA, type_id) RP b=body? 
+      { Method
+        { method_return_type = d.declaration_type
+        ; method_name = d.declaration_variable
+        ; method_formals = a
+        ; method_body = b } }
 
 type_id: 
     t=ID v=ID 
@@ -67,29 +80,39 @@ body:
     LB b=statement* RB
       { let ds = ref [] in (* ugly *)
         let ss = ref [] in
-        List.iter(List.iter(function S x->ss:=x::!ss | D x->ds:=x::!ds)) b;
+        let add r x = r := x :: !r in
+        List.iter(List.iter(either (add ds) (add ss))) b;
         Body (List.rev !ds, List.rev !ss) }
 
 statement:
-    RETURN r=ref_
-      { [S(Return r)] }
+    RETURN r=expression
+      { [Right(Return r)] }
   | VAR d=type_id
-      { [D d] }
-  | l=lhs ASGN e=expression
-      { fst l @ [S(Assignment (snd l, e))] }
-  | l=lhs ASGN r=expression DOT m=ID a=args
-      { fst l @ [S(Call {call_lhs=snd l; call_receiver=r; call_method=m; call_arguments=a})] }
+      { [Left d] }
   | l=lhs ASGN NEW
-      { fst l @ [S(Allocate (snd l))] }
-  | lhs DOT ID args (* sugar *)
-      { failwith "todo" }
+      { fst l @ [Right(Allocate (snd l))] }
+  | l=lhs ASGN e=expression
+      { fst l @ [Right(Assignment(snd l, e))] }
+  | l=lhs ASGN r=expression DOT m=ID a=args
+      { fst l @ [Right(Call 
+        { call_lhs = Some(snd l)
+        ; call_receiver = r
+        ; call_method = m
+        ; call_arguments = a })] }
+  (* TODO allow expr on the left: use indentation info to introduce SEMI *)
+  | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
+      { [ Right(Call
+        { call_lhs = None
+        ; call_receiver = Ref r
+        ; call_method = m
+        ; call_arguments = a })] }
   | WHILE pre=body? c=expression post=body?
-      { [S(While{while_pre_body=from_option empty_body pre; while_condition=c; while_post_body=from_option empty_body post})] }
+      { [Right(While{while_pre_body=from_option empty_body pre; while_condition=c; while_post_body=from_option empty_body post})] }
   | IF c=expression i=body e=else_?
-      { [S(If (c,i))] @ (match e with None -> [] | Some e -> [S(If (Not c, e))]) }
+      { [Right(If (c,i))] @ (match e with None -> [] | Some e -> [Right(If (Not c, e))]) }
 
 lhs:
-  VAR d=type_id { ([D d], d.declaration_variable) } (* sugar *)
+  VAR d=type_id { ([Left d], d.declaration_variable) } (* sugar *)
   | r=ref_ { ([], r) }
 
 expression:

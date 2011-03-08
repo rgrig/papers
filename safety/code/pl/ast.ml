@@ -14,13 +14,13 @@ type declaration =
   ; declaration_variable : string }
 
 type call = 
-  { call_lhs : string
+  { call_lhs : string option
   ; call_receiver : expression
   ; call_method : string
   ; call_arguments : expression list }
 
 type statement =
-    Return of string
+    Return of expression
   | Assignment of string * expression
   | Call of call
   | Allocate of string
@@ -38,7 +38,7 @@ type method_ =
   { method_return_type : string
   ; method_name : string
   ; method_formals : declaration list
-  ; method_body : body }
+  ; method_body : body option }
 
 type member =
     Field of declaration

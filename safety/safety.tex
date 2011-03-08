@@ -232,46 +232,53 @@ Finally, we give a sound encoding of automatons into the basic execution model.
 
 \subsection{Programming Language} % {{{
 
-The program is a list of classes.
-Each class contains fields and methods.
+The programming language has classes, global variables, fields, methods, four types of simple statements, loops, and branching.
 
 \grammar{
-  Program& Class\*\cr
-  Class& id \b\{ Member\* \b\}\cr
-  Member& TypeAndId& field\cr
-  Member& TypeAndId \b( FormalArgs \b) body& method\cr
-  Member& TypeAndId \b( FormalArgs \b)& abstract method\cr
-  TypeAndId& id id\cr
-  Body& \b\{ Statement\* \b\}\cr
+  Statement& \b{return} Expression& return\cr
+  Statement& identifier \b{:=} Expression& assignment\cr
+  Statement& identifier \b{:=} Expression \b. identifier \b( Arguments \b)& method call\cr
+  Statement& identifier \b{:=} \b{new}& memory allocation\cr
+  Statement& \b{while} Statement\* Expression Statement\*& loop\cr
+  Statement& \b{if} Expression Statement\*& branch\cr
 }
 
-\noindent There are five basic statements and two composed statements.
+\noindent Note that the loop's condition is evaluated somewhere in the middle of the body.
+Expressions have no side-effects; they are either booleans or references.
 
 \grammar{
-  Statement& \b{return} Var\cr
-  Statement& Var \b{:=} Var& stack assignment\cr
-  Statement& Var \b{:=} Var \b. id& heap assignment\cr
-  Statement& Var \b{:=} Var \b. id Args& method call\cr
-  Statement& Var \b{:=} \b{new} id& memory allocation\cr
-  Statement& \b{while} Body\? Condition Body\?& loop\cr
-  Statement& \b{if} Condition Body& branching\cr
+  Expression& Expression \b{and} Expression& $\mathbb{B}\to\mathbb{B}\to\mathbb{B} $\cr
+  Expression& \b{not} Expression& $\mathbb{B}\to\mathbb{B}$\cr
+  Expression& Expression \b{==} Expression& $\alpha\to\alpha\to\mathbb{B}$\cr
+  Expression& Expression \b. identifier& field dereference\cr
+  Expression& identifier& variable\cr
 }
 
+\noindent All methods have the implicit argument \textit{this}.
+Explicit arguments are typed.
+
+\grammar{
+  Arguments& identifier identifier ArgumentsTail\?& type, variable,\cr
+  ArgumentsTail& \b, Arguments& rest\cr
+}
+
+\noindent Other constructs that appear in examples are syntactic sugar.
 
 The program's state is determined by the content of the memory.
 \begin{align}
 \mathsf{ProgramState}&=\mathsf{Stack}\times\mathsf{Heap} \\
 \mathsf{Stack}&=\mathsf{Identifier}\pmap\mathsf{Value} \\
-\mathsf{Heap}&=\mathsf{Address}\pmap\mathsf{Value}
+\mathsf{Heap}&=(\mathsf{Address}\times\mathsf{Identifier})\pmap\mathsf{Value}
 \end{align}
 Unlike stacks, heaps are indexed by values.
 \begin{gather}
 \mathsf{Identifier}\cap\mathsf{Value}=\emptyset \\
 \mathsf{Address}\subset\mathsf{Value}
 \end{gather}
-Statements may be nondeterministic.
+
+The (small step) operational semantics is given by the function \textit{step}.
 \begin{equation}
-\mathsf{Statement}\subseteq\mathsf{ProgramState}\times\mathsf{ProgramState}
+\mathit{step}\in \mathsf{ProgramState}\to \mathsf{Statement} \to \mathsf{ProgramState}
 \end{equation}
 
 % }}}

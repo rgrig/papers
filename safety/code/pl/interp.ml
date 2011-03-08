@@ -1,10 +1,15 @@
 open Format
 
+let interpret p = failwith "Inter.interpret not implemented"
+
 let _ =
   let lexbuf = Lexing.from_channel stdin in
   let program =
     MenhirLib.Convert.Simplified.traditional2revised Parser.program in
-  try program (Lexer.token lexbuf)
+  try 
+    let p = program (Lexer.token lexbuf) in
+    Tc.type_check p;
+    interpret p
   with Parser.Error ->
     match Lexing.lexeme_start_p lexbuf with 
     { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
