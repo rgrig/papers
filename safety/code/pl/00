@@ -9,13 +9,14 @@ class Iterator
 
 class Collection
   Iterator iterator()
+  Unit add(Object o)
 
 var Unit unit
 
 class User
   Unit remove(Collection c, Object x)
     var Iterator i := c.iterator()
-    while { hasNext := i.hasNext() }  (hasNext)
+    while { hasNext := i.hasNext() } (hasNext)
       y := i.next()
       if x == y { i.remove() }
     return unit

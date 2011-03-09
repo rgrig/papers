@@ -8,7 +8,7 @@ let _ =
     MenhirLib.Convert.Simplified.traditional2revised Parser.program in
   try 
     let p = program (Lexer.token lexbuf) in
-    Tc.type_check p;
+    ignore (Tc.program p);
     interpret p
   with Parser.Error ->
     match Lexing.lexeme_start_p lexbuf with 
