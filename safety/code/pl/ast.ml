@@ -51,4 +51,12 @@ type program =
   ; program_classes : class_ list
   ; program_main : body }
 
+(* utilities {{{ *)
+
 let empty_body = Body ([], [])
+
+let field_declarations (_, ms) =
+  let f acc = function Field d -> d :: acc | _ -> acc in
+  List.rev (List.fold_left f [] ms)
+
+(* }}} *)
