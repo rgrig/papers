@@ -3,7 +3,7 @@ MAIN=fb
 INP=.:../lib:
 
 build:
-	@TEXINPUTS=$(INP) BSTINPUTS=$(INP) rubber -W all --force --pdf $(MAIN)
+	@TEXINPUTS=$(INP) BSTINPUTS=$(INP) rubber --force --pdf $(MAIN)
 
 clean:
 	@TEXINPUTS=$(INP) BSTINPUTS=$(INP) rubber --clean --pdf $(MAIN)

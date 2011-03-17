@@ -1,21 +1,19 @@
 %{{{ prelude latex
 \tracingmacros=0
-\documentclass[a4paper]{article}
+\documentclass{llncs}
 %{{{ packages
 \usepackage[english]{babel}
-\usepackage[colorlinks]{hyperref}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}  % TODO: paint everything in tikz and remove this
 \usepackage{listings}
-\usepackage{mathrsfs}  % TODO: perhaps get rid of these funky letters
+\usepackage{mathrsfs}
 \usepackage{microtype} % keep even if it seems not to do anything!
 \usepackage{tikz}
 \usepackage{xcolor}
 \usepackage{xspace}
-\usepackage{hyperref}  % solves pdfTeX warning (ext4)?
+\usepackage[colorlinks]{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
 %}}}
 %{{{ meta
@@ -145,19 +143,19 @@
 %}}}
 %{{{ new environments (and theorems)
 % TODO: Get rid of these. This should be a non-mathy `tool paper'.
-\newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
-\theoremstyle{slanted}
-\newtheorem{problem}{Problem}
-\newtheorem{conjecture}{Conjecture}
-\newtheorem{lemma}{Lemma}
-\newtheorem{proposition}{Proposition}
-\newtheorem{theorem}{Theorem}
-\newtheorem{corollary}{Corollary}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}
-\newtheorem{example}{Example}
-\theoremstyle{remark}
-\newtheorem{remark}{Remark}
+%\newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
+%\theoremstyle{slanted}
+%\newtheorem{problem}{Problem}
+%\newtheorem{conjecture}{Conjecture}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{proposition}{Proposition}
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{corollary}{Corollary}
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}
+%\newtheorem{example}{Example}
+%\theoremstyle{remark}
+%\newtheorem{remark}{Remark}
 %}}}
 %{{{ TeX settings
 \overfullrule=5pt
