@@ -1,0 +1,17 @@
+- add locations to ast
+- make TC report location problem
+- add nondeterminism
+- update TC
+- interpreter
+- more examples
+- example automaton
+- parser for automatons
+- ast for automatons
+- TC for automatons
+- interpreter with automata
+- ...
+
+notes:
+ - nondet
+ - statement to havoc all (use as default body)
+ - comments

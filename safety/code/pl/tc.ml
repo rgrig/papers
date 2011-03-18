@@ -1,58 +1,147 @@
+(*
+  For each type [Ast.t] there's a function [t : Ast.t-> type_].  Statements
+  other than return have the type [Unit]. Composed statements, including lists,
+  inherit the type of the first return they reach, and are [Unit] otherwise.
+
+  Functions that help manipulate the typing environment are packed in
+  modules.
+ *)
+
 open Ast
+open Format
 
 exception Error of string
 
-let rec map_find f = function
-  | x :: xs -> (match f x with (Some _ as x) -> x | None -> map_find f xs)
-  | [] -> None
+(* [map_find d f p xs] applies [f] to each [x] and returns the first
+  result that satisfies [p]. Otherwise returns the default [d]. *)
+let rec map_find d f p = function
+  | x :: xs -> let r = f x in if p r then r else map_find d f p xs
+  | [] -> d
+let map_find_not d f xs = map_find d f ((<>) d) xs
 
 type type_ =
     Class of string
   | Method of type_ list * type_
   | Bool
+  | Unit
 
-module StringMap = Map.Make (String)
+let type_of_string = function
+  | "Bool" -> Bool
+  | "Unit" -> Unit
+  | x -> Class x
 
-module Variables = struct
-  let empty = StringMap.empty
-  let add vs ds =
-    let f vs { declaration_type=t; declaration_variable=v } = 
-      StringMap.add v t vs in
-    List.fold_left f vs ds
-  let lookup vs v =
-    try (match (StringMap.find v vs) with
-      | "bool" -> Bool
-      | s -> Class s)
-    with Not_found -> raise (Error ("undefined variable " ^ v))
+let rec pp_list pp ppf = function
+  | [] -> ()
+  | [x] -> pp ppf x
+  | x :: xs -> pp ppf x; fprintf ppf ",@ "; pp_list pp ppf xs
+
+let rec pp_type ppf = function
+  | Class n -> fprintf ppf "%s" n
+  | Method (args, r) -> 
+      fprintf ppf "%a -> %a" (pp_list pp_type) args pp_type r
+  | Bool -> fprintf ppf "[Bool]"
+  | Unit -> fprintf ppf "[Unit]"
+
+(* NOTE: Fields and methods live in different namespaces. *)
+module type EnvironmentT = sig
+  type t
+  val make : program -> t
+  val add_variables : t -> declaration list -> t
+  val lookup_variable : t -> string -> type_
+  val lookup_field : t -> type_ -> string -> type_
+  val lookup_method : t -> type_ -> string -> (type_ * type_ list)
 end
 
-module Classes = struct
-  let empty = failwith "Classes.empty"
-  let add cs ds = failwith "Classes.add"
-  let lookup_field cs t f = failwith "Classes.lookup_field"
-  let lookup_method cs t m = failwith "Classes.lookup_method"
-end
+module Environment : EnvironmentT = struct (* {{{ *)
+  module StringMap = Map.Make (String)
+  
+  type t = 
+    { variables : type_ StringMap.t
+    ; fields_by_class : type_ StringMap.t StringMap.t
+    ; methods_by_class : (type_ * type_ list) StringMap.t StringMap.t }
+
+  let add_var m { declaration_variable = v; declaration_type = t } =
+    StringMap.add v (type_of_string t) m
+
+  let add_vars = List.fold_left add_var
+
+  let add_declarations m ds =
+    let add_one m { declaration_variable = v; declaration_type = t } =
+      StringMap.add v (type_of_string t) m in
+    List.fold_left add_one m ds
+
+  let process_member (fs, ms) = function
+    | Field d -> (add_var fs d, ms)
+    | Ast.Method 
+        { method_return_type = r
+        ; method_name = n
+        ; method_formals = args
+        ; method_body = _ }
+      ->
+        let gt x = type_of_string x.declaration_type in
+        let args = List.map gt args in
+        let r = type_of_string r in
+        (fs, StringMap.add n (r, args) ms)
+
+  let process_class (fbc, mbc) (cn, d) =
+    let fs, ms = StringMap.empty, StringMap.empty in
+    let fs, ms = List.fold_left process_member (fs, ms) d in
+    (StringMap.add cn fs fbc, StringMap.add cn ms mbc)
+
+  let make { program_globals=gs; program_classes=cs; program_main=_ } =
+    let fbc, mbc = StringMap.empty, StringMap.empty in
+    let fbc, mbc = List.fold_left process_class (fbc, mbc) cs in
+    { variables = add_vars StringMap.empty gs
+    ; fields_by_class = fbc
+    ; methods_by_class = mbc }
+
+  let add_variables env d = { env with variables = add_vars env.variables d }
+
+  let lookup_variable env id =
+    try StringMap.find id env.variables
+    with Not_found -> raise (Error ("undefined: " ^ id))
+
+  let get_class_info m t =
+    let n = (match t with Class n -> n | _ -> raise (Error "not a class")) in
+    try StringMap.find n m
+    with Not_found -> raise (Error ("undefined class: " ^ n))
+
+  let lookup_method env t m =
+    let ms = get_class_info env.methods_by_class t in
+    try StringMap.find m ms
+    with Not_found -> raise (Error ("method not found: " ^ m))
+
+  let lookup_field env t f =
+    let fs = get_class_info env.fields_by_class t in
+    try StringMap.find f fs
+    with Not_found -> raise (Error ("field not found: " ^ f))
+end (* }}} *)
 
 let assert_types_match t1 t2 =
-  if t1 <> t2 then raise (Error "type mismatch")
+  if t1 <> t2 then 
+    let msg = 
+      fprintf str_formatter "@[<2>type mismatch:@ %a and %a@]" 
+          pp_type t1 pp_type t2; flush_str_formatter () in
+    raise (Error msg)
 
-let call lm expression
+let rec call env
   { call_lhs = l
   ; call_receiver = r
   ; call_method = m
   ; call_arguments = a }
 =
+  let expression = expression env in
   let tr = expression r in 
-  let tmr, tma = lm tr m in
+  let tmr, tma = Environment.lookup_method env tr m in
   let ta = List.map expression a in
   (try List.iter2 assert_types_match tma ta
   with Invalid_argument _ -> raise (Error "wrong number of args"));
   (match l with 
-    | Some l -> assert_types_match tr (expression (Ref l)) 
+    | Some l -> assert_types_match tmr (expression (Ref l)) 
     | _ -> ());
-  None
+  Unit
 
-let while_ b e
+and while_ b e
   { while_pre_body = b1
   ; while_condition = c
   ; while_post_body = b2 }
@@ -61,41 +150,56 @@ let while_ b e
   assert_types_match (e c) Bool;
   assert_types_match t1 t2; t1
 
-let rec expression ve ce =
-  let expression = expression ve ce in
+and expression env =
+  let expression x = expression env x in
   function
   | Ac (_, es) ->
       let ts = List.map expression es in
       List.iter (assert_types_match Bool) ts; Bool
   | Bin (l, o, r) -> assert_types_match (expression l) (expression r); Bool
   | Not e -> assert_types_match (expression e) Bool; Bool
-  | Deref (e, f) -> let te = expression e in Classes.lookup_field ce te f
-  | Ref s -> Variables.lookup ve s
+  | Deref (e, f) -> Environment.lookup_field env (expression e) f
+  | Ref s -> Environment.lookup_variable env s
 
-and statement ve ce = 
-  let expression = expression ve ce in
-  let body = body ve ce in
+and statement env = 
+  let expression = expression env in
+  let body = body env in
+  let call = call env in
   function
-  | Return e -> Some (expression e)
+  | Return e -> expression e
   | Assignment (s, e) -> 
-      assert_types_match (expression (Ref s)) (expression e); None
-  | Call c -> call (Classes.lookup_method ce) expression c
-  | Allocate s -> ignore (expression (Ref s)); None
+      assert_types_match (expression (Ref s)) (expression e); Unit
+  | Call c -> call c
+  | Allocate s -> ignore (expression (Ref s)); Unit
   | While w -> while_ body expression w
   | If (e, b) -> 
       assert_types_match (expression e) Bool; body b
 
-and body ve ce (Body (d, s)) =
-  let ve = Variables.add ve (field_declarations ce) in
-  let ve = Variables.add ve d in
-  let statement = statement ve ce in
-  map_find statement s
+and body env (Body (d, s)) =
+  map_find_not Unit (statement (Environment.add_variables env d)) s
 
-let program
-  { program_globals = v
-  ; program_classes = c
-  ; program_main = m }
+let method_ env
+  { method_return_type = r
+  ; method_name = n
+  ; method_formals = args
+  ; method_body = b }
 =
-  let ve = Variables.add Variables.empty v in
-  let ce = Classes.add Classes.empty c in
-  body ve ce m
+  match b with
+    | None -> ()
+    | Some b ->
+        let env = Environment.add_variables env args in
+        let tr = body env b in
+        assert_types_match tr (type_of_string r)
+
+let class_ env (_, ds) =
+  let f (fs, ms) = function
+    | Field f -> (f :: fs, ms)
+    | Ast.Method m -> (fs, m :: ms) in
+  let fs, ms = List.fold_left f ([], []) ds in
+  let env = Environment.add_variables env fs in
+  List.iter (method_ env) (List.rev ms)
+
+let program p =
+  let env = Environment.make p in
+  List.iter (class_ env) p.program_classes;
+  body env p.program_main

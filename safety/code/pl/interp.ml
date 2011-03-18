@@ -1,6 +1,6 @@
 open Format
 
-let interpret p = failwith "Inter.interpret not implemented"
+let interpret p = () (* TODO *)
 
 let _ =
   let lexbuf = Lexing.from_channel stdin in

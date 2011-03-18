@@ -1,6 +1,14 @@
 type binop = Eq | Ne
 type acop = Or | And
 
+(* TODO
+type span = { span_begin : Lexing.position; span_end : Lexing/.position }
+type 'a with_span = 'a * span
+let ast = fst
+let loc = snd
+let ws x b e = (x, {span_begin = b; span_end = e})
+ *)
+
 (* Expressions have no side-effects, so they don't include method calls. *)
 type expression =
     Ac of acop * expression list
@@ -54,9 +62,5 @@ type program =
 (* utilities {{{ *)
 
 let empty_body = Body ([], [])
-
-let field_declarations (_, ms) =
-  let f acc = function Field d -> d :: acc | _ -> acc in
-  List.rev (List.fold_left f [] ms)
 
 (* }}} *)

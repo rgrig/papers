@@ -1,9 +1,7 @@
-class Unit {}
-class Boolean {}
 class Object {}
 
 class Iterator
-  Boolean hasNext()
+  Bool hasNext()
   Object next()
   Unit remove()
 
@@ -15,9 +13,10 @@ var Unit unit
 
 class User
   Unit remove(Collection c, Object x)
+    var Bool hasNext
     var Iterator i := c.iterator()
     while { hasNext := i.hasNext() } (hasNext)
-      y := i.next()
+      var Object y := i.next()
       if x == y { i.remove() }
     return unit
 
