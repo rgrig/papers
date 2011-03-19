@@ -1,5 +1,3 @@
-- add locations to ast
-- make TC report location problem
 - add nondeterminism
 - update TC
 - interpreter
@@ -12,6 +10,5 @@
 - ...
 
 notes:
- - nondet
  - statement to havoc all (use as default body)
  - comments

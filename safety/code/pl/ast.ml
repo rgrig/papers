@@ -1,13 +1,7 @@
 type binop = Eq | Ne
 type acop = Or | And
 
-(* TODO
-type span = { span_begin : Lexing.position; span_end : Lexing/.position }
-type 'a with_span = 'a * span
-let ast = fst
-let loc = snd
-let ws x b e = (x, {span_begin = b; span_end = e})
- *)
+type 'a with_line = { ast : 'a; line : int }
 
 (* Expressions have no side-effects, so they don't include method calls. *)
 type expression =
@@ -40,7 +34,7 @@ and while_ =
   ; while_condition : expression
   ; while_post_body : body }
 
-and body = Body of declaration list * statement list
+and body = Body of declaration list * statement with_line list
 
 type method_ =
   { method_return_type : string

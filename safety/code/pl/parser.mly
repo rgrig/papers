@@ -86,30 +86,40 @@ body:
 
 statement:
     RETURN r=expression
-      { [Right(Return r)] }
+      { [Right({ast=Return r; line=$startpos.Lexing.pos_lnum})] }
   | VAR d=type_id
       { [Left d] }
   | l=lhs ASGN NEW
-      { fst l @ [Right(Allocate (snd l))] }
+      { fst l @ [Right({ast=Allocate (snd l); line=$startpos.Lexing.pos_lnum})] }
   | l=lhs ASGN e=expression
-      { fst l @ [Right(Assignment(snd l, e))] }
+      { fst l @ 
+      [Right({ast=Assignment(snd l, e);
+        line=$startpos.Lexing.pos_lnum})] }
   | l=lhs ASGN r=expression DOT m=ID a=args
-      { fst l @ [Right(Call 
+      { fst l @ [Right({ast=Call 
         { call_lhs = Some(snd l)
         ; call_receiver = r
         ; call_method = m
-        ; call_arguments = a })] }
-  (* TODO allow expr on the left: use indentation info to introduce SEMI *)
+        ; call_arguments = a };
+        line=$startpos.Lexing.pos_lnum})] }
   | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
-      { [ Right(Call
+      { [ Right({ast=Call
         { call_lhs = None
         ; call_receiver = Ref r
         ; call_method = m
-        ; call_arguments = a })] }
+        ; call_arguments = a };
+        line=$startpos.Lexing.pos_lnum})] }
   | WHILE pre=body? c=expression post=body?
-      { [Right(While{while_pre_body=from_option empty_body pre; while_condition=c; while_post_body=from_option empty_body post})] }
+      { [Right({ast=While
+        { while_pre_body=from_option empty_body pre
+        ; while_condition=c
+        ; while_post_body=from_option empty_body post};
+        line=$startpos.Lexing.pos_lnum})] }
   | IF c=expression i=body e=else_?
-      { [Right(If (c,i))] @ (match e with None -> [] | Some e -> [Right(If (Not c, e))]) }
+      { let l = $startpos.Lexing.pos_lnum in
+      [Right({ast=If (c,i); line=l})] 
+      @ (match e with None -> [] | Some e -> 
+        [Right({ast=If (Not c, e); line=l})]) }
 
 lhs:
   VAR d=type_id { ([Left d], d.declaration_variable) } (* sugar *)
