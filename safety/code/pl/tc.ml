@@ -1,10 +1,7 @@
 (*
   For each type [Ast.t] there's a function [t : Ast.t-> type_].  Statements
-  other than return have the type [Unit]. Composed statements, including lists,
+  have the type [Unit], except return. Composed statements, including lists,
   inherit the type of the first return they reach, and are [Unit] otherwise.
-
-  Functions that help manipulate the typing environment are packed in
-  modules.
  *)
 
 open Ast

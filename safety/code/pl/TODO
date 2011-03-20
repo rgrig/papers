@@ -1,6 +1,8 @@
+- interpret argument, read input from stdin
+- finish interpreter
 - add nondeterminism
 - update TC
-- interpreter
+- update interpreter
 - more examples
 - example automaton
 - parser for automatons
@@ -11,4 +13,5 @@
 
 notes:
  - statement to havoc all (use as default body)
- - comments
+ - comments (low priority)
+ - tc should reject name clashes

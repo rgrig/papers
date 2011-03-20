@@ -53,7 +53,7 @@ type program =
   ; program_classes : class_ list
   ; program_main : body }
 
-(* utilities {{{ *)
+(* utilities *) (* {{{ *)
 
 let empty_body = Body ([], [])
 
