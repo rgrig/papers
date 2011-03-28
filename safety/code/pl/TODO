@@ -1,4 +1,3 @@
-- interpret argument, read input from stdin
 - finish interpreter
 - add nondeterminism
 - update TC
@@ -11,7 +10,12 @@
 - interpreter with automata
 - ...
 
-notes:
+notes (low priority todos):
  - statement to havoc all (use as default body)
- - comments (low priority)
+ - comments
  - tc should reject name clashes
+ - do type inference
+    - allow 'var x' without type
+    - allow 'x := new' without type
+    - the type checker&inferrer should plug in the ast the inferred types
+ - better line number info

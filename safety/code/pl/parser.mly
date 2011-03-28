@@ -6,6 +6,11 @@
   let either a b = function Left x -> a x | Right x -> b x
 
   let from_option a = function None -> a | Some a -> a
+
+  let type_of_string = function
+    | "Bool" -> Bool
+    | "Unit" -> Unit
+    | x -> Class x
 %}
 
 (* tokens and precedences {{{ *)
@@ -43,6 +48,9 @@
 
 %%
 
+with_line(X):
+    x=X { { ast = x; line = $startpos.Lexing.pos_lnum } }
+
 program: 
     a=global* m=main b=global* EOF
       { let f x = [x] in
@@ -74,52 +82,50 @@ member:
 
 type_id: 
     t=ID v=ID 
-      { { declaration_type = t; declaration_variable = v } }
+      { { declaration_type = type_of_string t; declaration_variable = v } }
 
 body: 
-    LB b=statement* RB
+    LB b=with_line(statement)* RB
       { let ds = ref [] in (* ugly *)
         let ss = ref [] in
-        let add r x = r := x :: !r in
-        List.iter(List.iter(either (add ds) (add ss))) b;
+        let add_to_ds x = ds := x :: !ds in
+        let add_to_ss line x = ss := { ast = x; line = line } :: !ss in
+        let process_line { ast = xs; line = line } =
+          List.iter (either add_to_ds (add_to_ss line)) xs in
+        List.iter process_line b;
         Body (List.rev !ds, List.rev !ss) }
 
 statement:
     RETURN r=expression
-      { [Right({ast=Return r; line=$startpos.Lexing.pos_lnum})] }
+      { [Right(Return r)] }
   | VAR d=type_id
       { [Left d] }
-  | l=lhs ASGN NEW
-      { fst l @ [Right({ast=Allocate (snd l); line=$startpos.Lexing.pos_lnum})] }
+  | l=lhs ASGN NEW t=ID
+      { fst l @ 
+        [Right(Allocate (snd l, type_of_string t))] }
   | l=lhs ASGN e=expression
       { fst l @ 
-      [Right({ast=Assignment(snd l, e);
-        line=$startpos.Lexing.pos_lnum})] }
+        [Right(Assignment(snd l, e))] }
   | l=lhs ASGN r=expression DOT m=ID a=args
-      { fst l @ [Right({ast=Call 
+      { fst l @ [Right(Call 
         { call_lhs = Some(snd l)
         ; call_receiver = r
         ; call_method = m
-        ; call_arguments = a };
-        line=$startpos.Lexing.pos_lnum})] }
+        ; call_arguments = a })] }
   | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
-      { [ Right({ast=Call
+      { [ Right(Call
         { call_lhs = None
         ; call_receiver = Ref r
         ; call_method = m
-        ; call_arguments = a };
-        line=$startpos.Lexing.pos_lnum})] }
+        ; call_arguments = a })] }
   | WHILE pre=body? c=expression post=body?
-      { [Right({ast=While
+      { [Right(While
         { while_pre_body=from_option empty_body pre
         ; while_condition=c
-        ; while_post_body=from_option empty_body post};
-        line=$startpos.Lexing.pos_lnum})] }
+        ; while_post_body=from_option empty_body post})] }
   | IF c=expression i=body e=else_?
-      { let l = $startpos.Lexing.pos_lnum in
-      [Right({ast=If (c,i); line=l})] 
-      @ (match e with None -> [] | Some e -> 
-        [Right({ast=If (Not c, e); line=l})]) }
+      { [Right(If(c,i))] 
+        @ (match e with None -> [] | Some e -> [Right(If(Not c, e))]) }
 
 lhs:
   VAR d=type_id { ([Left d], d.declaration_variable) } (* sugar *)

@@ -1,7 +1,14 @@
+open Format
+
 type binop = Eq | Ne
 type acop = Or | And
 
 type 'a with_line = { ast : 'a; line : int }
+
+type type_ =
+    Class of string
+  | Bool
+  | Unit
 
 (* Expressions have no side-effects, so they don't include method calls. *)
 type expression =
@@ -12,7 +19,7 @@ type expression =
   | Ref of string
 
 type declaration =
-  { declaration_type : string
+  { declaration_type : type_
   ; declaration_variable : string }
 
 type call = 
@@ -25,7 +32,7 @@ type statement =
     Return of expression
   | Assignment of string * expression
   | Call of call
-  | Allocate of string
+  | Allocate of string * type_
   | While of while_
   | If of expression * body
 
@@ -37,7 +44,7 @@ and while_ =
 and body = Body of declaration list * statement with_line list
 
 type method_ =
-  { method_return_type : string
+  { method_return_type : type_
   ; method_name : string
   ; method_formals : declaration list
   ; method_body : body option }
@@ -56,5 +63,10 @@ type program =
 (* utilities *) (* {{{ *)
 
 let empty_body = Body ([], [])
+
+let rec pp_type ppf = function
+  | Class n -> fprintf ppf "%s" n
+  | Bool -> fprintf ppf "[Bool]"
+  | Unit -> fprintf ppf "[Unit]"
 
 (* }}} *)

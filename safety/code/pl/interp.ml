@@ -21,16 +21,16 @@ module type HeapT = sig
   type t
   val empty : t
   val add_object : t -> variable list -> (t * value)
-  val del_object : t -> value -> t
+  val del_object : t -> value -> t (* remove? *)
   val write : t -> value -> variable -> value -> t
   val read : t -> value -> variable -> value
 end
 
+let read_input () = scanf " %d" (fun x -> x)
+
 (* implementation *) (* {{{ *)
 module StringMap = Map.Make (String)
 module IntMap = Map.Make (struct type t = int let compare = compare end)
-
-let read_input () = scanf " %d" (fun x -> x)
 
 module Stack : StackT = struct
   type t = value StringMap.t
@@ -71,24 +71,102 @@ module Heap : HeapT = struct
     with Not_found -> raise (Error "bad read")
 end
 (* }}} *)
+
+type state = 
+  { globals : Stack.t
+  ; heap : Heap.t
+  ; locals : Stack.t }
+
+let fields_by_class = ref StringMap.empty
+
+(* }}} *)
+(* interpreter *) (* {{{ *)
+(* helpers *) (* {{{ *)
+
+let process_tc_info aux =
+  let process_class c fs =
+    let collect f _ acc = f :: acc in
+    let fs = StringMap.fold collect fs [] in
+    fields_by_class := StringMap.add c fs !fields_by_class in
+  StringMap.iter process_class aux
+
+let assign_value state x v =
+  begin try 
+      { state with locals = Stack.write state.locals x v }, None
+    with Error _ -> begin try
+      let this = Stack.read state.locals "this" in
+      { state with heap = Heap.write state.heap this x v }, None
+    with Error _ ->
+      { state with globals = Stack.write state.globals x v }, None
+  end end
+
 (* }}} *)
 
-let body _ _ = failwith "continue here"
+let expression _ _ = 
+  eprintf "@[todo: expression@."; 0
 
-let program p =
+let assignment state x e =
+  assign_value state x (expression state e)
+
+let call state _ =
+  eprintf "@[todo: call@."; state, None
+
+let allocate state x = function
+  | Unit -> assign_value state x 0
+  | Bool -> assign_value state x (read_input () land 1)
+  | Class c ->
+      let fields = StringMap.find c !fields_by_class in
+      let nh, no = Heap.add_object state.heap fields in
+      let ns = { state with heap = nh } in
+      assign_value ns x no
+
+let while_ state 
+  { while_pre_body = _
+  ; while_condition = _
+  ; while_post_body = _ }
+=
+  eprintf "@[todo: while@."; state, None
+
+let if_ state _ _ =
+  eprintf "@[todo: if@."; state, None
+
+let statement state = function
+  | Return e -> (state, Some (expression state e))
+  | Assignment (x, e) -> assignment state x e
+  | Call c -> call state c
+  | Allocate (v, t) -> allocate state v t
+  | While w -> while_ state w
+  | If (c, b) -> if_ state c b
+
+let body state (Body (ds, ss)) =
+  let ls = List.map (fun x -> x.declaration_variable) ds in
+  let state = { state with 
+    locals = List.fold_left Stack.add_variable state.locals ls } in
+  let f acc { ast = s; line = _ } = match acc with
+    | (state, None) -> statement state s
+    | x -> x in
+  List.fold_left f (state, None) ss
+
+let program aux p =
   let gs = List.map (fun x -> x.declaration_variable) p.program_globals in
-  let stack = List.fold_left Stack.add_variable Stack.empty gs in
-  body (stack, Heap.empty) p.program_main
+  let globals = List.fold_left Stack.add_variable Stack.empty gs in
+  let state = { globals = globals; heap = Heap.empty; locals = Stack.empty } in
+  process_tc_info aux;
+  body state p.program_main
 
-let _ =  (* main {{{ *)
-  let lexbuf = Lexing.from_channel stdin in
+(* }}} *)
+(* driver *) (* {{{ *)
+
+let interpret fn =
+  let f = open_in fn in
+  let lexbuf = Lexing.from_channel f in
   let parse =
     MenhirLib.Convert.Simplified.traditional2revised Parser.program in
-  try 
+  try
     let p = parse (Lexer.token lexbuf) in
-    ignore (Tc.program p);
-    program p
-  with 
+    let aux = Tc.program p in
+    ignore (program aux p)
+  with
     | Parser.Error ->
         (match Lexing.lexeme_start_p lexbuf with 
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
@@ -96,4 +174,8 @@ let _ =  (* main {{{ *)
         eprintf "@[%d:%d: parse error@." line (c1-c0+1))
     | Tc.Error e -> eprintf "@[%s (typecheck)@." e
 
+let _ =
+  for i = 1 to Array.length Sys.argv - 1 do
+    interpret Sys.argv.(i)
+  done
 (* }}} *)

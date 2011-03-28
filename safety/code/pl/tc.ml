@@ -18,28 +18,7 @@ let rec map_find d f p = function
   | [] -> d
 let map_find_not d f xs = map_find d f ((<>) d) xs
 
-type type_ =
-    Class of string
-  | Method of type_ list * type_
-  | Bool
-  | Unit
-
-let type_of_string = function
-  | "Bool" -> Bool
-  | "Unit" -> Unit
-  | x -> Class x
-
-let rec pp_list pp ppf = function
-  | [] -> ()
-  | [x] -> pp ppf x
-  | x :: xs -> pp ppf x; fprintf ppf ",@ "; pp_list pp ppf xs
-
-let rec pp_type ppf = function
-  | Class n -> fprintf ppf "%s" n
-  | Method (args, r) -> 
-      fprintf ppf "%a -> %a" (pp_list pp_type) args pp_type r
-  | Bool -> fprintf ppf "[Bool]"
-  | Unit -> fprintf ppf "[Unit]"
+module StringMap = Map.Make (String)
 
 (* NOTE: Fields and methods live in different namespaces. *)
 module type EnvironmentT = sig
@@ -51,26 +30,43 @@ module type EnvironmentT = sig
   val lookup_variable : t -> string -> type_
   val lookup_field : t -> type_ -> string -> type_
   val lookup_method : t -> type_ -> string -> (type_ * type_ list)
+  val object_layout : t -> type_ StringMap.t StringMap.t
 end
 
 module Environment : EnvironmentT = struct (* {{{ *)
-  module StringMap = Map.Make (String)
-  
   type t = 
     { variables : type_ StringMap.t
     ; fields_by_class : type_ StringMap.t StringMap.t
     ; methods_by_class : (type_ * type_ list) StringMap.t StringMap.t 
     ; line : int option }
 
-  let add_var m { declaration_variable = v; declaration_type = t } =
-    StringMap.add v (type_of_string t) m
+  let object_layout env = env.fields_by_class
+
+  let position env = match env.line with
+    | None -> "?"
+    | Some n -> string_of_int n
+
+  let err p c s = fail (position p) c s
+
+  let check_type env = function
+    | Bool | Unit -> ()
+    | Class c ->
+        if not (StringMap.mem c env.fields_by_class) then
+          err env "class not declared" c
+
+  let check_types_exist env =
+    let check_type = check_type env in
+    let check_method_type (r, args) =
+      check_type r; List.iter check_type args in
+    let map_check check vs = StringMap.iter (fun _ t -> check t) vs in
+    map_check check_type env.variables;
+    map_check (map_check check_type) env.fields_by_class;
+    map_check (map_check check_method_type) env.methods_by_class
+
+  let add_var vs { declaration_variable = v; declaration_type = t } =
+    StringMap.add v t vs
 
   let add_vars = List.fold_left add_var
-
-  let add_declarations m ds =
-    let add_one m { declaration_variable = v; declaration_type = t } =
-      StringMap.add v (type_of_string t) m in
-    List.fold_left add_one m ds
 
   let process_member (fs, ms) = function
     | Field d -> (add_var fs d, ms)
@@ -80,9 +76,8 @@ module Environment : EnvironmentT = struct (* {{{ *)
         ; method_formals = args
         ; method_body = _ }
       ->
-        let gt x = type_of_string x.declaration_type in
+        let gt x = x.declaration_type in
         let args = List.map gt args in
-        let r = type_of_string r in
         (fs, StringMap.add n (r, args) ms)
 
   let process_class (fbc, mbc) (cn, d) =
@@ -93,20 +88,19 @@ module Environment : EnvironmentT = struct (* {{{ *)
   let make { program_globals=gs; program_classes=cs; program_main=_ } =
     let fbc, mbc = StringMap.empty, StringMap.empty in
     let fbc, mbc = List.fold_left process_class (fbc, mbc) cs in
-    { variables = add_vars StringMap.empty gs
-    ; fields_by_class = fbc
-    ; methods_by_class = mbc 
-    ; line = None }
+    let env = 
+      { variables = add_vars StringMap.empty gs
+      ; fields_by_class = fbc
+      ; methods_by_class = mbc 
+      ; line = None } in
+    check_types_exist env;
+    env
 
   let update_line env line = { env with line = Some line }
 
-  let position env = match env.line with
-    | None -> "?"
-    | Some n -> string_of_int n
-
-  let err p c s = fail (position p) c s
-
-  let add_variables env d = { env with variables = add_vars env.variables d }
+  let add_variables env d =
+    List.iter (fun x -> check_type env x.declaration_type) d;
+    { env with variables = add_vars env.variables d }
 
   let lookup_variable env id =
     try StringMap.find id env.variables
@@ -130,7 +124,7 @@ module Environment : EnvironmentT = struct (* {{{ *)
     with Not_found -> err env "field not found" f
 end (* }}} *)
 
-let assert_types_match env t1 t2 =
+let check_types_match env t1 t2 =
   if t1 <> t2 then
     let p = Environment.position env in
     let info = 
@@ -145,15 +139,15 @@ let rec call env
   ; call_arguments = a }
 =
   let expression = expression env in
-  let assert_types_match = assert_types_match env in
+  let check_types_match = check_types_match env in
   let tr = expression r in 
   let tmr, tma = Environment.lookup_method env tr m in
   let ta = List.map expression a in
-  (try List.iter2 assert_types_match tma ta
+  (try List.iter2 check_types_match tma ta
   with Invalid_argument _ ->
     fail (Environment.position env) "wrong number of arguments" m);
   (match l with 
-    | Some l -> assert_types_match tmr (expression (Ref l)) 
+    | Some l -> check_types_match tmr (expression (Ref l)) 
     | _ -> ());
   Unit
 
@@ -162,40 +156,41 @@ and while_ env
   ; while_condition = c
   ; while_post_body = b2 }
 =
-  let assert_types_match = assert_types_match env in
+  let check_types_match = check_types_match env in
   let body = body env in
   let expression = expression env in
   let t1 = body b1 in let t2 = body b2 in
-  assert_types_match (expression c) Bool;
-  assert_types_match t1 t2; t1
+  check_types_match (expression c) Bool;
+  check_types_match t1 t2; t1
 
 and expression env =
   let expression x = expression env x in
-  let assert_types_match = assert_types_match env in
+  let check_types_match = check_types_match env in
   function
   | Ac (_, es) ->
       let ts = List.map expression es in
-      List.iter (assert_types_match Bool) ts; Bool
-  | Bin (l, o, r) -> assert_types_match (expression l) (expression r); Bool
-  | Not e -> assert_types_match (expression e) Bool; Bool
+      List.iter (check_types_match Bool) ts; Bool
+  | Bin (l, o, r) -> check_types_match (expression l) (expression r); Bool
+  | Not e -> check_types_match (expression e) Bool; Bool
   | Deref (e, f) -> Environment.lookup_field env (expression e) f
   | Ref s -> Environment.lookup_variable env s
 
 and statement env {ast = ast; line = line} = 
   let env = Environment.update_line env line in
-  let assert_types_match = assert_types_match env in
+  let check_types_match = check_types_match env in
   let expression = expression env in
   let body = body env in
   let call = call env in
   match ast with
     | Return e -> expression e
     | Assignment (s, e) -> 
-        assert_types_match (expression (Ref s)) (expression e); Unit
+        check_types_match (expression (Ref s)) (expression e); Unit
     | Call c -> call c
-    | Allocate s -> ignore (expression (Ref s)); Unit
+    | Allocate (s, t) -> 
+        check_types_match (expression (Ref s)) t; Unit
     | While w -> while_ env w
     | If (e, b) -> 
-        assert_types_match (expression e) Bool; body b
+        check_types_match (expression e) Bool; body b
 
 and body env (Body (d, s)) =
   map_find_not Unit (statement (Environment.add_variables env d)) s
@@ -211,7 +206,7 @@ let method_ env
     | Some b ->
         let env = Environment.add_variables env args in
         let tr = body env b in
-        assert_types_match env tr (type_of_string r)
+        check_types_match env tr r
 
 let class_ env (_, ds) =
   let f (fs, ms) = function
@@ -224,4 +219,5 @@ let class_ env (_, ds) =
 let program p =
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
-  body env p.program_main
+  ignore (body env p.program_main);
+  Environment.object_layout env
