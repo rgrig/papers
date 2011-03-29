@@ -21,9 +21,9 @@ class User
     return unit
 
 main
-  unit := new Unit
-  var User u := new User
-  var Collection c := new Collection
-  var Object o := new Object
+  unit := new
+  var User u := new
+  var Collection c := new
+  var Object o := new
   c.add(o)
   u.remove(c, o)

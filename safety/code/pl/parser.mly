@@ -73,12 +73,15 @@ main:
 member:
     VAR d=type_id 
       { Field d }
-  | d=type_id LP a=separated_list(COMMA, type_id) RP b=body? 
+  | d=type_id LP a=separated_list(COMMA, type_id) RP b=body?
       { Method
         { method_return_type = d.declaration_type
         ; method_name = d.declaration_variable
         ; method_formals = a
-        ; method_body = b } }
+        ; method_body = 
+            match b with 
+              | Some b -> b 
+              | None -> default_body $endpos.Lexing.pos_lnum } }
 
 type_id: 
     t=ID v=ID 
@@ -100,24 +103,15 @@ statement:
       { [Right(Return r)] }
   | VAR d=type_id
       { [Left d] }
-  | l=lhs ASGN NEW t=ID
-      { fst l @ 
-        [Right(Allocate (snd l, type_of_string t))] }
+  | l=lhs ASGN NEW
+      { fst l @ [Right(mk_allocate (snd l))] }
   | l=lhs ASGN e=expression
       { fst l @ 
         [Right(Assignment(snd l, e))] }
   | l=lhs ASGN r=expression DOT m=ID a=args
-      { fst l @ [Right(Call 
-        { call_lhs = Some(snd l)
-        ; call_receiver = r
-        ; call_method = m
-        ; call_arguments = a })] }
+      { fst l @ [Right(mk_call (Some(snd l)) r m a)] }
   | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
-      { [ Right(Call
-        { call_lhs = None
-        ; call_receiver = Ref r
-        ; call_method = m
-        ; call_arguments = a })] }
+      { [ Right(mk_call None (Ref r) m a) ] }
   | WHILE pre=body? c=expression post=body?
       { [Right(While
         { while_pre_body=from_option empty_body pre

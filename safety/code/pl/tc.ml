@@ -30,7 +30,6 @@ module type EnvironmentT = sig
   val lookup_variable : t -> string -> type_
   val lookup_field : t -> type_ -> string -> type_
   val lookup_method : t -> type_ -> string -> (type_ * type_ list)
-  val object_layout : t -> type_ StringMap.t StringMap.t
 end
 
 module Environment : EnvironmentT = struct (* {{{ *)
@@ -50,6 +49,7 @@ module Environment : EnvironmentT = struct (* {{{ *)
 
   let check_type env = function
     | Bool | Unit -> ()
+    | AnyType -> failwith "AnyType should not be created by parser."
     | Class c ->
         if not (StringMap.mem c env.fields_by_class) then
           err env "class not declared" c
@@ -125,28 +125,27 @@ module Environment : EnvironmentT = struct (* {{{ *)
 end (* }}} *)
 
 let check_types_match env t1 t2 =
-  if t1 <> t2 then
+  if t1 <> t2 && t1 <> AnyType && t2 <> AnyType then
     let p = Environment.position env in
     let info = 
       fprintf str_formatter "@[%a and %a@]"
           pp_type t1 pp_type t2; flush_str_formatter () in
     fail p "type mismatch" info
 
-let rec call env
-  { call_lhs = l
-  ; call_receiver = r
-  ; call_method = m
-  ; call_arguments = a }
-=
+let rec call env c =
   let expression = expression env in
   let check_types_match = check_types_match env in
-  let tr = expression r in 
-  let tmr, tma = Environment.lookup_method env tr m in
-  let ta = List.map expression a in
+  let string_of_class = function
+    | Class c -> c
+    | _ -> fail (Environment.position env) "expected class, not primitive" "" in
+  let tr = expression c.call_receiver in 
+  let tmr, tma = Environment.lookup_method env tr c.call_method in
+  let ta = List.map expression c.call_arguments in
+  c.call_class <- Some (string_of_class tr);
   (try List.iter2 check_types_match tma ta
   with Invalid_argument _ ->
-    fail (Environment.position env) "wrong number of arguments" m);
-  (match l with 
+    fail (Environment.position env) "wrong number of arguments" c.call_method);
+  (match c.call_lhs with 
     | Some l -> check_types_match tmr (expression (Ref l)) 
     | _ -> ());
   Unit
@@ -167,27 +166,33 @@ and expression env =
   let expression x = expression env x in
   let check_types_match = check_types_match env in
   function
-  | Ac (_, es) ->
-      let ts = List.map expression es in
-      List.iter (check_types_match Bool) ts; Bool
-  | Bin (l, o, r) -> check_types_match (expression l) (expression r); Bool
-  | Not e -> check_types_match (expression e) Bool; Bool
-  | Deref (e, f) -> Environment.lookup_field env (expression e) f
-  | Ref s -> Environment.lookup_variable env s
+    | Ac (_, es) ->
+        let ts = List.map expression es in
+        List.iter (check_types_match Bool) ts; Bool
+    | Bin (l, o, r) -> check_types_match (expression l) (expression r); Bool
+    | Not e -> check_types_match (expression e) Bool; Bool
+    | Deref (e, f) -> Environment.lookup_field env (expression e) f
+    | Ref s -> Environment.lookup_variable env s
+    | Literal _ -> AnyType
+
+and allocate env a =
+  let expression = expression env in
+  let t = expression (Ref a.allocate_lhs) in
+  a.allocate_type <- Some t; Unit
 
 and statement env {ast = ast; line = line} = 
   let env = Environment.update_line env line in
-  let check_types_match = check_types_match env in
-  let expression = expression env in
+  let allocate = allocate env in
   let body = body env in
   let call = call env in
+  let check_types_match = check_types_match env in
+  let expression = expression env in
   match ast with
     | Return e -> expression e
     | Assignment (s, e) -> 
         check_types_match (expression (Ref s)) (expression e); Unit
     | Call c -> call c
-    | Allocate (s, t) -> 
-        check_types_match (expression (Ref s)) t; Unit
+    | Allocate a -> allocate a
     | While w -> while_ env w
     | If (e, b) -> 
         check_types_match (expression e) Bool; body b
@@ -201,12 +206,9 @@ let method_ env
   ; method_formals = args
   ; method_body = b }
 =
-  match b with
-    | None -> ()
-    | Some b ->
-        let env = Environment.add_variables env args in
-        let tr = body env b in
-        check_types_match env tr r
+  let env = Environment.add_variables env args in
+  let tr = body env b in
+  check_types_match env tr r
 
 let class_ env (_, ds) =
   let f (fs, ms) = function
@@ -219,5 +221,4 @@ let class_ env (_, ds) =
 let program p =
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
-  ignore (body env p.program_main);
-  Environment.object_layout env
+  body env p.program_main
