@@ -111,28 +111,36 @@ let vars ds = List.map (fun x -> x.declaration_variable) ds
 let assign_value state x v =
   begin try 
       { state with locals = Stack.write state.locals x v }, None
-    with Error _ -> begin try
+    with _ -> begin try
       let this = Stack.read state.locals "this" in
       { state with heap = Heap.write state.heap this x v }, None
-    with Error _ ->
+    with _ ->
       { state with globals = Stack.write state.globals x v }, None
+  end end
+
+let read_value state x =
+  begin try
+      Stack.read state.locals x
+    with _ -> begin try
+      Heap.read state.heap (Stack.read state.locals "this") x
+    with _ ->
+      Stack.read state.globals x
   end end
 
 (* }}} *)
 
-let rec expression state = function
-  (* XXX must take last bit before doing boolean operations *)
-  | Ac (Or, xs) -> List.fold_left max 0 (List.map (expression state) xs)
-  | Ac (And, xs) -> List.fold_left min 1 (List.map (expression state) xs)
-  | Bin (l, op, r) ->
-      let l = expression state l in
-      let r = expression state r in
-      if (l = r) = (op = Eq) then 1 else 0
-  | Not e -> 1 - expression state e
-  | Deref (_, _) -> eprintf "@[todo: expression Deref@."; 0
-  | Ref _ -> eprintf "@[todo: expression Ref@."; 0
-  | Literal None -> read_input ()
-  | Literal (Some x) -> x
+let rec expression state =
+  let bool_expression x = expression state x land 1 in
+  function
+    | Ac (Or, xs) -> List.fold_left max 0 (List.map bool_expression xs)
+    | Ac (And, xs) -> List.fold_left min 1 (List.map bool_expression xs)
+    | Bin (l, op, r) ->
+        if (expression state l = expression state r) = (op = Eq) then 1 else 0
+    | Not e -> 1 - expression state e
+    | Deref (e, f) -> Heap.read state.heap (expression state e) f
+    | Ref x -> read_value state x
+    | Literal None -> read_input ()
+    | Literal (Some x) -> x
 
 let rec assignment state x e =
   assign_value state x (expression state e)
@@ -163,15 +171,19 @@ and allocate state { allocate_lhs = x; allocate_type = t} =
     | AnyType -> 
         failwith "Huh? Only literals are polymorphic, and they're not on lhs."
 
-and while_ state 
-  { while_pre_body = _
-  ; while_condition = _
-  ; while_post_body = _ }
-=
-  eprintf "@[todo: while@."; state, None
+and while_ state loop =
+  let state, value = body state loop.while_pre_body in
+  if value <> None then state, value else
+  if expression state loop.while_condition land 1 = 0 then state, None else
+  let state, value = body state loop.while_post_body in
+  if value <> None then state, value else
+  while_ state loop
 
-and if_ state _ _ =
-  eprintf "@[todo: if@."; state, None
+and if_ state c b =
+  if expression state c land 1 <> 0 then
+    body state b
+  else
+    state, None
 
 and statement state = function
   | Return e -> (state, Some (expression state e))
