@@ -53,6 +53,7 @@ rule tok1 = parse
             { l OR }
   | '}'     { l RB }
   | ')'     { l RP }
+  | '*'     { l STAR }
   | ['a'-'z' 'A'-'Z']+ as id
             { l (try Hashtbl.find keyword_table id with Not_found -> ID id) }
   | eof     { l EOF }

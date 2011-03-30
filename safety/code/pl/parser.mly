@@ -1,11 +1,7 @@
 %{
   open Ast
   open Format
-
-  type ('a, 'b) either = Left of 'a | Right of 'b
-  let either a b = function Left x -> a x | Right x -> b x
-
-  let from_option a = function None -> a | Some a -> a
+  open Util
 
   let type_of_string = function
     | "Bool" -> Bool
@@ -34,6 +30,7 @@
 %token RB
 %token RETURN
 %token RP
+%token STAR
 %token THIS
 %token VAR
 %token WHILE
@@ -142,6 +139,8 @@ atom:
       { r }
   | r=ref_ 
       { Ref r }
+  | STAR
+      { Literal None }
 
 %inline binop:
     EQ

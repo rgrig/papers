@@ -2,9 +2,12 @@ open Ast
 open Format
 open Scanf
 
+module S = Stack (* save OCaml's stack module *)
+
 (* State *) (* {{{ *)
 
-exception Error of string
+exception Variable_missing
+exception Bad_access
 
 type value = int
 type variable = string
@@ -12,7 +15,13 @@ type variable = string
 module type StackT = sig
   type t
   val empty : t
-  val add_variable : t -> variable -> t
+
+  (* These hide older variables with the same name. *)
+  val init_variable : t -> variable -> value -> t
+  val add_variable : t -> variable -> t 
+    (* [init_variable] with random value *)
+
+  (* These two throw [Variable_missing] if the variable wasn't added earlier. *)
   val write : t -> variable -> value -> t
   val read : t -> variable -> value
 end
@@ -20,7 +29,10 @@ end
 module type HeapT = sig
   type t
   val empty : t
-  val add_object : t -> variable list -> (t * value)
+  val new_object : t -> variable list -> (t * value)
+
+  (* These two throw [Bad_access] if the object is not allocated
+     and [Variable_missing] if there's no field with that name. *)
   val write : t -> value -> variable -> value -> t
   val read : t -> value -> variable -> value
 end
@@ -34,9 +46,14 @@ module IntMap = Map.Make (struct type t = int let compare = compare end)
 module Stack : StackT = struct
   type t = value StringMap.t
   let empty = StringMap.empty
-  let add_variable s v = StringMap.add v (read_input ()) s
-  let write s v x = StringMap.add v x s
-  let read s v = StringMap.find v s (* If Not_found, then fix typechecker. *)
+  let init_variable s x v = StringMap.add x v s
+  let add_variable s x = init_variable s x (read_input ())
+  let write s x v =
+    if not (StringMap.mem x s) then raise Variable_missing;
+    StringMap.add x v s
+  let read s x =
+    try StringMap.find x s
+    with Not_found -> raise Variable_missing
 end
 
 module Heap : HeapT = struct
@@ -44,26 +61,21 @@ module Heap : HeapT = struct
 
   let empty = IntMap.empty, 0
 
-  let add_object (h, cnt) fs =
+  let new_object (h, cnt) fs =
     let add_field s f = StringMap.add f (read_input ()) s in
     let s = List.fold_left add_field StringMap.empty fs in
     let h = IntMap.add cnt s h in
     ((h, succ cnt), cnt)
 
   let write (h, cnt) p f x =
-    try
-      let fs = IntMap.find p h in
-      assert (StringMap.mem f fs); (* otherwise, fix typechecker *)
-      let fs = StringMap.add f x fs in
-      (IntMap.add p fs h, cnt)
-    with Not_found -> raise (Error "bad write")
+    let fs = try IntMap.find p h with Not_found -> raise Bad_access in
+    if not (StringMap.mem f fs) then raise Variable_missing;
+    let fs = StringMap.add f x fs in
+    (IntMap.add p fs h, cnt)
 
   let read (h, cnt) p f =
-    try
-      let fs = IntMap.find p h in
-      assert (StringMap.mem f fs); (* otherwise, fix typechecker *)
-      StringMap.find f fs
-    with Not_found -> raise (Error "bad read")
+    let fs = try IntMap.find p h with Not_found -> raise Bad_access in
+    try StringMap.find f fs with Not_found -> raise Variable_missing
 end
 (* }}} *)
 
@@ -104,6 +116,16 @@ let preprocess cs =
   List.iter preprocess_class cs
 
 (* }}} *)
+(* error reporting *) (* {{{ *)
+
+let location_stack = S.create ()
+let fault () =
+  let location =
+    try sprintf "@[%d@]" (S.top location_stack)
+    with S.Empty -> "?" in
+  eprintf "@[%s: memory fault@." location
+
+(* }}} *)
 (* helpers *) (* {{{ *)
 
 let vars ds = List.map (fun x -> x.declaration_variable) ds
@@ -111,20 +133,22 @@ let vars ds = List.map (fun x -> x.declaration_variable) ds
 let assign_value state x v =
   begin try 
       { state with locals = Stack.write state.locals x v }, None
-    with _ -> begin try
+    with Variable_missing -> begin try
       let this = Stack.read state.locals "this" in
       { state with heap = Heap.write state.heap this x v }, None
-    with _ ->
+    with Variable_missing ->
       { state with globals = Stack.write state.globals x v }, None
+      (* if Variable_missing is thrown here, that's a typechecker bug *)
   end end
 
 let read_value state x =
   begin try
       Stack.read state.locals x
-    with _ -> begin try
+    with Variable_missing -> begin try
       Heap.read state.heap (Stack.read state.locals "this") x
-    with _ ->
+    with Variable_missing ->
       Stack.read state.globals x
+      (* if Variable_missing is thrown here, that's a typechecker bug *)
   end end
 
 (* }}} *)
@@ -148,10 +172,10 @@ let rec assignment state x e =
 and call state c = 
   let k = Util.from_some c.call_class, c.call_method in
   let m = StringPairMap.find k !methods in
-  let formals = "this" :: vars m.method_formals in
-  let actuals = c.call_receiver :: c.call_arguments in
-  let actuals = List.map (expression state) actuals in 
-  let new_locals = List.fold_left2 Stack.write Stack.empty formals actuals in
+  let f = "this" :: vars m.method_formals in
+  let a = c.call_receiver :: c.call_arguments in
+  let a = List.map (expression state) a in 
+  let new_locals = List.fold_left2 Stack.init_variable Stack.empty f a in
   let old_locals = state.locals in
   let state, value = body { state with locals = new_locals } m.method_body in
   let state = { state with locals = old_locals } in
@@ -165,7 +189,7 @@ and allocate state { allocate_lhs = x; allocate_type = t} =
     | Bool -> assign_value state x (read_input () land 1)
     | Class c ->
         let fields = StringMap.find c !fields in
-        let nh, no = Heap.add_object state.heap fields in
+        let nh, no = Heap.new_object state.heap fields in
         let ns = { state with heap = nh } in
         assign_value ns x no
     | AnyType -> 
@@ -196,8 +220,11 @@ and statement state = function
 and body state (Body (ds, ss)) =
   let state = { state with 
     locals = List.fold_left Stack.add_variable state.locals (vars ds) } in
-  let f acc { ast = s; line = _ } = match acc with
-    | (state, None) -> statement state s
+  let f acc { ast = s; line = line } = match acc with
+    | (state, None) ->
+        S.push line location_stack;
+        let r = statement state s in
+        ignore (S.pop location_stack); r
     | x -> x in
   List.fold_left f (state, None) ss
 
@@ -206,7 +233,8 @@ let program p =
   let globals = List.fold_left Stack.add_variable Stack.empty gs in
   let state = { globals = globals; heap = Heap.empty; locals = Stack.empty } in
   preprocess p.program_classes;
-  body state p.program_main
+  try ignore (body state p.program_main)
+  with Bad_access -> fault ()
 
 (* }}} *)
 (* driver *) (* {{{ *)
