@@ -210,12 +210,14 @@ let method_ env
   let tr = body env b in
   check_types_match env tr r
 
-let class_ env (_, ds) =
+let class_ env (c, ds) =
   let f (fs, ms) = function
     | Field f -> (f :: fs, ms)
     | Ast.Method m -> (fs, m :: ms) in
   let fs, ms = List.fold_left f ([], []) ds in
   let env = Environment.add_variables env fs in
+  let env = Environment.add_variables env
+    [{declaration_type=Class c; declaration_variable="this"}] in
   List.iter (method_ env) (List.rev ms)
 
 let program p =

@@ -1,3 +1,4 @@
+- finish examples/bierhof2 (add literals)
 - more examples
 - example automaton
 - parser for automatons
@@ -10,6 +11,9 @@ notes (low priority todos):
  - statement to havoc all (use as default body)
  - tc should reject name clashes
  - allow 'var x' without type
- - better line number info
+ - better line number info for these errors
     - wrong return type
  - comments should be treated as ws by indentation grouping
+ - pure expressions are fine and nice, but it's rather annoying
+   to not have function calls in expression; can I allow them as
+   syntactic sugar?

@@ -34,10 +34,9 @@
 
 rule tok1 = parse
   | '\t'    { raise Error }
-  | ((' '* '\n')+ as x) (' '* as y)
+  | ((' '* ("//" [^ '\n']*)? '\n')+ as x) (' '* as y)
             { new_line x y lexbuf }
   | ' '+    { tok1 lexbuf }
-  | "(*"    { comment tok1 lexbuf } (* XXX Should I call new_line? *)
   | "/\\" | "&&"
             { l AND }
   | ":="    { l ASGN }
@@ -54,17 +53,10 @@ rule tok1 = parse
   | '}'     { l RB }
   | ')'     { l RP }
   | '*'     { l STAR }
-  | ['a'-'z' 'A'-'Z']+ as id
+  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* as id
             { l (try Hashtbl.find keyword_table id with Not_found -> ID id) }
   | eof     { l EOF }
   | _       { raise Error }
-
-and comment out = parse
-    "*)" { out lexbuf }
-  | "(*" { comment (comment out) lexbuf }
-  | '\n' { Lexing.new_line lexbuf; comment out lexbuf }
-  | eof  { l EOF }
-  | _    { comment out lexbuf }
 
 {
   (* EXERCISE: Write it with continuations. *)

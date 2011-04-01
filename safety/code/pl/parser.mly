@@ -35,8 +35,8 @@
 %token VAR
 %token WHILE
 
-%left EQ NE
 %left OR AND
+%left EQ NE
 %nonassoc NOT
 %left DOT
 (* }}} *)
