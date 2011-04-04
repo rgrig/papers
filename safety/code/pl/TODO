@@ -1,5 +1,3 @@
-- finish examples/bierhof2 (add literals)
-- more examples
 - example automaton
 - parser for automatons
 - ast for automatons
@@ -8,12 +6,15 @@
 - ...
 
 notes (low priority todos):
+ - more examples
  - statement to havoc all (use as default body)
+ - it's very ugly that referring to fields and referring to methods is different
+    - field  -- "this" is prohibited
+    - this.method() -- "this" is required
  - tc should reject name clashes
- - allow 'var x' without type
  - better line number info for these errors
     - wrong return type
- - comments should be treated as ws by indentation grouping
  - pure expressions are fine and nice, but it's rather annoying
    to not have function calls in expression; can I allow them as
    syntactic sugar?
+ - Generate this language from Java bytecode? It should be easy with ASM.

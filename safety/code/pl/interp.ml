@@ -138,7 +138,6 @@ let assign_value state x v =
       { state with heap = Heap.write state.heap this x v }, None
     with Variable_missing ->
       { state with globals = Stack.write state.globals x v }, None
-      (* if Variable_missing is thrown here, that's a typechecker bug *)
   end end
 
 let read_value state x =
@@ -148,7 +147,6 @@ let read_value state x =
       Heap.read state.heap (Stack.read state.locals "this") x
     with Variable_missing ->
       Stack.read state.globals x
-      (* if Variable_missing is thrown here, that's a typechecker bug *)
   end end
 
 (* }}} *)
@@ -234,7 +232,11 @@ let program p =
   let state = { globals = globals; heap = Heap.empty; locals = Stack.empty } in
   preprocess p.program_classes;
   try ignore (body state p.program_main)
-  with Bad_access -> fault ()
+  with Bad_access | Variable_missing -> fault ()
+  (* Variable_missing may happend when accessing a field of an object that
+     was not allocated. (Or if the typechecker is faulty and the variable
+     really isn't in scope. Or the interpreter is faulty and a variable that
+     should be in scope is not. *)
 
 (* }}} *)
 (* driver *) (* {{{ *)

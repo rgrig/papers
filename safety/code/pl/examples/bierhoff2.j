@@ -6,6 +6,9 @@
 // might try to check that ByteArray is used such that get(index) is
 // always preceded by set(index, _).
 
+// NOTE: There is one more example in the Modular Typestates paper that
+// is about checking an implementation in the presence of inheritance.
+
 // Some stubs, for things that are not built in the language.
 class Byte {}
 

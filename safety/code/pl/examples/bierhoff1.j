@@ -28,6 +28,5 @@ main
   if (hasNext && cSize == *)  // * is really 3 in the original
     var Object o := it.next()
     c.remove(o)
-    hasNext := it.hasNext()
-    if (hasNext) {} // Illegal
+    hasNext := it.hasNext() // Illegal
   var Iterator it3 := c.iterator()

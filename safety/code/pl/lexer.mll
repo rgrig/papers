@@ -35,7 +35,7 @@
 
 rule tok1 = parse
   | '\t'    { raise Error }
-  | ((' '* ("//" [^ '\n']*)? '\n')+ as x) (' '* as y)
+  | ((' '* (("//" | ';') [^ '\n']*)? '\n')+ as x) (' '* as y)
             { new_line x y lexbuf }
   | ' '+    { tok1 lexbuf }
   | "/\\" | "&&"
