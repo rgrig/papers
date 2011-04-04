@@ -15,6 +15,7 @@
 %token ASGN
 %token CLASS
 %token COMMA
+%token DO
 %token DOT
 %token ELSE
 %token EQ
@@ -109,7 +110,7 @@ statement:
       { fst l @ [Right(mk_call (Some(snd l)) r m a)] }
   | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
       { [ Right(mk_call None (Ref r) m a) ] }
-  | WHILE pre=body? c=expression post=body?
+  | pre=do_part? WHILE c=expression post=body?
       { [Right(While
         { while_pre_body=from_option empty_body pre
         ; while_condition=c
@@ -117,6 +118,10 @@ statement:
   | IF c=expression i=body e=else_?
       { [Right(If(c,i))] 
         @ (match e with None -> [] | Some e -> [Right(If(Not c, e))]) }
+
+do_part:
+    DO b=body
+      { b }
 
 lhs:
   VAR d=type_id { ([Left d], d.declaration_variable) } (* sugar *)

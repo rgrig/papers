@@ -1,3 +1,11 @@
+// Bierhoff and Aldrich annotate and check the correctness of this
+// implementation. Our whole approach is focused on checking how an API
+// is used, rather than on how it is implemented. Of course, each API
+// is implemented in lower-level APIs, so in some cases we might help
+// a bit with correctness checking. For example, in the code below we
+// might try to check that ByteArray is used such that get(index) is
+// always preceded by set(index, _).
+
 // Some stubs, for things that are not built in the language.
 class Byte {}
 
@@ -9,6 +17,7 @@ class ByteArray
 
 class Int
   Unit increment()
+  Unit fromByte(Byte b)
   Bool lt(Int x)
   Bool le(Int x)
   Byte toByte()
@@ -45,7 +54,7 @@ class PipedInputStream
 
   Unit receive(Int b)
     var Bool c  // condition
-    while {} (in == out) {}
+    while (in == out) {}
     c := in.lt(*) // was 0
     if c
       in := * // was 0
@@ -58,11 +67,28 @@ class PipedInputStream
     if c { in := * } // was 0
  
   Unit receivedLast() { closedByWriter := * } // was 1
-  Int read()  // says "analogous to receive()", TODO
+
+  Int read()
+    var Bool c
+    do { c:=in.lt(*)} // * should be 0
+    while (in == out || c) {}
+    var Byte r := buffer.get(in)
+    var Int rr := new
+    rr.fromByte(r)
+    in.increment()
+    return rr
 
   Unit close()
     closedByReader := * // was 1
     in := * // was -1
 
-main {}
-  // TODO
+main
+  var PipedInputStream i := new
+  var PipedOutputStream o := new
+  var Int x
+  i.init(o)
+  o.connect(i)
+  o.write(x)
+  o.close()
+  x := i.read()
+  i.close()

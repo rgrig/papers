@@ -1,3 +1,3 @@
 main
   var X x
-  x := new X
+  x := new

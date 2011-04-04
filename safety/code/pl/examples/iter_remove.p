@@ -15,7 +15,8 @@ class User
   Unit remove(Collection c, Object x)
     var Bool hasNext
     var Iterator i := c.iterator()
-    while { hasNext := i.hasNext() } ( hasNext )
+    do { hasNext := i.hasNext() } 
+    while hasNext
       var Object y := i.next()
       if x == y { i.remove() }
     return unit

@@ -21,6 +21,7 @@
   let _ = List.iter (fun (k, v) -> Hashtbl.add keyword_table k v)
     [ "and", AND
     ; "class", CLASS
+    ; "do", DO
     ; "else", ELSE
     ; "if", IF
     ; "main", MAIN
