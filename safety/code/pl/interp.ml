@@ -231,8 +231,11 @@ let program p =
   let globals = List.fold_left Stack.add_variable Stack.empty gs in
   let state = { globals = globals; heap = Heap.empty; locals = Stack.empty } in
   preprocess p.program_classes;
-  try ignore (body state p.program_main)
-  with Bad_access | Variable_missing -> fault ()
+  (match p.program_main with
+    | None -> ()
+    | Some m -> 
+        (try ignore (body state m)
+        with Bad_access | Variable_missing -> fault ()))
   (* Variable_missing may happend when accessing a field of an object that
      was not allocated. (Or if the typechecker is faulty and the variable
      really isn't in scope. Or the interpreter is faulty and a variable that

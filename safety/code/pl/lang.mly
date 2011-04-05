@@ -1,70 +1,21 @@
 %{
-  open Ast
-  open Format
-  open Util
-
   let type_of_string = function
     | "Bool" -> Bool
     | "Unit" -> Unit
     | x -> Class x
 %}
 
-(* tokens and precedences {{{ *)
-%token <string> ID
-%token AND
-%token ASGN
-%token CLASS
-%token COMMA
-%token DO
-%token DOT
-%token ELSE
-%token EQ
-%token EOF
-%token IF
-%token LB
-%token LP
-%token MAIN
-%token NE
-%token NEW
-%token NOT
-%token OR
-%token RB
-%token RETURN
-%token RP
-%token STAR
-%token THIS
-%token VAR
-%token WHILE
-
-%left OR AND
-%left EQ NE
-%nonassoc NOT
-%left DOT
-(* }}} *)
-
-%start <Ast.program> program
-
 %%
 
-with_line(X):
-    x=X { { ast = x; line = $startpos.Lexing.pos_lnum } }
+%public class_:
+    CLASS c=ID LB m=member* RB
+      { (c, m) }
 
-program: 
-    a=global* m=main b=global* EOF
-      { let f x = [x] in
-        let g x = [] in
-        let get f g x = List.concat (List.map (either f g) x) in
-        { program_classes = get f g a @ get f g b
-        ; program_globals = get g f a @ get g f b
-        ; program_main = m } }
+%public global:
+    VAR d=type_id 
+      { d }
 
-global:
-    CLASS c=ID LB m=member* RB 
-      { Left(c, m) }
-  | VAR d=type_id 
-      { Right d }
-
-main: 
+%public main:
     MAIN b=body 
       { b }
 
@@ -82,7 +33,7 @@ member:
               | None -> default_body $endpos.Lexing.pos_lnum } }
 
 type_id: 
-    t=ID v=ID 
+    t=ID v=ID
       { { declaration_type = type_of_string t; declaration_variable = v } }
 
 body: 
@@ -108,7 +59,7 @@ statement:
         [Right(Assignment(snd l, e))] }
   | l=lhs ASGN r=expression DOT m=ID a=args
       { fst l @ [Right(mk_call (Some(snd l)) r m a)] }
-  | r=ref_ DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
+  | r=ID DOT m=ID a=args (* if lhs may start with (, then grammar would be ambiguous *)
       { [ Right(mk_call None (Ref r) m a) ] }
   | pre=do_part? WHILE c=expression post=body?
       { [Right(While
@@ -125,10 +76,10 @@ do_part:
 
 lhs:
   VAR d=type_id { ([Left d], d.declaration_variable) } (* sugar *)
-  | r=ref_ { ([], r) }
+  | r=ID { ([], r) }
 
 expression:
-    r=atom 
+    r=atom
       { r }
   | l=expression op=binop r=expression
       { Bin (l, op, r) }
@@ -139,11 +90,13 @@ expression:
   | NOT r=expression
       { Not r }
 
-atom:
+%public atom:
     LP r=expression RP
       { r }
-  | r=ref_ 
+  | r=ID
       { Ref r }
+  | n=NUMBER
+      { Literal(Some n) }
   | STAR
       { Literal None }
 
@@ -159,15 +112,9 @@ atom:
   | AND
       { And }
 
-args: 
-    LP r=separated_list(COMMA, expression) RP 
+%public args:
+    LP r=separated_list(COMMA, expression) RP
       { r }
-
-ref_: 
-    s=ID
-      { s }
-  | THIS 
-      { "this" }
 
 else_:
     ELSE b=body 

@@ -16,22 +16,29 @@
       Lexing.pos_bol = lcp.Lexing.pos_cnum - n
     };
     r n
- 
-  let keyword_table = Hashtbl.create 53
-  let _ = List.iter (fun (k, v) -> Hashtbl.add keyword_table k v)
-    [ "and", AND
-    ; "class", CLASS
-    ; "do", DO
-    ; "else", ELSE
-    ; "if", IF
-    ; "main", MAIN
-    ; "new", NEW
-    ; "or", OR
-    ; "return", RETURN
-    ; "this", THIS
-    ; "var", VAR
-    ; "while", WHILE ]
+
+  let keyword =
+    let table = Hashtbl.create 53 in
+    List.iter (fun (k, v) -> Hashtbl.add table k v)
+      [ "and", AND
+      ; "class", CLASS
+      ; "do", DO
+      ; "else", ELSE
+      ; "false", NUMBER 0
+      ; "if", IF
+      ; "main", MAIN
+      ; "new", NEW
+      ; "or", OR
+      ; "property", PROPERTY
+      ; "return", RETURN
+      ; "true", NUMBER 1
+      ; "var", VAR
+      ; "while", WHILE ];
+    fun id -> l (try Hashtbl.find table id with Not_found -> ID id)
 }
+
+let id_head = ['a'-'z' 'A'-'Z']
+let id_tail = ['a'-'z' 'A'-'Z' '0'-'9']*
 
 rule tok1 = parse
   | '\t'    { raise Error }
@@ -40,7 +47,9 @@ rule tok1 = parse
   | ' '+    { tok1 lexbuf }
   | "/\\" | "&&"
             { l AND }
+  | "->"    { l ARROW }
   | ":="    { l ASGN }
+  | ":"     { l COLON }
   | ','     { l COMMA }
   | '.'     { l DOT }
   | "=="    { l EQ }
@@ -54,8 +63,9 @@ rule tok1 = parse
   | '}'     { l RB }
   | ')'     { l RP }
   | '*'     { l STAR }
-  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* as id
-            { l (try Hashtbl.find keyword_table id with Not_found -> ID id) }
+  | '"' ([^ '"' '\n']* as x) '"'
+            { l (STRING x) }
+  | id_head id_tail as id { keyword id }
   | eof     { l EOF }
   | _       { raise Error }
 

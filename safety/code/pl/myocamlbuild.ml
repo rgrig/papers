@@ -1,3 +1,9 @@
+(* 
+  NOTE: This is copied from ocamlbuild's wiki, and modified a little.  Its main
+  purpose is to use ocamlfind to link to libraries such as the one that comes
+  with menhir. This should be built-in starting with 3.12.
+*)
+
 open Ocamlbuild_plugin
 
 (* these functions are not really officially exported *)

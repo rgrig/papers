@@ -65,7 +65,7 @@ type class_ = string * member list
 type program =
   { program_globals : declaration list
   ; program_classes : class_ list
-  ; program_main : body }
+  ; program_main : body option }
 
 (* utilities *) (* {{{ *)
 

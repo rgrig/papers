@@ -223,4 +223,6 @@ let class_ env (c, ds) =
 let program p =
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
-  body env p.program_main
+  (match p.program_main with
+    | None -> ()
+    | Some m -> ignore (body env m))

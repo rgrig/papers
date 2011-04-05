@@ -1,3 +1,22 @@
+property "trying to advance an iterator on a collection modified by another iterator"
+  start -> gotOne:    I := C.iterator()
+  gotOne -> gotTwo:   J := c.iterator()
+  gotTwo -> jInvalid: i.remove()
+  gotTwo -> iInvalid: j.remove()
+  jInvalid -> error:  j.next()
+  iInvalid -> error:  i.next()
+
+property "trying to advance an iterator on a modified collection"
+  start -> tracking:    I := C.iterator()
+  tracking -> modified: c.add(*), c.remove(*)
+  modified -> error:    i.next()
+
+property "trying to advance an iterator past the end"
+  start -> tracking:    I := *.iterator()
+  tracking -> notAtEnd: true := i.hasNext()
+  notAtEnd -> tracking: i.next()
+  tracking -> error:    i.next()
+
 class Object {}
 
 class Iterator
