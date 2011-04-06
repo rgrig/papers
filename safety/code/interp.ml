@@ -4,6 +4,9 @@ open Scanf
 
 module S = Stack (* save OCaml's stack module *)
 
+(* knobs *) (* {{{ *)
+let run_properties = ref false
+(* }}} *)
 (* State *) (* {{{ *)
 
 exception Variable_missing
@@ -47,7 +50,7 @@ module Stack : StackT = struct
   type t = value StringMap.t
   let empty = StringMap.empty
   let init_variable s x v = StringMap.add x v s
-  let add_variable s x = init_variable s x (read_input ())
+  let add_variable s x = init_variable s x (-1)
   let write s x v =
     if not (StringMap.mem x s) then raise Variable_missing;
     StringMap.add x v s
