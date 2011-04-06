@@ -1,0 +1,12 @@
+#/bin/bash
+if (( $# != 1 )); then
+  echo Tell the last commit you announced.
+  exit 1
+fi
+echo "From: Radu Grigore <radu.grigore@eecs.qmul.ac.uk>"
+#echo "To: radugrigore@gmail.com"
+echo "To: rusmus@dcs.qmul.ac.uk,ddino@eecs.qmul.ac.uk,radugrigore@gmail.com"
+echo -n "Subject: [safety] commit(s): "
+git diff $1..HEAD --shortstat
+echo
+git log $1.. --pretty=format:"%ci%nhttp://github.com/rgrig/papers/commit/%h%n%w(80,2,2)%s%n%b" --reverse -- .
