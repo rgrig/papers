@@ -1,5 +1,3 @@
-- ast for automatons
-- TC for automatons
 - interpreter with automata
 - intialize with 0; random must be explicit (and is non-0)
 - ...

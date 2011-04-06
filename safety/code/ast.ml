@@ -1,12 +1,13 @@
 open Format
 
+(* common parts at the bottom: expressions mostly *) (* {{{ *)
 type binop = Eq | Ne
 type acop = Or | And
 
 type 'a with_line = { ast : 'a; line : int }
 
 type type_ =
-    Class of string
+  | Class of string
   | Bool
   | Unit
   | AnyType (* used while typechecking polymorphic literals *)
@@ -19,6 +20,9 @@ type expression =
   | Deref of expression * string
   | Ref of string
   | Literal of int option
+
+(* }}} *)
+(* parts used only by programs. *) (* {{{ *)
 
 type declaration =
   { declaration_type : type_
@@ -62,11 +66,37 @@ type member =
 
 type class_ = string * member list
 
+(* }}} *)
+(* parts used only by properties *) (* {{{ *)
+module Property = struct
+
+  (* Compare with [call_statement] above. *)
+  type label =
+    { label_lhs : expression
+    ; label_receiver : expression
+    ; label_method : string
+    ; label_arguments : expression list }
+
+  type edge =
+    { edge_source : string
+    ; edge_target : string
+    ; edge_label : label }
+
+  type t =
+    { message : string
+    ; edges: edge list }
+
+end
+(* }}} *)
+(* top level common parts: the big list corresponding to common.mly *)
+
 type program =
   { program_globals : declaration list
   ; program_classes : class_ list
-  ; program_main : body option }
+  ; program_main : body option 
+  ; program_properties : Property.t list }
 
+(* }}} *)
 (* utilities *) (* {{{ *)
 
 let mk_allocate v = Allocate { allocate_lhs = v; allocate_type = None }

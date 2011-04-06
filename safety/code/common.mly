@@ -55,7 +55,10 @@ program:
   | property t=program
       { eprintf "DBG: skip a property"; t } 
   | EOF
-      { { program_classes = []; program_globals = []; program_main = None } }
+      { { program_classes = []
+        ; program_globals = []
+        ; program_main = None
+        ; program_properties = []  } }
 
 %public with_line(X):
     x=X { { ast = x; line = $startpos.Lexing.pos_lnum } }
