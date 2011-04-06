@@ -1,8 +1,7 @@
-- example automaton
-- parser for automatons
 - ast for automatons
 - TC for automatons
 - interpreter with automata
+- intialize with 0; random must be explicit (and is non-0)
 - ...
 
 notes (low priority todos):
@@ -18,3 +17,5 @@ notes (low priority todos):
    to not have function calls in expression; can I allow them as
    syntactic sugar?
  - Generate this language from Java bytecode? It should be easy with ASM.
+ - Generate jstar core from this language.
+ - Generate Boogie from this language.
