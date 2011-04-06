@@ -7,6 +7,6 @@ echo "From: Radu Grigore <radu.grigore@eecs.qmul.ac.uk>"
 #echo "To: radugrigore@gmail.com"
 echo "To: rusmus@dcs.qmul.ac.uk,ddino@eecs.qmul.ac.uk,radugrigore@gmail.com"
 echo -n "Subject: [safety] commit(s): "
-git diff $1..HEAD --shortstat
+git diff $1..HEAD --shortstat -B -C -- .
 echo
 git log $1.. --pretty=format:"%ci%nhttp://github.com/rgrig/papers/commit/%h%n%w(80,2,2)%s%n%b" --reverse -- .
