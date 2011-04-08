@@ -1,10 +1,10 @@
-all:
-	ocamlbuild -cflag -annot interp.byte gen.byte
+byte:
+	ocamlbuild -cflag -annot gen.byte interp.byte
 
-examples:
-	@for f in examples/*.p; do echo ===$$f===; ./gen.byte 0 | ./interp.byte $$f; done
+examples: byte
+	@./test.sh
 
 clean:
 	ocamlbuild -clean
 
-.PHONY: all examples clean
+.PHONY: byte examples clean
