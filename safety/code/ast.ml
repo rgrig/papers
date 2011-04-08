@@ -88,7 +88,7 @@ module Property = struct
 
 end
 (* }}} *)
-(* top level common parts: the big list corresponding to common.mly *)
+(* top level common parts: the big list corresponding to common.mly *) (* {{{ *)
 
 type program =
   { program_globals : declaration list
@@ -98,6 +98,11 @@ type program =
 
 (* }}} *)
 (* utilities *) (* {{{ *)
+
+let ok_automaton =
+  { Property.message = 
+      "internal error: ok_automaton should be happy with all programs"
+  ; Property.edges = [] }
 
 let mk_allocate v = Allocate { allocate_lhs = v; allocate_type = None }
 let mk_call l r m a = Call

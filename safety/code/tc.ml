@@ -11,13 +11,6 @@ exception Error of string
 
 let fail p c s = raise (Error (p ^ ": " ^ c ^ ": " ^ s))
 
-(* [map_find d f p xs] applies [f] to each [x] and returns the first
-  result that satisfies [p]. Otherwise returns the default [d]. *)
-let rec map_find d f p = function
-  | x :: xs -> let r = f x in if p r then r else map_find d f p xs
-  | [] -> d
-let map_find_not d f xs = map_find d f ((<>) d) xs
-
 module StringMap = Map.Make (String)
 
 (* NOTE: Fields and methods live in different namespaces. *)
@@ -198,7 +191,7 @@ and statement env {ast = ast; line = line} =
         check_types_match (expression e) Bool; body b
 
 and body env (Body (d, s)) =
-  map_find_not Unit (statement (Environment.add_variables env d)) s
+  Util.map_find_not Unit (statement (Environment.add_variables env d)) s
 
 let method_ env
   { method_return_type = r

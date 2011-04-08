@@ -1,9 +1,13 @@
 - interpreter with automata
+- cleanup code
+- statement to havoc all (use as default body) -- deallocate all reachable heap
+- pretty-printer for AST
+- desugar properties into statemets
+- cleanup code
 - ...
 
 notes (low priority todos):
  - more examples
- - statement to havoc all (use as default body)
  - it's very ugly that referring to fields and referring to methods is different
     - field  -- "this" is prohibited
     - this.method() -- "this" is required

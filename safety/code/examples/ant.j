@@ -15,5 +15,5 @@ class Foo
 main
   var Foo foo := new
   var List l := foo.bar()
-  var Object  := new
+  var Object o := new
   l.add(o)
