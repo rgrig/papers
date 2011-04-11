@@ -1,5 +1,5 @@
 byte:
-	ocamlbuild -cflag -annot gen.byte interp.byte
+	ocamlbuild -cflags -dtypes gen.byte interp.byte
 
 examples: byte
 	@./test.sh

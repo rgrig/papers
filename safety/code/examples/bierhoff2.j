@@ -57,7 +57,8 @@ class PipedInputStream
 
   Unit receive(Int b)
     var Bool c  // condition
-    while (in == out) {}
+    while (in == out)
+      in := * // to break deadlock
     c := in.lt(*) // was 0
     if c
       in := * // was 0
@@ -74,7 +75,8 @@ class PipedInputStream
   Int read()
     var Bool c
     do { c:=in.lt(*)} // * should be 0
-    while (in == out || c) {}
+    while (in == out || c)
+      in := *
     var Byte r := buffer.get(in)
     var Int rr := new
     rr.fromByte(r)
