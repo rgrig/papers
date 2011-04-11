@@ -1,8 +1,12 @@
+(* modules *) (* {{{ *)
 open Ast
 open Format
 open Scanf
-
 module S = Stack (* save OCaml's stack module *)
+module StringMap = Map.Make (String)
+module StringSet = Set.Make (String)
+module IntMap = Map.Make (struct type t = int let compare = compare end)
+(* }}} *)
 
 (* knobs *) (* {{{ *)
 let run_properties = ref false
@@ -28,6 +32,9 @@ module type StackT = sig
   (* These two throw [Variable_missing] if the variable wasn't added earlier. *)
   val write : t -> variable -> value -> t
   val read : t -> variable -> value
+
+  (* DBG *)
+  val defined_variables : t -> StringSet.t
 end
 
 module type HeapT = sig
@@ -39,14 +46,14 @@ module type HeapT = sig
      and [Variable_missing] if there's no field with that name. *)
   val write : t -> value -> variable -> value -> t
   val read : t -> value -> variable -> value
+
+  (* DBG *)
+  val defined_variables : t -> StringSet.t
 end
 
 let read_input () = scanf " %d" (fun x -> x)
 
 (* implementation *) (* {{{ *)
-module StringMap = Map.Make (String)
-module IntMap = Map.Make (struct type t = int let compare = compare end)
-
 module Stack : StackT = struct
   type t = value StringMap.t
   let empty = StringMap.empty
@@ -58,6 +65,9 @@ module Stack : StackT = struct
   let read s x =
     try StringMap.find x s
     with Not_found -> raise Variable_missing
+
+  let defined_variables s = (* DBG *)
+    StringMap.fold (fun k _ s -> StringSet.add k s) s StringSet.empty
 end
 
 module Heap : HeapT = struct
@@ -80,6 +90,11 @@ module Heap : HeapT = struct
   let read (h, cnt) p f =
     let fs = try IntMap.find p h with Not_found -> raise Bad_access in
     try StringMap.find f fs with Not_found -> raise Variable_missing
+
+  let defined_variables (h, _) = (* DBG *)
+    let f k _ acc = StringSet.add k acc in
+    let one _ s acc = StringMap.fold f s acc in
+    IntMap.fold one h StringSet.empty
 end
 (* }}} *)
 
@@ -100,8 +115,6 @@ type 'a program_state =
 (* }}} *)
 (* interpreter *) (* {{{ *)
 (* global environment *) (* {{{ *)
-module StringSet = Set.Make (String)
-
 module StringPairMap = Map.Make (struct
   type t = string * string
   let compare = compare
@@ -132,11 +145,11 @@ let preprocess cs =
 (* error reporting *) (* {{{ *)
 
 let location_stack = S.create ()
-let fault () =
+let report_error message =
   let location =
     try sprintf "@[%d@]" (S.top location_stack)
     with S.Empty -> "?" in
-  eprintf "@[%s: memory fault@." location
+  eprintf "@[%s: %s@." location message
 
 (* }}} *)
 (* helpers *) (* {{{ *)
@@ -166,11 +179,24 @@ let pick d xs = match List.length xs with
   | 0 -> d
   | n -> List.nth xs (read_input () mod n)
 
-let pick_automaton ps =
-  let p = pick ok_automaton ps in
+let start_state p =
   { automaton_node = "start"
   ; automaton_stack = Stack.empty
   ; automaton_description = p }
+
+let pick_automaton ps = 
+  start_state (pick ok_automaton ps)
+
+(*DBG*)
+let report_defined_variables state =
+  let v = StringSet.empty in
+  let v = StringSet.union v (Stack.defined_variables state.locals) in
+  let v = StringSet.union v (Heap.defined_variables state.heap) in
+  let v = StringSet.union v (Stack.defined_variables state.globals) in
+  eprintf "@[<2>variables";
+  StringSet.iter (fun x -> eprintf "@\n%s" x) v;
+  eprintf "@."
+  
 
 (* }}} *)
 (* functions that see only the program state *) (* {{{ *)
@@ -263,26 +289,35 @@ module PropertyHelpers = struct
 
   exception No_match
 
-  let rec pmatch (s, gs) p e = 
+  let is_pattern s = 'A' <= s.[0] && s.[0] < 'Z'
+  let var = String.uncapitalize
+
+  (* TODO: check that the pattern is linear *)
+  let rec pmatch state (s, gs) p e = 
     let fold ps es = 
-      try List.fold_left2 pmatch (s, gs) ps es 
+      try List.fold_left2 (pmatch state) (s, gs) ps es 
       with Invalid_argument _ -> raise No_match in
     match p, e with
       | Ac (po, ps), Ac (eo, es) when po = eo -> fold ps es
       | Bin (pl, po, pr), Bin (el, eo, er) when po = eo -> fold [pl;pr] [el;er]
-      | Not p, Not e -> pmatch (s, gs) p e
-      | Deref (p, pf), Deref (e, ef) when pf = ef -> pmatch (s, gs) p e
+      | Not p, Not e -> pmatch state (s, gs) p e
+      | Deref (p, pf), Deref (e, ef) when pf = ef -> pmatch state (s, gs) p e
       | Literal None, _ -> (s, gs)
       | Literal (Some p), Literal (Some e) when p = e -> (s, gs)
-(*      | Ref p, e ->
+      | Ref p, e ->
           if is_pattern p then
-            (Stack.write s (var p) (expression *)
-      | _ -> failwith "todo: continue here"
+            (Stack.init_variable s (var p) (expression state e), gs)
+          else
+            (s, (p, e) :: gs)
+      | _ -> raise No_match
 
   let bad_guard state s (av, pe) =
-    let va = Stack.read s av in
-    let vp = expression state pe in
-    va <> vp
+    try
+      let va = Stack.read s av in
+      let vp = expression state pe in
+      va <> vp
+    with Variable_missing | Bad_access ->
+      false
 
   let evolve state c e =
     let now = state.checker_state in
@@ -294,20 +329,22 @@ module PropertyHelpers = struct
       let patterns = l.label_lhs :: l.label_receiver :: l.label_arguments in
       let actuals =
         Util.option (Literal None) (fun x -> Ref x) c.call_lhs
-        :: Ref c.call_method :: c.call_arguments in
-      let s, guards = List.fold_left2 pmatch (s, []) patterns actuals in
+        :: c.call_receiver :: c.call_arguments in
+      let s, guards = List.fold_left2 (pmatch state) (s, []) patterns actuals in
       if List.exists (bad_guard state s) guards then None
-      else  Some { now with automaton_stack = s }
+      else Some { now with automaton_stack = s; automaton_node = e.edge_target }
     with Invalid_argument _ | No_match ->
       None
 end
+
+exception Wrap of exn
 
 let property state c =
   let now = state.checker_state in
   let p = now.automaton_description in
   let candidates = 
     Util.map_option (PropertyHelpers.evolve state c) p.Property.edges in
-  let next = pick now candidates in
+  let next = pick now (start_state p :: candidates) in
   if next.automaton_node = "error" then
     raise (Property_fails p.Property.message);
   next
@@ -327,7 +364,9 @@ let program p =
     | None -> ()
     | Some m -> 
         (try ignore (body property state m)
-        with Bad_access | Variable_missing -> fault ()))
+        with 
+          | Bad_access | Variable_missing -> report_error "memory fault"
+          | Property_fails s -> report_error s))
   (* Exception Variable_missing at [x.f] when [x] points to an object with
      wrong type. This may happen with [var Foo x := *]. *)
 
