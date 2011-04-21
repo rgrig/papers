@@ -1,4 +1,9 @@
-byte:
+# If other sources are modified then |make| won't recompile properly.
+SOURCES=$(wildcard *.ml) $(wildcard *.mll) $(wildcard *.mly)
+
+byte: interp.byte gen.byte
+
+interp.byte gen.byte: $(SOURCES)
 	ocamlbuild -cflags -dtypes gen.byte interp.byte
 
 examples: byte
