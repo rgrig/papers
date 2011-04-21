@@ -139,7 +139,7 @@ let rec call env c =
   with Invalid_argument _ ->
     fail (Environment.position env) "wrong number of arguments" c.call_method);
   (match c.call_lhs with 
-    | Some l -> check_types_match tmr (expression (Ref l)) 
+    | Some l -> check_types_match tmr (expression (Ref l))
     | _ -> ());
   Unit
 

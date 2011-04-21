@@ -1,5 +1,8 @@
 open Format
 
+type value = int
+type variable = string
+
 (* common parts at the bottom: expressions mostly *) (* {{{ *)
 type binop = Eq | Ne
 type acop = Or | And
@@ -17,9 +20,9 @@ type expression =
     Ac of acop * expression list
   | Bin of expression * binop * expression
   | Not of expression
-  | Deref of expression * string
-  | Ref of string
-  | Literal of int option
+  | Deref of expression * variable
+  | Ref of variable
+  | Literal of value option
 
 (* }}} *)
 (* parts used only by programs. *) (* {{{ *)
@@ -70,10 +73,19 @@ type class_ = string * member list
 (* parts used only by properties *) (* {{{ *)
 module Property = struct
 
-  (* Compare with [call_statement] above. *)
+  (* Since there's another [expression], you're asking for trouble if you
+     open this module. *)
+  type expression =
+      Constant of value
+    | Pattern of variable option
+    | Guard of variable
+
+  (* 
+    Compare with [call_statement] above.
+    The first argument is teh receiver.
+   *)
   type label =
-    { label_lhs : expression
-    ; label_receiver : expression
+    { label_result : expression
     ; label_method : string
     ; label_arguments : expression list }
 

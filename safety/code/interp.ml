@@ -2,23 +2,18 @@
 open Ast
 open Format
 open Scanf
+open Util
 module S = Stack (* save OCaml's stack module *)
 module StringMap = Map.Make (String)
 module StringSet = Set.Make (String)
 module IntMap = Map.Make (struct type t = int let compare = compare end)
 (* }}} *)
 
-(* knobs *) (* {{{ *)
-let run_properties = ref false
-(* }}} *)
 (* State *) (* {{{ *)
 
 exception Variable_missing
 exception Bad_access
 exception Property_fails of string
-
-type value = int
-type variable = string
 
 module type StackT = sig
   type t
@@ -32,9 +27,6 @@ module type StackT = sig
   (* These two throw [Variable_missing] if the variable wasn't added earlier. *)
   val write : t -> variable -> value -> t
   val read : t -> variable -> value
-
-  (* DBG *)
-  val defined_variables : t -> StringSet.t
 end
 
 module type HeapT = sig
@@ -46,9 +38,6 @@ module type HeapT = sig
      and [Variable_missing] if there's no field with that name. *)
   val write : t -> value -> variable -> value -> t
   val read : t -> value -> variable -> value
-
-  (* DBG *)
-  val defined_variables : t -> StringSet.t
 end
 
 let read_input () = scanf " %d" (fun x -> x)
@@ -65,13 +54,10 @@ module Stack : StackT = struct
   let read s x =
     try StringMap.find x s
     with Not_found -> raise Variable_missing
-
-  let defined_variables s = (* DBG *)
-    StringMap.fold (fun k _ s -> StringSet.add k s) s StringSet.empty
 end
 
 module Heap : HeapT = struct
-  type t = int StringMap.t IntMap.t * int
+  type t = value StringMap.t IntMap.t * int
 
   let empty = IntMap.empty, 0
 
@@ -90,18 +76,12 @@ module Heap : HeapT = struct
   let read (h, cnt) p f =
     let fs = try IntMap.find p h with Not_found -> raise Bad_access in
     try StringMap.find f fs with Not_found -> raise Variable_missing
-
-  let defined_variables (h, _) = (* DBG *)
-    let f k _ acc = StringSet.add k acc in
-    let one _ s acc = StringMap.fold f s acc in
-    IntMap.fold one h StringSet.empty
 end
 (* }}} *)
 
 type automaton_state =
   { automaton_node : string
-  ; automaton_stack : Stack.t
-  ; automaton_description : Property.t }
+  ; automaton_stack : Stack.t }
 
 type 'a program_state =
   { globals : Stack.t
@@ -120,6 +100,7 @@ module StringPairMap = Map.Make (struct
   let compare = compare
 end)
 
+let automaton = ref ok_automaton
 let fields = ref StringMap.empty 
   (* for each class, a list of fields *)
 let methods = ref StringPairMap.empty 
@@ -144,12 +125,13 @@ let preprocess cs =
 (* }}} *)
 (* error reporting *) (* {{{ *)
 
+let program_name = ref ""
 let location_stack = S.create ()
 let report_error message =
   let location =
     try sprintf "@[%d@]" (S.top location_stack)
     with S.Empty -> "?" in
-  eprintf "@[%s: %s@." location message
+  eprintf "@[%s:%s: %s@." !program_name location message
 
 (* }}} *)
 (* helpers *) (* {{{ *)
@@ -177,26 +159,44 @@ let read_value state x =
 
 let pick d xs = match List.length xs with
   | 0 -> d
-  | n -> List.nth xs (read_input () mod n)
+  | n -> List.nth xs (read_input () mod n) 
 
-let start_state p =
-  { automaton_node = "start"
-  ; automaton_stack = Stack.empty
-  ; automaton_description = p }
+(* }}} *)
+(* functions that evolve only the automata state *) (* {{{ *)
 
-let pick_automaton ps = 
-  start_state (pick ok_automaton ps)
+module PH = struct (* property helpers *)
+  open Property
 
-(*DBG*)
-let report_defined_variables state =
-  let v = StringSet.empty in
-  let v = StringSet.union v (Stack.defined_variables state.locals) in
-  let v = StringSet.union v (Heap.defined_variables state.heap) in
-  let v = StringSet.union v (Stack.defined_variables state.globals) in
-  eprintf "@[<2>variables";
-  StringSet.iter (fun x -> eprintf "@\n%s" x) v;
-  eprintf "@."
-  
+  type call_description =
+    { result : value
+    ; method_ : string
+    ; arguments : value list }
+
+  let save_value s (p, v) =
+    Stack.init_variable s p v
+
+  let good_value s (p, v) =
+    (* TODO: check that automaton variables are read after being written *)
+    Stack.read s p = v
+
+  let evolve now c e =
+    failwith "todo"
+end
+
+exception Wrap of exn
+
+let property s _ = s
+
+(*
+let property now c =
+  let p = now.automaton_description in
+  let candidates = 
+    map_option (PH.evolve now c) p.Property.edges in
+  let next = pick now (start_state p :: candidates) in
+  if next.automaton_node = "error" then
+    raise (Property_fails p.Property.message);
+  next
+*)
 
 (* }}} *)
 (* functions that see only the program state *) (* {{{ *)
@@ -208,7 +208,7 @@ let rec expression (state : 'a program_state) =
     | Ac (And, xs) -> List.fold_left min 1 (List.map bool_expression xs)
     | Bin (l, op, r) ->
         if (expression state l = expression state r) = (op = Eq) then 1 else 0
-    | Not e -> 1 - expression state e
+    | Not e -> (match expression state e with 0 -> 1 | _ -> 0)
     | Deref (e, f) -> Heap.read state.heap (expression state e) f
     | Ref x -> read_value state x
     | Literal None -> read_input ()
@@ -218,26 +218,25 @@ let rec assignment (state : 'a program_state) x e =
   assign_value state x (expression state e)
 
 and call 
-  (chk : 'a program_state -> call_statement -> 'a) 
+  (chk : 'a -> 'b -> 'a) 
   (state : 'a program_state) 
   (c : call_statement)
 =
-  let state = {state with checker_state = chk state c} in
-  let k = Util.from_some c.call_class, c.call_method in
-  let m = StringPairMap.find k !methods in
-  let f = "this" :: vars m.method_formals in
-  let a = c.call_receiver :: c.call_arguments in
-  let a = List.map (expression state) a in 
-  let new_locals = List.fold_left2 Stack.init_variable Stack.empty f a in
-  let old_locals = state.locals in
-  let state, value = body chk { state with locals = new_locals } m.method_body in
-  let state = { state with locals = old_locals } in
+  let m = (* method *)
+    StringPairMap.find (from_some c.call_class, c.call_method) !methods in
+  let formals = "this" :: vars m.method_formals in
+  let args = List.map (expression state) (c.call_receiver::c.call_arguments) in 
+  let m_locals =
+    List.fold_left2 Stack.init_variable Stack.empty formals args in
+  let locals = state.locals in
+  let state, value = body chk { state with locals = m_locals } m.method_body in
+  let state = { state with locals = locals } in
   match c.call_lhs with
-    | Some x -> assign_value state x (Util.from_some value)
+    | Some x -> assign_value state x (from_some value)
     | None -> state, None
 
 and allocate (state : 'a program_state) { allocate_lhs = x; allocate_type = t} =
-  match Util.from_some t with
+  match from_some t with
     | Unit -> assign_value state x 0
     | Bool -> assign_value state x (read_input () land 1)
     | Class c ->
@@ -282,74 +281,6 @@ and body chk (state : 'a program_state) (Body (ds, ss)) =
   List.fold_left f (state, None) ss
 
 (* }}} *)
-(* functions that evolve only the automata state *) (* {{{ *)
-
-module PropertyHelpers = struct
-  open Property
-
-  exception No_match
-
-  let is_pattern s = 'A' <= s.[0] && s.[0] < 'Z'
-  let var = String.uncapitalize
-
-  (* TODO: check that the pattern is linear *)
-  let rec pmatch state (s, gs) p e = 
-    let fold ps es = 
-      try List.fold_left2 (pmatch state) (s, gs) ps es 
-      with Invalid_argument _ -> raise No_match in
-    match p, e with
-      | Ac (po, ps), Ac (eo, es) when po = eo -> fold ps es
-      | Bin (pl, po, pr), Bin (el, eo, er) when po = eo -> fold [pl;pr] [el;er]
-      | Not p, Not e -> pmatch state (s, gs) p e
-      | Deref (p, pf), Deref (e, ef) when pf = ef -> pmatch state (s, gs) p e
-      | Literal None, _ -> (s, gs)
-      | Literal (Some p), Literal (Some e) when p = e -> (s, gs)
-      | Ref p, e ->
-          if is_pattern p then
-            (Stack.init_variable s (var p) (expression state e), gs)
-          else
-            (s, (p, e) :: gs)
-      | _ -> raise No_match
-
-  let bad_guard state s (av, pe) =
-    try
-      let va = Stack.read s av in
-      let vp = expression state pe in
-      va <> vp
-    with Variable_missing | Bad_access ->
-      false
-
-  let evolve state c e =
-    let now = state.checker_state in
-    let s = now.automaton_stack in
-    if e.edge_source <> now.automaton_node then None else
-    let l = e.edge_label in
-    if l.label_method <> c.call_method then None else
-    try
-      let patterns = l.label_lhs :: l.label_receiver :: l.label_arguments in
-      let actuals =
-        Util.option (Literal None) (fun x -> Ref x) c.call_lhs
-        :: c.call_receiver :: c.call_arguments in
-      let s, guards = List.fold_left2 (pmatch state) (s, []) patterns actuals in
-      if List.exists (bad_guard state s) guards then None
-      else Some { now with automaton_stack = s; automaton_node = e.edge_target }
-    with Invalid_argument _ | No_match ->
-      None
-end
-
-exception Wrap of exn
-
-let property state c =
-  let now = state.checker_state in
-  let p = now.automaton_description in
-  let candidates = 
-    Util.map_option (PropertyHelpers.evolve state c) p.Property.edges in
-  let next = pick now (start_state p :: candidates) in
-  if next.automaton_node = "error" then
-    raise (Property_fails p.Property.message);
-  next
-
-(* }}} *)
 
 let program p =
   let gs = vars p.program_globals in
@@ -358,7 +289,9 @@ let program p =
     { globals = globals
     ; heap = Heap.empty
     ; locals = Stack.empty
-    ; checker_state = pick_automaton p.program_properties } in
+    ; checker_state = 
+      { automaton_node = "start"
+      ; automaton_stack = Stack.empty} } in
   preprocess p.program_classes;
   (match p.program_main with
     | None -> ()
@@ -378,6 +311,8 @@ let interpret fn =
   let lexbuf = Lexing.from_channel f in
   let parse =
     MenhirLib.Convert.Simplified.traditional2revised Parser.program in
+  program_name := fn;
+  S.clear location_stack;
   try
     let p = parse (Lexer.token lexbuf) in
     ignore (Tc.program p);
@@ -388,7 +323,7 @@ let interpret fn =
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
         eprintf "@[%d:%d: parse error@." line (c1-c0+1))
-    | Tc.Error e -> eprintf "@[%s (typecheck)@." e
+    | Tc.Error e -> eprintf "@[%s:%s (typecheck)@." fn e
 
 let _ =
   for i = 1 to Array.length Sys.argv - 1 do

@@ -25,3 +25,5 @@ let map_option f xs =
     | Some y -> y :: acc in
   List.rev (List.fold_left f' [] xs)
 
+(** Function composition. *)
+let (@@) f g x = f (g x)

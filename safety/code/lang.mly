@@ -90,7 +90,7 @@ expression:
   | NOT r=expression
       { Not r }
 
-%public atom:
+atom:
     LP r=expression RP
       { r }
   | r=ID
