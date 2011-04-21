@@ -1,4 +1,10 @@
-- interpreter with automata
+- property checks
+  - linear
+  - read comes only after write (or fail semantics?)
+- desugar
+  - generate unique IDs
+  - ... into two types of edges (call and return)
+- interpret automaton
 - cleanup code
 - statement to havoc all (use as default body) -- deallocate all reachable heap
 - pretty-printer for AST
