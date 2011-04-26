@@ -71,7 +71,7 @@ type class_ = string * member list
 
 (* }}} *)
 (* parts used only by properties *) (* {{{ *)
-module Property = struct
+module PropertyAst = struct
 
   (* Since there's another [expression], you're asking for trouble if you
      open this module. *)
@@ -106,15 +106,15 @@ type program =
   { program_globals : declaration list
   ; program_classes : class_ list
   ; program_main : body option 
-  ; program_properties : Property.t list }
+  ; program_properties : PropertyAst.t with_line list }
 
 (* }}} *)
 (* utilities *) (* {{{ *)
 
 let ok_automaton =
-  { Property.message = 
+  { PropertyAst.message = 
       "internal error: ok_automaton should be happy with all programs"
-  ; Property.edges = [] }
+  ; PropertyAst.edges = [] }
 
 let mk_allocate v = Allocate { allocate_lhs = v; allocate_type = None }
 let mk_call l r m a = Call

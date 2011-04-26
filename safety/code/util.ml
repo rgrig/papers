@@ -27,3 +27,8 @@ let map_option f xs =
 
 (** Function composition. *)
 let (@@) f g x = f (g x)
+
+module IntMap = Map.Make (struct type t = int let compare = compare end)
+module StringMap = Map.Make (String)
+module StringPairMap = Map.Make (struct type t = string * string let compare = compare end)
+module StringSet = Set.Make (String)

@@ -4,9 +4,6 @@ open Format
 open Scanf
 open Util
 module S = Stack (* save OCaml's stack module *)
-module StringMap = Map.Make (String)
-module StringSet = Set.Make (String)
-module IntMap = Map.Make (struct type t = int let compare = compare end)
 (* }}} *)
 
 (* State *) (* {{{ *)
@@ -95,11 +92,6 @@ type 'a program_state =
 (* }}} *)
 (* interpreter *) (* {{{ *)
 (* global environment *) (* {{{ *)
-module StringPairMap = Map.Make (struct
-  type t = string * string
-  let compare = compare
-end)
-
 let automaton = ref ok_automaton
 let fields = ref StringMap.empty 
   (* for each class, a list of fields *)
@@ -165,7 +157,7 @@ let pick d xs = match List.length xs with
 (* functions that evolve only the automata state *) (* {{{ *)
 
 module PH = struct (* property helpers *)
-  open Property
+  open PropertyAst
 
   type call_description =
     { result : value
@@ -307,6 +299,7 @@ let program p =
 (* driver *) (* {{{ *)
 
 let interpret fn =
+  let report_tc m = eprintf "@[%s: %s (typecheck)@." fn m in
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   let parse =
@@ -315,7 +308,7 @@ let interpret fn =
   S.clear location_stack;
   try
     let p = parse (Lexer.token lexbuf) in
-    ignore (Tc.program p);
+    List.iter report_tc (Tc.program p);
     ignore (program p)
   with
     | Parser.Error ->
@@ -323,7 +316,7 @@ let interpret fn =
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
         eprintf "@[%d:%d: parse error@." line (c1-c0+1))
-    | Tc.Error e -> eprintf "@[%s:%s (typecheck)@." fn e
+    | Tc.Error e -> report_tc e
 
 let _ =
   for i = 1 to Array.length Sys.argv - 1 do

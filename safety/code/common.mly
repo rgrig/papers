@@ -52,7 +52,7 @@ program:
       { if t.program_main <> None then 
           eprintf "WARNING: Only the last main matters.";
         { t with program_main = Some h } }
-  | h=property t=program
+  | h=with_line(property) t=program
       { { t with program_properties = h :: t.program_properties } } 
   | EOF
       { { program_classes = []

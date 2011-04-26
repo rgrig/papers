@@ -3,15 +3,17 @@
   have the type [Unit], except return. Composed statements, including lists,
   inherit the type of the first return they reach, and are [Unit] otherwise.
  *)
-
+(* modules *) (* {{{ *)
 open Ast
 open Format
+open Util
+
+(* }}} *)
+(* environment and other utilities *) (* {{{ *)
 
 exception Error of string
 
 let fail p c s = raise (Error (p ^ ": " ^ c ^ ": " ^ s))
-
-module StringMap = Map.Make (String)
 
 (* NOTE: Fields and methods live in different namespaces. *)
 module type EnvironmentT = sig
@@ -125,6 +127,8 @@ let check_types_match env t1 t2 =
           pp_type t1 pp_type t2; flush_str_formatter () in
     fail p "type mismatch" info
 
+(* }}} *)
+(* typechecking of programs *) (* {{{ *)
 let rec call env c =
   let expression = expression env in
   let check_types_match = check_types_match env in
@@ -213,9 +217,66 @@ let class_ env (c, ds) =
     [{declaration_type=Class c; declaration_variable="this"}] in
   List.iter (method_ env) (List.rev ms)
 
+(* }}} *)
+(* static checks for properties *) (* {{{ *)
+
+module PropertyChecks = struct
+  module A = Ast.PropertyAst
+
+  let warnings = ref []
+  let location = ref "<INTERNAL ERROR>" (* user should not see this *)
+  let set_location = function
+    | None -> location := "?"
+    | Some l -> location := sprintf "%d" l
+  let warn m = 
+    warnings := sprintf "%s: Warning: %s" !location m :: !warnings
+
+  let get_source e = e.A.edge_source
+  let get_target e = e.A.edge_target
+
+  let adjacency_of_edges source target =
+    let f acc e =
+      let s, t = source e, target e in
+      let old = try StringMap.find s acc with Not_found -> StringSet.empty in
+      StringMap.add s (StringSet.add t old) acc in
+    List.fold_left f StringMap.empty
+
+  let rec reachable_from g s =
+    let r = ref StringSet.empty in
+    let rec f s =
+      if not (StringSet.mem s !r) then begin
+        r := StringSet.add s !r;
+        let succ = try StringMap.find s g with Not_found -> StringSet.empty in
+        StringSet.iter f succ
+      end in
+    f s; !r
+
+  let check_unused_states p =
+    let succ = adjacency_of_edges get_source get_target p.A.edges in
+    let pred = adjacency_of_edges get_target get_source p.A.edges in
+    let fs = reachable_from succ "start" in
+    let te = reachable_from pred "error" in
+    let collect get s = 
+      List.fold_left (fun s e -> StringSet.add (get e) s) s p.A.edges in
+    let all = collect get_target (collect get_source StringSet.empty) in
+    let bad = StringSet.diff all (StringSet.inter fs te) in
+    if not (StringSet.mem "start" all) then warn "missing start";
+    if not (StringSet.mem "error" all) then warn "missing error";
+    StringSet.iter (fun s -> warn (sprintf "unused state: %s" s)) bad
+
+  let all p =
+    set_location (Some p.line);
+    let p = p.ast in
+    check_unused_states p
+end
+
+(* }}} *)
 let program p =
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
+  PropertyChecks.warnings := [];
+  List.iter PropertyChecks.all p.program_properties;
   (match p.program_main with
     | None -> ()
-    | Some m -> ignore (body env m))
+    | Some m -> ignore (body env m));
+  List.rev !PropertyChecks.warnings
