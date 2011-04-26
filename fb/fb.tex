@@ -15,7 +15,7 @@
 \usepackage{xspace}
 \usepackage[colorlinks]{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
-%}}}
+%}}} packages
 %{{{ meta
 \def\fbtitle{FreeBoogie}
 \def\fbauthors{Radu Grigore and Joseph Kiniry}
@@ -30,7 +30,7 @@
 \hypersetup{
   pdfauthor={\fbauthors},
   pdftitle={\fbtitle}}
-%}}}
+%}}} PDF settings
 %{{{ tikz helpers
 
 % global styles
@@ -172,6 +172,7 @@
 There are many verification condition generators, each with its own design.
 This article documents the main design decisions of FreeBoogie.
 It is 
+% @review JRK Missing text.
 
 Researchers often implement VCGENs (\fb verification \fb condition
 \textbf{gen}erators) as part of their experiments. Certain design
@@ -182,8 +183,11 @@ others.
 \end{abstract}
 % }}} abstract
 %{{{ run
-\section{An Example Run}
 
+% @review JRK A prelude to this run example is missing.
+
+\section{An Example Run}
+% @review JRK *want*
 \bc
 \begin{boogie}
 type T;
@@ -246,6 +250,7 @@ example.bpl:2:11} indicating that the program is correct.
 %{{{sec:pipeline
 \section{Pipeline}
 \label{sec:pipeline}
+% @review JRK *want*
 
 Figure~\ref{fig:architecture} shows that FreeBoogie has a
 pipeline architecture. The \colorbox{green!50!white}{light green}
@@ -332,6 +337,7 @@ formulas from valid formulas.
 
 All transformations in FreeBoogie are sound; all transformations
 in FreeBoogie, except loop handling,
+% @review JRK Missing text.
 
 Full Boogie would not be user friendly without high-level
 constructs like \textbf{while} statements and \textbf{break}
@@ -386,6 +392,7 @@ following sections.
 %{{{ sec:design.ast
 \section{The Abstract Syntax Tree and its Visitors}
 \label{sec:design.ast}
+% @review JRK *want*, but needs a lot of trimming (see below)
 
 The Boogie AST data structures are described using a compact
 notation. A subset, corresponding to core Boogie, appears in
@@ -429,6 +436,8 @@ specific classes: We are forced to implement operations over the
 AST using the visitor pattern~\cite{gamma1995}.
 
 \subsection{The Abstract Grammar Language}
+% @review JRK *not really* (Perhaps put these subsections in an
+% appendix in a tech report version of the paper that we can cite?)
 
 AstGen reads a description of an abstract grammar and a template.
 Therefore it understands two languages---the AstGen abstract
@@ -519,6 +528,8 @@ this use. Hence, specification rules could be abused to insert,
 say, custom comments in the header of generated classes.
 
 \subsection{AstGen Templates}
+% @review JRK *not really* (Perhaps put these subsections in an
+% appendix in a tech report version of the paper that we can cite?)
 
 Figure~\ref{fig:astgen-template} illustrates the main
 characteristics of an AstGen template and, at the same time,
@@ -648,6 +659,7 @@ enumeration.
 
 \subsection{Visitors}
 \label{sec:visitors}
+% @review JRK *not really* (Keep only from *** down, in a tighter revision.)
 
 The visitor pattern is widely used to implement compilers. It can
 be seen as a workaround to a limitation of most object-oriented
@@ -706,6 +718,8 @@ putting all the pretty printing code into one visitor called
 \textit{PrettyPrinter}. (Note that AstGen makes it hard to use
 the former approach, with a specific \textit{prettyPrint} method
 in each class.)
+
+% @review JRK ***
 
 FreeBoogie uses the traditional visitor pattern and
 the root of the visitors' class hierarchy is the class
@@ -801,6 +815,7 @@ then the former will be called by the traversal code in
 
 \subsection{Immutability}
 \label{sec:design.immutability}
+% @review JRK *want* (but tighten-up)
 
 In Java programming, it is unusual to constrain data structures
 to be immutable. Since the resulting code may look awkward to
@@ -901,6 +916,7 @@ method is implemented in the code template for AST classes.)
 %}}} sec:design.ast
 %{{{ aux
 \section{Auxiliary Information}
+% @review JRK *want*
 
 The package \textit{freeboogie.tc} derives extra information from
 a Boogie AST---types, a symbol table, and a flowgraph.
@@ -1047,6 +1063,7 @@ pattern.
 %}}} aux
 %{{{ vcgen
 \section{Verification Condition Generation}
+% @review JRK *want*
 
 The package \textit{freeboogie.vcgen} consists of Boogie
 transformers and Boogie to SMT transformers. The facade of this
@@ -1081,6 +1098,7 @@ Chapter~\ref{ch:spwp}.
 % {{{ sec:design.backend
 \section{The Prover Backend}
 \label{sec:design.backend}
+% @review JRK *want*
 
 The package \textit{freeboogie.backend} contains (1)~SMT data
 structures and (2)~code to communicate with provers. The design
@@ -1088,6 +1106,8 @@ is inspired by the sorted multi-prover backend in \escjava.
 
 \subsection{Data Structures and Sort-Checking}
 \label{sec:design.ds}
+% @review JRK *maybe* (the beginning is nice, but then it gets a bit
+% overly pendantic/detailed for this kind of paper)
 
 The main data structure is a rooted ordered tree whose nodes are
 labeled by strings. Each node has a \emph{sort}, and there are
@@ -1185,6 +1205,7 @@ by maintaining a global set of all SMT trees that were created, a
 technique sometimes known by the name \emph{hash-consing}.
 
 \subsection{The Translation of Boogie Expressions}
+% @review JRK *want*
 
 The methods \textit{mk} provide one way of building trees; the
 method~\textit{of} provides another way of building trees.
@@ -1288,6 +1309,7 @@ before the query.
 
 
 \subsection{Talking to the Prover}
+% @review JRK *want*
 
 The class \textit{Prover} defines the interface that is used
 by the package \textit{freeboogie.vcgen} to talk to the
@@ -1316,6 +1338,7 @@ other facilities of the real prover.
 %}}} sec:design.backend
 %{{{ gencode
 \section{Other Generated Code}
+% @review JRK *maybe*
 
 The Boogie parser resides in the package
 \textit{freeboogie.parser} and is generated by ANTLR
@@ -1327,6 +1350,8 @@ recognition); the command line parser resides in the package
 %}}} gencode
 %{{{ related
 \section{Related Work}
+% @review JRK *want*  (though must be trimmed---also,  a discussion of
+% Cok's jSMTLIB is now necessary)
 
 The main goal of the previous sections is to anchor the
 subsequent theoretical chapters in a concrete program,
@@ -1336,6 +1361,7 @@ for the reader who wants to understand the design in detail, but
 feels that the previous sections are too shallow.
 
 \subsection{Similar Tools}
+% @review JRK *want* 
 
 FreeBoogie is a Java clone of the Boogie
 tool~\cite{barnett2005boogie} from Microsoft Research. The
@@ -1370,6 +1396,7 @@ compare approaches to representing ASTs, interfacing with provers
 (Why being especially interesting), and so on.
 
 \subsection{Design, Pipeline, and Correctness}
+% @review JRK *maybe* 
 
 Because the input and the output are programs written in
 well-defined languages, FreeBoogie is a compiler. The standard
@@ -1443,6 +1470,7 @@ of more sophisticated creation patterns, such as singleton and
 hash-consing.
 
 \subsection{The Expression Problem}
+% @review JRK *not really*
 
 The visitor pattern is a way of achieving multiple dynamic
 dispatch, but it is also a partial solution to the
@@ -1491,9 +1519,10 @@ new AST nodes are added.)
 
 Another approach to the expression problem is to
 modify the programming language to support multiple
-dispatch~\cite{chambers1994mm, clifton2006}.
+dispatch~\cite{chambers1994mm,clifton2006}.
 
 \subsection{Provers}
+% @review JRK *maybe* (but significantly shrunk)
 
 Many languages understood by theorem provers (such as the SMT
 language, the Simplify language, and the PVS prover language)
@@ -1574,6 +1603,7 @@ they are different, since SMT does not define an uniform
 API\null.
 
 \subsection{Code Generators}
+% @review JRK *not really*
 
 The Boogie AST is generated by AstGen; the Boogie parser is
 generated by ANTLR; the command-line parser is generated by
@@ -1602,6 +1632,9 @@ nearby and easy to convince to add new features and fix bugs, if
 needed.
 
 %}}} related
+
+% @review JRK *want* A conclusion.
+
 \bibliographystyle{plain}
 \bibliography{fb}
 \end{document}
