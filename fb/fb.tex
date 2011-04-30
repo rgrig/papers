@@ -17,11 +17,11 @@
 \usepgflibrary{arrows}
 % >>>
 % meta <<<
-\def\fbtitle{FreeBoogie}
-\def\fbauthors{Radu Grigore and Joseph Kiniry}
-\title{\fbtitle}
+\title{FreeBoogie}
 \subtitle{201105}
-\author{\fbauthors}
+\author{Radu Grigore\inst{1} and Joseph Roland Kiniry\inst{2}}
+\institute{Queen Mary, University of London
+\and IT University of Copenhagen}
 % >>>
 % PDF settings <<<
 \definecolor{darkblue}{rgb}{0,0,0.4}
@@ -29,8 +29,8 @@
 % comment the next line for printing
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
 \hypersetup{
-  pdfauthor={\fbauthors},
-  pdftitle={\fbtitle}}
+  pdfauthor={Radu Grigore and Joseph Kiniry},
+  pdftitle={FreeBoogie}}
 % >>>
 % tikz helpers <<<
 
@@ -171,6 +171,18 @@ multiple implementations. Second, the FreeBoogie project has distinct
 priorities, namely simplicity of its code and good documentation. Third,
 FreeBoogie is easy to compile and use on Linux, because it is written
 in~Java.
+
+This paper is written for researchers that want to experiment with the
+Boogie language. For example, one might be interested in verifying Boogie
+programs by symbolic execution rather than verification-condition
+generation; another might be interested in adding the heap to Boogie's
+semantics rather than keeping it as a global array; yet another might want
+to infer procedure specifications for a set of given implementations. These
+are all experiments that could be made by modifying FreeBoogie. The main
+technical challenge is then to understand FreeBoogie enough to modify it.
+Luckily, its code was written so that it is easy to understand. Even
+better, this article gives a high-level overview of the design, and points
+to the tricky pieces of code, so that you can get up to speed quickly.
 
 % >>>
 \section{An Example Run} % <<<
