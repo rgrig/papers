@@ -1,7 +1,7 @@
-%{{{ prelude latex
+% prelude latex <<<
 \tracingmacros=0
 \documentclass{llncs}
-%{{{ packages
+% packages <<<
 \usepackage[english]{babel}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -15,14 +15,14 @@
 \usepackage{xspace}
 \usepackage[colorlinks]{hyperref}  % solves pdfTeX warning (ext4)?
 \usepgflibrary{arrows}
-%}}} packages
-%{{{ meta
+% >>>
+% meta <<<
 \def\fbtitle{FreeBoogie}
 \def\fbauthors{Radu Grigore and Joseph Kiniry}
 \title{\fbtitle}
 \author{\fbauthors}
-%}}} meta
-%{{{ PDF settings
+% >>>
+% PDF settings <<<
 \definecolor{darkblue}{rgb}{0,0,0.4}
 \definecolor{verylightgray}{rgb}{0.9,0.9,0.9}
 % comment the next line for printing
@@ -30,8 +30,8 @@
 \hypersetup{
   pdfauthor={\fbauthors},
   pdftitle={\fbtitle}}
-%}}} PDF settings
-%{{{ tikz helpers
+% >>>
+% tikz helpers <<<
 
 % global styles
 \tikzstyle{arr}=[->,>=stealth']
@@ -65,8 +65,8 @@
 \newcommand{\cnode}{\node[fgdraw,fgfill,rectangle]} % copy nodes
 \newcommand{\enode}{\oonode} % empty node
 \newcommand{\fnode}{\rwnode} % filled node
-%}}}
-%{{{ package customization
+% >>>
+% package customization <<<
 \lstset{
   basicstyle=\scriptsize,
   identifierstyle=\itshape,
@@ -102,8 +102,8 @@
 \deflang{boogie}
 \deflang{smt}
 \abovetopsep=1ex % because tabular appears below captions
-%}}}
-%{{{ new commands 
+% >>>
+% new commands <<<
 \def\fb#1{{\bf #1}} % for introducing acronyms
 \newcommand{\csharp}{C$^\sharp$\xspace}
 \newcommand{\escjava}{ESC\slash Java\xspace}
@@ -140,33 +140,19 @@
 \newcommand{\bc}{\begin{figure}\centering\begin{tabular}{c}} % begin codebox
 \newcommand{\ec}[2]{\end{tabular}\caption{#1}\label{#2}\end{figure}} % end codebox
 
-%}}}
-%{{{ new environments (and theorems)
-% TODO: Get rid of these. This should be a non-mathy `tool paper'.
-%\newtheoremstyle{slanted}{}{}{\slshape}{}{\bf}{.}{.5em}{}
-%\theoremstyle{slanted}
-%\newtheorem{problem}{Problem}
-%\newtheorem{conjecture}{Conjecture}
-%\newtheorem{lemma}{Lemma}
-%\newtheorem{proposition}{Proposition}
-%\newtheorem{theorem}{Theorem}
-%\newtheorem{corollary}{Corollary}
-%\theoremstyle{definition}
-%\newtheorem{definition}{Definition}
-%\newtheorem{example}{Example}
-%\theoremstyle{remark}
-%\newtheorem{remark}{Remark}
-%}}}
-%{{{ TeX settings
+% >>>
+% TeX settings <<<
 \overfullrule=5pt
 \showboxdepth=10
 \showboxbreadth=100
-%}}}
-%}}}
-
+% >>>
+% >>>
+% author instructions <<<
+% - 12 pages, lncs format
+% >>>
 \begin{document}
 \maketitle
-% {{{ abstract
+% abstract <<<
 \begin{abstract}
 
 There are many verification condition generators, each with its own design.
@@ -181,12 +167,9 @@ that the authors learned by developing one VCGEN and by studying many
 others.
 
 \end{abstract}
-% }}} abstract
-%{{{ run
-
+% >>>
 % @review JRK A prelude to this run example is missing.
-
-\section{An Example Run}
+\section{An Example Run} % <<<
 % @review JRK *want*
 \bc
 \begin{boogie}
@@ -246,9 +229,8 @@ log file \texttt{example.log} will contain everything sent to
 the prover. The result of the whole run is \shell{OK: indexOf at
 example.bpl:2:11} indicating that the program is correct.
 
-%}}}
-%{{{sec:pipeline
-\section{Pipeline}
+% >>>
+\section{Pipeline} % <<<
 \label{sec:pipeline}
 % @review JRK *want*
 
@@ -258,8 +240,7 @@ color stands for the Boogie AST (\fb abstract \fb syntax \fb
 tree); the \colorbox{blue!50!black}{\textcolor{white}{dark blue}}
 color stands for the SMT AST\null.
 
-%{{{ fig:architecture
-\begin{figure}
+\begin{figure} % <<<
   \centering
   \begin{tikzpicture}[scale=1]
   \tikzstyle phaseS=[thick,rounded corners=2pt,draw=black,fill=white];
@@ -289,8 +270,7 @@ color stands for the SMT AST\null.
   \end{tikzpicture}
   \caption{FreeBoogie architecture.}
   \label{fig:architecture}
-\end{figure}
-%}}} fig:architecture
+\end{figure} % >>>
 
 Horizontal boxes, except for the first one (parse) and the last
 one (query a prover), represent \emph{transformations}. Depending
@@ -388,9 +368,8 @@ following sections.
   and code for interfacing with the prover
 \end{itemize}
 
-%}}} sec:pipeline
-%{{{ sec:design.ast
-\section{The Abstract Syntax Tree and its Visitors}
+% >>>
+\section{The Abstract Syntax Tree and its Visitors} % <<<
 \label{sec:design.ast}
 % @review JRK *want*, but needs a lot of trimming (see below)
 
@@ -411,7 +390,7 @@ classes. However, the programmer needs to learn a new language
 (the one used in Figure~\ref{fig:boogie-absgrm}) and IDEs are
 usually confused by code generators.
 
-\begin{figure}\centering\footnotesize
+\begin{figure}\centering\footnotesize % <<<
 \begin{verbatim}
 Program = Signature! sig, Body! body;
 Signature = String! name, [list] VariableDecl args, [list] VariableDecl results;
@@ -428,14 +407,14 @@ Identifier = String! id,
 OneAssignment = Identifier lhs, Expr rhs;
 \end{verbatim}
 \caption{The abstract grammar of core Boogie}\label{fig:boogie-absgrm}
-\end{figure}
+\end{figure} % >>>
 
 Another consequence of this approach, which might be seen as a
 disadvantage, is that there is no way to add specific code to
 specific classes: We are forced to implement operations over the
 AST using the visitor pattern~\cite{gamma1995}.
 
-\subsection{The Abstract Grammar Language}
+\subsection{The Abstract Grammar Language} % <<<
 % @review JRK *not really* (Perhaps put these subsections in an
 % appendix in a tech report version of the paper that we can cite?)
 
@@ -527,7 +506,8 @@ class invariants. However, there is nothing in AstGen to enforce
 this use. Hence, specification rules could be abused to insert,
 say, custom comments in the header of generated classes.
 
-\subsection{AstGen Templates}
+% >>>
+\subsection{AstGen Templates} % <<<
 % @review JRK *not really* (Perhaps put these subsections in an
 % appendix in a tech report version of the paper that we can cite?)
 
@@ -656,8 +636,8 @@ the macro \macro{enumName} cannot appear outside of the argument
 of \macro{enums}, which is the only macro that sets a current
 enumeration.
 
-
-\subsection{Visitors}
+% >>>
+\subsection{Visitors} % <<<
 \label{sec:visitors}
 % @review JRK *not really* (Keep only from *** down, in a tighter revision.)
 
@@ -812,8 +792,8 @@ If both \jmlCode|eval(A)| and \jmlCode|see(A)| are overriden,
 then the former will be called by the traversal code in
 \textit{Transformer}.
 
-
-\subsection{Immutability}
+% >>>
+\subsection{Immutability} % <<<
 \label{sec:design.immutability}
 % @review JRK *want* (but tighten-up)
 
@@ -913,9 +893,9 @@ this means that the programmer must occasionally clone pieces
 of the AST when implementing transformers. (The \textit{clone}
 method is implemented in the code template for AST classes.)
 
-%}}} sec:design.ast
-%{{{ aux
-\section{Auxiliary Information}
+% >>>
+% >>>
+\section{Auxiliary Information} % <<<
 % @review JRK *want*
 
 The package \textit{freeboogie.tc} derives extra information from
@@ -1060,9 +1040,8 @@ All auxiliary information is available through
 \textit{TcInterface}, which is an implementation of the Facade
 pattern.
 
-%}}} aux
-%{{{ vcgen
-\section{Verification Condition Generation}
+% >>>
+\section{Verification Condition Generation} % <<<
 % @review JRK *want*
 
 The package \textit{freeboogie.vcgen} consists of Boogie
@@ -1094,9 +1073,8 @@ class \textit{WeakestPrecondition} or by the class
 options. The theory behind these two classes is presented in
 Chapter~\ref{ch:spwp}.
 
-%}}} vcgen
-% {{{ sec:design.backend
-\section{The Prover Backend}
+% >>>
+\section{The Prover Backend} % <<<
 \label{sec:design.backend}
 % @review JRK *want*
 
@@ -1104,7 +1082,7 @@ The package \textit{freeboogie.backend} contains (1)~SMT data
 structures and (2)~code to communicate with provers. The design
 is inspired by the sorted multi-prover backend in \escjava.
 
-\subsection{Data Structures and Sort-Checking}
+\subsection{Data Structures and Sort-Checking} % <<<
 \label{sec:design.ds}
 % @review JRK *maybe* (the beginning is nice, but then it gets a bit
 % overly pendantic/detailed for this kind of paper)
@@ -1204,7 +1182,8 @@ Any SMT trees $s$ and~$t$ have the property that
 by maintaining a global set of all SMT trees that were created, a
 technique sometimes known by the name \emph{hash-consing}.
 
-\subsection{The Translation of Boogie Expressions}
+% >>>
+\subsection{The Translation of Boogie Expressions} % <<<
 % @review JRK *want*
 
 The methods \textit{mk} provide one way of building trees; the
@@ -1307,8 +1286,8 @@ These are SMT trees themselves, and may have further hypotheses
 attached. All hypotheses are collected and sent to the prover
 before the query.
 
-
-\subsection{Talking to the Prover}
+% >>>
+\subsection{Talking to the Prover} % <<<
 % @review JRK *want*
 
 The class \textit{Prover} defines the interface that is used
@@ -1335,9 +1314,8 @@ Similarly, a class that extends \textit{Prover} may choose to
 treat certain SMT tree labels specially to take advantage of
 other facilities of the real prover.
 
-%}}} sec:design.backend
-%{{{ gencode
-\section{Other Generated Code}
+% >>>
+\section{Other Generated Code} % <<<
 % @review JRK *maybe*
 
 The Boogie parser resides in the package
@@ -1347,9 +1325,8 @@ recognition); the command line parser resides in the package
 \textit{freeboogie.cli} and is generated by CLOPS (\fb command
 \fb line \textbf{op}tion\textbf{s}).
 
-%}}} gencode
-%{{{ related
-\section{Related Work}
+% >>>
+\section{Related Work} % <<<
 % @review JRK *want*  (though must be trimmed---also,  a discussion of
 % Cok's jSMTLIB is now necessary)
 
@@ -1360,7 +1337,7 @@ and to make explicit the early design choices. This section is
 for the reader who wants to understand the design in detail, but
 feels that the previous sections are too shallow.
 
-\subsection{Similar Tools}
+\subsection{Similar Tools} % <<<
 % @review JRK *want* 
 
 FreeBoogie is a Java clone of the Boogie
@@ -1395,7 +1372,8 @@ the verification of C programs. Similarly, it is interesting to
 compare approaches to representing ASTs, interfacing with provers
 (Why being especially interesting), and so on.
 
-\subsection{Design, Pipeline, and Correctness}
+% >>>
+\subsection{Design, Pipeline, and Correctness} % <<<
 % @review JRK *maybe* 
 
 Because the input and the output are programs written in
@@ -1469,7 +1447,8 @@ version~6. Such methods also make possible the implementation
 of more sophisticated creation patterns, such as singleton and
 hash-consing.
 
-\subsection{The Expression Problem}
+% >>>
+\subsection{The Expression Problem} % <<<
 % @review JRK *not really*
 
 The visitor pattern is a way of achieving multiple dynamic
@@ -1521,7 +1500,8 @@ Another approach to the expression problem is to
 modify the programming language to support multiple
 dispatch~\cite{chambers1994mm,clifton2006}.
 
-\subsection{Provers}
+% >>>
+\subsection{Provers} % <<<
 % @review JRK *maybe* (but significantly shrunk)
 
 Many languages understood by theorem provers (such as the SMT
@@ -1602,7 +1582,8 @@ provides also a .NET API and an OCaml API\null. Unfortunately,
 they are different, since SMT does not define an uniform
 API\null.
 
-\subsection{Code Generators}
+% >>>
+\subsection{Code Generators} % <<<
 % @review JRK *not really*
 
 The Boogie AST is generated by AstGen; the Boogie parser is
@@ -1631,7 +1612,8 @@ the approach is viable. CLOPS was chosen because its authors were
 nearby and easy to convince to add new features and fix bugs, if
 needed.
 
-%}}} related
+% >>>
+% >>>
 
 % @review JRK *want* A conclusion.
 
@@ -1639,4 +1621,4 @@ needed.
 \bibliography{fb}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
-% vim:textwidth=75
+% vim:tw=75:fo+=t:fmr=<<<,>>>:
