@@ -20,6 +20,7 @@
 \def\fbtitle{FreeBoogie}
 \def\fbauthors{Radu Grigore and Joseph Kiniry}
 \title{\fbtitle}
+\subtitle{201105}
 \author{\fbauthors}
 % >>>
 % PDF settings <<<
@@ -108,7 +109,6 @@
 \newcommand{\csharp}{C$^\sharp$\xspace}
 \newcommand{\escjava}{ESC\slash Java\xspace}
 \newcommand{\framac}{\hbox{Frama-C}}
-\newcommand{\fx}{F\kern-0.1667em\lower.5ex\hbox{X}\kern-.125em 7\xspace}
 \newcommand{\indentline}[1]{\\\leftline{\indent#1}}
 \newcommand{\macro}[1]{\texttt{\char`\\#1}}
 \newcommand{\jk}[1]{{\small [\textcolor{red}{jk}: #1]}}
@@ -147,28 +147,32 @@
 \showboxbreadth=100
 % >>>
 % >>>
-% author instructions <<<
+% boogie and lncs instructions <<<
 % - 12 pages, lncs format
 % >>>
 \begin{document}
 \maketitle
 % abstract <<<
 \begin{abstract}
-
-There are many verification condition generators, each with its own design.
-This article documents the main design decisions of FreeBoogie.
-It is 
-% @review JRK Missing text.
-
-Researchers often implement VCGENs (\fb verification \fb condition
-\textbf{gen}erators) as part of their experiments. Certain design
-principles keep being rediscovered. This article summarizes a few lessons
-that the authors learned by developing one VCGEN and by studying many
-others.
-
+We describe the current design of FreeBoogie, a static verifier for Boogie
+programs.
 \end{abstract}
 % >>>
-% @review JRK A prelude to this run example is missing.
+\section{Introduction} % <<<
+
+``Why another static verifier for Boogie? Is there something so wrong with
+the one from Microsoft Research that it cannot be fixed?'' We expect that
+many readers have these thoughts at this point, so we answer.  FreeBoogie
+exists because we wanted to change the Boogie language back in 2007 and
+Microsoft's verifier was closed source at the time. We keep FreeBoogie
+alive for three main reasons. First, we like the Boogie language and
+history shows that languages have higher chances to survive if they have
+multiple implementations. Second, the FreeBoogie project has distinct
+priorities, namely simplicity of its code and good documentation. Third,
+FreeBoogie is easy to compile and use on Linux, because it is written
+in~Java.
+
+% >>>
 \section{An Example Run} % <<<
 % @review JRK *want*
 \bc
@@ -933,6 +937,7 @@ treat certain SMT tree labels specially to take advantage of
 other facilities of the real prover.
 
 % >>>
+% >>>
 \section{Related Work} % <<<
 % @review JRK *want*  (though must be trimmed---also,  a discussion of
 % Cok's jSMTLIB is now necessary)
@@ -947,6 +952,7 @@ feels that the previous sections are too shallow.
 \subsection{Similar Tools} % <<<
 % @review JRK *want* 
 
+\rg{This comparison needs to be as good as possible.}
 FreeBoogie is a Java clone of the Boogie
 tool~\cite{barnett2005boogie} from Microsoft Research. The
 internals differ but the input and the output interfaces
