@@ -260,79 +260,102 @@ the order in which transformers are applied, which is established in
 needed.
 
 % >>>
-\section{The Abstract Syntax Tree and its Visitors} % <<<
+\section{Boogie AST and Transformers} % <<<
 \label{sec:ast}
-% @review JRK *want*, but needs a lot of trimming (see below)
 
-The Boogie AST data structures are described using a compact notation. A
-subset, corresponding to core Boogie, appears in
-Figure~\ref{fig:boogie-absgrm}. AstGen (a helper tool) reads this
-description and a code template to produce Java classes. The approach has
-advantages and disadvantages. The generated classes are very similar to
-each other because they come from the same template. This means that it is
-easy to learn their interface.  It also means that it is easier to change
-all the classes in a consistent way by changing the template. The compact
-description in \rg{file fb.ag} is easier to read than the corresponding
-\rg{gazillion} Java classes. The overall structure of the AST is easier to
-grasp. It is also easier to modify, since it takes far less time to change
-one or two lines than one or two Java classes. However, the programmer
-needs to learn a new language (the one used in
-Figure~\ref{fig:boogie-absgrm}) and IDEs are often confused by code
-generators.
+This section describes the package \method{ast}.
 
-\rg{Must mention where the template is, and the main methods one needs to
-know. (Such as \texttt{withBla}.)}
+\subsection{The Boogie AST} % <<<
 
-Another consequence of this approach, which might be seen as a
-disadvantage, is that there is no way to add specific code to
-specific classes: We are forced to implement operations over the
-AST using the visitor pattern~\cite{gamma1995}.
+To understand Boogie's AST one must understand Boogie's abstract grammar,
+which is in the file \texttt{fb.ag}, and the template for the AST data
+structures, which is in the file \texttt{classes.tpl}.
 
-\subsection{Visitors} % <<<
+AstGen, a helper tool hosted in the same repository, generates Java from
+\texttt{fb.ag} and \texttt{classes.tpl}.  The approach has advantages and
+disadvantages.  The generated classes are very similar to each other
+because they come from the same template. This means that it is easy to
+learn their interface.  It also means that it is easier to change all the
+classes in a consistent way by changing the template.  The
+$\approx360$~lines of \texttt{fb.ag} and \texttt{classes.tpl} are much
+easier to understand than the $\approx6400$~lines of generated Java. Also,
+it is relatively easy to modify the AST\null.  However, the programmer
+needs to learn two small languages (for describing abstract grammars and
+for writing templates), and IDEs are often confused by code generators.
+Also, all operations on the AST \emph{must} be implemented using
+visitors~\cite[Chapter~5]{gamma1995}, because one cannot add custom code
+to particular AST classes.
+
+To instantiate an AST class~$A$, programmers should say
+\[x=A.\mathit{mk}(\langle\mathit{children}\rangle[,\langle\mathit{location}\rangle]).\]
+To access a child~$c$ say $x.c()$. To create another instance of~$A$ that
+is like~$x$, except that child~$c$ has value~$y$, say $x.withC(y)$.  It is
+not possible to mutate an AST object (see Section~\ref{sec:immutability}).
+Finally, one should get familiar with the operations defined in
+\texttt{utils.tpl}, because they abstract idioms that occur frequently.
+
+% >>>
+\subsection{Visitors, Evaluators, Transformers} % <<<
 \label{sec:visitors}
 
-\rg{Typeset $<$ as $\langle$.}
-\rg{Get rid of $\mathscr A$.}
-\rg{Rewrite this paragraph: even I got bored and glanced over.}
-FreeBoogie uses the visitor pattern and
-the root of the visitors' class hierarchy is the class
-\jmlCode|Evaluator<R>|. The root of the Boogie AST
-class hierarchy is the class \jmlCode|Ast|. A subclass
-of \jmlCode|Evaluator<R>| is like a function of type
-$\mathit{Ast}\to R$, in the sense that it associates a
-value of type~$R$ (possibly \jmlCode|null|) to an AST
-node. For example, the type checker is a subclass of
-\jmlCode|Evaluator<Type>|. The base class \jmlCode|Evaluator|
-declares one \jmlCode|eval($\mathscr{A}$)| method for each AST
-class~$\mathscr{A}$. These methods
-are not only declared, but they are also implemented, so that
-subclasses explicitly handle only the relevant types of AST
-nodes. For all the other AST node types, the default behavior
-implemented in \jmlCode|Evaluator| is to recursively evaluate all
-children and to cache the results. Because the \jmlCode|eval|
-methods of \jmlCode|Evaluator| are so similar, they are generated
-from an AstGen template.
+AstGen generates $\approx4000$~lines of Java code that makes it easier to
+write Boogie transformers. For example, the $6$~lines in
+Fig.~\ref{lst:example-transformer} are all that is needed to change all
+occurrences of~$u$ into~$v$ in some Boogie AST\null. Note that the code is
+fairly robust to changes in FreeBoogie's abstract grammar---as long as the
+non-terminal is called \textit{Identifier}, it does not matter where
+exactly it can appear in the program.
 
-An important type of evaluator is a transformer: The class
-\jmlCode|Transformer| extends \jmlCode|Evaluator<Ast>|. The
-main functionality implemented in \jmlCode|Transformer|, path
-copying, is illustrated in Figure~\ref{fig:path-copying}. Empty
-nodes (\tikz[baseline=-.5ex] \node[fgdraw,circle] {}; and
-\tikz[baseline=-.5ex] \node[fgdraw]{};) represent AST nodes
-that exist on the heap before a transformer~$T$ acts; filled
-nodes (\tikz[baseline=-.5ex] \node[fgdraw,fgfill,circle]{};
-and \tikz[baseline=-.5ex] \node[fgdraw,fgfill]{};) represent
-AST nodes created by the transformer~$T$. Because the
-transformer~$T$ is interested only in rectangle nodes,
-it overrides only the \jmlCode|eval| method that takes
-rectangles as parameters. That overriden method is responsible
-for creating the filled rectangle (\tikz[baseline=-.5ex]
-\node[fgdraw,fgfill]{};). All the other filled nodes
-(\tikz[baseline=-.5ex] \node[fgdraw,fgfill,circle]{};) are
-created by \textit{Transformer}, and need not be of any concern
-to the particular transformer~$T$.
+\bc
+\begin{jml}
+public class Renamer extends Transformer {
+  @Override public Identifier eval(Identifier identifier) {
+    if (!identifier.id().equals("u")) return identifier;
+    else return Identifier.mk("v");
+  }
+}
+\end{jml}
+\ec{Changing all occurrences of variable~$v$ into variable~$y$}
+{lst:example-transformer}
 
-\begin{figure}\centering
+The root of the AST class hierarchy is \textit{Ast}; the root of the
+visitors' class hierarchy is $\mathit{Evaluator}\langle R\rangle$, which is
+generated from \texttt{evaluator.tpl}. For each class~$A$ that extends
+\textit{Ast}, there is a method $R\,\mathit{eval}(A)$. For example, the
+typechecker is an instance of
+$\mathit{Evaluator}\langle\mathit{Type}\rangle$. Its \textit{eval}
+methods return an instance of \textit{Type} when $A$~extends
+\textit{Expr} (which itself extends \textit{Ast}), otherwise they return
+\textbf{null}.
+
+The \textit{eval} methods defined in \textit{Evaluator} recursively invoke
+the current visitor on all the children and then return \textbf{null}.
+This Fig.~\ref{lst:example-transformer} needs no code to traverse the
+AST\null. \textit{Evaluator} also contains a cache that may be used by its
+subclasses to avoid redoing work. See, for example,
+\textit{AssociativeEvaluator} in \texttt{evaluator.tpl}, or the evaluation
+of expressions in \method{tc.TypeChecker}.
+
+Boogie transformers are a special case of evaluators: The class
+\textit{Transformer} extends $\mathit{Evaluator}\langle\mathit{Ast}\rangle$
+and is generated from \texttt{transformer.tpl}. The main functionality
+implemented in \textit{Transformer}, path copying, is illustrated in
+Figure~\ref{fig:path-copying}. Empty nodes (\tikz[baseline=-.5ex]
+\node[fgdraw,circle] {}; and \tikz[baseline=-.5ex] \node[fgdraw]{};)
+represent AST nodes that exist on the heap before a transformer~$T$ acts;
+filled nodes (\tikz[baseline=-.5ex] \node[fgdraw,fgfill,circle]{}; and
+\tikz[baseline=-.5ex] \node[fgdraw,fgfill]{};) represent AST nodes created
+by the transformer~$T$. Because the transformer~$T$ is interested only in
+rectangle nodes, it overrides only the \jmlCode|eval| method that takes
+rectangles as parameters. That overriden method is responsible for creating
+the filled rectangle (\tikz[baseline=-.5ex] \node[fgdraw,fgfill]{};). All
+the other filled nodes (\tikz[baseline=-.5ex]
+\node[fgdraw,fgfill,circle]{};) are created by \textit{Transformer}, and
+need not be of any concern to the particular transformer~$T$.  The input
+and the output of a transformer are treees that usually share a large
+number of nodes.
+
+\begin{figure}\centering % <<<
 \begin{tikzpicture}
   [level distance=7mm,
   level/.style={sibling distance=5cm/(#1^1.5)}]
@@ -366,16 +389,8 @@ to the particular transformer~$T$.
 \node[above right] at (A') {output};
 \end{tikzpicture}
 \caption{Path copying}\label{fig:path-copying}
-\end{figure}
+\end{figure} % >>>
 
-The input and the output of a transformer usually share a large number of
-nodes. Since \textit{Evaluator} caches the information that various
-evaluators associate with AST nodes, there is no need to repeat the
-computation of that auxiliary information for the shared parts. \rg{Don't
-use `auxiliary'. Reserve that word for tc, st, and fg.} For example, most
-of the type information is already in the cache of the type checker.
-
-\rg{Make more convincing.}
 Sometimes a transformer wants to `see' AST nodes of type~$A$
 even if it computes no value for them. A typical example is
 a pretty printer. In such cases a transformer may override
@@ -387,95 +402,55 @@ then the former will be called by the traversal code in
 
 % >>>
 \subsection{Immutability} % <<<
-\label{sec:design.immutability}
-% @review JRK *want* (but tighten-up)
+\label{sec:immutability}
 
-In Java programming, it is unusual to constrain data structures
-to be immutable. Since the resulting code may look awkward to
-many programmers, there better be some good reasons for this
-design decision. In fact, awkward code, such as copying all but
-one of the fields in a new object instead of doing a simple
-assignment, is only one of the apparent problems.
+Many Java programmers dislike immutable data structures, so this design
+decision needs some motivation.
 
-\bc
-\begin{jml}
-public class Renamer extends Transformer {
-  @Override public Identifier eval(Identifier identifier) {
-    if (!identifier.id().equals("u")) return identifier;
-    else return Identifier.mk("v");
-  }
-}
-\end{jml}
-\ec{Changing all occurrences of variable~$v$ into variable~$y$}
-{lst:example-transformer}
+A first objection is that immutable data structures lead to awkward code.
+But I believe that the generated code, such as the \textit{withX} methods,
+alleviate this problem.
 
-Immutability implies path copying, which is a potential performance
-problem. Consider the task of changing all occurrences of the variable~$u$
-into variable~$v$, which is achieved by the transformer in
-Figure~\ref{lst:example-transformer}. Suppose an AST with height~$h$ and
-$n$~nodes contains exactly one occurrence of variable~$u$. If the class
-\textit{Identifier} would be mutable, one assignment would be enough to
-achieve the substitution; since the class \textit{Identifier} is immutable,
-about $h$ new nodes must be created and initialized. However, if there are
-two occurrences of variable~$u$, they share some ancestors, meaning that
-less than about $2h$ new AST nodes must be created and initialized. Even
-more, if we take into account the tree traversal, then both
-implementations, with a mutable AST and with an immutable AST, take
-$\Theta(n)$ time \rg{where $n\ldots$}. In other words, there is no
-asymptotic slowdown.
-
-A Boogie block contains a \emph{list} of statements (see
-Figure~\ref{fig:boogie-absgrm}). Such lists should be immutable,
-but there are no immutable lists in the Java API (\fb application
-\fb programming \fb interface), only immutable \emph{views} of
-lists. Immutable collections can be implemented such that
-immutability is enforced statically by the compiler or such
-that immutability is enforced by runtime checks. Unfortunately,
-the former is incompatible with implementing Java API
-interfaces~\cite{javaCollectFaq}. For example, in order to use
-the iteration statement
-\jmlCode|for (T x : xs)|,
-one must implement the interface \textit{Iterable} that
-contains the method \textit{remove}. Obviously, calls to
-the \textit{remove} method are not prevented statically by
-the compiler. FreeBoogie uses the \textit{ImmutableList}
-class from the Google Collections~\cite{google-collect}
-library \rg{guava!}, which follows the approach with runtime checks.
+A second objection is that immutable data structures are inefficient. The
+equivalent of assigning a field is making a copy of a whole object. For
+Boogie AST transformers, this means several objects must be copied
+(Fig.~\ref{fig:path-copying}). However, note that one run of a transformer
+over an AST tree with $n$~nodes takes $\Theta(n)$~time both for mutable and
+for immutable data structures. The space usage of immutable ASTs is indeed
+higher, unless the input of transformations needs to persist.
 
 However, the advantages of immutability outweigh its
 disadvantages.
 
-First, immutability enables \textit{Evaluator} to cache the
-results of previous computations, because only immutable data
-structures can be used as keys in maps. A particular evaluator,
-such as the type-checker, need not mention anywhere in its
-implementation that caching is used. Yet, if the type-checker
-is invoked twice on the same AST fragment, then the second call
-will return immediately. This leads to cleaner code also because
-AST transformers need not bother with updating the auxiliary
-information---recomputing it is cheap.
-
-Second, immutability makes the code easier to understand, because
-it frees the programmer from thinking about aliasing of AST nodes.
-In Java, any mutation of \jmlCode|u.f| must be done only after
-thinking how it will affect code that uses possible aliases of~$u$.
-Because the AST is a central data structure in FreeBoogie, there
-is a lot of potential aliasing that must be considered whenever
-a mutation is done. It is much simpler to forbid mutations altogether.
+First, immutability enables \textit{Evaluator} to cache the results of
+previous computations, because only immutable data structures can be used
+as keys in maps. Second, it turns out that there is a situation in which
+the intermediate ASTs need to persist: For incremental verification.  And
+third, immutability makes the code easier to understand, because it frees
+the programmer from thinking about aliasing of AST nodes. In our
+experience, aliasing of AST nodes inside a language-processing tool is a
+wonderful source of bugs.
 
 Still, there are situations when the programmer must think about aliasing
-of AST data structures. It is natural to think of an AST reference as
+of Boogie AST objects. It is natural to think of an AST reference as
 \emph{being} a piece of a Boogie program, even if, strictly speaking, it
 only \emph{represents} a piece of a Boogie program. To maintain this useful
-illusion the programmer must ensure that no sharing occurs within
+illusion the programmer must ensure that no sharing occurs \emph{within}
 \emph{one} version of the AST\null. In practice, this means that the
 programmer must occasionally clone pieces of the AST when implementing
-transformers. (The \textit{clone} method is implemented in the code
-template for AST classes.)
+transformers. To facilitate this, AstGen generates a \textit{clone} method
+for each AST class.
+
+Finally, let us note a technicality. Some AST nodes must contain lists of
+other nodes. For example, a \textit{block} contains a list of
+\textit{statement}s. There is no convenient way, however, to represent
+immutable collections using Java's API. FreeBoogie uses the class
+\textit{ImmutableList} from the Guava libraries~\cite{guava-libraries}
+wherever \texttt{fb.ag} uses the \texttt{[list]} tag.
 
 % >>>
 % >>>
-\section{Auxiliary Information} % <<<
+\section{Derived Information} % <<<
 % @review JRK *want*
 
 The package \textit{freeboogie.tc} derives extra information from
