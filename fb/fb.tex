@@ -110,6 +110,8 @@
 \newcommand{\escjava}{ESC\slash Java\xspace}
 \newcommand{\framac}{\hbox{Frama-C}}
 \newcommand{\jk}[1]{{\small [\textcolor{red}{jk}: #1]}}
+\newcommand{\methodHelper}[1]{$\mathit{#1}$\catcode`\#=6 }
+\newcommand{\method}{\catcode`\#=12 \methodHelper}
 \newcommand{\rg}[1]{{\small [\textcolor{red}{rg}: #1]}}
 \newcommand{\shell}[1]{\\\leftline{\indent\indent\footnotesize\texttt{#1}}}
 \newcommand{\specsharp}{Spec$^\sharp$\xspace}
@@ -170,70 +172,66 @@ and then follow the instructions in \texttt{README}.
 % >>>
 \section{The Pipeline} % <<<
 
-The best way to understand how FreeBoogie works is to run it on a few
-examples and ask it to dump its data structures at intermediate stages.
-Figure~\ref{lst:boogie-indexof} shows a Boogie program suitable for a first
-run. To peek at FreeBoogie's internals use the following command. \rg{Use a
-file from the repo.} \shell{fb --dump-intermediate-stages=log example.bpl}
-This will create a directory \texttt{log}. The output of each processing
-phase of FreeBoogie appears in a subdirectory of~\texttt{log}. The name of
-the subdirectory is the name of the phase. \rg{The pipeline is built by
-code in $\ldots$} \rg{Each subdir contains code plus aux info (types,
-symbol table, flowgraph.)}
+The best way to understand FreeBoogie is to run it and peek at its internal
+state.  The command \shell{fb -dis=log examples/simples.bpl} generates a
+directory \texttt{log}. Its subdirectory
+\texttt{freeboogie.vcgen.WhileDesugarer} contains a dump of FreeBoogie's
+internal state after \textbf{while} was desugared. The Boogie AST is in
+\texttt{simple.bpl}. There is also a symbol table (\texttt{symbols.txt})
+and a flowgraph (\texttt{indexOf$\ldots$}), both of which are derived from
+the Boogie AST\null. FreeBoogie does \emph{not} keep the derived
+information in sync with the AST, but re-derives it after each modification
+of the AST\null.
 
+The command \shell{fb -lf=example.log -ll=info -lc=prover
+examples/simple.bpl} logs the communication with the prover in the file
+\texttt{example.log}.
 
-The flowgraph is an example of \emph{auxiliary} information that
-FreeBoogie computes after each transformation. The other pieces
-of auxiliary information are the symbol table and the types. The
-\emph{symbol table} is a one-to-many bidirectional map between
-identifier definitions and identifier uses. The \emph{types} are
-associated with expressions (and subexpressions).
-
-To see the query that is sent to the theorem prover you must run a
-different command. \rg{Use file in repo} \shell{fb -lf=example.log -ll=info
--lc=prover example.bpl} The log file \texttt{example.log} will contain
-everything sent to the prover. The result of the whole run is \shell{OK:
-indexOf at example.bpl:2:11} indicating that the program is correct.
-
-\rg{In general, $\ldots$}
-\rg{Get rid of colors.}
 Figure~\ref{fig:architecture} shows that FreeBoogie has a
-pipeline architecture. The \colorbox{green!50!white}{light green}
-color stands for the Boogie AST (\fb abstract \fb syntax \fb
-tree); the \colorbox{blue!50!black}{\textcolor{white}{dark blue}}
-color stands for the SMT AST\null.
+pipeline architecture.
 
-\begin{figure} % <<<
-  \centering
-  \begin{tikzpicture}[scale=1]
-  \tikzstyle phaseS=[thick,rounded corners=2pt,draw=black,fill=white];
-  \fill[color=green!50!white] (0,-0.25) rectangle +(6,-4.75);
-  \fill[color=blue!50!black] (0,-4.75) rectangle +(6,-1.5);
-  \foreach \py/\px/\ptext in {
-    0/5.45/parse,
-    1/5.45/desugar \textbf{break},
-    2/5.45/desugar \textbf{while},
-    3/5.45/desugar \textbf{if},
-    4/5.45/handle loops,
-    5/5.45/desugar \textbf{call},
-    6/5.45/desugar \textbf{havoc},
-    7/5.45/desugar specifications,
-    8/5.45/remove assignments,
-    9/6/compute VC,
-    10/6/add prover-dependent axioms,
-    11/6/simplify VC,
-    12/6/query a prover}
-  {
-    \draw[phaseS]
-     [yscale=.5](0,-\py-0.1) rectangle node {\ptext}  +(\px,-.8);
-  }
-  \draw[phaseS] (5.55,-0.25) rectangle node[rotate=-90] 
-    {update extra information} (6,-4.45);
+\begin{figure}\centering % <<<
+\begin{tikzpicture}
+  \tikzstyle dr=[dashed,rounded corners=1pt,fill=white];
+  \tikzstyle ar=[thick,rounded corners=1pt,fill=white];
+  \tikzstyle g=[color=gray];
+  \def\a{0.2}
+  \def\b{1.5}
+  \def\c{0.2}
+  \def\d{1.5}
+  \def\e{0.1}
 
-  \end{tikzpicture}
-  \caption{FreeBoogie architecture.}
-  \label{fig:architecture}
-  \rg{Only say `desugar', not what kind of desugaring.}
+  % ds rectangles
+  \draw[dr] (-\e,\d+\e) rectangle (-\a-\c-\b-\b-\c-\a+\e,-\d-\d);
+  \draw[dr] (+\e,\d+\e) rectangle (+\a+\c+\b+\b+\c+\a-\e,-\d-\d);
+
+  % action rectangles
+  \draw[ar] (-\a-\c-\b-\b-\c-\a-\a,-\d) rectangle +(+\a+\a,+\d+\d);
+  \draw[ar] (+\a+\c+\b+\b+\c+\a+\a,+\d) rectangle +(-\a-\a,-\d-\d);
+  \draw[ar] (-\a-\c-\b-\b,-\d) rectangle +(+\b+\b,+\d+\d);
+  \draw[ar] (+\a+\c+\b+\b,+\d) rectangle +(-\b-\b,-\d-\d);
+  \draw[ar] (-\a,-\d) rectangle +(\a+\a,\d+\d);
+
+  % text
+  \node[rotate=90] at (-\a-\c-\b-\b-\c-\a,0) {parse};
+  \node[rotate=90] at (-\a-\c-\b-\b+\a,0) {transform Boogie};
+  \node[rotate=90] at (0,0) {generate VC};
+  \node[rotate=90] at (+\a+\c+\a,0) {transform SMT};
+  \node[rotate=90] at (+\a+\c+\b+\b+\c+\a,0) {query prover};
+
+  \node[g] at (-\a-\c-\b+\a,\a+\a) {desugar};
+  \node[g] at (-\a-\c-\b+\a,0) {handle loops};
+  \node[g] at (-\a-\c-\b+\a,-\a-\a) {passivate};
+
+  \node[g] at (+\a+\c+\b+\a,\a) {add axioms};
+  \node[g] at (+\a+\c+\b+\a,-\a) {simplify};
+
+  \node at (-\a-\c-\b,-\d-\d/2+\a+\a) {Boogie AST};
+  \node at (-\a-\c-\b,-\d-\d/2) {$\Downarrow$};
+  \node at (-\a-\c-\b,-\d-\d/2-\a-\a) {types, flowgraph, $\ldots$};
+  \node at (+\a+\c+\b,-\d-\d/2) {SMT AST};
+\end{tikzpicture}
+\caption{The architecture of FreeBoogie}\label{fig:architecture}
 \end{figure} % >>>
 
 \rg{Put this in the figure (`transf', `Boogie transf', $\ldots$)}
