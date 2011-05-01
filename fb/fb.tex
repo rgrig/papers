@@ -179,16 +179,26 @@ directory \texttt{log}. Its subdirectory
 internal state after \textbf{while} was desugared. The Boogie AST is in
 \texttt{simple.bpl}. There is also a symbol table (\texttt{symbols.txt})
 and a flowgraph (\texttt{indexOf$\ldots$}), both of which are derived from
-the Boogie AST\null. FreeBoogie does \emph{not} keep the derived
-information in sync with the AST, but re-derives it after each modification
-of the AST\null.
+the Boogie AST\null. Similarly, the other subdirectories describe the state
+at other points of execution.
 
 The command \shell{fb -lf=example.log -ll=info -lc=prover
 examples/simple.bpl} logs the communication with the prover in the file
 \texttt{example.log}.
 
-Figure~\ref{fig:architecture} shows that FreeBoogie has a
-pipeline architecture.
+Fig.~\ref{fig:architecture} shows that FreeBoogie has a pipeline
+architecture. The most important data structures are the Boogie AST
+(Section~\ref{sec:ast}) and the SMT AST (Section~\ref{sec:backend}). The
+phase that is conceptually most important, the actual generation of the
+verification condition, is extremely simple: see the classes
+\method{vcgen.WeakestPrecondition} and
+\method{vcgen.StrongestPostcondition}. Most of the work is done before by
+Boogie transformers, which are also in the package \method{vcgen}. Each
+Boogie transformer takes as input a Boogie AST and some derived information
+(such as types and flowgraphs) and produces another Boogie AST\null.
+Transformers are \emph{not} responsible with keeping the derived
+information in sync with the Boogie AST; the package \method{tc} is
+responsible with (re)deriving types, symbol tables, flowgraphs, and so on.
 
 \begin{figure}\centering % <<<
 \begin{tikzpicture}
@@ -234,90 +244,24 @@ pipeline architecture.
 \caption{The architecture of FreeBoogie}\label{fig:architecture}
 \end{figure} % >>>
 
-\rg{Put this in the figure (`transf', `Boogie transf', $\ldots$)}
-Horizontal boxes, except for the first one (parse) and the last
-one (query a prover), represent \emph{transformations}. Depending
-on the type of input and on the type of output there are three
-types of transformations: Boogie to Boogie, Boogie to SMT, and
-SMT to SMT\null. For brevity, we say `Boogie transformations'
-instead of `Boogie to Boogie transformations', and `SMT
-transformations' instead of `SMT to SMT transformations'. All
-these transformations are designed not to miss bugs, at the cost
-of possible false positives.
+The other important packages are: \method{parser}, which contains a parser
+for Boogie; \method{ast}, which contains the Boogie AST data structures;
+and \method{backend}, which contains everything involving SMT.
 
-\rg{Less formal:}
-A Boogie transformation is \emph{sound} when it produces only
-incorrect Boogie programs from incorrect Boogie programs. A
-Boogie to SMT transformation is \emph{sound} when it produces
-only invalid formulas from incorrect Boogie programs. An SMT
-transformation is \emph{sound} when it produces only invalid
-formulas from invalid formulas.
-
-The symmetric notion is that of completeness.
-
-\rg{Less formal and shorter.}
-A Boogie transformation is \emph{complete} when it produces
-only correct Boogie programs from correct Boogie programs. A
-Boogie to SMT transformation is \emph{complete} when it produces
-only valid formulas from correct Boogie programs. An SMT
-transformation is \emph{complete} when it produces only valid
-formulas from valid formulas.
-
-All transformations in FreeBoogie are sound; all transformations
-in FreeBoogie, except loop handling, are complete.
-
-Full Boogie would not be user friendly without high-level
-constructs like \textbf{while} statements and \textbf{break}
-statements. Many phases in FreeBoogie perform syntactic
-desugarings of these constructs. The desugaring is sometimes
-local, in the sense that it can be done without keeping track of
-an environment, and sometimes it is not. For example, to desugar
-the \textbf{break} statement we must keep track of the enclosing
-\textbf{while} and \textbf{if} statements; but the desugaring of
-a \textbf{havoc} statement does not depend on any surrounding
-code. \rg{Must refer back to this when discussing visitors and their state.}
-
-The most important transformation in FreeBoogie is the
-transition from Boogie to SMT\null. The role of preceding Boogie
-transformations is to simplify the program to a form on which the
-VC is easily computed; the role of subsequent SMT transformations
-is to bring the VC to a form that is easily handled by a prover.
-
-The order of Boogie transformations depends on constraints
-such as the following. The Boogie to SMT transformation
-(`compute VC' in Figure~\ref{fig:architecture}) only handles
-the \textbf{assert}, \textbf{assume}, and \textbf{goto}
-statements. The Boogie transformation that removes assignments
-only handles acyclic flowgraphs. Hence, the flowgraph must
-first be transformed into an acyclic one (`handle loops' in
-Figure~\ref{fig:architecture}).
-
-The VC uses concepts such as arrays, which may or may not be
-known to the prover. In the latter case, axioms that describe
-the concept must be added to the VC\null. Finally, the VC is
-simplified so that the communication with the prover is
-more efficient. \rg{Check if I actually do any simplifications.}
-
-The source code of FreeBoogie, written in Java~6, contains
-four packages, which are in one-to-one correspondence with the
-following sections.
-
-\begin{itemize}
-\item \texttt{freeboogie.ast}: data structures for representing
-  Boogie programs and facilities for processing such data structures
-\item \texttt{freeboogie.tc}: code that computes auxiliary information
-  from a Boogie AST
-\item \texttt{freeboogie.vcgen}: the Boogie transformations and
-  the Boogie to SMT transformation
-\item \texttt{freeboogie.backend}: 
-  SMT transformations, 
-  data structures for representing SMT, 
-  and code for interfacing with the prover
-\end{itemize}
+By design, Boogie transformers modify the AST as little as possible, are
+sound, and, if possible, complete. (In other words, any unsoundness is a
+bug, not a feature.) Because transformers do little, they are small, easy
+to understand, probably correct. The most likely source of bugs is the
+tacit dependencies between transformers. For example,
+\method{vcgen.WeakestPrecondition} assumes that its input has no
+assignments, and says so in its comments. Because of these dependencies,
+the order in which transformers are applied, which is established in
+\method{Main#initialize}, is important and fragile. A better solution is
+needed.
 
 % >>>
 \section{The Abstract Syntax Tree and its Visitors} % <<<
-\label{sec:design.ast}
+\label{sec:ast}
 % @review JRK *want*, but needs a lot of trimming (see below)
 
 The Boogie AST data structures are described using a compact notation. A
@@ -595,7 +539,7 @@ Chapter~\ref{ch:spwp}.
 
 % >>>
 \section{The Prover Backend} % <<<
-\label{sec:design.backend}
+\label{sec:backend}
 % @review JRK *want*
 
 The package \textit{freeboogie.backend} contains SMT data
@@ -606,6 +550,14 @@ agree with Joe that it was pedantic, and a little must be said anyway.}
 
 \rg{Need to say: (1) how to add new symbols and (2) axioms that are added
 only when certain symbols are used.}
+
+\rg{This is moved from Pipeline: Check and rewrite.}
+The VC uses concepts such as arrays, which may or may not be
+known to the prover. In the latter case, axioms that describe
+the concept must be added to the VC\null. Finally, the VC is
+simplified so that the communication with the prover is
+more efficient. \rg{Check if I actually do any simplifications.}
+
 
 \subsection{Talking to the Prover} % <<<
 % @review JRK *want*
