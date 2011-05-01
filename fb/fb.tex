@@ -451,141 +451,114 @@ wherever \texttt{fb.ag} uses the \texttt{[list]} tag.
 % >>>
 % >>>
 \section{Derived Information} % <<<
-% @review JRK *want*
 
-The package \textit{freeboogie.tc} derives extra information from
-a Boogie AST---types, a symbol table, and a flowgraph.
+The package \textit{tc} derives extra information from a Boogie
+AST---types, a symbol table, and a flowgraph.
 
-The AST constructed by the parser is type-checked in order to
-catch simple mistakes in the input. As a safeguard against bugs,
-the AST is type-checked after each transformation. A side-effect
-of type-checking is that the type of each expression is known.
-
-\rg{Rephrase.}
-The symbol table helps in navigating the AST\null. It consists of
-one-to-many bidirectional maps that link identifier declarations
-to places where the identifiers are used. All
-these maps are in the class \textit{SymbolTable}.
-Another bidirectional map is built by
-\textit{ImplementationChecker}: In full Boogie a \emph{procedure}
-may have zero, one, or multiple \emph{implementations}. 
-
+The AST constructed by the parser is type-checked in order to catch simple
+mistakes in the input. As a safeguard against bugs, the AST is type-checked
+after each transformation. A side-effect of type-checking is that the type
+of each expression is known.  The symbol table helps in navigating the
+AST\null. It consists of one-to-many bidirectional maps that link
+identifier declarations to places where the identifiers are used. These
+maps are in \textit{SymbolTable} and in \textit{ImplementationChecker}.
 Finally, it is sometimes convenient to view one implementation as a
 flowgraph whose nodes are statements. Such a flowgraph is built by
-\textit{FlowGraphMaker}. \rg{Say that unreachable nodes get warnings and
-mention SimpleGraph?}
+\textit{FlowGraphMaker}.
 
-All auxiliary information is available through
-\textit{TcInterface}, which is an implementation of the Facade
-pattern.
+All derived information is available through \textit{TcInterface}, the
+facade of the package \textit{tc}.  Because of the caching in
+\textit{Evaluator} and because much of the output of a transformation is
+shared with the input, it is not expensive to re-derive the types and the
+symbol table after each transformation.
 
 % >>>
 \section{Verification Condition Generation} % <<<
-% @review JRK *want*
 
-The package \textit{freeboogie.vcgen} consists of Boogie
-transformers and Boogie to SMT transformers. The facade of this
-package is the class \textit{VcGenerator}.
+Boogie transformers reside in the package \textit{vcgen} (and use the
+infrastructure in package \textit{ast}). Also, the key phase of FreeBoogie,
+the generation of verification conditions, is implemented in the package
+\textit{vcgen}.
 
-Most Boogie transformers are responsible for small AST
-modifications such as desugaring an \textbf{if} statement
-into \textbf{assume} and \textbf{goto} statements. For speed,
-it would be better to cluster many such simple transformers
-into one, but the code is simpler if they are kept
-separate. A few helper classes are used by multiple Boogie
-transformers: \textit{CommandDesugarer} is used as a base class
-by transformers that change statements into lists of statements;
-\textit{ReadWriteSetFinder} is an evaluator that associates with
-each statement two sets---the set of variables that are read and
-the set of variables that are written.
+The main quality of \textit{vcgen} is the simplicity of the code that does
+the core task. If the reader reads no other code of FreeBoogie, we urge her
+to take a look at the class \textit{StrongestPostcondition}.
 
-Boogie transformations do not update the auxiliary information
-while they are building new AST nodes. Instead, at the very end,
-they recompute all auxiliary information, and caches ensure that
-no computation is repeated. This way, bugs that produce untypable
-Boogie programs get caught at run-time. (Type information is
-auxiliary information, so type-checking is repeated. \rg{remove?})
+To implement a new transformation, developers should a few more things.
+First, there is a common pattern of keeping track of context. Second, there
+are a few helper classes in this package as well.
 
-The Boogie to SMT transformation is done by the
-class \textit{WeakestPrecondition} or by the class
-\textit{StrongestPostcondition}, depending on the command line
-options. The theory behind these two classes is presented in
-Chapter~\ref{ch:spwp}.
+Some transformations are local. For example, in order to turn
+$\mathbf{havoc}\,x$ into $x:=\mathit{fresh}$ we need not know anything
+about the surrounding code. Other transformations are only trivially
+non-local. For example, in order to turn a \textbf{call} into
+$\mathbf{assert}\ldots\mathbf{havoc}\ldots\mathbf{assume}$, one needs to
+find the declaration of the procedure being called, which can be done using
+the symbol table. However, transformers do sometimes need to keep track of
+custom context information. For example, in order to desugar \textbf{break}
+one needs to know the enclosing loops, and this ``derived information'' is
+not available through \textit{TcInterface}. In those cases various
+\textit{eval} methods will essentially send each other information through
+fields of the transformer. The most complicated transformer, which
+illustrates this technique, is \textit{AbstractPassivator}.
+
+Transformers that need to replace a statement with a list of statements
+extend \textit{CommandDesugarer}. Transformers that need to know which
+variables are read or written in various pieces of program use the class
+\textit{ReadWriteSetFinder}.
 
 % >>>
 \section{The Prover Backend} % <<<
 \label{sec:backend}
 % @review JRK *want*
 
-The package \textit{freeboogie.backend} contains SMT data
-structures and code to communicate with provers.
+The package \textit{backend} contains SMT data structures and code to
+communicate with provers.
 
-\rg{I think I need to add back how sort checking is done. I'm not sure I
-agree with Joe that it was pedantic, and a little must be said anyway.}
+The SMT AST is a tree of strings---all the objects are of type
+\textit{SmtTree}. However, to construct ASTs one \emph{should} use a
+\textit{TermBuilder}, because its \textit{mk} methods perform
+sort-checking. For example, to construct a conjunction between $x$~and~$y$
+using the builder \textit{term}, one should write
+$\mathit{term}.\mathit{mk}(\mathtt{"and"},x,y)$. For this to succeed, the
+label \texttt{and} must have been declared before by calling \textit{def}
+on the builder. That call has essentially the form \[
+\mathit{term}.\mathit{def}(\langle\mathit{label}\rangle,
+\langle\textit{sort of result}\rangle, \langle\textit{sorts of
+arguments}\rangle). \] See \method{TermBuilder#TermBuilder} for examples.
+All classes that implement the interface \textit{Prover} should know how to
+handle all the labels that were registered with a term builder. See
+\method{SimplifyProver#printTerm} for an example.
 
-\rg{Need to say: (1) how to add new symbols and (2) axioms that are added
-only when certain symbols are used.}
-
-\rg{This is moved from Pipeline: Check and rewrite.}
-The VC uses concepts such as arrays, which may or may not be
-known to the prover. In the latter case, axioms that describe
-the concept must be added to the VC\null. Finally, the VC is
-simplified so that the communication with the prover is
-more efficient. \rg{Check if I actually do any simplifications.}
-
-
-\subsection{Talking to the Prover} % <<<
-% @review JRK *want*
-
-\rg{Check the code: I have a vague feeling there's something more
-interesting to say here.}
-
-The class \textit{Prover} defines the interface that is used
-by the package \textit{freeboogie.vcgen} to talk to the
-prover. It is a thin interface, consisting of the methods
-\textit{assume}, \textit{retract}, \textit{push}, \textit{pop},
-and \textit{isValid}.
-
-The real prover does not have to have the notion of an
-assumption (also known as hypothesis), but a class that extends
-\textit{Prover} should take advantage of all facilities of a real
-prover. For example, if Simplify is used as a prover, then a
-sequence of calls \jmlCode|assume(h)|, \jmlCode|isValid($q_1$)|,
-\jmlCode|isValid($q_2$)| may result in one of the following two
-strings being sent to the prover:
-\begin{align}
-&(\mathbf{IMPLIES}\;h\;q_1)\;(\mathbf{IMPLIES}\;h\;q_2)\\
-&(\mathbf{BG\_PUSH}\;h)\;q_1\;q_2
-\end{align}
-Both are OK, but the second is better, if only because
-$h$ is communicated once.
-
-Similarly, a class that extends \textit{Prover} may choose to
-treat certain SMT tree labels specially to take advantage of
-other facilities of the real prover.
-
-% >>>
-% >>>
-\section{Dependencies} % <<<
-
-\rg{Keep short. Mention CLOPS, AstGen, GenericUtils, Guava, the d/l
-process.}
+At the moment, \textit{TermOfExpr} and \textit{FormulaOfExpr} perform some
+tricky maneuvers so that the output is understood by the old prover
+Simplify, which does not understand \textbf{ite}. The trickiness will be
+removed and Simplify no longer supported.
 
 % >>>
 \section{Related Work} % <<<
-% @review JRK *want*  (though must be trimmed---also,  a discussion of
-% Cok's jSMTLIB is now necessary)
 
-\rg{Say that this evolved from chapter X in my thesis.}
-\rg{Mention Boogie, Spec$\sharp$, B2BPL, SMTLIB (including jSMTLIB) and
-nothing else. Keep short.}
-\rg{The comparison with Boogie needs to be good.}
+This paper evolved from Chapter~3 of the first author's PhD dissertation.
+
+Leino~\cite{leino2008boogie} describes the Boogie language. Barnett et
+al.~\cite{barnett2005boogie} describe the static verifier for Boogie
+programs developed at Microsoft Research. It is part of the
+Spec$^\sharp$~\cite{barnett2005spec} program verifier, and many other
+static analysis tools. Barrett et al.~\cite{barrett2010lang} describes the
+interface between verifiers and provers (reasoning engines), which
+FreeBoogie adopts. B2BPL is a tool developed at ETH Z\"urich that converts
+Java bytecode into Boogie. It is part of FreeBoogie's repository, because
+we plan to integrate them.
+
+% TODO: jSMTLIB
 
 % >>>
 \section{Conclusion} % <<<
-% @review JRK *want* A conclusion.
 
-\rg{Not sure what to say here.}
+FreeBoogie is an alternative to the Boogie tool. Its design stresses
+correctness and simplicity. Even if at the moment it is only of $\alpha$
+quality, we plan to keep improving it and we hope that it makes a good
+framework for researchers that want to experiment with the Boogie language.
 
 % >>>
 \bibliographystyle{plain}
