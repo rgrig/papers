@@ -264,10 +264,32 @@ module PropertyChecks = struct
     if not (StringSet.mem "error" all) then warn "missing error";
     StringSet.iter (fun s -> warn (sprintf "unused state: %s" s)) bad
 
+  let warn_bad_pattern e vs = match StringSet.elements vs with
+    | [] -> ()
+    | vs ->
+        fprintf str_formatter "%s->%s: " e.A.edge_source e.A.edge_target;
+        fprintf str_formatter "multiple bindings for ";
+        pp_list ", " pp_s str_formatter vs;
+        warn (flush_str_formatter ())
+
+  let check_linear_patterns p =
+    let check_edge e =
+      let chk ((seen, bad) as acc) = function
+        | A.Pattern (Some x) ->
+            if StringSet.mem x seen
+            then (seen, StringSet.add x bad)
+            else (StringSet.add x seen, bad)
+        | _ -> acc in
+      let ls = let l = e.A.edge_label in l.A.label_result :: l.A.label_arguments in
+      let _, vs = List.fold_left chk (StringSet.empty, StringSet.empty) ls in
+      warn_bad_pattern e vs in
+    List.iter check_edge p.A.edges
+
   let all p =
     set_location (Some p.line);
     let p = p.ast in
-    check_unused_states p
+    check_unused_states p;
+    check_linear_patterns p
 end
 
 (* }}} *)

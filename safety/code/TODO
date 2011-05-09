@@ -1,6 +1,6 @@
 - property checks
-  - linear
-  - read comes only after write (or fail semantics?)
+  - unused variables (warn)
+  - possibly uninit vars (error)
 - desugar
   - generate unique IDs
   - ... into two types of edges (call and return)

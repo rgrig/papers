@@ -32,3 +32,12 @@ module IntMap = Map.Make (struct type t = int let compare = compare end)
 module StringMap = Map.Make (String)
 module StringPairMap = Map.Make (struct type t = string * string let compare = compare end)
 module StringSet = Set.Make (String)
+
+let pp_s pp_f s = Format.fprintf pp_f "%s" s
+
+let pp_list pp_sep pp_element =
+  let rec f = fun pp_f -> function
+    | [] -> ()
+    | [x] -> pp_element pp_f x
+    | x :: xs -> Format.fprintf pp_f "%a%s%a" pp_element x pp_sep f xs in
+  f

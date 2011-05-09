@@ -26,3 +26,7 @@ property "foo"
   c -> bar: *.m()
   foo -> d: *.m()
   f-> error: *.m()
+
+property "non-linear pattern"
+  start -> a: X := X.next()
+  a -> error: X := Y.foo(X, Y)
