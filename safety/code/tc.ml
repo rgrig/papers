@@ -234,20 +234,21 @@ module PropertyChecks = struct
   let get_source e = e.A.edge_source
   let get_target e = e.A.edge_target
 
-  let adjacency_of_edges source target =
+  let default d f m x = try f x m with Not_found -> d
+
+  let adjacency_of_edges source target es =
     let f acc e =
       let s, t = source e, target e in
       let old = try StringMap.find s acc with Not_found -> [] in
       StringMap.add s (t :: old) acc in
-    List.fold_left f StringMap.empty
+    default [] StringMap.find (List.fold_left f StringMap.empty es)
 
   let rec reachable_from g s =
     let r = ref StringSet.empty in
     let rec f s =
       if not (StringSet.mem s !r) then begin
         r := StringSet.add s !r;
-        let succ = try StringMap.find s g with Not_found -> [] in
-        List.iter f succ
+        List.iter f (g s)
       end in
     f s; !r
 
@@ -264,11 +265,11 @@ module PropertyChecks = struct
     if not (StringSet.mem "error" all) then warn "missing error";
     StringSet.iter (fun s -> warn (sprintf "unused state: %s" s)) bad
 
-  let warn_bad_pattern e vs = match StringSet.elements vs with
+  let warn_bad_edge msg e vs = match StringSet.elements vs with
     | [] -> ()
     | vs ->
         fprintf str_formatter "%s->%s: " e.A.edge_source e.A.edge_target;
-        fprintf str_formatter "multiple bindings for ";
+        fprintf str_formatter "%s: " msg;
         pp_list ", " pp_s str_formatter vs;
         warn (flush_str_formatter ())
 
@@ -280,7 +281,7 @@ module PropertyChecks = struct
         else (StringSet.add x seen, bad) in
       let ps = A.patterns e in
       let _, vs = List.fold_left see (StringSet.empty, StringSet.empty) ps in
-      warn_bad_pattern e vs in
+      warn_bad_edge "multiple bindings" e vs in
     List.iter check_edge p.A.edges
 
   let bindings =
@@ -289,31 +290,59 @@ module PropertyChecks = struct
       List.fold_left (flip StringSet.add) StringSet.empty ps in
     y (memo f)
 
+  let dump_set s =
+    eprintf "@[";
+    pp_list ", " pp_s err_formatter (StringSet.elements s);
+    eprintf "@]"
+
+  (*
+    Associates a value with each state in property [p]. The property is seen as
+    a graph, [vf] and [ef] are applied repeatedly to update values associated to
+    vertices and edges until a fixpoint is reached. The function [vf] takes the
+    values on incoming edges, a vertex, and returns a vertex value; the function
+    [ef] takes the value on the source vertex, an edge, and returns an edge
+    value. The value [d] is the initial value tacked on vertices.
+   *)
+  let fixpoint_on_graph p d vf ef =
+    let incoming = adjacency_of_edges get_target (fun e->e) p.A.edges in
+    let outgoing = adjacency_of_edges get_source (fun e->e) p.A.edges in
+    let ve = Hashtbl.create 13 in (* cache for edge values *)
+    let rec loop vv dv =
+      if StringSet.is_empty dv then vv else begin
+        let ef e =
+          try Hashtbl.find ve e
+          with Not_found ->
+            let vf v = try StringMap.find v vv with Not_found -> d in
+            let r = ef (vf (get_source e)) e in
+            Hashtbl.add ve e r; r in
+        let v = StringSet.choose dv in
+        let dv = StringSet.remove v dv in
+        let w = vf (List.map ef (incoming v)) v in
+        let edv =
+          if not (StringMap.mem v vv) || StringMap.find v vv <> w then begin
+            let es = outgoing v in
+            List.iter (fun e -> Hashtbl.remove ve e) es;
+            List.map get_target es
+          end else [] in
+        loop (StringMap.add v w vv) (List.fold_left (flip StringSet.add) dv edv)
+      end in
+    let m = loop StringMap.empty (StringSet.singleton "start") in
+    default d StringMap.find m
+
+  let bound_variables p =
+    let v_k es_k v = match es_k, v with
+      | _, "start" | [], _ -> StringSet.empty
+      | e::ev, _ -> List.fold_left StringSet.inter e ev in
+    let e_k s_k e = StringSet.union s_k (bindings e) in
+    fixpoint_on_graph p StringSet.empty v_k e_k
+
   let check_bound_variables p =
-    let incoming = adjacency_of_edges get_target (fun e -> e) p.A.edges in
-    let known k =
-      let process_vertex v es k =
-        let ke e =
-          let kv =
-            try StringMap.find (get_source e) k
-            with Not_found -> StringSet.empty in
-          StringSet.union (bindings e) kv in
-        let inter acc e = StringSet.inter acc (ke e) in
-        let r = match v, es with
-          | "start", _ | _, [] -> StringSet.empty
-          | _, e :: es ->
-              List.fold_left inter (ke e) es in
-        StringMap.add v r k in
-      StringMap.fold process_vertex incoming k in
-    let k = fix known StringMap.empty in
+    let bound = bound_variables p in
     let check_edge e =
-      let gs = A.guards e in
-      let k = 
-        try StringMap.find (get_source e) k
-        with Not_found -> StringSet.empty in
-      let chk g = if not (StringSet.mem g k) then
-        warn ("BLA " ^ g) in
-      List.iter chk gs in
+      let guards = A.guards e in
+      let guards = List.fold_left (flip StringSet.add) StringSet.empty guards in
+      let bound_here = bound (get_source e) in
+      warn_bad_edge "possibly unbound" e (StringSet.diff guards bound_here) in
     List.iter check_edge p.A.edges
 
   let all p =

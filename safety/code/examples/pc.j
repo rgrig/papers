@@ -36,5 +36,6 @@ property "unset variable"
 
 property "possibly unset variable"
   start -> a: X.foo()
-  start -> a: *.bar()
-  a -> error: x.foo()
+  a -> b:     x.foo()  // this one is OK
+  start -> b: *.bar()
+  b -> error: x.foo()

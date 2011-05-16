@@ -8,8 +8,9 @@
 - cleanup code
 - statement to havoc all (use as default body) -- deallocate all reachable heap
 - pretty-printer for AST
-- desugar properties into statemets
+- desugar properties into statements
 - cleanup code
+- generate coreStarIL
 - ...
 
 notes (low priority todos):
@@ -24,5 +25,4 @@ notes (low priority todos):
    to not have function calls in expression; can I allow them as
    syntactic sugar?
  - Generate this language from Java bytecode? It should be easy with ASM.
- - Generate jstar core from this language.
  - Generate Boogie from this language.
