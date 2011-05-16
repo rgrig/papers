@@ -30,3 +30,11 @@ property "foo"
 property "non-linear pattern"
   start -> a: X := X.next()
   a -> error: X := Y.foo(X, Y)
+
+property "unset variable"
+  start -> error: x.foo()
+
+property "possibly unset variable"
+  start -> a: X.foo()
+  start -> a: *.bar()
+  a -> error: x.foo()

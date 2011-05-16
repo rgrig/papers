@@ -237,8 +237,8 @@ module PropertyChecks = struct
   let adjacency_of_edges source target =
     let f acc e =
       let s, t = source e, target e in
-      let old = try StringMap.find s acc with Not_found -> StringSet.empty in
-      StringMap.add s (StringSet.add t old) acc in
+      let old = try StringMap.find s acc with Not_found -> [] in
+      StringMap.add s (t :: old) acc in
     List.fold_left f StringMap.empty
 
   let rec reachable_from g s =
@@ -246,8 +246,8 @@ module PropertyChecks = struct
     let rec f s =
       if not (StringSet.mem s !r) then begin
         r := StringSet.add s !r;
-        let succ = try StringMap.find s g with Not_found -> StringSet.empty in
-        StringSet.iter f succ
+        let succ = try StringMap.find s g with Not_found -> [] in
+        List.iter f succ
       end in
     f s; !r
 
@@ -274,22 +274,54 @@ module PropertyChecks = struct
 
   let check_linear_patterns p =
     let check_edge e =
-      let chk ((seen, bad) as acc) = function
-        | A.Pattern (Some x) ->
-            if StringSet.mem x seen
-            then (seen, StringSet.add x bad)
-            else (StringSet.add x seen, bad)
-        | _ -> acc in
-      let ls = let l = e.A.edge_label in l.A.label_result :: l.A.label_arguments in
-      let _, vs = List.fold_left chk (StringSet.empty, StringSet.empty) ls in
+      let see (seen, bad) x =
+        if StringSet.mem x seen
+        then (seen, StringSet.add x bad)
+        else (StringSet.add x seen, bad) in
+      let ps = A.patterns e in
+      let _, vs = List.fold_left see (StringSet.empty, StringSet.empty) ps in
       warn_bad_pattern e vs in
+    List.iter check_edge p.A.edges
+
+  let bindings =
+    let f _ e =
+      let ps = A.patterns e in
+      List.fold_left (flip StringSet.add) StringSet.empty ps in
+    y (memo f)
+
+  let check_bound_variables p =
+    let incoming = adjacency_of_edges get_target (fun e -> e) p.A.edges in
+    let known k =
+      let process_vertex v es k =
+        let ke e =
+          let kv =
+            try StringMap.find (get_source e) k
+            with Not_found -> StringSet.empty in
+          StringSet.union (bindings e) kv in
+        let inter acc e = StringSet.inter acc (ke e) in
+        let r = match v, es with
+          | "start", _ | _, [] -> StringSet.empty
+          | _, e :: es ->
+              List.fold_left inter (ke e) es in
+        StringMap.add v r k in
+      StringMap.fold process_vertex incoming k in
+    let k = fix known StringMap.empty in
+    let check_edge e =
+      let gs = A.guards e in
+      let k = 
+        try StringMap.find (get_source e) k
+        with Not_found -> StringSet.empty in
+      let chk g = if not (StringSet.mem g k) then
+        warn ("BLA " ^ g) in
+      List.iter chk gs in
     List.iter check_edge p.A.edges
 
   let all p =
     set_location (Some p.line);
     let p = p.ast in
     check_unused_states p;
-    check_linear_patterns p
+    check_linear_patterns p;
+    check_bound_variables p
 end
 
 (* }}} *)

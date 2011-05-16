@@ -41,3 +41,21 @@ let pp_list pp_sep pp_element =
     | [x] -> pp_element pp_f x
     | x :: xs -> Format.fprintf pp_f "%a%s%a" pp_element x pp_sep f xs in
   f
+
+let rec fix f x =
+  let y = f x in
+  if y = x then y else fix f y
+
+let rec y f x = f (y f) x
+
+let rec memo f f' =
+  let cache = Hashtbl.create 101 in
+  fun x ->
+    try
+      Hashtbl.find cache x
+    with Not_found -> begin
+      let r = f f' x in
+      Hashtbl.add cache x r; r
+    end
+
+let flip f x y = f y x

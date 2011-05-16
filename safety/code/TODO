@@ -1,6 +1,6 @@
 - property checks
+  - refactor Tc.PropertyChecks.check_bound_variables
   - unused variables (warn)
-  - possibly uninit vars (error)
 - desugar
   - generate unique IDs
   - ... into two types of edges (call and return)

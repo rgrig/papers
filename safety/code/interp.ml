@@ -299,7 +299,7 @@ let program p =
 (* driver *) (* {{{ *)
 
 let interpret fn =
-  let report_tc m = eprintf "@[%s: %s (typecheck)@." fn m in
+  let report_tc m = eprintf "@[%s:%s (typecheck)@." fn m in
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   let parse =

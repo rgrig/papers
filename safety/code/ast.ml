@@ -98,6 +98,23 @@ module PropertyAst = struct
     { message : string
     ; edges: edge list }
 
+  (* utilities *) (* {{{ *)
+  let labels_of_edge f e =
+    let l = e.edge_label in
+    let ls = l.label_result :: l.label_arguments in
+    Util.map_option f ls
+
+  let get_guard = function
+    | Guard x -> Some x
+    | _ -> None
+
+  let get_pattern = function
+    | Pattern (Some x) -> Some x
+    | _ -> None
+
+  let guards e = labels_of_edge get_guard e
+  let patterns e = labels_of_edge get_pattern e
+  (* }}} *)
 end
 (* }}} *)
 (* top level common parts: the big list corresponding to common.mly *) (* {{{ *)
