@@ -1,5 +1,5 @@
 - property checks
-  - refactor Tc.PropertyChecks.check_bound_variables
+  - Tc.PropertyChecks.check_bound_variables is wrong (see last test in pc.j)
   - unused variables (warn)
   - treat some as errors: do not continue
 - desugar

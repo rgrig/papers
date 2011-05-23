@@ -39,3 +39,12 @@ property "possibly unset variable"
   a -> b:     x.foo()  // this one is OK
   start -> b: *.bar()
   b -> error: x.foo()
+
+// should be OK
+property "trying to advance an iterator past the end"
+  start -> tracking:    I := *.iterator()
+  tracking -> notAtEnd: true := i.hasNext()
+  notAtEnd -> tracking: i.next()
+  tracking -> error:    i.next()
+
+

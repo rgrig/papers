@@ -33,6 +33,10 @@ module StringMap = Map.Make (String)
 module StringPairMap = Map.Make (struct type t = string * string let compare = compare end)
 module StringSet = Set.Make (String)
 
+let flip f x y = f y x
+
+let add_strings s = List.fold_left (flip StringSet.add) s
+
 let pp_s pp_f s = Format.fprintf pp_f "%s" s
 
 let pp_list pp_sep pp_element =
@@ -57,5 +61,3 @@ let rec memo f f' =
       let r = f f' x in
       Hashtbl.add cache x r; r
     end
-
-let flip f x y = f y x

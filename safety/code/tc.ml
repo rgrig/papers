@@ -234,14 +234,14 @@ module PropertyChecks = struct
   let get_source e = e.A.edge_source
   let get_target e = e.A.edge_target
 
-  let default d f m x = try f x m with Not_found -> d
+  let default_find d m x = try U.StringMap.find x m with Not_found -> d
 
   let adjacency_of_edges source target es =
     let f acc e =
       let s, t = source e, target e in
-      let old = try U.StringMap.find s acc with Not_found -> [] in
+      let old = default_find [] acc s in
       U.StringMap.add s (t :: old) acc in
-    default [] U.StringMap.find (List.fold_left f U.StringMap.empty es)
+    default_find [] (List.fold_left f U.StringMap.empty es)
 
   let rec reachable_from g s =
     let r = ref U.StringSet.empty in
@@ -257,8 +257,7 @@ module PropertyChecks = struct
     let pred = adjacency_of_edges get_target get_source p.A.edges in
     let fs = reachable_from succ "start" in
     let te = reachable_from pred "error" in
-    let collect get s =
-      List.fold_left (fun s e -> U.StringSet.add (get e) s) s p.A.edges in
+    let collect get s = U.add_strings s (List.map get p.A.edges) in
     let all = collect get_target (collect get_source U.StringSet.empty) in
     let bad = U.StringSet.diff all (U.StringSet.inter fs te) in
     if not (U.StringSet.mem "start" all) then warn "missing start";
@@ -285,62 +284,73 @@ module PropertyChecks = struct
     List.iter check_edge p.A.edges
 
   let bindings =
-    let f _ e =
-      let ps = A.patterns e in
-      List.fold_left (U.flip U.StringSet.add) U.StringSet.empty ps in
+    let f _ e = U.add_strings U.StringSet.empty (A.patterns e) in
     U.y (U.memo f)
 
-  let dump_set s =
-    eprintf "@[";
-    U.pp_list ", " U.pp_s err_formatter (U.StringSet.elements s);
-    eprintf "@]"
+  let pp_set ppf s =
+    printf "@[";
+    U.pp_list ", " U.pp_s ppf (U.StringSet.elements s);
+    printf "@]"
 
-  (*
-    Associates a value with each state in property [p]. The property is seen as
-    a graph, [vf] and [ef] are applied repeatedly to update values associated to
-    vertices and edges until a fixpoint is reached. The function [vf] takes the
-    values on incoming edges, a vertex, and returns a vertex value; the function
-    [ef] takes the value on the source vertex, an edge, and returns an edge
-    value. The value [d] is the initial value tacked on vertices.
-   *)
-  let fixpoint_on_graph p d vf ef =
-    let incoming = adjacency_of_edges get_target (fun e->e) p.A.edges in
-    let outgoing = adjacency_of_edges get_source (fun e->e) p.A.edges in
-    let ve = Hashtbl.create 13 in (* cache for edge values *)
-    let rec loop vv dv =
-      if U.StringSet.is_empty dv then vv else begin
-        let ef e =
-          try Hashtbl.find ve e
-          with Not_found ->
-            let vf v = try U.StringMap.find v vv with Not_found -> d in
-            let r = ef (vf (get_source e)) e in
-            Hashtbl.add ve e r; r in
-        let v = U.StringSet.choose dv in
-        let dv = U.StringSet.remove v dv in
-        let w = vf (List.map ef (incoming v)) v in
-        let edv =
-          if not (U.StringMap.mem v vv) || U.StringMap.find v vv <> w then begin
-            let es = outgoing v in
-            List.iter (fun e -> Hashtbl.remove ve e) es;
-            List.map get_target es
-          end else [] in
-        loop (U.StringMap.add v w vv) (List.fold_left (U.flip U.StringSet.add) dv edv)
+  (** {3} Fixpoint on a graph, and helpers. *) (* {{{ *)
+
+  let fg_cache_compute_e compute_e v_src init =
+    let cache = Hashtbl.create 13 in begin fun vv e ->
+      try Hashtbl.find cache e
+      with Not_found ->
+printf "@[get: %a@." pp_set (bindings e);
+        let r = compute_e (default_find init vv (v_src e)) e in
+        Hashtbl.add cache e r;
+        r
+    end,
+    (fun e -> Hashtbl.remove cache e)
+
+  let fg_choose todo =
+    let v = U.StringSet.choose todo in
+    (v, U.StringSet.remove v todo)
+
+  let fg_update values todo init v w e_out v_tgt clear_edge =
+    if not (U.StringMap.mem v values) || U.StringMap.find v values <> w then
+    begin
+      let es = e_out v in
+      let vs = List.map v_tgt es in
+      (U.StringMap.add v w values, U.add_strings todo vs)
+    end else (values, todo)
+
+  let fixpoint_on_graph
+    e_in e_out v_src v_tgt    (* graph description *)
+    todo                      (* vertices to process initially *)
+    init compute_v compute_e  (* default value and recurrence relations *)
+  =
+    let compute_e, clear_edge = fg_cache_compute_e compute_e v_src init in
+    let rec loop (values, todo) =
+      if U.StringSet.is_empty todo then values else begin
+        let v, todo = fg_choose todo in
+        let w = compute_v (List.map (compute_e values) (e_in v)) v in
+printf "@[%s: %a@." v pp_set w;
+        loop (fg_update values todo init v w e_out v_tgt clear_edge)
       end in
-    let m = loop U.StringMap.empty (U.StringSet.singleton "start") in
-    default d U.StringMap.find m
+    default_find init (loop (U.StringMap.empty, todo))
+
+  (* }}} *)
 
   let bound_variables p =
-    let v_k es_k v = match es_k, v with
+    let compute_v es v = match es, v with
       | _, "start" | [], _ -> U.StringSet.empty
-      | e::ev, _ -> List.fold_left U.StringSet.inter e ev in
-    let e_k s_k e = U.StringSet.union s_k (bindings e) in
-    fixpoint_on_graph p U.StringSet.empty v_k e_k
+      | e::es, _ -> List.fold_left U.StringSet.inter e es in
+    let compute_e v e = U.StringSet.union v (bindings e) in
+    let incoming = adjacency_of_edges get_target (fun e->e) p.A.edges in
+    let outgoing = adjacency_of_edges get_source (fun e->e) p.A.edges in
+    fixpoint_on_graph
+      incoming outgoing get_source get_target
+      (U.StringSet.singleton "start")
+      U.StringSet.empty compute_v compute_e
 
   let check_bound_variables p =
+printf "@[ *** START *** @.";
     let bound = bound_variables p in
     let check_edge e =
-      let guards = A.guards e in
-      let guards = List.fold_left (U.flip U.StringSet.add) U.StringSet.empty guards in
+      let guards = U.add_strings U.StringSet.empty (A.guards e) in
       let bound_here = bound (get_source e) in
       warn_bad_edge "possibly unbound" e (U.StringSet.diff guards bound_here) in
     List.iter check_edge p.A.edges
