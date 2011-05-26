@@ -144,8 +144,7 @@ let rec call env c =
   let string_of_class = function
     | Class c -> c
     | _ ->
-        error (Environment.position env) "expected class, not primitive" "";
-        "<PRIMITIVE>" in
+        fatal (Environment.position env) "expected class, not primitive" "" in
   let tr = expression c.call_receiver in
   let tmr, tma = Environment.lookup_method env tr c.call_method in
   let ta = List.map expression c.call_arguments in
@@ -343,9 +342,10 @@ let program n p =
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
   List.iter PropertyChecks.all p.program_properties;
-  (match p.program_main with
+  (try match p.program_main with
     | None -> ()
-    | Some m -> ignore (body env m));
+    | Some m -> ignore (body env m)
+  with Error -> ());
   let pp l = List.iter (fun s -> eprintf "@[%s:%s@." n s) (List.rev l) in
   pp !errors; pp !warnings;
   if !errors <> [] then raise Error
