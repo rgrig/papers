@@ -61,3 +61,20 @@ let rec memo f f' =
       let r = f f' x in
       Hashtbl.add cache x r; r
     end
+
+let fresh_id =
+  let alphabet = "abcdefghijklmnopqrstuvwxyz" in
+  let n = String.length alphabet in
+  let count = ref (-1) in
+  fun () ->
+    incr count;
+    let r = Buffer.create 5 in
+    let rec f x =
+      if x > 0 then f (x / n);
+      Buffer.add_char r alphabet.[x mod n] in
+    f !count;
+    if Buffer.length r = 0 then Buffer.add_char r 'a';
+    Buffer.contents r
+
+let fresh_internal_id () =
+  Printf.sprintf "<%s>" (fresh_id ())

@@ -1,7 +1,4 @@
-- property checks
-  - treat some as errors: do not continue
 - desugar
-  - generate unique IDs
   - ... into two types of edges (call and return)
 - interpret automaton
 - cleanup code
