@@ -177,7 +177,7 @@ and expression env =
     | Ac (_, es) ->
         let ts = List.map expression es in
         List.iter (check_types_match Bool) ts; Bool
-    | Bin (l, o, r) -> check_types_match (expression l) (expression r); Bool
+    | Bin (l, _, r) -> check_types_match (expression l) (expression r); Bool
     | Not e -> check_types_match (expression e) Bool; Bool
     | Deref (e, f) -> Environment.lookup_field env (expression e) f
     | Ref s -> Environment.lookup_variable env s
@@ -210,7 +210,7 @@ and body env (Body (d, s)) =
 
 let method_ env
   { method_return_type = r
-  ; method_name = n
+  ; method_name = _
   ; method_formals = args
   ; method_body = b }
 =
