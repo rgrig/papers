@@ -77,7 +77,7 @@ rule tok1 = parse
     let return t = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
     let rec return_rb n = match !indents with
       | h :: t when h > n -> incr scheduled_rb; indents := t; return_rb n
-      | h :: t when h < n -> raise Error
+      | h :: _ when h < n -> raise Error
       | [] -> failwith "broken invariant: List.length !indents > 0"
       | _ -> tok2 ()
     and tok2 () =

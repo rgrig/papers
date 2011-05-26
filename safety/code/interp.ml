@@ -1,8 +1,9 @@
 (* modules *) (* {{{ *)
 open Ast
 open Format
-module U = Util
+module PA = Ast.PropertyAst
 module S = Stack (* save OCaml's stack module *)
+module U = Util
 (* }}} *)
 
 (* State *) (* {{{ *)
@@ -69,7 +70,7 @@ module Heap : HeapT = struct
     let fs = U.StringMap.add f x fs in
     (U.IntMap.add p fs h, cnt)
 
-  let read (h, cnt) p f =
+  let read (h, _) p f =
     let fs = try U.IntMap.find p h with Not_found -> raise Bad_access in
     try U.StringMap.find f fs with Not_found -> raise Variable_missing
 end
@@ -83,48 +84,13 @@ type 'a program_state =
   { globals : Stack.t
   ; heap : Heap.t
   ; locals : Stack.t
-  ; checker_state : 'a }
+  ; automaton_state : 'a }
   (* Only [automaton_state program_state] is used, but forcing the polymorphic
   type ['a program_state] on some functions makes it possible to make sure
-  they don't look at [checker_state]. *)
+  they don't look at [automaton_state]. *)
 
 (* }}} *)
 (* interpreter *) (* {{{ *)
-(* global environment *) (* {{{ *)
-let automaton = ref ok_automaton
-let fields = ref U.StringMap.empty
-  (* for each class, a list of fields *)
-let methods = ref U.StringPairMap.empty
-  (* for each (class, method) names, the method *)
-
-let preprocess cs =
-  fields := U.StringMap.empty;  methods := U.StringPairMap.empty;
-  let preprocess_class (c, ms) =
-    let fs = ref U.StringSet.empty in
-    let preprocess_member = function
-      | Field { declaration_variable = f; declaration_type = _ } ->
-          assert (not (U.StringSet.mem f !fs)); (* otherwise fix tc.ml *)
-          fs := U.StringSet.add f !fs
-      | Method m ->
-          let k = c, m.method_name in
-          assert (not (U.StringPairMap.mem k !methods)); (* otherwise fix tc.ml *)
-          methods := U.StringPairMap.add k m !methods in
-    List.iter preprocess_member ms;
-    fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
-  List.iter preprocess_class cs
-
-(* }}} *)
-(* error reporting *) (* {{{ *)
-
-let program_name = ref ""
-let location_stack = S.create ()
-let report_error message =
-  let location =
-    try sprintf "@[%d@]" (S.top location_stack)
-    with S.Empty -> "?" in
-  eprintf "@[%s:%s: %s@." !program_name location message
-
-(* }}} *)
 (* helpers *) (* {{{ *)
 
 let vars ds = List.map (fun x -> x.declaration_variable) ds
@@ -153,11 +119,56 @@ let pick d xs = match List.length xs with
   | n -> List.nth xs (read_input () mod n)
 
 (* }}} *)
+(* global environment *) (* {{{ *)
+let automaton = ref ok_automaton
+let fields = ref U.StringMap.empty
+  (* for each class, a list of fields *)
+let methods = ref U.StringPairMap.empty
+  (* for each (class, method) names, the method *)
+
+let preprocess_classes cs =
+  fields := U.StringMap.empty;  methods := U.StringPairMap.empty;
+  let preprocess_class (c, ms) =
+    let fs = ref U.StringSet.empty in
+    let preprocess_member = function
+      | Field { declaration_variable = f; declaration_type = _ } ->
+          assert (not (U.StringSet.mem f !fs)); (* otherwise fix tc.ml *)
+          fs := U.StringSet.add f !fs
+      | Method m ->
+          let k = c, m.method_name in
+          assert (not (U.StringPairMap.mem k !methods)); (* otherwise fix tc.ml *)
+          methods := U.StringPairMap.add k m !methods in
+    List.iter preprocess_member ms;
+    fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
+  List.iter preprocess_class cs
+
+let split_call_return l = l (* TODO(rgrig) *)
+
+let preprocess_properties ps =
+  let ps = List.map (fun x -> x.ast) ps in
+  automaton := pick ok_automaton ps;
+  automaton :=
+    { !automaton with PA.edges = split_call_return !automaton.PA.edges }
+
+let preprocess p =
+  preprocess_classes p.program_classes;
+  preprocess_properties p.program_properties
+
+(* }}} *)
+(* error reporting *) (* {{{ *)
+
+let program_name = ref ""
+let location_stack = S.create ()
+let report_error message =
+  let location =
+    try sprintf "@[%d@]" (S.top location_stack)
+    with S.Empty -> "?" in
+  eprintf "@[%s:%s: %s@." !program_name location message
+
+(* }}} *)
 (* functions that evolve only the automata state *) (* {{{ *)
 
 module PH = struct (* property helpers *)
-  open PropertyAst
-
   type call_description =
     { result : value
     ; method_ : string
@@ -167,14 +178,11 @@ module PH = struct (* property helpers *)
     Stack.init_variable s p v
 
   let good_value s (p, v) =
-    (* TODO: check that automaton variables are read after being written *)
     Stack.read s p = v
 
-  let evolve now c e =
+  let evolve _ _ _ =
     failwith "todo"
 end
-
-exception Wrap of exn
 
 let property s _ = s
 
@@ -273,6 +281,14 @@ and body chk (state : 'a program_state) (Body (ds, ss)) =
 
 (* }}} *)
 
+let main state = U.option () (fun m ->
+  try ignore (body property state m)
+  with
+    | Bad_access | Variable_missing -> report_error "memory fault"
+    | Property_fails s -> report_error s)
+  (* Exception Variable_missing at [x.f] when [x] points to an object with
+     wrong type. This may happen with [var Foo x := *]. *)
+
 let program p =
   let gs = vars p.program_globals in
   let globals = List.fold_left Stack.add_variable Stack.empty gs in
@@ -280,19 +296,11 @@ let program p =
     { globals = globals
     ; heap = Heap.empty
     ; locals = Stack.empty
-    ; checker_state =
+    ; automaton_state =
       { automaton_node = "start"
       ; automaton_stack = Stack.empty} } in
-  preprocess p.program_classes;
-  (match p.program_main with
-    | None -> ()
-    | Some m ->
-        (try ignore (body property state m)
-        with
-          | Bad_access | Variable_missing -> report_error "memory fault"
-          | Property_fails s -> report_error s))
-  (* Exception Variable_missing at [x.f] when [x] points to an object with
-     wrong type. This may happen with [var Foo x := *]. *)
+  preprocess p;
+  main state p.program_main
 
 (* }}} *)
 (* driver *) (* {{{ *)
