@@ -1,8 +1,5 @@
-(*
-  For each type [Ast.t] there's a function [t : Ast.t-> type_].  Statements
-  have the type [Unit], except return. Composed statements, including lists,
-  inherit the type of the first return they reach, and are [Unit] otherwise.
- *)
+(** Static checks. *)
+
 (* modules *) (* {{{ *)
 open Ast
 open Format
@@ -11,9 +8,14 @@ module U = Util
 (* }}} *)
 (* environment and other utilities *) (* {{{ *)
 
-exception Error of string
+exception Error
 
-let fail p c s = raise (Error (p ^ ": " ^ c ^ ": " ^ s))
+let warnings = ref []
+let errors = ref []
+
+let warn p m = warnings := (sprintf "@[%s: warning: %s@]" p m) :: !warnings
+let error p c m = errors := (sprintf "@[%s: %s: %s@]" p c m) :: !errors
+let fatal p c m = error p c m; raise Error
 
 (* NOTE: Fields and methods live in different namespaces. *)
 module type EnvironmentT = sig
@@ -40,14 +42,15 @@ module Environment : EnvironmentT = struct (* {{{ *)
     | None -> "?"
     | Some n -> string_of_int n
 
-  let err p c s = fail (position p) c s
+  let error p c s = error (position p) c s
+  let fatal p c s = fatal (position p) c s
 
   let check_type env = function
     | Bool | Unit -> ()
     | AnyType -> failwith "AnyType should not be created by parser."
     | Class c ->
         if not (U.StringMap.mem c env.fields_by_class) then
-          err env "class not declared" c
+          error env "class not declared" c
 
   let check_types_exist env =
     let check_type = check_type env in
@@ -99,24 +102,24 @@ module Environment : EnvironmentT = struct (* {{{ *)
 
   let lookup_variable env id =
     try U.StringMap.find id env.variables
-    with Not_found -> err env "undefined" id
+    with Not_found -> fatal env "undefined" id
 
   let get_class_info e m t =
     let n = match t with
       | Class n -> n
-      | _ -> err e "not a class" "?" in
+      | _ -> fatal e "not a class" "?" in
     try U.StringMap.find n m
-    with Not_found -> err e "undefined class" n
+    with Not_found -> fatal e "undefined class" n
 
   let lookup_method env t m =
     let ms = get_class_info env env.methods_by_class t in
     try U.StringMap.find m ms
-    with Not_found -> err env "method not found" m
+    with Not_found -> fatal env "method not found" m
 
   let lookup_field env t f =
     let fs = get_class_info env env.fields_by_class t in
     try U.StringMap.find f fs
-    with Not_found -> err env "field not found" f
+    with Not_found -> fatal env "field not found" f
 end (* }}} *)
 
 let check_types_match env t1 t2 =
@@ -125,23 +128,31 @@ let check_types_match env t1 t2 =
     let info =
       fprintf str_formatter "@[%a and %a@]"
           pp_type t1 pp_type t2; flush_str_formatter () in
-    fail p "type mismatch" info
+    error p "type mismatch" info
 
 (* }}} *)
 (* typechecking of programs *) (* {{{ *)
+(*
+  For each type [Ast.t] there's a function [t : Ast.t-> type_].  Statements
+  have the type [Unit], except return. Composed statements, including lists,
+  inherit the type of the first return they reach, and are [Unit] otherwise.
+ *)
+
 let rec call env c =
   let expression = expression env in
   let check_types_match = check_types_match env in
   let string_of_class = function
     | Class c -> c
-    | _ -> fail (Environment.position env) "expected class, not primitive" "" in
+    | _ ->
+        error (Environment.position env) "expected class, not primitive" "";
+        "<PRIMITIVE>" in
   let tr = expression c.call_receiver in
   let tmr, tma = Environment.lookup_method env tr c.call_method in
   let ta = List.map expression c.call_arguments in
   c.call_class <- Some (string_of_class tr);
   (try List.iter2 check_types_match tma ta
   with Invalid_argument _ ->
-    fail (Environment.position env) "wrong number of arguments" c.call_method);
+    fatal (Environment.position env) "wrong number of arguments" c.call_method);
   (match c.call_lhs with
     | Some l -> check_types_match tmr (expression (Ref l))
     | _ -> ());
@@ -223,13 +234,11 @@ let class_ env (c, ds) =
 module PropertyChecks = struct
   module A = Ast.PropertyAst
 
-  let warnings = ref []
   let location = ref "<INTERNAL ERROR>" (* user should not see this *)
   let set_location = function
     | None -> location := "?"
     | Some l -> location := sprintf "%d" l
-  let warn m =
-    warnings := sprintf "%s: Warning: %s" !location m :: !warnings
+  let warn m = warn !location m
 
   let get_source e = e.A.edge_source
   let get_target e = e.A.edge_target
@@ -264,13 +273,12 @@ module PropertyChecks = struct
     if not (U.StringSet.mem "error" all) then warn "missing error";
     U.StringSet.iter (fun s -> warn (sprintf "unused state: %s" s)) bad
 
-  let warn_bad_edge msg e vs = match U.StringSet.elements vs with
+  let error_edge msg e vs = match U.StringSet.elements vs with
     | [] -> ()
     | vs ->
-        fprintf str_formatter "%s->%s: " e.A.edge_source e.A.edge_target;
-        fprintf str_formatter "%s: " msg;
         U.pp_list ", " U.pp_s str_formatter vs;
-        warn (flush_str_formatter ())
+        fprintf str_formatter " on edge %s->%s" e.A.edge_source e.A.edge_target;
+        error !location msg (flush_str_formatter ())
 
   let check_linear_patterns p =
     let check_edge e =
@@ -280,7 +288,7 @@ module PropertyChecks = struct
         else (U.StringSet.add x seen, bad) in
       let ps = A.patterns e in
       let _, vs = List.fold_left see (U.StringSet.empty, U.StringSet.empty) ps in
-      warn_bad_edge "multiple bindings" e vs in
+      error_edge "multiple bindings" e vs in
     List.iter check_edge p.A.edges
 
   let bindings =
@@ -317,7 +325,8 @@ module PropertyChecks = struct
     let check_edge e =
       let guards = U.add_strings U.StringSet.empty (A.guards e) in
       let bound_here = bound (get_source e) in
-      warn_bad_edge "possibly unbound" e (U.StringSet.diff guards bound_here) in
+      let unbound = U.StringSet.diff guards bound_here in
+      error_edge "possibly unbound" e unbound in
     List.iter check_edge p.A.edges
 
   let all p =
@@ -329,12 +338,14 @@ module PropertyChecks = struct
 end
 
 (* }}} *)
-let program p =
+let program n p =
+  warnings := []; errors := [];
   let env = Environment.make p in
   List.iter (class_ env) p.program_classes;
-  PropertyChecks.warnings := [];
   List.iter PropertyChecks.all p.program_properties;
   (match p.program_main with
     | None -> ()
     | Some m -> ignore (body env m));
-  List.rev !PropertyChecks.warnings
+  let pp l = List.iter (fun s -> eprintf "@[%s:%s@." n s) (List.rev l) in
+  pp !errors; pp !warnings;
+  if !errors <> [] then raise Error

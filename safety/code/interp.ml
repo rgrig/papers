@@ -299,7 +299,6 @@ let program p =
 (* driver *) (* {{{ *)
 
 let interpret fn =
-  let report_tc m = eprintf "@[%s:%s (typecheck)@." fn m in
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   let parse =
@@ -308,15 +307,15 @@ let interpret fn =
   S.clear location_stack;
   try
     let p = parse (Lexer.token lexbuf) in
-    List.iter report_tc (Tc.program p);
+    Check.program !program_name p;
     ignore (program p)
   with
     | Parser.Error ->
-        (match Lexing.lexeme_start_p lexbuf with 
+        (match Lexing.lexeme_start_p lexbuf with
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
         eprintf "@[%d:%d: parse error@." line (c1-c0+1))
-    | Tc.Error e -> report_tc e
+    | Check.Error -> ()
 
 let _ =
   for i = 1 to Array.length Sys.argv - 1 do
