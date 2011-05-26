@@ -1,6 +1,4 @@
 - property checks
-  - Tc.PropertyChecks.check_bound_variables is wrong (see last test in pc.j)
-  - unused variables (warn)
   - treat some as errors: do not continue
 - desugar
   - generate unique IDs
@@ -27,3 +25,4 @@ notes (low priority todos):
    syntactic sugar?
  - Generate this language from Java bytecode? It should be easy with ASM.
  - Generate Boogie from this language.
+ - property check: warn when variables are not used

@@ -287,67 +287,32 @@ module PropertyChecks = struct
     let f _ e = U.add_strings U.StringSet.empty (A.patterns e) in
     U.y (U.memo f)
 
-  let pp_set ppf s =
-    printf "@[";
-    U.pp_list ", " U.pp_s ppf (U.StringSet.elements s);
-    printf "@]"
-
-  (** {3} Fixpoint on a graph, and helpers. *) (* {{{ *)
-
-  let fg_cache_compute_e compute_e v_src init =
-    let cache = Hashtbl.create 13 in begin fun vv e ->
-      try Hashtbl.find cache e
-      with Not_found ->
-printf "@[get: %a@." pp_set (bindings e);
-        let r = compute_e (default_find init vv (v_src e)) e in
-        Hashtbl.add cache e r;
-        r
-    end,
-    (fun e -> Hashtbl.remove cache e)
-
-  let fg_choose todo =
-    let v = U.StringSet.choose todo in
-    (v, U.StringSet.remove v todo)
-
-  let fg_update values todo init v w e_out v_tgt clear_edge =
-    if not (U.StringMap.mem v values) || U.StringMap.find v values <> w then
-    begin
-      let es = e_out v in
-      let vs = List.map v_tgt es in
-      (U.StringMap.add v w values, U.add_strings todo vs)
-    end else (values, todo)
-
-  let fixpoint_on_graph
-    e_in e_out v_src v_tgt    (* graph description *)
-    todo                      (* vertices to process initially *)
-    init compute_v compute_e  (* default value and recurrence relations *)
-  =
-    let compute_e, clear_edge = fg_cache_compute_e compute_e v_src init in
-    let rec loop (values, todo) =
-      if U.StringSet.is_empty todo then values else begin
-        let v, todo = fg_choose todo in
-        let w = compute_v (List.map (compute_e values) (e_in v)) v in
-printf "@[%s: %a@." v pp_set w;
-        loop (fg_update values todo init v w e_out v_tgt clear_edge)
-      end in
-    default_find init (loop (U.StringMap.empty, todo))
-
-  (* }}} *)
+  let count_states p =
+    let f states e =
+      U.StringSet.add (get_source e) (U.StringSet.add (get_target e) states) in
+    U.StringSet.cardinal (List.fold_left f U.StringSet.empty p.A.edges)
 
   let bound_variables p =
-    let compute_v es v = match es, v with
-      | _, "start" | [], _ -> U.StringSet.empty
-      | e::es, _ -> List.fold_left U.StringSet.inter e es in
-    let compute_e v e = U.StringSet.union v (bindings e) in
-    let incoming = adjacency_of_edges get_target (fun e->e) p.A.edges in
     let outgoing = adjacency_of_edges get_source (fun e->e) p.A.edges in
-    fixpoint_on_graph
-      incoming outgoing get_source get_target
-      (U.StringSet.singleton "start")
-      U.StringSet.empty compute_v compute_e
+    let m = ref (U.StringMap.add "start" U.StringSet.empty U.StringMap.empty) in
+    let now, nxt = ref (U.StringSet.singleton "start"), ref U.StringSet.empty in
+    for i = 2 to count_states p do begin
+      let relax e =
+        let s, t = get_source e, get_target e in
+        nxt := U.StringSet.add t !nxt;
+        let r = bindings e in
+        let r = U.StringSet.union r (U.StringMap.find s !m) in
+        (try
+          let r = U.StringSet.inter r (U.StringMap.find t !m) in
+          m := U.StringMap.add t r !m
+        with Not_found ->
+          m := U.StringMap.add t r !m) in
+      U.StringSet.iter (fun v -> List.iter relax (outgoing v)) !now;
+      now := !nxt; nxt := U.StringSet.empty
+    end done;
+    default_find U.StringSet.empty !m
 
   let check_bound_variables p =
-printf "@[ *** START *** @.";
     let bound = bound_variables p in
     let check_edge e =
       let guards = U.add_strings U.StringSet.empty (A.guards e) in
