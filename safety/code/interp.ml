@@ -1,8 +1,7 @@
 (* modules *) (* {{{ *)
 open Ast
 open Format
-open Scanf
-open Util
+module U = Util
 module S = Stack (* save OCaml's stack module *)
 (* }}} *)
 
@@ -18,7 +17,7 @@ module type StackT = sig
 
   (* These hide older variables with the same name. *)
   val init_variable : t -> variable -> value -> t
-  val add_variable : t -> variable -> t 
+  val add_variable : t -> variable -> t
     (* [init_variable] with random value *)
 
   (* These two throw [Variable_missing] if the variable wasn't added earlier. *)
@@ -37,42 +36,42 @@ module type HeapT = sig
   val read : t -> value -> variable -> value
 end
 
-let read_input () = scanf " %d" (fun x -> x)
+let read_input () = Scanf.scanf " %d" (fun x -> x)
 
 (* implementation *) (* {{{ *)
 module Stack : StackT = struct
-  type t = value StringMap.t
-  let empty = StringMap.empty
-  let init_variable s x v = StringMap.add x v s
+  type t = value U.StringMap.t
+  let empty = U.StringMap.empty
+  let init_variable s x v = U.StringMap.add x v s
   let add_variable s x = init_variable s x (-1)
   let write s x v =
-    if not (StringMap.mem x s) then raise Variable_missing;
-    StringMap.add x v s
+    if not (U.StringMap.mem x s) then raise Variable_missing;
+    U.StringMap.add x v s
   let read s x =
-    try StringMap.find x s
+    try U.StringMap.find x s
     with Not_found -> raise Variable_missing
 end
 
 module Heap : HeapT = struct
-  type t = value StringMap.t IntMap.t * int
+  type t = value U.StringMap.t U.IntMap.t * int
 
-  let empty = IntMap.empty, 0
+  let empty = U.IntMap.empty, 0
 
   let new_object (h, cnt) fs =
-    let add_field s f = StringMap.add f (read_input ()) s in
-    let s = List.fold_left add_field StringMap.empty fs in
-    let h = IntMap.add cnt s h in
+    let add_field s f = U.StringMap.add f (read_input ()) s in
+    let s = List.fold_left add_field U.StringMap.empty fs in
+    let h = U.IntMap.add cnt s h in
     ((h, succ cnt), cnt)
 
   let write (h, cnt) p f x =
-    let fs = try IntMap.find p h with Not_found -> raise Bad_access in
-    if not (StringMap.mem f fs) then raise Variable_missing;
-    let fs = StringMap.add f x fs in
-    (IntMap.add p fs h, cnt)
+    let fs = try U.IntMap.find p h with Not_found -> raise Bad_access in
+    if not (U.StringMap.mem f fs) then raise Variable_missing;
+    let fs = U.StringMap.add f x fs in
+    (U.IntMap.add p fs h, cnt)
 
   let read (h, cnt) p f =
-    let fs = try IntMap.find p h with Not_found -> raise Bad_access in
-    try StringMap.find f fs with Not_found -> raise Variable_missing
+    let fs = try U.IntMap.find p h with Not_found -> raise Bad_access in
+    try U.StringMap.find f fs with Not_found -> raise Variable_missing
 end
 (* }}} *)
 
@@ -93,25 +92,25 @@ type 'a program_state =
 (* interpreter *) (* {{{ *)
 (* global environment *) (* {{{ *)
 let automaton = ref ok_automaton
-let fields = ref StringMap.empty 
+let fields = ref U.StringMap.empty
   (* for each class, a list of fields *)
-let methods = ref StringPairMap.empty 
+let methods = ref U.StringPairMap.empty
   (* for each (class, method) names, the method *)
 
 let preprocess cs =
-  fields := StringMap.empty;  methods := StringPairMap.empty;
+  fields := U.StringMap.empty;  methods := U.StringPairMap.empty;
   let preprocess_class (c, ms) =
-    let fs = ref StringSet.empty in
+    let fs = ref U.StringSet.empty in
     let preprocess_member = function
       | Field { declaration_variable = f; declaration_type = _ } ->
-          assert (not (StringSet.mem f !fs)); (* otherwise fix tc.ml *)
-          fs := StringSet.add f !fs
-      | Method m -> 
+          assert (not (U.StringSet.mem f !fs)); (* otherwise fix tc.ml *)
+          fs := U.StringSet.add f !fs
+      | Method m ->
           let k = c, m.method_name in
-          assert (not (StringPairMap.mem k !methods)); (* otherwise fix tc.ml *)
-          methods := StringPairMap.add k m !methods in
+          assert (not (U.StringPairMap.mem k !methods)); (* otherwise fix tc.ml *)
+          methods := U.StringPairMap.add k m !methods in
     List.iter preprocess_member ms;
-    fields := StringMap.add c (StringSet.elements !fs) !fields in
+    fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
 
 (* }}} *)
@@ -131,7 +130,7 @@ let report_error message =
 let vars ds = List.map (fun x -> x.declaration_variable) ds
 
 let assign_value state x v =
-  begin try 
+  begin try
       { state with locals = Stack.write state.locals x v }, None
     with Variable_missing -> begin try
       let this = Stack.read state.locals "this" in
@@ -151,7 +150,7 @@ let read_value state x =
 
 let pick d xs = match List.length xs with
   | 0 -> d
-  | n -> List.nth xs (read_input () mod n) 
+  | n -> List.nth xs (read_input () mod n)
 
 (* }}} *)
 (* functions that evolve only the automata state *) (* {{{ *)
@@ -182,7 +181,7 @@ let property s _ = s
 (*
 let property now c =
   let p = now.automaton_description in
-  let candidates = 
+  let candidates =
     map_option (PH.evolve now c) p.Property.edges in
   let next = pick now (start_state p :: candidates) in
   if next.automaton_node = "error" then
@@ -209,34 +208,34 @@ let rec expression (state : 'a program_state) =
 let rec assignment (state : 'a program_state) x e =
   assign_value state x (expression state e)
 
-and call 
-  (chk : 'a -> 'b -> 'a) 
-  (state : 'a program_state) 
+and call
+  (chk : 'a -> 'b -> 'a)
+  (state : 'a program_state)
   (c : call_statement)
 =
   let m = (* method *)
-    StringPairMap.find (from_some c.call_class, c.call_method) !methods in
+    U.StringPairMap.find (U.from_some c.call_class, c.call_method) !methods in
   let formals = "this" :: vars m.method_formals in
-  let args = List.map (expression state) (c.call_receiver::c.call_arguments) in 
+  let args = List.map (expression state) (c.call_receiver::c.call_arguments) in
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
   let state, value = body chk { state with locals = m_locals } m.method_body in
   let state = { state with locals = locals } in
   match c.call_lhs with
-    | Some x -> assign_value state x (from_some value)
+    | Some x -> assign_value state x (U.from_some value)
     | None -> state, None
 
 and allocate (state : 'a program_state) { allocate_lhs = x; allocate_type = t} =
-  match from_some t with
+  match U.from_some t with
     | Unit -> assign_value state x 0
     | Bool -> assign_value state x (read_input () land 1)
     | Class c ->
-        let fields = StringMap.find c !fields in
+        let fields = U.StringMap.find c !fields in
         let nh, no = Heap.new_object state.heap fields in
         let ns = { state with heap = nh } in
         assign_value ns x no
-    | AnyType -> 
+    | AnyType ->
         failwith "Huh? Only literals are polymorphic, and they're not on lhs."
 
 and while_ chk (state : 'a program_state) loop =
@@ -262,7 +261,7 @@ and statement chk (state : 'a program_state) = function
   | If (c, b) -> if_ chk state c b
 
 and body chk (state : 'a program_state) (Body (ds, ss)) =
-  let state = { state with 
+  let state = { state with
     locals = List.fold_left Stack.add_variable state.locals (vars ds) } in
   let f acc { ast = s; line = line } = match acc with
     | (state, None) ->
@@ -277,19 +276,19 @@ and body chk (state : 'a program_state) (Body (ds, ss)) =
 let program p =
   let gs = vars p.program_globals in
   let globals = List.fold_left Stack.add_variable Stack.empty gs in
-  let state = 
+  let state =
     { globals = globals
     ; heap = Heap.empty
     ; locals = Stack.empty
-    ; checker_state = 
+    ; checker_state =
       { automaton_node = "start"
       ; automaton_stack = Stack.empty} } in
   preprocess p.program_classes;
   (match p.program_main with
     | None -> ()
-    | Some m -> 
+    | Some m ->
         (try ignore (body property state m)
-        with 
+        with
           | Bad_access | Variable_missing -> report_error "memory fault"
           | Property_fails s -> report_error s))
   (* Exception Variable_missing at [x.f] when [x] points to an object with
