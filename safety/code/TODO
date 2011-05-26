@@ -2,9 +2,9 @@
   - ... into two types of edges (call and return)
 - interpret automaton
 - cleanup code
+- desugar properties into statements
 - statement to havoc all (use as default body) -- deallocate all reachable heap
 - pretty-printer for AST
-- desugar properties into statements
 - cleanup code
 - generate coreStarIL
 - ...

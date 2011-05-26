@@ -31,7 +31,7 @@ type declaration =
   { declaration_type : type_
   ; declaration_variable : string }
 
-type call_statement = 
+type call_statement =
   { call_lhs : string option
   ; call_receiver : expression
   ; mutable call_class : string option
@@ -80,7 +80,7 @@ module PropertyAst = struct
     | Pattern of variable option
     | Guard of variable
 
-  (* 
+  (*
     Compare with [call_statement] above.
     The first argument is teh receiver.
    *)
@@ -122,14 +122,14 @@ end
 type program =
   { program_globals : declaration list
   ; program_classes : class_ list
-  ; program_main : body option 
+  ; program_main : body option
   ; program_properties : PropertyAst.t with_line list }
 
 (* }}} *)
 (* utilities *) (* {{{ *)
 
 let ok_automaton =
-  { PropertyAst.message = 
+  { PropertyAst.message =
       "internal error: ok_automaton should be happy with all programs"
   ; PropertyAst.edges = [] }
 
@@ -141,7 +141,7 @@ let mk_call l r m a = Call
   ; call_method = m
   ; call_arguments = a }
 
-let default_body line = 
+let default_body line =
   Body ([], [{ ast = Return(Literal None); line = line }])
 let empty_body = Body ([], [])
 
