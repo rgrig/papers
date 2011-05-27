@@ -28,9 +28,15 @@ let map_option f xs =
 (** Function composition. *)
 let (@@) f g x = f (g x)
 
-module IntMap = Map.Make (struct type t = int let compare = compare end)
+module Int = struct type t = int let compare = compare end
+module OrderedPair (A:Set.OrderedType) (B:Set.OrderedType) =
+struct
+  type t = A.t * B.t
+  let compare = compare
+end
+module IntMap = Map.Make (Int)
 module StringMap = Map.Make (String)
-module StringPairMap = Map.Make (struct type t = string * string let compare = compare end)
+module StringPairMap = Map.Make (OrderedPair (String) (String))
 module StringSet = Set.Make (String)
 
 let flip f x y = f y x
@@ -78,3 +84,11 @@ let fresh_id =
 
 let fresh_internal_id () =
   Printf.sprintf "<%s>" (fresh_id ())
+
+let todo () = failwith "todo"
+
+let replicate n x =
+  let rec f acc = function
+    | 0 -> acc
+    | n -> f (x :: acc) (pred n) in
+  f [] n

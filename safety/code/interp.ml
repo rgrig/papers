@@ -142,7 +142,36 @@ let preprocess_classes cs =
     fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
 
-let split_call_return l = l (* TODO(rgrig) *)
+(* a Set of (String, Int) pairs *)
+let collect_methods es =
+  let module Ssi = Set.Make (U.OrderedPair (String) (U.Int)) in
+  let method_of_edge e =
+    let l = e.PA.edge_label in
+    (l.PA.label_method, List.length (l.PA.label_arguments)) in
+  let f ms e = Ssi.add (method_of_edge e) ms in
+  let uniq = List.fold_left f Ssi.empty es in
+  Ssi.elements uniq
+
+let split_call_return es =
+  let methods = collect_methods es in
+  let error_edges from =
+    let one (mn, ac) =
+      let any = PA.Pattern None in
+      PA.mk_edge from "error" any mn (U.replicate ac any) in
+    List.map one methods in
+  let desugar e =
+    let l = e.PA.edge_label in
+    let lr = l.PA.label_result in
+    let la = l.PA.label_arguments in
+    let any = PA.Pattern None in
+    if lr = any || List.for_all ((=) any) la then [e] else begin
+      let is = U.fresh_internal_id () in (* intermediate state *)
+      let many = List.map (fun _ -> any) la in
+      PA.mk_edge e.PA.edge_source is any l.PA.label_method la ::
+      PA.mk_edge is e.PA.edge_target lr l.PA.label_method many ::
+      error_edges is
+    end in
+  List.concat (List.map desugar es)
 
 let preprocess_properties ps =
   let ps = List.map (fun x -> x.ast) ps in

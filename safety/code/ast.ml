@@ -82,7 +82,7 @@ module PropertyAst = struct
 
   (*
     Compare with [call_statement] above.
-    The first argument is teh receiver.
+    The first argument is the receiver.
    *)
   type label =
     { label_result : expression
@@ -114,6 +114,15 @@ module PropertyAst = struct
 
   let guards e = labels_of_edge get_guard e
   let patterns e = labels_of_edge get_pattern e
+
+  let mk_edge src tgt res mname args =
+    { edge_source = src
+    ; edge_target = tgt
+    ; edge_label =
+      { label_result = res
+      ; label_method = mname
+      ; label_arguments = args } }
+
   (* }}} *)
 end
 (* }}} *)
