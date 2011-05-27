@@ -12,5 +12,6 @@ examples: byte
 
 clean:
 	ocamlbuild -clean
+	rm -f .out
 
 .PHONY: byte examples clean
