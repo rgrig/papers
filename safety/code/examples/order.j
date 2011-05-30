@@ -31,7 +31,7 @@ class ConcatStream  // TODO: Should really inherit from Stream
     else
       r := second.read()
     return r
- 
+
   Bool hasMore()
     var Bool f := first.hasMore()
     var Bool s := second.hasMore()

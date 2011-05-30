@@ -1,4 +1,4 @@
-(* 
+(*
   NOTE: This is copied from ocamlbuild's wiki, and modified a little.  Its main
   purpose is to use ocamlfind to link to libraries such as the one that comes
   with menhir. This should be built-in starting with 3.12.
@@ -20,7 +20,7 @@ let split s ch =
   try
     go s
   with Not_found -> !x
-                                                                                                                                                                                                                                             
+
 let split_nl s = split s '\n'
 
 let before_space s =
@@ -74,18 +74,18 @@ let _ = dispatch begin function
          flag ["ocaml"; "doc";      "syntax_"^syntax] & S[A"-syntax"; A syntax];
          flag ["ocaml"; "infer_interface"; "syntax_"^syntax] & S[A"-syntax"; A syntax];
        end (find_syntaxes ());
-       
+
        (* The default "thread" tag is not compatible with ocamlfind.
           Indeed, the default rules add the "threads.cma" or "threads.cmxa"
           options when using this tag. When using the "-linkpkg" option with
           ocamlfind, this module will then be added twice on the command line.
-       
+
           To solve this, one approach is to add the "-thread" option when using
           the "threads" package using the previous plugin.
         *)
        flag ["ocaml"; "pkg_threads"; "compile"] (S[A "-thread"]);
        flag ["ocaml"; "pkg_threads"; "link"] (S[A "-thread"]);
        flag ["ocaml"; "pkg_threads"; "infer_interface"] (S[A "-thread"])
-       
+
    | _ -> ()
 end

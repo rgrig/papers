@@ -1,4 +1,5 @@
 /.allout
 /.out
 _build
-interp.native
+/*.native
+/*.byte

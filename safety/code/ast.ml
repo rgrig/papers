@@ -80,6 +80,8 @@ module PropertyAst = struct
     | Pattern of variable option
     | Guard of variable
 
+  let any = Pattern None (* short name, because it's used often *)
+
   (*
     Compare with [call_statement] above.
     The first argument is the receiver.

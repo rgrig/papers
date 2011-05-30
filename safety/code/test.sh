@@ -6,4 +6,4 @@ for (( i=0; i<20; ++i )); do
   cat .out >> .allout
 done
 sort -t : -k 1,2 .allout | uniq > .out
-diff -u .out ref.out && echo "All OK. (See .out for results)"
+diff -u ref.out .out && echo "All OK. (See .out for results)"

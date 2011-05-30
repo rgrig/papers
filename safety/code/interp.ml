@@ -126,6 +126,10 @@ let fields = ref U.StringMap.empty
 let methods = ref U.StringPairMap.empty
   (* for each (class, method) names, the method *)
 
+let automaton_start =
+  { automaton_node = "start"
+  ; automaton_stack = Stack.empty }
+
 let preprocess_classes cs =
   fields := U.StringMap.empty;  methods := U.StringPairMap.empty;
   let preprocess_class (c, ms) =
@@ -142,7 +146,6 @@ let preprocess_classes cs =
     fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
 
-(* a Set of (String, Int) pairs *)
 let collect_methods es =
   let module Ssi = Set.Make (U.OrderedPair (String) (U.Int)) in
   let method_of_edge e =
@@ -154,22 +157,19 @@ let collect_methods es =
 
 let split_call_return es =
   let methods = collect_methods es in
-  let error_edges from =
+  let error_edges_from src =
     let one (mn, ac) =
-      let any = PA.Pattern None in
-      PA.mk_edge from "error" any mn (U.replicate ac any) in
+      PA.mk_edge src "error" PA.any mn (U.replicate ac PA.any) in
     List.map one methods in
   let desugar e =
     let l = e.PA.edge_label in
-    let lr = l.PA.label_result in
-    let la = l.PA.label_arguments in
-    let any = PA.Pattern None in
-    if lr = any || List.for_all ((=) any) la then [e] else begin
+    let lr, la = l.PA.label_result, l.PA.label_arguments in
+    if lr = PA.any || List.for_all ((=) PA.any) la then [e] else begin
       let is = U.fresh_internal_id () in (* intermediate state *)
-      let many = List.map (fun _ -> any) la in
-      PA.mk_edge e.PA.edge_source is any l.PA.label_method la ::
+      let many = List.map (fun _ -> PA.any) la in
+      PA.mk_edge e.PA.edge_source is PA.any l.PA.label_method la ::
       PA.mk_edge is e.PA.edge_target lr l.PA.label_method many ::
-      error_edges is
+      error_edges_from is
     end in
   List.concat (List.map desugar es)
 
@@ -197,34 +197,50 @@ let report_error message =
 (* }}} *)
 (* functions that evolve only the automata state *) (* {{{ *)
 
-module PH = struct (* property helpers *)
-  type call_description =
-    { result : value
-    ; method_ : string
-    ; arguments : value list }
+module PropertyInterpreter = struct
+  type event =
+    | Call of string * value list
+    | Return of value option * string
 
-  let save_value s (p, v) =
-    Stack.init_variable s p v
+  let mname = function Call (mname, _) | Return (_, mname) -> mname
+  let return_event = function Return _ -> true | _ -> false
 
-  let good_value s (p, v) =
-    Stack.read s p = v
+  exception No_match
+  let pmatch s v = function
+    | PA.Constant w -> if v = w then s else raise No_match
+    | PA.Guard x -> if v = Stack.read s x then s else raise No_match
+    | PA.Pattern None -> s
+    | PA.Pattern (Some x) -> Stack.init_variable s x v
 
-  let evolve _ _ _ =
-    failwith "todo"
+  let evolve s e
+    { PA.edge_source = src
+    ; PA.edge_target = tgt
+    ; PA.edge_label =
+      { PA.label_result = lr
+      ; PA.label_method = ln
+      ; PA.label_arguments = la } }
+  =
+    if s.automaton_node <> src then None else
+    if mname e <> ln then None else
+    if return_event e <> (lr <> PA.any) then None else
+    let values, patterns = match e with
+      | Call (_, args) -> args, la
+      | Return (Some result, _) -> [result], [lr]
+      | Return (None, _) -> [], [] in
+    try Some
+      { automaton_node = tgt
+      ; automaton_stack =
+        List.fold_left2 pmatch s.automaton_stack values patterns }
+    with No_match | Invalid_argument _ -> None
+
+  let check s e =
+    let candidates = U.map_option (evolve s e) !automaton.PA.edges in
+    let next = pick s (automaton_start :: candidates) in
+    if next.automaton_node = "error" then
+      raise (Property_fails !automaton.PA.message);
+    next
+
 end
-
-let property s _ = s
-
-(*
-let property now c =
-  let p = now.automaton_description in
-  let candidates =
-    map_option (PH.evolve now c) p.Property.edges in
-  let next = pick now (start_state p :: candidates) in
-  if next.automaton_node = "error" then
-    raise (Property_fails p.Property.message);
-  next
-*)
 
 (* }}} *)
 (* functions that see only the program state *) (* {{{ *)
@@ -250,6 +266,8 @@ and call
   (state : 'a program_state)
   (c : call_statement)
 =
+  let module PI = PropertyInterpreter in
+  let event s e = { s with automaton_state = chk s.automaton_state e } in
   let m = (* method *)
     U.StringPairMap.find (U.from_some c.call_class, c.call_method) !methods in
   let formals = "this" :: vars m.method_formals in
@@ -257,7 +275,9 @@ and call
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
+  let state = event state (PI.Call (m.method_name, args)) in
   let state, value = body chk { state with locals = m_locals } m.method_body in
+  let state = event state (PI.Return (value, m.method_name)) in
   let state = { state with locals = locals } in
   match c.call_lhs with
     | Some x -> assign_value state x (U.from_some value)
@@ -311,7 +331,7 @@ and body chk (state : 'a program_state) (Body (ds, ss)) =
 (* }}} *)
 
 let main state = U.option () (fun m ->
-  try ignore (body property state m)
+  try ignore (body PropertyInterpreter.check state m)
   with
     | Bad_access | Variable_missing -> report_error "memory fault"
     | Property_fails s -> report_error s)
@@ -325,9 +345,7 @@ let program p =
     { globals = globals
     ; heap = Heap.empty
     ; locals = Stack.empty
-    ; automaton_state =
-      { automaton_node = "start"
-      ; automaton_stack = Stack.empty} } in
+    ; automaton_state = automaton_start } in
   preprocess p;
   main state p.program_main
 
