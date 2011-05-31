@@ -1,4 +1,9 @@
+(* modules *) (* {{{ *)
 open Format
+
+module U = Util
+
+(* }}} *)
 
 type value = int
 type variable = string
@@ -82,19 +87,19 @@ module PropertyAst = struct
 
   let any = Pattern None (* short name, because it's used often *)
 
-  (*
-    Compare with [call_statement] above.
-    The first argument is the receiver.
-   *)
-  type label =
-    { label_result : expression
-    ; label_method : string
-    ; label_arguments : expression list }
+  type 'a label_data =
+    | Call of 'a list  (* the first element is the receiver *)
+    | Return of 'a * int (* second is argument count *)
+    | Call_return of 'a * 'a list
+
+  type 'a label =
+    { label_method : string
+    ; label_data : 'a label_data }
 
   type edge =
     { edge_source : string
     ; edge_target : string
-    ; edge_label : label }
+    ; edge_label : expression label }
 
   type t =
     { message : string
@@ -102,9 +107,11 @@ module PropertyAst = struct
 
   (* utilities *) (* {{{ *)
   let labels_of_edge f e =
-    let l = e.edge_label in
-    let ls = l.label_result :: l.label_arguments in
-    Util.map_option f ls
+    let ls = match e.edge_label.label_data with
+      | Call es -> es
+      | Return (e, _) -> [e]
+      | Call_return (e, es) -> e :: es in
+    U.map_option f ls
 
   let get_guard = function
     | Guard x -> Some x
@@ -117,13 +124,16 @@ module PropertyAst = struct
   let guards e = labels_of_edge get_guard e
   let patterns e = labels_of_edge get_pattern e
 
-  let mk_edge src tgt res mname args =
-    { edge_source = src
-    ; edge_target = tgt
+  let arg_count = function
+    | Call es | Call_return (_, es) -> List.length es
+    | Return (_, n) -> n
+
+  let mk_edge s t m ld =
+    { edge_source = s
+    ; edge_target = t
     ; edge_label =
-      { label_result = res
-      ; label_method = mname
-      ; label_arguments = args } }
+      { label_method = m
+      ; label_data = ld } }
 
   (* }}} *)
 end

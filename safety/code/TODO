@@ -1,22 +1,35 @@
+- BUG: When edge a->b is split into a->I, I->b, I->error, there should also
+  be a return edge I->a that contains the negated guards of I->b. IOW, you
+  need to go back to state a if arguments match but not the return value.
+  This implies we need a guard that says "NOT equal to this value".
+- BUG: Booleans are treated inconsistently leading to unsoundness. For example,
+  in the condition of a while loop, only the last bit is analyzed, but when
+  the constant "true" is used as a guard in an automaton, the value 1 is
+  required. I don't know a simple solution.
 - cleanup code
 - desugar properties into statements
+- add tracing of execution
+- cleanup code
 - statement to havoc all (use as default body) -- deallocate all reachable heap
 - pretty-printer for AST
 - cleanup code
-- generate coreStarIL
-- ...
 
 notes (low priority todos):
- - more examples
- - it's very ugly that referring to fields and referring to methods is different
-    - field  -- "this" is prohibited
-    - this.method() -- "this" is required
- - tc should reject name clashes
- - better line number info for these errors
-    - wrong return type
- - pure expressions are fine and nice, but it's rather annoying
-   to not have function calls in expression; can I allow them as
-   syntactic sugar?
- - Generate this language from Java bytecode? It should be easy with ASM.
- - Generate Boogie from this language.
- - property check: warn when variables are not used
+- symbolic execution
+- generate coreStarIL
+- more examples
+- it's very ugly that referring to fields and referring to methods is different
+  - field  -- "this" is prohibited
+  - this.method() -- "this" is required
+- tc should reject name clashes
+- better line number info for these errors
+  - wrong return type
+- pure expressions are fine and nice, but it's rather annoying
+  to not have function calls in expression; can I allow them as
+  syntactic sugar?
+- Generate this language from Java bytecode?
+- Generate this language from coreStarIL?
+- Generate Boogie from this language.
+- property check: warn when variables are not used
+
+vim:spell:

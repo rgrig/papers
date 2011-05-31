@@ -114,9 +114,12 @@ let read_value state x =
       Stack.read state.globals x
   end end
 
-let pick d xs = match List.length xs with
-  | 0 -> d
-  | n -> List.nth xs (read_input () mod n)
+let pick x xs =
+  let xs = x :: xs in
+  let n = List.length xs in
+  let m = read_input () mod n in
+(* DBG eprintf "@[  %d out of %d@." (m+1) n; *)
+  List.nth xs m
 
 (* }}} *)
 (* global environment *) (* {{{ *)
@@ -150,32 +153,33 @@ let collect_methods es =
   let module Ssi = Set.Make (U.OrderedPair (String) (U.Int)) in
   let method_of_edge e =
     let l = e.PA.edge_label in
-    (l.PA.label_method, List.length (l.PA.label_arguments)) in
+    (l.PA.label_method, PA.arg_count l.PA.label_data) in
   let f ms e = Ssi.add (method_of_edge e) ms in
   let uniq = List.fold_left f Ssi.empty es in
   Ssi.elements uniq
 
+(* TODO(rgrig): Must add a Return edge from intermediate to source. *)
 let split_call_return es =
   let methods = collect_methods es in
   let error_edges_from src =
     let one (mn, ac) =
-      PA.mk_edge src "error" PA.any mn (U.replicate ac PA.any) in
+      PA.mk_edge src "error" mn (PA.Call (U.replicate ac PA.any)) in
     List.map one methods in
   let desugar e =
     let l = e.PA.edge_label in
-    let lr, la = l.PA.label_result, l.PA.label_arguments in
-    if lr = PA.any || List.for_all ((=) PA.any) la then [e] else begin
-      let is = U.fresh_internal_id () in (* intermediate state *)
-      let many = List.map (fun _ -> PA.any) la in
-      PA.mk_edge e.PA.edge_source is PA.any l.PA.label_method la ::
-      PA.mk_edge is e.PA.edge_target lr l.PA.label_method many ::
-      error_edges_from is
-    end in
+    match l.PA.label_data with
+      | PA.Call_return (lr, la) ->
+          let is = U.fresh_internal_id () in (* intermediate state *)
+          let m = l.PA.label_method in
+          PA.mk_edge e.PA.edge_source is m (PA.Call la) ::
+          PA.mk_edge is e.PA.edge_target m (PA.Return (lr, List.length la)) ::
+          error_edges_from is
+      | _ -> [e] in
   List.concat (List.map desugar es)
 
 let preprocess_properties ps =
   let ps = List.map (fun x -> x.ast) ps in
-  automaton := pick ok_automaton ps;
+  automaton := ((* DBG eprintf "@[pick automaton@.";*) pick ok_automaton ps);
   automaton :=
     { !automaton with PA.edges = split_call_return !automaton.PA.edges }
 
@@ -197,14 +201,13 @@ let report_error message =
 (* }}} *)
 (* functions that evolve only the automata state *) (* {{{ *)
 
+(* DBG
+let dt = function
+  | PA.Call _ -> eprintf "@[call@."
+  | PA.Return _ -> eprintf "@[return@."
+  | PA.Call_return _ -> eprintf "@[OMG@." *)
+
 module PropertyInterpreter = struct
-  type event =
-    | Call of string * value list
-    | Return of value option * string
-
-  let mname = function Call (mname, _) | Return (_, mname) -> mname
-  let return_event = function Return _ -> true | _ -> false
-
   exception No_match
   let pmatch s v = function
     | PA.Constant w -> if v = w then s else raise No_match
@@ -212,30 +215,34 @@ module PropertyInterpreter = struct
     | PA.Pattern None -> s
     | PA.Pattern (Some x) -> Stack.init_variable s x v
 
-  let evolve s e
+  let evolve s
+    { PA.label_method = en
+    ; PA.label_data = ed }
     { PA.edge_source = src
     ; PA.edge_target = tgt
     ; PA.edge_label =
-      { PA.label_result = lr
-      ; PA.label_method = ln
-      ; PA.label_arguments = la } }
+      { PA.label_method = ln
+      ; PA.label_data = ld } }
   =
-    if s.automaton_node <> src then None else
-    if mname e <> ln then None else
-    if return_event e <> (lr <> PA.any) then None else
-    let values, patterns = match e with
-      | Call (_, args) -> args, la
-      | Return (Some result, _) -> [result], [lr]
-      | Return (None, _) -> [], [] in
-    try Some
-      { automaton_node = tgt
-      ; automaton_stack =
-        List.fold_left2 pmatch s.automaton_stack values patterns }
+    if s.automaton_node <> src || en <> ln then None else
+    try
+(* DBG      dt ed; dt ld; *)
+      let vs, ps = match ed, ld with
+        | PA.Call vs, PA.Call ps -> List.map U.from_some vs, ps
+        | PA.Return (None, m), PA.Return (PA.Pattern None, n) when m=n -> [],[]
+        | PA.Return (Some v, m), PA.Return (p, n) when m = n -> [v], [p]
+        | PA.Call_return _, _ | _, PA.Call_return _ -> assert false
+        | _ -> raise No_match in
+      Some { automaton_node = ((* DBG eprintf "@[    ->%s on %s@." tgt ln;*) tgt)
+           ; automaton_stack = List.fold_left2 pmatch s.automaton_stack vs ps }
     with No_match | Invalid_argument _ -> None
 
   let check s e =
     let candidates = U.map_option (evolve s e) !automaton.PA.edges in
-    let next = pick s (automaton_start :: candidates) in
+    let candidates = if candidates = [] then [s] else candidates in
+    let next = ((* DBG eprintf "@[pick next state@.";*) pick automaton_start candidates) in
+(* DBG    eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
+(* DBG    report_error "transition"; *)
     if next.automaton_node = "error" then
       raise (Property_fails !automaton.PA.message);
     next
@@ -266,21 +273,24 @@ and call
   (state : 'a program_state)
   (c : call_statement)
 =
-  let module PI = PropertyInterpreter in
   let event s e = { s with automaton_state = chk s.automaton_state e } in
   let m = (* method *)
     U.StringPairMap.find (U.from_some c.call_class, c.call_method) !methods in
+  let mn = m.method_name in
   let formals = "this" :: vars m.method_formals in
   let args = List.map (expression state) (c.call_receiver::c.call_arguments) in
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let state = event state (PI.Call (m.method_name, args)) in
+  let state = event state
+    {PA.label_method=mn; PA.label_data=PA.Call (List.map (fun x->Some x) args)} in
   let state, value = body chk { state with locals = m_locals } m.method_body in
-  let state = event state (PI.Return (value, m.method_name)) in
+  let state = event state
+    {PA.label_method=mn; PA.label_data=PA.Return(value,List.length args)} in
   let state = { state with locals = locals } in
   match c.call_lhs with
-    | Some x -> assign_value state x (U.from_some value)
+    | Some x -> (* DBG eprintf "@[    %s returns %d@." c.call_method
+    (U.from_some value);*) assign_value state x (U.from_some value)
     | None -> state, None
 
 and allocate (state : 'a program_state) { allocate_lhs = x; allocate_type = t} =
@@ -353,6 +363,7 @@ let program p =
 (* driver *) (* {{{ *)
 
 let interpret fn =
+(* DBG eprintf "@[=== START ===@."; *)
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   let parse =

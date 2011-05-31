@@ -7,6 +7,8 @@
   let var = String.uncapitalize
 %}
 
+%token CALL
+
 %%
 
 %public property: PROPERTY m=STRING LB t=transition* RB {
@@ -22,15 +24,22 @@ transition: s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) {
   List.map f ls
 }
 
-label: l=pexpr r=receiver? DOT m=ID LP a=separated_list(COMMA, pexpr) RP { 
-  let l, r = 
-    match r with
-      | None -> P.Pattern None, l
-      | Some r -> l, r in 
-  { P.label_result = l
-  ; P.label_method = m
-  ; P.label_arguments = r :: a }
-}
+label: l=call_label | l=return_label | l=mixed_label { l }
+
+call_label:
+    CALL r=pexpr DOT m=ID LP a=separated_list(COMMA, pexpr) RP
+      { { P.label_method = m; P.label_data = P.Call (r :: a) } }
+
+return_label:
+    RETURN r=pexpr ASGN STAR DOT m=ID LP a=separated_list(COMMA, STAR) RP
+      { { P.label_method = m; P.label_data = P.Return (r, List.length a) } }
+
+mixed_label:
+    l=pexpr r=receiver? DOT m=ID LP a=separated_list(COMMA, pexpr) RP
+      { let l, r = match r with
+          | None -> P.any, l
+          | Some r -> l, r in
+        { P.label_method = m; P.label_data = P.Call_return (l, r :: a) } }
 
 receiver: ASGN a=pexpr { a }
 
@@ -42,6 +51,6 @@ pexpr:
       { P.Constant n }
   | STAR
       { P.Pattern None }
- 
+
 %%
 

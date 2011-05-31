@@ -74,13 +74,14 @@ let fresh_id =
   let count = ref (-1) in
   fun () ->
     incr count;
-    let r = Buffer.create 5 in
-    let rec f x =
-      if x > 0 then f (x / n);
-      Buffer.add_char r alphabet.[x mod n] in
-    f !count;
-    if Buffer.length r = 0 then Buffer.add_char r 'a';
-    Buffer.contents r
+    if !count = 0 then String.sub alphabet 0 1 else begin
+      let r = Buffer.create 5 in
+      let rec f x =
+        if x >= n then f (x / n);
+        Buffer.add_char r alphabet.[x mod n] in
+      f !count;
+      Buffer.contents r
+    end
 
 let fresh_internal_id () =
   Printf.sprintf "<%s>" (fresh_id ())
@@ -92,3 +93,7 @@ let replicate n x =
     | 0 -> acc
     | n -> f (x :: acc) (pred n) in
   f [] n
+
+let list_of_option = function
+  | Some x -> [x]
+  | None -> []

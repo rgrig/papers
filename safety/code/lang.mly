@@ -12,31 +12,31 @@
       { (c, m) }
 
 %public global:
-    VAR d=type_id 
+    VAR d=type_id
       { d }
 
 %public main:
-    MAIN b=body 
+    MAIN b=body
       { b }
 
 member:
-    VAR d=type_id 
+    VAR d=type_id
       { Field d }
   | d=type_id LP a=separated_list(COMMA, type_id) RP b=body?
       { Method
         { method_return_type = d.declaration_type
         ; method_name = d.declaration_variable
         ; method_formals = a
-        ; method_body = 
-            match b with 
-              | Some b -> b 
+        ; method_body =
+            match b with
+              | Some b -> b
               | None -> default_body $endpos.Lexing.pos_lnum } }
 
-type_id: 
+type_id:
     t=ID v=ID
       { { declaration_type = type_of_string t; declaration_variable = v } }
 
-body: 
+body:
     LB b=with_line(statement)* RB
       { let ds = ref [] in (* ugly *)
         let ss = ref [] in
@@ -55,7 +55,7 @@ statement:
   | l=lhs ASGN NEW
       { fst l @ [Right(mk_allocate (snd l))] }
   | l=lhs ASGN e=expression
-      { fst l @ 
+      { fst l @
         [Right(Assignment(snd l, e))] }
   | l=lhs ASGN r=expression DOT m=ID a=args
       { fst l @ [Right(mk_call (Some(snd l)) r m a)] }
@@ -67,7 +67,7 @@ statement:
         ; while_condition=c
         ; while_post_body=from_option empty_body post})] }
   | IF c=expression i=body e=else_?
-      { [Right(If(c,i))] 
+      { [Right(If(c,i))]
         @ (match e with None -> [] | Some e -> [Right(If(Not c, e))]) }
 
 do_part:
@@ -106,8 +106,8 @@ atom:
   | NE
       { Ne }
 
-%inline acop: 
-    OR 
+%inline acop:
+    OR
       { Or }
   | AND
       { And }
@@ -117,7 +117,7 @@ atom:
       { r }
 
 else_:
-    ELSE b=body 
+    ELSE b=body
       { b } (* sugar *)
 
 %%

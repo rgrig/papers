@@ -21,6 +21,7 @@
     let table = Hashtbl.create 53 in
     List.iter (fun (k, v) -> Hashtbl.add table k v)
       [ "and", AND
+      ; "call", CALL
       ; "class", CLASS
       ; "do", DO
       ; "else", ELSE
