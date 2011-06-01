@@ -27,6 +27,7 @@ module type EnvironmentT = sig
   val lookup_variable : t -> string -> type_
   val lookup_field : t -> type_ -> string -> type_
   val lookup_method : t -> type_ -> string -> (type_ * type_ list)
+  (* TODO(rgrig): expose error&fatal and use them *)
 end
 
 module Environment : EnvironmentT = struct (* {{{ *)
@@ -47,7 +48,7 @@ module Environment : EnvironmentT = struct (* {{{ *)
 
   let check_type env = function
     | Bool | Unit -> ()
-    | AnyType -> failwith "AnyType should not be created by parser."
+    | AnyType _ -> failwith "AnyType should not be created by parser."
     | Class c ->
         if not (U.StringMap.mem c env.fields_by_class) then
           error env "class not declared" c
@@ -123,12 +124,19 @@ module Environment : EnvironmentT = struct (* {{{ *)
 end (* }}} *)
 
 let check_types_match env t1 t2 =
-  if t1 <> t2 && t1 <> AnyType && t2 <> AnyType then
-    let p = Environment.position env in
-    let info =
-      fprintf str_formatter "@[%a and %a@]"
-          pp_type t1 pp_type t2; flush_str_formatter () in
-    error p "type mismatch" info
+  let chk t1 t2 =
+    if t1 <> t2 then
+      let p = Environment.position env in
+      let info =
+        fprintf str_formatter "@[%a and %a@]"
+            pp_type t1 pp_type t2; flush_str_formatter () in
+      error p "type mismatch" info in
+  let get_type = function AnyType t -> t | t -> ref (Some t) in
+  match get_type t1, get_type t2 with
+    | {contents=Some s}, {contents=Some t} -> chk s t
+    | {contents=None}, {contents=None} -> ()
+    | {contents=(Some _ as s)}, ({contents=None} as t)
+    | ({contents=None} as t), {contents=(Some _ as s)} -> t := s
 
 (* }}} *)
 (* typechecking of programs *) (* {{{ *)
@@ -180,7 +188,7 @@ and expression env =
     | Not e -> check_types_match (expression e) Bool; Bool
     | Deref (e, f) -> Environment.lookup_field env (expression e) f
     | Ref s -> Environment.lookup_variable env s
-    | Literal _ -> AnyType
+    | Literal (_, t) -> AnyType t
 
 and allocate env a =
   let expression = expression env in

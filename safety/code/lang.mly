@@ -96,9 +96,9 @@ atom:
   | r=ID
       { Ref r }
   | n=NUMBER
-      { Literal(Some n) }
+      { Literal (Some n, ref None) }
   | STAR
-      { Literal None }
+      { Literal (None, ref None) }
 
 %inline binop:
     EQ

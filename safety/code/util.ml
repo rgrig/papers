@@ -52,6 +52,10 @@ let pp_list pp_sep pp_element =
     | x :: xs -> Format.fprintf pp_f "%a%s%a" pp_element x pp_sep f xs in
   f
 
+let pp_option pp_e ppf = function
+  | None -> Format.fprintf ppf "None"
+  | Some s -> Format.fprintf ppf "Some %a" pp_e s
+
 let rec fix f x =
   let y = f x in
   if y = x then y else fix f y

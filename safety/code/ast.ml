@@ -8,7 +8,7 @@ module U = Util
 type value = int
 type variable = string
 
-(* common parts at the bottom: expressions mostly *) (* {{{ *)
+(* AST types shared by programs and automata (towards leaves) *) (* {{{ *)
 type binop = Eq | Ne
 type acop = Or | And
 
@@ -18,7 +18,7 @@ type type_ =
   | Class of string
   | Bool
   | Unit
-  | AnyType (* used while typechecking polymorphic literals *)
+  | AnyType of type_ option ref (* used while typechecking Nondet *)
 
 (* Expressions have no side-effects, so they don't include method calls. *)
 type expression =
@@ -27,10 +27,10 @@ type expression =
   | Not of expression
   | Deref of expression * variable
   | Ref of variable
-  | Literal of value option
+  | Literal of value option * type_ option ref
 
 (* }}} *)
-(* parts used only by programs. *) (* {{{ *)
+(* AST (types) only for programs. *) (* {{{ *)
 
 type declaration =
   { declaration_type : type_
@@ -75,7 +75,7 @@ type member =
 type class_ = string * member list
 
 (* }}} *)
-(* parts used only by properties *) (* {{{ *)
+(* AST (types) only for automata *) (* {{{ *)
 module PropertyAst = struct
 
   (* Since there's another [expression], you're asking for trouble if you
@@ -138,7 +138,7 @@ module PropertyAst = struct
   (* }}} *)
 end
 (* }}} *)
-(* top level common parts: the big list corresponding to common.mly *) (* {{{ *)
+(* Root of AST, see common.mly. *) (* {{{ *)
 
 type program =
   { program_globals : declaration list
@@ -163,13 +163,13 @@ let mk_call l r m a = Call
   ; call_arguments = a }
 
 let default_body line =
-  Body ([], [{ ast = Return(Literal None); line = line }])
+  Body ([], [{ ast = Return(Literal (None, ref None)); line = line }])
 let empty_body = Body ([], [])
 
 let rec pp_type ppf = function
   | Class n -> fprintf ppf "%s" n
   | Bool -> fprintf ppf "[Bool]"
   | Unit -> fprintf ppf "[Unit]"
-  | AnyType -> fprintf ppf "[*]"
+  | AnyType {contents=t} -> fprintf ppf "<%a>" (U.pp_option pp_type) t
 
 (* }}} *)

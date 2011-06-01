@@ -2,10 +2,6 @@
   be a return edge I->a that contains the negated guards of I->b. IOW, you
   need to go back to state a if arguments match but not the return value.
   This implies we need a guard that says "NOT equal to this value".
-- BUG: Booleans are treated inconsistently leading to unsoundness. For example,
-  in the condition of a while loop, only the last bit is analyzed, but when
-  the constant "true" is used as a guard in an automaton, the value 1 is
-  required. I don't know a simple solution.
 - cleanup code
 - desugar properties into statements
 - add tracing of execution

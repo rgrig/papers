@@ -253,7 +253,14 @@ end
 (* functions that see only the program state *) (* {{{ *)
 
 let rec expression (state : 'a program_state) =
-  let bool_expression x = expression state x land 1 in
+  let bool_expression x =
+    let r = expression state x in
+    assert (0 <= r && r < 2);
+    r in
+  let convert_value x = function
+    | Bool -> x land 1
+    | Unit -> 0
+    | _ -> x in
   function
     | Ac (Or, xs) -> List.fold_left max 0 (List.map bool_expression xs)
     | Ac (And, xs) -> List.fold_left min 1 (List.map bool_expression xs)
@@ -262,8 +269,9 @@ let rec expression (state : 'a program_state) =
     | Not e -> (match expression state e with 0 -> 1 | _ -> 0)
     | Deref (e, f) -> Heap.read state.heap (expression state e) f
     | Ref x -> read_value state x
-    | Literal None -> read_input ()
-    | Literal (Some x) -> x
+    | Literal (_, {contents=None}) -> failwith "INTERNAL: TC should fill this"
+    | Literal (None, {contents=Some t}) -> convert_value (read_input ()) t
+    | Literal (Some x, {contents=Some t}) -> convert_value x t
 
 let rec assignment (state : 'a program_state) x e =
   assign_value state x (expression state e)
@@ -302,7 +310,7 @@ and allocate (state : 'a program_state) { allocate_lhs = x; allocate_type = t} =
         let nh, no = Heap.new_object state.heap fields in
         let ns = { state with heap = nh } in
         assign_value ns x no
-    | AnyType ->
+    | AnyType _ ->
         failwith "Huh? Only literals are polymorphic, and they're not on lhs."
 
 and while_ chk (state : 'a program_state) loop =
