@@ -163,7 +163,7 @@ let split_call_return es =
   let methods = collect_methods es in
   let error_edges_from src =
     let one (mn, ac) =
-      PA.mk_edge src "error" mn (PA.Call (U.replicate ac PA.any)) in
+      PA.mk_edge src "error" mn (PA.Call (U.replicate ac PA.GuardAny)) in
     List.map one methods in
   let desugar e =
     let l = e.PA.edge_label in
@@ -209,16 +209,20 @@ let dt = function
 
 module PropertyInterpreter = struct
   exception No_match
-  let pmatch s v = function
-    | PA.Constant w -> if v = w then s else raise No_match
-    | PA.Guard x -> if v = Stack.read s x then s else raise No_match
-    | PA.Pattern None -> s
-    | PA.Pattern (Some x) -> Stack.init_variable s x v
+  let pmatch s v =
+    let chk c = if c then s else raise No_match in
+    function
+      | PA.Binder x -> Stack.init_variable s x v
+      | PA.GuardVarEq x -> chk (v = Stack.read s x)
+      | PA.GuardVarNeq x -> chk (v <> Stack.read s x)
+      | PA.GuardCtEq w -> chk (v = w)
+      | PA.GuardCtNeq w -> chk (v <> w)
+      | PA.GuardAny -> chk true
 
   let evolve s
-    { PA.label_method = en
+    { PA.label_method = en  (* the event taking place *)
     ; PA.label_data = ed }
-    { PA.edge_source = src
+    { PA.edge_source = src  (* the automaton edge being examined *)
     ; PA.edge_target = tgt
     ; PA.edge_label =
       { PA.label_method = ln
@@ -229,9 +233,10 @@ module PropertyInterpreter = struct
 (* DBG      dt ed; dt ld; *)
       let vs, ps = match ed, ld with
         | PA.Call vs, PA.Call ps -> List.map U.from_some vs, ps
-        | PA.Return (None, m), PA.Return (PA.Pattern None, n) when m=n -> [],[]
+        | PA.Return (None, m), PA.Return (PA.GuardAny, n) when m=n -> [],[]
         | PA.Return (Some v, m), PA.Return (p, n) when m = n -> [v], [p]
-        | PA.Call_return _, _ | _, PA.Call_return _ -> assert false
+        | PA.Call_return _, _ | _, PA.Call_return _ ->
+            failwith "INTERNAL: Call_return should be desugared by now."
         | _ -> raise No_match in
       Some { automaton_node = ((* DBG eprintf "@[    ->%s on %s@." tgt ln;*) tgt)
            ; automaton_stack = List.fold_left2 pmatch s.automaton_stack vs ps }

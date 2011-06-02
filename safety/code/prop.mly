@@ -3,7 +3,7 @@
 %{
   module P = Ast.PropertyAst
 
-  let is_pattern s = 'A' <= s.[0] && s.[0] < 'Z'
+  let is_binder s = 'A' <= s.[0] && s.[0] < 'Z'
   let var = String.uncapitalize
 %}
 
@@ -37,7 +37,7 @@ return_label:
 mixed_label:
     l=pexpr r=receiver? DOT m=ID LP a=separated_list(COMMA, pexpr) RP
       { let l, r = match r with
-          | None -> P.any, l
+          | None -> P.GuardAny, l
           | Some r -> l, r in
         { P.label_method = m; P.label_data = P.Call_return (l, r :: a) } }
 
@@ -45,12 +45,11 @@ receiver: ASGN a=pexpr { a }
 
 pexpr:
     s=ID
-      { if is_pattern s then P.Pattern (Some (var s))
-        else P.Guard s }
+      { if is_binder s then P.Binder (var s) else P.GuardVarEq s }
   | n=NUMBER
-      { P.Constant n }
+      { P.GuardCtEq n }
   | STAR
-      { P.Pattern None }
+      { P.GuardAny }
 
 %%
 

@@ -79,13 +79,15 @@ type class_ = string * member list
 module PropertyAst = struct
 
   (* Since there's another [expression], you're asking for trouble if you
-     open this module. *)
+     open this module.
+     See [Interp.PropertyInterpreter.pmatch]. *)
   type expression =
-      Constant of value
-    | Pattern of variable option
-    | Guard of variable
-
-  let any = Pattern None (* short name, because it's used often *)
+    | Binder of variable
+    | GuardVarEq of variable
+    | GuardVarNeq of variable
+    | GuardCtEq of value
+    | GuardCtNeq of value
+    | GuardAny
 
   type 'a label_data =
     | Call of 'a list  (* the first element is the receiver *)
@@ -114,11 +116,11 @@ module PropertyAst = struct
     U.map_option f ls
 
   let get_guard = function
-    | Guard x -> Some x
+    | GuardVarEq x | GuardVarNeq x -> Some x
     | _ -> None
 
   let get_pattern = function
-    | Pattern (Some x) -> Some x
+    | Binder x -> Some x
     | _ -> None
 
   let guards e = labels_of_edge get_guard e
