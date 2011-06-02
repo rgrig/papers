@@ -2,6 +2,7 @@
   be a return edge I->a that contains the negated guards of I->b. IOW, you
   need to go back to state a if arguments match but not the return value.
   This implies we need a guard that says "NOT equal to this value".
+  (e.g., examples/order.j fails with seed 673 because of this bug)
 - cleanup code
 - desugar properties into statements
 - add tracing of execution
@@ -12,20 +13,22 @@
 
 notes (low priority todos):
 - symbolic execution
-- generate coreStarIL
+- translations
+  - tppl -> coreStarIL
+  - tppl -> Boogie
+  - Java bytecode <-> tppl
+  - NOTE: Boogie and coreStarIL are not executable in general, so can't be
+    translated into tppl or bytecode.
 - more examples
 - it's very ugly that referring to fields and referring to methods is different
   - field  -- "this" is prohibited
   - this.method() -- "this" is required
-- tc should reject name clashes
-- better line number info for these errors
-  - wrong return type
 - pure expressions are fine and nice, but it's rather annoying
   to not have function calls in expression; can I allow them as
   syntactic sugar?
-- Generate this language from Java bytecode?
-- Generate this language from coreStarIL?
-- Generate Boogie from this language.
+- tc should reject name clashes
+- better line number info for these errors
+  - wrong return type
 - property check: warn when variables are not used
 
 vim:spell:
