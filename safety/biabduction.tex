@@ -1,0 +1,96 @@
+\documentclass{article}
+
+\usepackage[all]{xy}
+%\xyoption{pdf}
+
+\title{Understanding Biabduction}
+\author{Radu Grigore, Rasmus Lerchedahl Petersen}
+
+\newcommand{\ts}{\vdash}
+\newcommand{\hoare}[3]{\{#1\}#2\{#3\}}
+\newcommand{\set}[2]{\{#1 \mid #2\}}
+
+\begin{document}
+\maketitle
+\section{Introduction}\label{sec:intro}
+We shll attempt to give a clear account of the technique for symbolic
+execution known as biabduction, suitable for a graduate student. We
+will assume access to an abductive theorem prover, i.e. that we can
+ask questions of the form $P * ?A \ts Q *?F$, where $P$ and $Q$ are
+known and $A$ (the abducted anti-frame) and $F$ (the abducted frame)
+are synthesized. Thus the pair $(A, F)$ constitutes the answer to the
+question.
+
+How to program a theorem capable of answering such questions is
+another interesting challenge which we might address at a later stage.
+\section{Symbolic Execution}\label{sec:symbexe}
+\subsection{Idea}\label{sec:symbexe:idea}
+We maintain a symbolic state while (symbolically) executing each
+statement. Statements are represented as Hoare triples, a pre- and a
+post condition.
+
+For biabduction, the state consists of a pair of heaps $(H, L)$. The
+semantics of this pair is that ``if $L$ is provided at the beginning,
+then $H$ is available now''.
+
+Thus, to execute $\hoare P C Q$ from the state $(H, L)$, we first ask
+the abductive question $H * ?A \ts P * ?F$. If we get back the answer
+$(A, F)$, we know that adding $A$ to the current heap will allow us to
+execute $C$. We cannot add anything to the current heap, but we could
+have added more than $L$ in the beginning. The frame rule will then
+ensure, that it is available now.
+
+In that case, we can execute $C$ from $P * F$ and use the frame rule
+again to conclude that the resulting state will be $Q * F$.
+
+So after the staement $C$, we have the symbolic state $(Q * F, L *
+A)$, because if $L * A$ is provided in the beginning, then $H * A$ is
+available to $C$ which will then execute to reach $Q * F$.
+
+As a diagram:
+\[
+\xymatrix{
+{\vdots} \ar[d]^{(H, L)} \\
+*+[F]{\hoare P C Q} \ar[d]^{(Q * F, L * A)} &
+{\mathrm{when}\ H * A \ts P * F} \\
+{\vdots}
+}
+\]
+When we reach the final statement, we have obtained a specification
+for the procedure. Because we know that if $L$ is provided in the
+beginning then $H$ will be available in the end. Thus the procedure
+satisfies the Hoare triple $\hoare L - H$.
+\subsection{Base case}\label{sec:symbexe:base}
+The base case is slightly more complicated than the idea described
+above, because each statement can potentially be reached in more than
+one way. Similarly, in the case of a branching statement, it could
+have multiple continuations.
+
+In general we have a control flow graph where each node is a
+statement. It can have multiple incoming flows and multiple outgoing
+flows. Also each flow is in general a set of possible states (pairs of
+heaps).
+\[
+\xymatrix{
+{\vdots} \ar[dr]^{S_1} & {\vdots} \ar[d]_{\ldots}^{\ldots} & {\vdots} \ar[dl]_{S_n} \\
+& *+[F]{\hoare P C Q} \ar[dl]^{S} \ar[d]_{\ldots}^{\ldots} \ar[dr]_{S}
+& & S = \set{(Q * F, L * A)}{\exists i, H.\ (H, L)\in S_i\ \land\ H * A \ts P * F} \\
+{\vdots} & {\vdots} & {\vdots}
+}
+\]
+\subsection{Loops}\label{sec:symbexe:loops}
+Lopps require a fixed point calculation. We can detect back edges via
+a depth first search and insert abstraction nodes.
+\subsection{Abstraction}\label{sec:symbexe:abstraction}
+For each abstraction node, we over approximate the inflows by the single outflow
+\[
+\xymatrix{
+{\vdots} \ar[d]^{S} & {S = \{(H_1, L_1), \ldots, (H_n, L_n)\}}\\
+*+[F]{\hoare P C Q} \ar[d]^{\{(Q * F, L * A)\}} & H_1 \lor \ldots \lor H_n \ts H \\
+{\vdots} & L \ts L_1 \land \ldots \land L_n
+}
+\]
+Then we repeat until we reach a fixed point.
+\subsection{Recursion}\label{sec:symbexe:recursion}
+Recursion requires another fixed point computation.
+\end{document}
