@@ -1,0 +1,60 @@
+\def\para #1.{\noindent{\it#1.\enspace}}
+
+This file contains notes written before the implementation of various tricky parts.
+Notes are in chronological order (oldest first) and there is no requirement for a note to relate to previous ones.
+This is mostly a historical document, so there is no promise that notes are kept up to date when the implementation changes.
+
+\beginsection Desugaring of call--return transitions. % <<<
+
+\para Background.
+The automata observe two types of events in the program, method calls and method returns.
+Sometimes, however, it is convenient for the user to think of a (call, return) pair as an atomic event.
+For example, a transition labeled $I:=C.{\it iterator}()$ refers to both the call and the return of the method {\it iterator}.
+When there is no intervening event between the call and the return, the semantics are straightforward; otherwise, the semantics range from ``a bit tricky'' (for example when intervening events are relevant to the automaton, but only if it would be in some unrelated state) to ``completely incomprehensible'' (for example, when the intervening events are recursive calls).
+The user can tag a transition with {\it call\/} or {\it return\/} to say which type of event may trigger it.
+If no tag is present then the transition is said to be a call--return transition.
+Such transitions are desugared into a configuration (which uses no call--return transitions), such that in most cases the effect is what a user would expect and in tricky cases the desugared automaton errs on the sound side.
+The formal semantics of call-return transitions are given by this desugaring.
+The purpose of this note is to describe precisely the desugaring and argue why it matches what a user would informally expect of call--return transitions.
+
+Each call or return transition has a guard and an action:
+The guard examines the values (sent as arguments or received as result) and says yes/no; the action writes values in automaton variables.
+Intuitively, a call--return transition has two guards (a call guard and a return guard), two actions (a call action and a return action), and a middle state in which the transition is being performed.
+As Rasmus noticed, if two call--return transitions are being performed at the same time and they share the source, then the situation is tricky.
+The problem is that the return event might match no return guard or exactly one return guard.
+In the first case, no transition should be performed and the source should remain active; in the second case, one transition should be performed and only its target should remain active.
+There seems to be no way to distinguish the two situations without either (1)~looking at both call--return transitions at the same time or (2)~storing some history in the automaton memory.
+Both approaches are distasteful because of their complexity and lack of locality.
+
+Still, writing $J:=c.{\it iterator}()$ is quite nice.
+The informal meaning is the following:
+If a call event that satisfies the call guard comes, then the next event must be a return event of the same method, otherwise the automaton signals.
+If the return event satisfies the return guard (after performing the call action), then the call--return transition is performed (the return action is also performed and the target state is activated); otherwise, the transition is not performed.
+
+As we saw, the informal meaning breaks when something else is happening in parallel.
+In a way, the reason why we need to consider at the same time what happens with all the outgoing transitions of a certain state is that the source state remains active if and only if {\it no\/} outgoing transition is performed. With call or return transitions it is fairly simple to consider them at once:
+The interpreter iterates through them, makes a set of successors, and then nondeterministically picks one if the set is nonempty; otherwise, it picks the source.
+When call--return edges are involved, then there would be significantly more work to do.
+
+The simple solution is to preclude anything from happening in parallel.
+There are a few conditions that might be OK, listed here from strongest to weakest.
+\item{(1)} If a state has an outgoing call--return transition, then it must have no other outgoing transition.
+\item{(2)} If a state has an outgoing call--return transition on method~$m$, then it must have no other outgoing transition on method~$m$.
+\item{(3)} If a state has an outgoing call--return transition on method~$m$, then it must have no other outgoing call--return transition on method~$m$ and no outgoing call transition on method~$m$.
+\item{(4)} If a state has an outgoing call--return transition on method~$m$, then it must have no other outgoing call--return transition on method~$m$.
+
+\noindent Condition~(1) is too restrictive---it forbids some automata currently given as examples (loop while {\it hasNext\/}).
+Condition~(4) still allows rather tricky situations.
+Between (2)~and~(3), the first is simpler to implement and the second is more flexible.
+Next, I focus on (2) for a weak reason: it covers all the examples we have so far.
+
+I write transitions giving names to guards and actions, although these are more abstract concepts that do not appear in the concrete syntax.
+Consider a call--return transition.
+$$x\to y:\; (g_1,a_1); (g_2,a_2)$$
+TODO: Continue. A way to push and pop the whole automaton memory? Or a way to undo actions? Or restrict $a_1$ (call action) to be a nop?
+
+% >>>
+
+\bye
+
+% vim:wrap:linebreak:fmr=<<<,>>>:nosi:spell:
