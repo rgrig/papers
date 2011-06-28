@@ -77,65 +77,81 @@ type class_ = string * member list
 (* }}} *)
 (* AST (types) only for automata *) (* {{{ *)
 module PropertyAst = struct
+  (* Say [module PA = PropertyAst] rather than [open PropertyAst] when using. *)
 
-  (* Since there's another [expression], you're asking for trouble if you
-     open this module.
-     See [Interp.PropertyInterpreter.pmatch]. *)
-  type expression =
-    | Binder of variable
-    | GuardVarEq of variable
-    | GuardVarNeq of variable
-    | GuardCtEq of value
-    | GuardCtNeq of value
-    | GuardAny
+  type method_ = string * int
 
-  type 'a label_data =
-    | Call of 'a list  (* the first element is the receiver *)
-    | Return of 'a * int (* second is argument count *)
-    | Call_return of 'a * 'a list
+  type event_type =
+    | Call
+    | Return
 
-  type 'a label =
-    { label_method : string
-    ; label_data : 'a label_data }
+  type atomic_guard =
+    | Var of variable * int
+    | Ct of value * int
+    | Event of event_type * method_
+    | Any
+
+  type guard =
+    | Atomic of atomic_guard
+    | Not of guard
+    | And of guard list
+    | Or of guard list
+
+  type action = (variable * int) list
+
+  type event =
+    { event_type : event_type
+    ; event_method : method_
+    ; event_values : value U.IntMap.t }
+
+  type label =
+    { label_guard : guard
+    ; label_action : action }
 
   type edge =
     { edge_source : string
     ; edge_target : string
-    ; edge_label : expression label }
+    ; edge_label : label list }
 
   type t =
     { message : string
     ; edges: edge list }
 
   (* utilities *) (* {{{ *)
-  let labels_of_edge f e =
-    let ls = match e.edge_label.label_data with
-      | Call es -> es
-      | Return (e, _) -> [e]
-      | Call_return (e, es) -> e :: es in
-    U.map_option f ls
+  let wvars { label_guard = _; label_action = a } =
+    List.map fst a
 
-  let get_guard = function
-    | GuardVarEq x | GuardVarNeq x -> Some x
-    | _ -> None
+  let rvars { label_guard = g; label_action = _ } =
+    let rec f = function
+      | Atomic (Var (v, _)) -> [v]
+      | Not g -> f g
+      | And gs | Or gs -> List.concat (List.map f gs)
+      | _ -> [] in
+    f g
 
-  let get_pattern = function
-    | Binder x -> Some x
-    | _ -> None
+  let vars_of_edge f
+    { edge_source = _
+    ; edge_target = _
+    ; edge_label = ls }
+  =
+    List.concat (List.map f ls)
 
-  let guards e = labels_of_edge get_guard e
-  let patterns e = labels_of_edge get_pattern e
+  let written_vars = vars_of_edge wvars
+  let read_vars = vars_of_edge rvars
 
-  let arg_count = function
-    | Call es | Call_return (_, es) -> List.length es
-    | Return (_, n) -> n
+  let mk_event et m (vs : value list) =
+    { event_type = et
+    ; event_method = m
+    ; event_values =
+        let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
+        snd (List.fold_left f (0, U.IntMap.empty) vs) }
 
-  let mk_edge s t m ld =
+  let mk_edge s t lg la =
     { edge_source = s
     ; edge_target = t
     ; edge_label =
-      { label_method = m
-      ; label_data = ld } }
+      [ { label_guard = lg
+        ; label_action = la } ] }
 
   (* }}} *)
 end

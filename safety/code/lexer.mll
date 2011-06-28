@@ -54,18 +54,22 @@ rule tok1 = parse
   | ','     { l COMMA }
   | '.'     { l DOT }
   | "=="    { l EQ }
-  | '{'     { l LB }
+  | '['     { l LB }
+  | '{'     { l LC }
   | '('     { l LP }
   | "!="    { l NE }
   | "¬" | "!"
             { l NOT }
   | "\\/" | "||"
             { l OR }
-  | '}'     { l RB }
+  | ']'     { l RB }
+  | '}'     { l RC }
   | ')'     { l RP }
   | '*'     { l STAR }
   | '"' ([^ '"' '\n']* as x) '"'
             { l (STRING x) }
+  | '-'? ['0'-'9']+ as n
+            { l (NUMBER (int_of_string n)) }
   | id_head id_tail as id { keyword id }
   | eof     { l EOF }
   | _       { raise Error }
@@ -84,12 +88,12 @@ rule tok1 = parse
     and tok2 () =
       if !scheduled_rb > 0 then begin
         decr scheduled_rb;
-        return RB
+        return RC
       end else match tok1 lexbuf with (* TODO *)
         | Right n ->
             if n > List.hd !indents then begin
               indents := n :: !indents;
-              return LB
+              return LC
             end else return_rb n
         | Left t -> return t in
     tok2

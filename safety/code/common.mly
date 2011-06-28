@@ -20,6 +20,7 @@
 %token EQ
 %token IF
 %token LB
+%token LC
 %token LP
 %token MAIN
 %token NE
@@ -28,6 +29,7 @@
 %token OR
 %token PROPERTY
 %token RB
+%token RC
 %token RETURN
 %token RP
 %token STAR

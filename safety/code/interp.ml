@@ -149,39 +149,14 @@ let preprocess_classes cs =
     fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
 
-let collect_methods es =
-  let module Ssi = Set.Make (U.OrderedPair (String) (U.Int)) in
-  let method_of_edge e =
-    let l = e.PA.edge_label in
-    (l.PA.label_method, PA.arg_count l.PA.label_data) in
-  let f ms e = Ssi.add (method_of_edge e) ms in
-  let uniq = List.fold_left f Ssi.empty es in
-  Ssi.elements uniq
-
-(* TODO(rgrig): Must add a Return edge from intermediate to source. *)
-let split_call_return es =
-  let methods = collect_methods es in
-  let error_edges_from src =
-    let one (mn, ac) =
-      PA.mk_edge src "error" mn (PA.Call (U.replicate ac PA.GuardAny)) in
-    List.map one methods in
-  let desugar e =
-    let l = e.PA.edge_label in
-    match l.PA.label_data with
-      | PA.Call_return (lr, la) ->
-          let is = U.fresh_internal_id () in (* intermediate state *)
-          let m = l.PA.label_method in
-          PA.mk_edge e.PA.edge_source is m (PA.Call la) ::
-          PA.mk_edge is e.PA.edge_target m (PA.Return (lr, List.length la)) ::
-          error_edges_from is
-      | _ -> [e] in
-  List.concat (List.map desugar es)
+let desugar_multi_edges es = es (* TODO
+  failwith "TODO: make sure each edge has exactly one label." *)
 
 let preprocess_properties ps =
   let ps = List.map (fun x -> x.ast) ps in
   automaton := ((* DBG eprintf "@[pick automaton@.";*) pick ok_automaton ps);
   automaton :=
-    { !automaton with PA.edges = split_call_return !automaton.PA.edges }
+    { !automaton with PA.edges = desugar_multi_edges !automaton.PA.edges }
 
 let preprocess p =
   preprocess_classes p.program_classes;
@@ -208,6 +183,7 @@ let dt = function
   | PA.Call_return _ -> eprintf "@[OMG@." *)
 
 module PropertyInterpreter = struct
+(*
   exception No_match
   let pmatch s v =
     let chk c = if c then s else raise No_match in
@@ -218,40 +194,45 @@ module PropertyInterpreter = struct
       | PA.GuardCtEq w -> chk (v = w)
       | PA.GuardCtNeq w -> chk (v <> w)
       | PA.GuardAny -> chk true
+*)
+  let rec evaluate_guard s e =
+    let rv i = U.IntMap.find i e.PA.event_values in
+    let rec f = function
+      | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
+      | PA.Atomic (PA.Ct (v, i)) -> v = rv i
+      | PA.Atomic (PA.Event (et, m)) ->
+          et = e.PA.event_type && m = e.PA.event_method
+      | PA.Not g -> not (f g)
+      | PA.And gs -> List.for_all f gs
+      | PA.Or gs -> List.exists f gs in
+    f
 
-  let evolve s
-    { PA.label_method = en  (* the event taking place *)
-    ; PA.label_data = ed }
+  let perform_actions s a vs = s (* TODO *)
+
+  let evolve s e
     { PA.edge_source = src  (* the automaton edge being examined *)
     ; PA.edge_target = tgt
-    ; PA.edge_label =
-      { PA.label_method = ln
-      ; PA.label_data = ld } }
+    ; PA.edge_label = ls }
   =
-    if s.automaton_node <> src || en <> ln then None else
-    try
-(* DBG      dt ed; dt ld; *)
-      let vs, ps = match ed, ld with
-        | PA.Call vs, PA.Call ps -> List.map U.from_some vs, ps
-        | PA.Return (None, m), PA.Return (PA.GuardAny, n) when m=n -> [],[]
-        | PA.Return (Some v, m), PA.Return (p, n) when m = n -> [v], [p]
-        | PA.Call_return _, _ | _, PA.Call_return _ ->
-            failwith "INTERNAL: Call_return should be desugared by now."
-        | _ -> raise No_match in
-      Some { automaton_node = ((* DBG eprintf "@[    ->%s on %s@." tgt ln;*) tgt)
-           ; automaton_stack = List.fold_left2 pmatch s.automaton_stack vs ps }
-    with No_match | Invalid_argument _ -> None
+    match ls with
+      | [{PA.label_guard = g; PA.label_action = a}] ->
+          if s.automaton_node <> src ||
+             not (evaluate_guard s.automaton_stack e g) then None
+          else Some
+            { automaton_node = tgt
+            ; automaton_stack =
+                perform_actions s.automaton_stack a e.PA.event_values }
+      | _ -> failwith "INTERNAL: You must first desugar multi-event edges."
 
   let check s e =
     let candidates = U.map_option (evolve s e) !automaton.PA.edges in
     let candidates = if candidates = [] then [s] else candidates in
-    let next = ((* DBG eprintf "@[pick next state@.";*) pick automaton_start candidates) in
-(* DBG    eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
-(* DBG    report_error "transition"; *)
+    let next = pick automaton_start candidates in
+(* DBG   eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
+(* DBG   report_error "transition"; *)
     if next.automaton_node = "error" then
       raise (Property_fails !automaton.PA.message);
     next
-
 end
 
 (* }}} *)
@@ -295,11 +276,11 @@ and call
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let state = event state
-    {PA.label_method=mn; PA.label_data=PA.Call (List.map (fun x->Some x) args)} in
+  let method_id = (mn, List.length formals) in
+  let state = event state (PA.mk_event PA.Call method_id args) in
   let state, value = body chk { state with locals = m_locals } m.method_body in
   let state = event state
-    {PA.label_method=mn; PA.label_data=PA.Return(value,List.length args)} in
+    (PA.mk_event PA.Return method_id (U.list_of_option value)) in
   let state = { state with locals = locals } in
   match c.call_lhs with
     | Some x -> (* DBG eprintf "@[    %s returns %d@." c.call_method

@@ -293,13 +293,14 @@ module PropertyChecks = struct
         if U.StringSet.mem x seen
         then (seen, U.StringSet.add x bad)
         else (U.StringSet.add x seen, bad) in
-      let ps = A.patterns e in
-      let _, vs = List.fold_left see (U.StringSet.empty, U.StringSet.empty) ps in
+      let vs = A.written_vars e in
+      let _, vs =
+        List.fold_left see (U.StringSet.empty, U.StringSet.empty) vs in
       error_edge "multiple bindings" e vs in
     List.iter check_edge p.A.edges
 
   let bindings =
-    let f _ e = U.add_strings U.StringSet.empty (A.patterns e) in
+    let f _ e = U.add_strings U.StringSet.empty (A.written_vars e) in
     U.y (U.memo f)
 
   let count_states p =
@@ -330,7 +331,7 @@ module PropertyChecks = struct
   let check_bound_variables p =
     let bound = bound_variables p in
     let check_edge e =
-      let guards = U.add_strings U.StringSet.empty (A.guards e) in
+      let guards = U.add_strings U.StringSet.empty (A.read_vars e) in
       let bound_here = bound (get_source e) in
       let unbound = U.StringSet.diff guards bound_here in
       error_edge "possibly unbound" e unbound in

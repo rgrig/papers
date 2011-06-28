@@ -1,8 +1,4 @@
-- BUG: When edge a->b is split into a->I, I->b, I->error, there should also
-  be a return edge I->a that contains the negated guards of I->b. IOW, you
-  need to go back to state a if arguments match but not the return value.
-  This implies we need a guard that says "NOT equal to this value".
-  (e.g., examples/order.j fails with seed 673 because of this bug)
+- desugar edges that consume multiple events into edges that consume one
 - cleanup code
 - desugar properties into statements
 - add tracing of execution

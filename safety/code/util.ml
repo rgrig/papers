@@ -34,7 +34,10 @@ struct
   type t = A.t * B.t
   let compare = compare
 end
-module IntMap = Map.Make (Int)
+
+(* The type annotation on IntMap is a workaround for OCaml bug
+   http://caml.inria.fr/mantis/view.php?id=5302 *)
+module IntMap : (Map.S with type key = int) = Map.Make (Int)
 module StringMap = Map.Make (String)
 module StringPairMap = Map.Make (OrderedPair (String) (String))
 module StringSet = Set.Make (String)

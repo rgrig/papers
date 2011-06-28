@@ -8,7 +8,7 @@
 %%
 
 %public class_:
-    CLASS c=ID LB m=member* RB
+    CLASS c=ID LC m=member* RC
       { (c, m) }
 
 %public global:
@@ -37,7 +37,7 @@ type_id:
       { { declaration_type = type_of_string t; declaration_variable = v } }
 
 body:
-    LB b=with_line(statement)* RB
+    LC b=with_line(statement)* RC
       { let ds = ref [] in (* ugly *)
         let ss = ref [] in
         let add_to_ds x = ds := x :: !ds in
