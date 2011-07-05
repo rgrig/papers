@@ -20,7 +20,7 @@
     fst (List.fold_left f ([], 0) ps)
 
   let mk_call_guard m ps =
-    let es = P.Event (P.Call, (m, List.length ps)) :: mk_guard ps in
+    let es = P.Event (P.Call, (m, List.length ps - 1)) :: mk_guard ps in
     let es = List.map (fun x -> P.Atomic x) es in
     P.And es
 
@@ -72,7 +72,7 @@ mixed_label:
           | Some r -> l, r in [
         { P.label_guard = mk_call_guard m (r :: a);
           P.label_action = mk_action (r :: a) };
-        { P.label_guard = mk_return_guard m l (List.length (r :: a));
+        { P.label_guard = mk_return_guard m l (List.length a);
           P.label_action = mk_action [l] } ] }
 
 receiver: ASGN a=pexpr { a }

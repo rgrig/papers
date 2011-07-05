@@ -89,6 +89,8 @@ type 'a program_state =
   type ['a program_state] on some functions makes it possible to make sure
   they don't look at [automaton_state]. *)
 
+let events = Queue.create ()
+
 (* }}} *)
 (* interpreter *) (* {{{ *)
 (* helpers *) (* {{{ *)
@@ -183,56 +185,75 @@ let dt = function
   | PA.Call_return _ -> eprintf "@[OMG@." *)
 
 module PropertyInterpreter = struct
-(*
-  exception No_match
-  let pmatch s v =
-    let chk c = if c then s else raise No_match in
-    function
-      | PA.Binder x -> Stack.init_variable s x v
-      | PA.GuardVarEq x -> chk (v = Stack.read s x)
-      | PA.GuardVarNeq x -> chk (v <> Stack.read s x)
-      | PA.GuardCtEq w -> chk (v = w)
-      | PA.GuardCtNeq w -> chk (v <> w)
-      | PA.GuardAny -> chk true
-*)
   let rec evaluate_guard s e =
     let rv i = U.IntMap.find i e.PA.event_values in
     let rec f = function
       | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
       | PA.Atomic (PA.Ct (v, i)) -> v = rv i
       | PA.Atomic (PA.Event (et, m)) ->
+(*DBG printf "expecting (%s, %d); seen (%s, %d)\n"
+  (fst m) (snd m)
+  (fst e.PA.event_method) (snd e.PA.event_method);*)
           et = e.PA.event_type && m = e.PA.event_method
       | PA.Not g -> not (f g)
       | PA.And gs -> List.for_all f gs
       | PA.Or gs -> List.exists f gs in
     f
 
-  let perform_actions s a vs = s (* TODO *)
+  let perform_action s a e =
+    let f s (v, i) =
+      let vl = try U.IntMap.find i e.PA.event_values
+      with Not_found -> failwith "Internal error: index not assigned" in
+      Stack.init_variable s v vl in
+    List.fold_left f s a
 
-  let evolve s e
+  (* TODO *)
+  let call_return_warn e g = ()
+
+  exception Return of Stack.t
+  exception No_match
+  let evolve
+    { automaton_node = v
+    ; automaton_stack = s }
     { PA.edge_source = src  (* the automaton edge being examined *)
     ; PA.edge_target = tgt
     ; PA.edge_label = ls }
   =
-    match ls with
-      | [{PA.label_guard = g; PA.label_action = a}] ->
-          if s.automaton_node <> src ||
-             not (evaluate_guard s.automaton_stack e g) then None
-          else Some
-            { automaton_node = tgt
-            ; automaton_stack =
-                perform_actions s.automaton_stack a e.PA.event_values }
-      | _ -> failwith "INTERNAL: You must first desugar multi-event edges."
+    assert (src = v);
+    let f (ls, s) e = match ls with
+      | [] -> raise (Return s)
+      | l :: ls ->
+          let g = l.PA.label_guard in
+          if not (evaluate_guard s e g) then begin
+            if ls = [] then call_return_warn e g;
+            raise No_match
+          end;
+          let s = perform_action s l.PA.label_action e in
+          if ls = [] then raise (Return s);
+          (ls, s) in
+    try
+      ignore (Queue.fold f (ls, s) events);
+      failwith "internal error: previous line should always throw"
+    with
+      | No_match -> None
+      | Return s ->
+          Some ({ automaton_node = tgt; automaton_stack = s}, List.length ls)
 
   let check s e =
-    let candidates = U.map_option (evolve s e) !automaton.PA.edges in
-    let candidates = if candidates = [] then [s] else candidates in
-    let next = pick automaton_start candidates in
+    Queue.push e events;
+    let outgoing = PA.outgoing !automaton s.automaton_node in
+    let n = List.fold_left max 0 (List.map PA.edge_length outgoing) in
+    if Queue.length events >= n then begin
+      let candidates = U.map_option (evolve s) outgoing in
+      let candidates = if candidates = [] then [(s,1)] else candidates in
+      let next, k = pick (automaton_start, 1) candidates in
+      for i = 1 to k do ignore (Queue.pop events) done;
 (* DBG   eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
 (* DBG   report_error "transition"; *)
-    if next.automaton_node = "error" then
-      raise (Property_fails !automaton.PA.message);
-    next
+      if next.automaton_node = "error" then
+        raise (Property_fails !automaton.PA.message);
+      next
+    end else s
 end
 
 (* }}} *)
@@ -276,7 +297,7 @@ and call
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let method_id = (mn, List.length formals) in
+  let method_id = (mn, List.length m.method_formals) in
   let state = event state (PA.mk_event PA.Call method_id args) in
   let state, value = body chk { state with locals = m_locals } m.method_body in
   let state = event state
@@ -373,7 +394,7 @@ let interpret fn =
         (match Lexing.lexeme_start_p lexbuf with
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-        eprintf "@[%d:%d: parse error@." line (c1-c0+1))
+        eprintf "@[%s:%d:%d: parse error@." fn line (c1-c0+1))
     | Check.Error -> ()
 
 let _ =

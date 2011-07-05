@@ -11,11 +11,16 @@ property "trying to advance an iterator on a modified collection"
   tracking -> modified: c.add(*), c.remove(*)
   modified -> error:    i.next()
 
-property "trying to advance an iterator past the end"
+property "advancing iterator without checking if not last"
   start -> tracking:    I := *.iterator()
   tracking -> notAtEnd: true := i.hasNext()
   notAtEnd -> tracking: i.next()
   tracking -> error:    i.next()
+
+property "trying to advance an iterator past the end"
+  start -> tracking:  I := *.iterator()
+  tracking -> atEnd:  false := i.hasNext()
+  atEnd -> error:     i.next()
 
 class Object {}
 

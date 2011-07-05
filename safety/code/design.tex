@@ -116,12 +116,13 @@ $$\vbox{
   \+&&      ${\it candidates}:=[]$\cr
   \+$L:$&&  {\bf for each} transition ${\it vertex}({\it state})\to x:\;
                                (g_0,a_0),\ldots,(g_{n-1},a_{n-1})$\cr
+  \+&&&       {\bf if} $n<{\it size}(e)$ {\bf then continue} loop $L$\cr
   \+&&&       $\sigma:={\it store}(\it state)$\cr
-  \+&&&       {\bf for} $(k:=0; k<\min(n,{\it size}(e)); +\!\!+k)$ \cr
+  \+&&&       {\bf for} $k\in[\,0.\,.\,n)$ \cr
   \+&&&&        {\bf if} $\lnot(g_k\;e_k\;\sigma)$
-                                     {\bf then continue} loop $L$\cr
+                      {\bf then continue} loop $L$\cr
   \+&&&&        $\sigma:=a_k\;e_k\;\sigma$\cr
-  \+&&&       append $(x,\sigma,k)$ to {\it candidates}\cr
+  \+&&&     append $(x,\sigma,n)$ to {\it candidates}\cr
   \+&&      {\bf if} no {\it candidates} \cr
   \+&&&       delete $e_0$ from $e$\cr
   \+&&      {\bf else}\cr

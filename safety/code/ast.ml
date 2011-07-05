@@ -153,6 +153,11 @@ module PropertyAst = struct
       [ { label_guard = lg
         ; label_action = la } ] }
 
+  let edge_length e = List.length e.edge_label
+
+  let outgoing a src =
+    List.filter (fun e -> e.edge_source = src) a.edges
+
   (* }}} *)
 end
 (* }}} *)

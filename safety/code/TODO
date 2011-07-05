@@ -1,4 +1,4 @@
-- desugar edges that consume multiple events into edges that consume one
+- filter the events relevant to the automaton, based on method ids
 - cleanup code
 - desugar properties into statements
 - add tracing of execution
