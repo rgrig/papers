@@ -1,0 +1,92 @@
+\documentclass[preprint]{sigplanconf} % <<<
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphics}
+\usepackage[latin1]{inputenc}
+\usepackage{microtype}  % do not remove
+\usepackage{pygmentize}
+\usepackage{xcolor}
+\usepackage[colorlinks]{hyperref}
+
+\RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
+\definecolor{darkblue}{rgb}{0,0,0.4}
+\definecolor{verylightgray}{rgb}{0.9,0.9,0.9}
+% comment the next line for printing
+\hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
+\hypersetup{
+  pdftitle={A Language for Specifying Safety Temporal Properties of Object-Oriented Programs},
+  pdfauthor={Dino Distefano and Radu Grigore and Rasmus Lerchedahl Petersen}}
+
+\titlebanner{DRAFT}
+\title{A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
+\authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
+
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\pmap}{\rightharpoonup}
+\newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
+
+\overfullrule=5pt
+\showboxdepth=10
+\showboxbreadth=30
+% >>>
+\begin{document}
+\maketitle
+
+\begin{abstract} % <<<
+TODO
+\end{abstract}
+\category{D.2.1}{Software Engineering}{Requirements/Specifications}
+\terms Languages, Verification
+\keywords Safety, Temporal Properties, Object-Oriented
+
+% >>>
+\section{Introduction} % <<<
+
+Our goal is a tool that checks safety properties of large Java projects.
+The properties should be given by the user; they should not be hard-coded.
+This article presents a language of properties.
+We tried to make it simple and intuitive, so that programmers would use it.
+
+% >>>
+\section{Example} % <<<
+
+The program in~\autoref{fig:cme} fails with an exception.
+It is illegal to modify the underlying collection while iterating.
+
+\begin{figure}\centering
+\include{Cme}
+\caption{Throws \textit{ConcurrentModificationException}.}
+\label{fig:cme}
+\end{figure}
+
+% >>>
+\section{Syntax} % <<<
+
+% >>>
+\section{Semantics} % <<<
+
+The input seen by an automaton is a sequence of events.
+\begin{align}
+\set{Event}&=\{\mathtt{call}, \mathtt{return}\}\times \set{MethodId} \times (\N \pmap \set{Value}) \\
+\set{Input}&=\N\pmap\set{Event}
+\end{align}
+
+%>>>
+\section{Testing} % <<<
+
+% >>>
+\section{Future Work} %<<<
+
+%>>>
+\section{Related Work} %>>>
+
+%>>>
+\section{Conclusions} %<<<
+
+%>>>
+
+\end{document}
+% vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
+% vim:fmr=<<<,>>>:
+
