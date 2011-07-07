@@ -2,10 +2,12 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{graphics}
 \usepackage[latin1]{inputenc}
 \usepackage{microtype}  % do not remove
 \usepackage{pygmentize}
+\usepackage{rgalg}
 \usepackage{xcolor}
 \usepackage[colorlinks]{hyperref}
 
@@ -25,6 +27,9 @@
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\pmap}{\rightharpoonup}
 \newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
+
+\theoremstyle{definition}
+\newtheorem{example}{Example}
 
 \overfullrule=5pt
 \showboxdepth=10
@@ -56,7 +61,7 @@ It is illegal to modify the underlying collection while iterating.
 
 \begin{figure}\centering
 \include{Cme}
-\caption{Throws \textit{ConcurrentModificationException}.}
+\caption{Running example program}
 \label{fig:cme}
 \end{figure}
 
@@ -66,11 +71,111 @@ It is illegal to modify the underlying collection while iterating.
 % >>>
 \section{Semantics} % <<<
 
-The input seen by an automaton is a sequence of events.
+A program's semantics is a set of event traces;
+an automaton's semantics is also a set of event traces.
+A program \emph{violates} a property when their sets intersect.
+Both the program and the automaton are nondeterministic.
+
+Each event has a tag and carries an array of values.
 \begin{align}
-\set{Event}&=\{\mathtt{call}, \mathtt{return}\}\times \set{MethodId} \times (\N \pmap \set{Value}) \\
-\set{Input}&=\N\pmap\set{Event}
+\set{Event}&=\bigcup_{n\in\N}\set{Tag}_n\times(n\to\set{Value})
 \end{align}
+(As usual, $n=\{0,1,\ldots,n-1\}$.)
+The content of the undefined sets (such as \set{Value}) is not important.
+We assume that these basic sets are disjoint.
+Traces are finite.
+\begin{align}
+\set{Trace}=\bigcup_{n\in\N} n\to\set{Event}
+\end{align}
+Intuitively, the program outputs a trace that drives the automaton.
+
+The automaton is defined on top of a finite multi-graph.
+The automaton is an array of transitions.
+Each transition has an edge and an array of labels.
+Each edge has a source vertex and a target vertex.
+Each label is a (guard, action) pair.
+There are at least two vertices.
+\begin{align}
+\set{Automaton} &= \bigcup_{n\in\N} n \to \set{Transition} \\
+\set{Transition} &= \set{Edge}\times \bigcup_{n\in\N} n\to\set{Label} \\
+\set{Edge}&=\set{Vertex}\times\set{Vertex} \\
+\set{Label}&=\set{Guard}\times\set{Action} \\
+\{\mathtt{start},\mathtt{error}\}&\subseteq\set{Vertex}
+\end{align}
+The deterministic state contains a store of values.
+We also define an automaton deterministic execution state, which includes the input to be processed.
+\begin{align}
+\set{Store}&=\set{Variable}\to\set{Value} \\
+\set{AState}&=\set{Vertex}\times\set{Store} \\
+\set{EState}&=\set{AState}\times\set{Trace}
+\end{align}
+Guards compare the values in an event with those in a store.
+Actions modify the store, using values from an event.
+\begin{align}
+\set{Guard}&=\set{Event}\to\set{Store}\to2 \\
+\set{Action}&=\set{Event}\to\set{Store}\to\set{Store}
+\end{align}
+The automaton deterministic step function evolves the execution state.
+\begin{align}
+\mathit{adStep}\in\set{EState}\to\set{EState}\to2
+\end{align}
+\begin{example}
+Consider an automaton in state~$s_1$.
+The input is a trace~$e_1e_2$ obtained by concatenating traces $e_1$~and~$e_2$.
+The automaton must make a nondeterministic choice out of some alternatives.
+A feasible alternative might be to consume $e_1$ and move to state~$s_2$.
+For this, we write $(s_2,e_2)\in\mathit{adStep}(s_1,e_1e_2)$.
+(We write $x\in f$ to mean that $f(x)=1$.)
+\end{example}
+The nondeterministic step is defined in terms of~\textit{adStep}.
+\begin{align}
+\mathit{anStep}&\in(\set{EState}\to2)\to\set{EState}\to2 \\
+\mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S
+\end{align}
+An iterated version of \textit{anStep} is useful for defining reachable states.
+\begin{align}
+\mathit{anStep}^\star\;0\;S &= S \\
+\mathit{anStep}^\star\;(\mathit{succ}\;n)\;S &= S \cup \mathit{anStep}^\star\;n\;(\mathit{anStep}\;S)
+\end{align}
+Finally, we can define the set of traces described by an automaton.
+\[ \{ e \mid \exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{anStep}^\star\;\{((\mathtt{start},0),e)\}\} \]
+These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
+
+\autoref{fig:adStep} defines \textit{adStep}.
+Consider an automaton in state~$(x_1,\sigma_1)$ that processes trace~$e_1$.
+If there is a transition from~$x_1$ to~$x_2$ that matches the events in a prefix~$e$ of~$e_1$, then the automaton may nondeterministically choose to perform that transition (line~10).
+If no such transition exists, then the first event in $e_1$ is dropped and the automaton remains in the same state (line~11).
+The actions of a transition are performed in order.
+The guards are evaluated after all previous actions were performed.
+A transition matches when all its guards hold.
+
+\begin{figure}
+\hbox to\hsize{\vbox{
+\begin{alg}
+\^  $\proc{adStep}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
+\=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
+\=  $e:=\text{$e_1$ without the suffix $e_2$}$
+\=  ~for each~ transition $((y_1,y_2),l)$
+\+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
+\=    $\sigma:=\sigma_1$
+\=    ~for each~ $k\in\mathit{len}\;l$
+\+      $(g,a):=l\;k$
+\=      ~if~ $\lnot(g\;(e\;k)\;\sigma)$ ~then continue~ to line 3
+\=      $\sigma:=a\;(e\;k)\;\sigma$
+\-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
+\-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
+\end{alg}
+\smallskip
+}\hfil}
+\caption{One automaton step}
+\label{fig:adStep}
+\end{figure}
+
+The function~\textit{adStep} is the crux of the automata semantics.
+At line~5 a copy of the store is made, which is used by the following loop.
+This copy is how \emph{roll-back} is built into the semantics of the automata.
+If transitions always have length~$1$, then \textit{adStep} becomes simpler.
+However, we could not find a desugaring into automata with transitions of length~$1$.
 
 %>>>
 \section{Testing} % <<<
