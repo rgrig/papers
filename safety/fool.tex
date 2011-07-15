@@ -39,11 +39,8 @@
 \maketitle
 
 \begin{abstract} % <<<
-  In this paper we present a new specification language for temporal
-  safety properties aimed at object-oriented languages.  The language
-  is expressive enough to represent relationships between objects and
-  it is designed with the goal of performing dynamic/static
-  analysis of object-oriented software.
+In this paper we present a new specification language for temporal safety properties aimed at object-oriented languages.
+The language is expressive enough to represent relationships between objects and it is designed with the goal of performing dynamic and static analysis of object-oriented software.
 \end{abstract}
 \category{D.2.1}{Software Engineering}{Requirements/Specifications}
 \terms Languages, Verification
@@ -89,6 +86,8 @@ an automaton's semantics is also a set of event traces.
 A program \emph{violates} a property when their sets intersect.
 Both the program and the automaton are nondeterministic.
 
+\subsection{Automaton} % <<<
+
 Each event has a tag and carries an array of values.
 \begin{align}
 \set{Event}&=\bigcup_{n\in\N}\set{Tag}_n\times(n\to\set{Value})
@@ -116,11 +115,12 @@ There are at least two vertices.
 \{\mathtt{start},\mathtt{error}\}&\subseteq\set{Vertex}
 \end{align}
 The deterministic state contains a store of values.
+A store is a finite partial map from automaton variables to values.
 We also define an automaton deterministic execution state, which includes the input to be processed.
 \begin{align}
-\set{Store}&=\set{Variable}\to\set{Value} \\
+\set{Store}&=\set{Variable}\pmap\set{Value} \\
 \set{AState}&=\set{Vertex}\times\set{Store} \\
-\set{EState}&=\set{AState}\times\set{Trace}
+\set{EAState}&=\set{AState}\times\set{Trace}
 \end{align}
 Guards compare the values in an event with those in a store.
 Actions modify the store, using values from an event.
@@ -130,7 +130,7 @@ Actions modify the store, using values from an event.
 \end{align}
 The automaton deterministic step function evolves the execution state.
 \begin{align}
-\mathit{adStep}\in\set{EState}\to\set{EState}\to2
+\mathit{adStep}\in\set{EAState}\to\set{EAState}\to2
 \end{align}
 \begin{example}
 Consider an automaton in state~$s_1$.
@@ -142,7 +142,7 @@ For this, we write $(s_2,e_2)\in\mathit{adStep}(s_1,e_1e_2)$.
 \end{example}
 The nondeterministic step is defined in terms of~\textit{adStep}.
 \begin{align}
-\mathit{anStep}&\in(\set{EState}\to2)\to\set{EState}\to2 \\
+\mathit{anStep}&\in(\set{EAState}\to2)\to\set{EAState}\to2 \\
 \mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S
 \end{align}
 An iterated version of \textit{anStep} is useful for defining reachable states.
@@ -190,7 +190,41 @@ This copy is how \emph{roll-back} is built into the semantics of the automata.
 If transitions always have length~$1$, then \textit{adStep} becomes simpler.
 However, we could not find a desugaring into automata with transitions of length~$1$.
 
-%>>>
+% >>>
+\subsection{Program} % <<<
+
+Let us now see how a simple object-oriented language produces event traces.
+The state of the program is the content of the memory.
+The program store (also known as stack) is similar to the automaton store.
+Program variables and automaton variables live in different name-spaces.
+Heaps map object addresses and field names to their values.
+\begin{align}
+\set{PState}&=\set{Store}\times\set{Heap}\\
+\set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
+\end{align}
+The input is an array of values.
+The program execution state keeps track of the input yet to be processed.
+\begin{align}
+\set{Input}&=\bigcup_{n\in\N}n\to\set{Value}\\
+\set{EPState}&=\set{PState}\times\set{Input}
+\end{align}
+Expressions do not have side-effects.
+Events are produced by the execution of simple statements.
+\begin{align}
+\set{Expression}&=\set{PState}\pmap\set{Value} \\
+\mathit{pStep}&\in\set{PState}\to\set{Statement}\to(\set{PState}\times\set{Event})
+\end{align}
+
+
+The program is composed of statements.
+
+
+
+TODO: Note that any PL that produces traces of events is suitable.
+IDEA: apply to something like Haskell?
+
+% >>>
+% >>>
 \section{Testing} % <<<
 
 % >>>
