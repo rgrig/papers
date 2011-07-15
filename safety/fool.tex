@@ -60,7 +60,7 @@ The program in~\autoref{fig:cme} fails with an exception.
 It is illegal to modify the underlying collection while iterating.
 
 \begin{figure}\centering
-\include{Cme}
+\include{IncorrectIteratorUse}
 \caption{Running example program}
 \label{fig:cme}
 \end{figure}
@@ -133,9 +133,9 @@ The nondeterministic step is defined in terms of~\textit{adStep}.
 \mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S
 \end{align}
 An iterated version of \textit{anStep} is useful for defining reachable states.
+We define it as the least fixed point for the following equation.
 \begin{align}
-\mathit{anStep}^\star\;0\;S &= S \\
-\mathit{anStep}^\star\;(\mathit{succ}\;n)\;S &= S \cup \mathit{anStep}^\star\;n\;(\mathit{anStep}\;S)
+\mathit{anStep}^\star\;S &= S \cup \mathit{anStep}^\star\;(\mathit{anStep}\;S)
 \end{align}
 Finally, we can define the set of traces described by an automaton.
 \[ \{ e \mid \exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{anStep}^\star\;\{((\mathtt{start},0),e)\}\} \]
