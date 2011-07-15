@@ -61,7 +61,7 @@ The language is expressive enough to represent relationships between objects and
 One popular class of properties addressed by many techniques in program verification is to check whether a program satisfies some specified safety property.  
 Violations of this class of properties may lead to unexpected run-time errors.
 
-Many safety properties can be expressed using the framework of {\em typestate}~\cite{Strom and Yemini 1986} which uses finite state automata for specifying conformance or violation w.r.t. a temporal safety property.
+Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which uses finite state automata for specifying conformance or violation w.r.t. a temporal safety property.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.  
 The properties should be given by the user; they should not be hard-coded.
@@ -73,10 +73,10 @@ In order to achive our goal we would need
 \end{itemize}
 This paper addresses the first point by introducing {\em TPL} (Temporal Property Language). 
 \dinocomment{Come up with a better name or drop it!}
-It has the following carachteristics:
+It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
-And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds02} a formalist known to be effective and concise in specifying heap related properties.
+And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
 \item It allows very high-level intuitive specifications which are given with an special form of automata.
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
@@ -95,9 +95,9 @@ The paper is organized as follows. In Section~\ref{sec:example} we start with a 
 Section~\ref{sec:syntax} gives the syntax of TPL and in Section~\ref{sec:semantics} introduces its semantics. 
 Section~\ref{sec:testing} describes the use of TPL for run-time checking of safety properties. 
 Section~\ref{sec:related} discusses related work and our future plans. 
-Finally, Section~\ref{sec:conclusion} conclude the paper.
+Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
-\section{Example} % <<<
+\section{Example}\label{sec:example} % <<<
 
 The program in~\autoref{fig:cme} fails with an exception.
 It is illegal to modify the underlying collection while iterating.
@@ -109,10 +109,10 @@ It is illegal to modify the underlying collection while iterating.
 \end{figure}
 
 % >>>
-\section{Syntax} % <<<
+\section{Syntax}\label{sec:syntax} % <<<
 
 % >>>
-\section{Semantics} % <<<
+\section{Semantics}\label{sec:semantics} % <<<
 
 A program's semantics is a set of event traces;
 an automaton's semantics is also a set of event traces.
@@ -258,19 +258,22 @@ IDEA: apply to something like Haskell?
 
 % >>>
 % >>>
-\section{Testing} % <<<
+\section{Testing}\label{sec:testing} % <<<
 
 % >>>
-\section{Future Work} %<<<
+\section{Future Work}\label{sec:future} %<<<
 
 %>>>
-\section{Related Work} %>>>
+\section{Related Work}\label{sec:related} %<<<
 
 %>>>
-\section{Conclusions} %<<<
+\section{Conclusions}\label{sec:conclusions} %<<<
 
 %>>>
 
+\softraggedright
+\bibliographystyle{abbrvnat}
+\bibliography{safety}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 % vim:fmr=<<<,>>>:
