@@ -8,7 +8,9 @@
 \usepackage{microtype}  % do not remove
 \usepackage{pygmentize}
 \usepackage{rgalg}
+\usepackage{tikz}
 \usepackage{xcolor}
+
 \usepackage[colorlinks]{hyperref}
 
 \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
@@ -32,8 +34,10 @@
 \end{minipage}}
 \end{center}}
 
+\newcommand{\note}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
+\newcommand{\rg}[1]{\note{rg}{#1}}
 
-
+\newcommand{\eval}[1]{[[#1]]}
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\pmap}{\rightharpoonup}
 \newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
@@ -99,17 +103,119 @@ Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
 \section{Example}\label{sec:example} % <<<
 
-The program in~\autoref{fig:cme} fails with an exception.
-It is illegal to modify the underlying collection while iterating.
+\rg{I am heavily editing this section, much text is crap now.}
 
-\begin{figure}\centering
+The last statement in \autoref{fig:running.java} throws an exception.
+There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
+The automaton in \autoref{fig:running.property} formally captures the disallowed API usage.
+The automaton is given essentially as a list of labeled transitions.
+Each label is a statement pattern.
+\autoref{fig:running.drawing} shows the same automaton in a graphical form.
+
+\autoref{fig:running.steps} shows how a particular execution of the program drives the automaton.
+The automaton is nondeterministic so it has a set of active states.
+Initially, only the state $(\mathit{start},[])$ is active.
+The outgoing transition of vertex \textit{start} is labeled by \[I:=C.\mathtt{iterator}()\] and the statement about to be executed is \[\text{\Verb+i = c.iterator()+}.\]
+
+\rg{TODO: continue here}
+
+
+The problem is subtle and appears in practice from time to time.
+It is clearly a temporal property (an iterator cannot be used \emph{after} another iterator modifies the collection) and it involves multiple objects (two iterators and one collection).
+\autoref{fig:running.property} 
+
+
+%\autoref{fig:running.java} shows a program that throws \Verb+ConcurrentModificationException+.
+
+X illustrates a subtle temporal property, which is well-known to Java programmers.
+
+The program in~X fails with an exception.
+It is usually illegal to modify the underlying collection while iterating.
+A collection may be modified through its methods or through the \textit{remove} method of one of its iterators.
+The iterator that modifies the collection remains valid; the others must not be used anymore.
+We express this last property formally using the following automaton.
+
+X shows a drawing of~TODO.
+Properties are structured as labeled digraphs.
+The first column lists the arcs;
+the second column lists the corresponding arc labels.
+The labels look like simple statements in a programming language.
+They are in fact statement patterns.
+The first label, $I:=C.\mathit{iterator}()$, matches all calls to a method called \textit{iterator}.
+The patterns $I$~and~$C$ match any two values and record them in two automaton variables, $i$~and~$c$.
+The second label, $J:=c.\mathit{iterator}()$, uses a lowercase~$c$.
+Unlike the pattern~$C$, the pattern~$c$ only matches values equal the value of the automaton variable~$c$.
+The automaton variables $i$,~$j$, and~$c$ live in a distinct name-space.
+The fact that the code in X uses the same names is irrelevant.
+The automaton is non-deterministic and it is driven by executions of the program.
+Let us assume that the values taken by the \emph{program} variables $c$,~$i$, and~$j$ are, respectively, $1$,~$2$, and~$3$.
+Then the parallel execution of the program with the automaton proceeds as follows.
+
+\begin{figure}
 \include{IncorrectIteratorUse}
-\caption{Running example program}
-\label{fig:cme}
+\caption{Running example: Java code}
+\label{fig:running.java}
+\end{figure}
+\begin{figure}
+\begin{Verbatim}
+property "collection was modified by iterator"
+  using prefix java.lang.Collection
+  using prefix java.lang.Iterator
+  start -> gotOne:    I := C.iterator()
+  gotOne -> gotTwo:   J := c.iterator()
+  gotTwo -> jInvalid: i.remove()
+  gotTwo -> iInvalid: j.remove()
+  jInvalid -> error:  call j.*()
+  iInvalid -> error:  call i.*()
+\end{Verbatim}
+\caption{Running example: Safety property}
+\label{fig:running.property}
+\end{figure}
+\begin{figure}
+\begin{tikzpicture}[xscale=2.5]
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
+  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
+  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
+  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
+  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
+  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
+  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
+  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
+  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
+  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
+  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
+  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
+\end{tikzpicture}
+\caption{Running example: Drawing of safety property}
+\label{fig:running.drawing}
+\end{figure}
+\begin{figure}
+\begin{align*}
+&\{(\mathit{start}, [])\} \\
+&\text{\Verb+\PY{n}{Iterator}\PY{o}{<}\PY{n}{Integer}\PY{o}{>} \PY{n}{i} \PY{o}{=} \PY{n}{c}\PY{o}{.}\PY{n+na}{iterator}\PY{o}{(}\PY{o}{)}\PY{o}{;}+} \\
+&\text{assume $c$ holds $1$, and $i$ holds $2$ } \\
+&\{(\mathit{start},[]), (\mathit{gotOne},[c:1, i:2])\} \\
+&\text{\Verb+\PY{n}{Iterator}\PY{o}{<}\PY{n}{Integer}\PY{o}{>} \PY{n}{j} \PY{o}{=} \PY{n}{c}\PY{o}{.}\PY{n+na}{iterator}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\\
+&\text{assume $j$ holds $3$} \\
+&\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]),(\mathit{gotTwo},[c:1,i:2,j:3])\} \\
+&\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+} \\
+&\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]),(\mathit{gotTwo},[c:1,i:2,j:3])\}\\
+&\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{remove}\PY{o}{(}\PY{o}{)}\PY{o}{;}+} \\
+&\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]),(\mathit{jInvalid},[c:1,i:2,j:3])\} \\
+&\text{\Verb+\PY{n}{j}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\\
+&\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]), (\mathit{error},[c:1,i:2,j:3])\}
+\end{align*}
+\caption{Running example: Step by step}
+\label{fig:running.steps}
 \end{figure}
 
 % >>>
 \section{Syntax}\label{sec:syntax} % <<<
+
+\rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
 
 % >>>
 \section{Semantics}\label{sec:semantics} % <<<
@@ -259,6 +365,9 @@ IDEA: apply to something like Haskell?
 % >>>
 % >>>
 \section{Testing}\label{sec:testing} % <<<
+
+\rg{Explain code instrumentation.}
+
 
 % >>>
 \section{Future Work}\label{sec:future} %<<<
