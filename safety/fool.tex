@@ -224,6 +224,7 @@ A program's semantics is a set of event traces;
 an automaton's semantics is also a set of event traces.
 A program \emph{violates} a property when their sets intersect.
 Both the program and the automaton are nondeterministic.
+\dinocomment{So we only want to use the automata to specify bad behaviour? How about good behaviour?}
 
 \subsection{Automaton} % <<<
 
@@ -254,6 +255,7 @@ There are at least two vertices.
 \{\mathtt{start},\mathtt{error}\}&\subseteq\set{Vertex}
 \end{align}
 The deterministic state contains a store of values.
+\dinocomment{this deterministic state seems to come out of the blue.}
 A store is a finite partial map from automaton variables to values.
 We also define an automaton deterministic execution state, which includes the input to be processed.
 \begin{align}
