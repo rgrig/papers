@@ -3,30 +3,40 @@ MAIN=fool safety biabduction
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))
+JAVA=$(wildcard *.java)
+JAVATEX=$(patsubst %.java,%.tex,$(JAVA))
+JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
 
-$(PDF): %.pdf:
-	@TEXINPUTS=$(INP) python compile.py "$*"
-
 safety.pdf: safety.tex safety.bib
 
-fool.pdf: fool.tex safety.bib fig_code sigplanconf.cls
+fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex
 
 biabduction.pdf: biabduction.tex
 
-clean:
-	@$(MAKE) -s -C fig_code clean
-	@rm -rf *.aux *.bbl *.bak *.blg *.log *.out *.pdf
+$(PDF): %.pdf: req
+	@TEXINPUTS=$(INP) python compile.py "$*"
 
-cleanbib:
+$(JAVATEX): %.tex: %.java %.class
+	@pygmentize -o $@ $<
+
+$(JAVACLASS): %.class: %.java
+	@javac $< || echo "WARNING: $< does not compile."
+
+clean:
+	@rm -f *.aux *.bbl *.bak *.blg *.log *.out *.pdf *.class
+	@rm -f $(JAVATEX)
+	@rm -f req
+
+cleanbib: req
 	@echo "WARNING: Target NOT tested on Mac."
 	@cp safety.bib safety.bib.bak && bibtool safety.bib -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib safety.bib; done
 
-fig_code:
-	@$(MAKE) -s -C fig_code
-
-sigplanconf.cls:
+sigplanconf.cls: req
 	@python wget.py http://www.sigplan.org/sigplanconf.cls sigplanconf.cls
 
-.PHONY: req build clean cleanbib fig_code
+req:
+	@(python -V > /dev/null 2> /dev/null && python chk_requirements.py && touch req) || (echo "You need python. Sorry." && exit 1)
+
+.PHONY: build clean cleanbib

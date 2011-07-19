@@ -3,10 +3,10 @@ import re
 import sys
 
 def bibtex(f):
-  os.system('bibtex "{0}"'.format(f))
+  return os.spawnlp(os.P_WAIT, 'bibtex', 'bibtex', f)
 
 def latex(f):
-  os.system('pdflatex "{0}"'.format(f))
+  return os.spawnlp(os.P_WAIT, 'pdflatex', 'pdflatex', f)
 
 def grep(fn, r):
   f = open(fn, 'r')
@@ -20,9 +20,11 @@ def grep(fn, r):
 
 def compile(f):
   for i in range(10):
-    latex(f)
+    if latex(f) != 0:
+      return
     if grep('{0}.log'.format(f), 'No file.*bbl'):
-      bibtex(f)
+      if bibtex(f) != 0:
+        return
     if not grep('{0}.log'.format(f), '[Rr]erun'):
       return
   print('I run pdflatex 10 times for {0}. Something is wrong.'.format(f))
