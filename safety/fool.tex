@@ -26,16 +26,11 @@
 \title{A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
 
-\newcommand{\dinocomment}[1]{
-\begin{center}
-\fbox{
-\begin{minipage}{3.0in}
-{\bf Dino's comment:} {\it #1}
-\end{minipage}}
-\end{center}}
-
 \newcommand{\note}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
 \newcommand{\rg}[1]{\note{rg}{#1}}
+\newcommand{\rlp}[1]{\note{rlp}{#1}}
+\newcommand{\dd}[1]{\note{d}{#1}}
+\newcommand{\dinocomment}[1]{\dd{#1}}
 
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\eval}[1]{[[#1]]}
@@ -78,10 +73,12 @@ In order to achive our goal we would need
 \end{itemize}
 This paper addresses the first point by introducing {\em TPL} (Temporal Property Language). 
 \dinocomment{Come up with a better name or drop it!}
+\rlp{What are the requirements for a good name? (We just need
+  something to refer to, I think.)}
 It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
-And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
+And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
 \item It allows very high-level intuitive specifications which are given with an special form of automata.
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
@@ -97,7 +94,7 @@ Moreover we show how this can be used for doing dynamic checking of its properti
 % Safety (obiquitus)
 
 The paper is organized as follows. In Section~\ref{sec:example} we start with a motivating example. 
-Section~\ref{sec:syntax} gives the syntax of TPL and in Section~\ref{sec:semantics} introduces its semantics. 
+Section~\ref{sec:syntax} gives the syntax of TPL and Section~\ref{sec:semantics} introduces its semantics. 
 Section~\ref{sec:testing} describes the use of TPL for run-time checking of safety properties. 
 Section~\ref{sec:related} discusses related work and our future plans. 
 Finally, Section~\ref{sec:conclusions} conclude the paper.
