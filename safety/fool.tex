@@ -26,6 +26,9 @@
 \title{A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
 
+\renewcommand{\sectionautorefname}{Section}
+\renewcommand{\subsectionautorefname}{\sectionautorefname}
+
 \newcommand{\dinocomment}[1]{
 \begin{center}
 \fbox{
@@ -82,6 +85,10 @@ It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
 And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
+\rg{I would not mention separation logic here.
+We did not quite get to using it, although that's what we want for TACAS\null.
+It might look like some gratitious `name-dropping'.
+The Future Work or the Conclusions sections are better places.}
 \item It allows very high-level intuitive specifications which are given with an special form of automata.
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
@@ -102,9 +109,17 @@ Section~\ref{sec:testing} describes the use of TPL for run-time checking of safe
 Section~\ref{sec:related} discusses related work and our future plans. 
 Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
-\section{Example}\label{sec:example} % <<<
+\section{Examples} \label{sec:example} % <<<
 
-\rg{I am heavily editing this section, much text is crap now.}
+The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
+It is sufficiently complex to illustrate a large part of our language.
+It is also subtle and causes trouble in practice from time to time.
+Properties are essentially automata that monitor program executions.
+For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
+
+The following examples (\autoref{sec:example.others}) illustrate the expressivity of the property language.
+
+\subsection{Invalidating Iterators} \label{sec:example.steps} % <<<
 
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
@@ -113,99 +128,14 @@ The automaton is given essentially as a list of labeled transitions.
 Each label is a statement pattern.
 \autoref{fig:running.drawing} shows the same automaton in a graphical form.
 
-\autoref{fig:running.steps} shows how a particular execution of the program drives the automaton.
-The automaton is nondeterministic so it has a \emph{set} of active states.
-Initially, only the state $(\mathit{start},[])$ is active.
-The outgoing transition of vertex \textit{start} is labeled by \[I:=C.\mathtt{iterator}()\] and the statement about to be executed is \verbline[.]{i = c.\PY{n+na}{iterator}()}
-To see if the pattern matches the statement we first look at the method.
-For simplicity, we identify Java methods by their fully qualified names and their arities.
-In this case, the method that is invoked is \verbline[.]{java.util.ArrayList.iterator<1>}
-The \texttt{using prefix} directives say that the string \texttt{iterator} is a shorthand for one of two method names.
-The pattern matches the methods
-\begin{align*}
-&\text{\Verb@java.util.Collection.iterator<1>@} \\
-&\text{\Verb@java.util.Iterator.iterator<1>@}
-\end{align*}
-and all the methods that override them.
-In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
-Next, we look at the patterns $I$~and~$C$.
-By convention, patterns starting with an uppercase letter match any value.
-In this case, they match the values held by the program variable $i$~and~$c$.
-At this point, all conditions are met to perform the transition from \textit{start} to \textit{gotOne}.
-Performing a transition involves remembering the values on which the uppercase patterns matched.
-For concreteness, let us assume that the program variables $c$~and~$i$ hold the values $1$~and~$2$.
-Then, performing the first transition stores the values $1$~and~$2$ into the \emph{automaton variables} $c$~and~$i$.
-The automaton variables live in a different name-space from program variables.
-In this case we use the same names for automaton variables as for program variables purely as a mnemonic device---there is no semantics to it.
-The end result of performing the transition from \textit{start} to \textit{gotOne} is that the state \[(\mathit{gotOne},[c:1,i:2])\] is activated.
-Usually, the source of a transition would not be active anymore.
-In this case, the state $(\mathit{state},[])$ remains active because it is a special state that is always active.
-Conceptually, the vertex \textit{start} has a loop on it that always matches.
-
-For the second step we need to consider the two active states in turn.
-For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
-Note that now the automaton variable~$i$ remembers the value of the program variable~$j$.
-For \[\mathit{gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne}.
-It has the label \[J:=c.\mathtt{iterator}();\]
-the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-The method and the uppercase pattern~$J$ match in the same way as before.
-The lowercase pattern $c$ matches only the value that is held by the automaton variable~$c$.
-In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
-In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~$c$ still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
-
-In the third step, no transition is performed and the same states remain active.
-None of the outgoing transitions of \textit{start}, \textit{gotOne}, and \textit{gotTwo} match the method \textit{next}.
-
-In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed for the state corresponding to the vertex \textit{gotTwo}.
-The pattern $i.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
-The states corresponding to vertices \textit{start} and \textit{gotOne} remain unchanged, because their outgoing transitions do not match.
-
-For the fifth and final step, one of the active states is \[(\mathit{jInvalid},[c:1,i:2,j:3]),\] the label on its outgoing transition is \[\mathtt{call}\;j.{*}(),\] and the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The pattern has two distinguishing features, the~$*$ as a method name and the tag \texttt{call}.
-Let us discuss first the method name.
-
-\rg{TODO: continue here}
-
-
-The problem is subtle and appears in practice from time to time.
-It is clearly a temporal property (an iterator cannot be used \emph{after} another iterator modifies the collection) and it involves multiple objects (two iterators and one collection).
-\autoref{fig:running.property} 
-
-
-%\autoref{fig:running.java} shows a program that throws \Verb+ConcurrentModificationException+.
-
-X illustrates a subtle temporal property, which is well-known to Java programmers.
-
-The program in~X fails with an exception.
-It is usually illegal to modify the underlying collection while iterating.
-A collection may be modified through its methods or through the \textit{remove} method of one of its iterators.
-The iterator that modifies the collection remains valid; the others must not be used anymore.
-We express this last property formally using the following automaton.
-
-X shows a drawing of~TODO.
-Properties are structured as labeled digraphs.
-The first column lists the arcs;
-the second column lists the corresponding arc labels.
-The labels look like simple statements in a programming language.
-They are in fact statement patterns.
-The first label, $I:=C.\mathit{iterator}()$, matches all calls to a method called \textit{iterator}.
-The patterns $I$~and~$C$ match any two values and record them in two automaton variables, $i$~and~$c$.
-The second label, $J:=c.\mathit{iterator}()$, uses a lowercase~$c$.
-Unlike the pattern~$C$, the pattern~$c$ only matches values equal the value of the automaton variable~$c$.
-The automaton variables $i$,~$j$, and~$c$ live in a distinct name-space.
-The fact that the code in X uses the same names is irrelevant.
-The automaton is non-deterministic and it is driven by executions of the program.
-Let us assume that the values taken by the \emph{program} variables $c$,~$i$, and~$j$ are, respectively, $1$,~$2$, and~$3$.
-Then the parallel execution of the program with the automaton proceeds as follows.
-
-\begin{figure}
+\begin{figure} % running example <<<
 \include{IncorrectIteratorUse}
 \caption{Running example: Java code}
 \label{fig:running.java}
 \end{figure}
 \begin{figure}
 \begin{Verbatim}
-property "collection was modified by iterator"
+property InvalidateOtherIterators
   using prefix java.util.Collection
   using prefix java.util.Iterator
   start -> gotOne:    I := C.iterator()
@@ -231,7 +161,7 @@ property "collection was modified by iterator"
   \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
   \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
   \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
-  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
+  \draw[transition] (gotTwo)--node[above]{$j.\mathtt{remove}()$} (iInvalid);
   \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
   \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
   \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
@@ -257,8 +187,106 @@ property "collection was modified by iterator"
 \end{align*}
 \caption{Running example: Step by step}
 \label{fig:running.steps}
-\end{figure}
+\end{figure} % >>>
 
+\autoref{fig:running.steps} shows how an execution of the program drives the automaton.
+The automaton is nondeterministic so it has a \emph{set} of active states.
+Initially, only the state $(\mathit{start},[])$ is active.
+The outgoing transition of vertex \textit{start} is labeled by \[I:=C.\mathtt{iterator}()\] and the statement about to be executed is \verbline[.]{i = c.\PY{n+na}{iterator}()}
+To see if the pattern matches the statement we first look at the method.
+For simplicity, we identify Java methods by their fully qualified names and their arities.
+In this case, the method that is invoked is \verbline[.]{java.util.ArrayList.iterator[1]}
+The \texttt{using prefix} directives say that the string \texttt{iterator} appearing in the automaton label is a shorthand for one of two method names.
+The pattern matches the methods
+\begin{align*}
+&\text{\Verb@java.util.Collection.iterator[1]@} \\
+&\text{\Verb@java.util.Iterator.iterator[1]@}
+\end{align*}
+and all the methods that override them.
+In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
+Next, we look at the patterns $I$~and~$C$.
+By convention, patterns starting with an uppercase letter match any \emph{value}.
+In this case, they match the values held by the program variables $i$~and~$c$.
+At this point, all conditions are met to perform the transition from \textit{start} to \textit{gotOne}.
+Performing a transition involves remembering the values on which the uppercase patterns matched.
+For concreteness, let us assume that the program variables $c$~and~$i$ hold the values $1$~and~$2$.
+Then, performing the first transition stores the values $1$~and~$2$ into the \emph{automaton variables} $c$~and~$i$.
+The automaton variables live in a different name-space from program variables.
+In this case we use the same names for automaton variables as for program variables purely as a mnemonic device---there is no semantics to it.
+The end result of performing the transition from \textit{start} to \textit{gotOne} is that the state \[(\mathit{gotOne},[c:1,i:2])\] is activated.
+Usually, the source of a transition would not be active anymore.
+In this case, the state $(\mathit{start},[])$ remains active because it is a special state that is always active.
+Conceptually, the vertex \textit{start} has a loop on it that always matches.
+
+For the second step we need to consider the two active states in turn.
+For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
+Note that now the automaton variable~$i$ remembers the value of the program variable~$j$.
+For \[\mathit{gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne}.
+It has the label \[J:=c.\mathtt{iterator}();\]
+the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
+The method and the uppercase pattern~$J$ match in the same way as before.
+The lowercase pattern $c$ matches only the value that is held by the automaton variable~$c$.
+In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~$c$ still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
+
+In the third step, no transition is performed and the same states remain active.
+None of the outgoing transitions of \textit{start}, \textit{gotOne}, and \textit{gotTwo} match the method \textit{next}.
+
+In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed.
+The pattern $i.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
+The states corresponding to vertices \textit{start} and \textit{gotOne} remain unchanged, because their outgoing transitions do not match.
+
+For the fifth and final step, one of the active states is \[(\mathit{jInvalid},[c:1,i:2,j:3]),\] the label on its outgoing transition is \[\mathtt{call}\;j.{*}(),\] and the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
+The pattern has two distinguishing features, the~$*$ as a method name and the tag \texttt{call}.
+Let us discuss first the method name.
+As before, the first step is to prepend the prefixes.
+\begin{align*}
+&\text{\Verb@java.util.Collection.*[1]@} \\
+&\text{\Verb@java.util.Iterator.*[1]@}
+\end{align*}
+Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
+We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
+
+The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
+Note that a pattern like $I:=C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
+In particular, in-between those two events other methods might be called.
+A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
+When the tag is \texttt{call}, there can be no left-hand side;
+when the tag is \texttt{return}, the right-hand side is only a method name pattern.
+Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
+If a tag is not present, then the transition is said to be a \emph{call--return transition}.
+We allow the user to use such transitions for convenience.
+Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
+
+The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \textit{error} is reached.
+
+How is this better than just having an exception thrown by the Java~API\null?
+\begin{itemize}
+\item We can record which statements trigger which transitions, so we can a trace that explains what exactly went wrong.
+\item We do not need to write the code that checks whether the property is violated.
+  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
+  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
+  By comparison, the code in \autoref{fig:running.property} is simple and captures how programmers think about the property.
+\item One can retro-actively document third-party libraries with such properties without having access to the code.
+\item It is possible in principle to design a static analysis for such properties.
+  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
+  Our current prototype only does run-time checking, though.
+\end{itemize}
+
+
+% >>>
+\subsection{Other Examples} \label{sec:example.others} % <<<
+\rg{TODO: continue here}
+
+\rg{A more realistic example that breaks this property?}
+
+The problem is subtle and appears in practice from time to time.
+It is clearly a temporal property (an iterator cannot be used \emph{after} another iterator modifies the collection) and it involves multiple objects (two iterators and one collection).
+\autoref{fig:running.property} 
+
+\rg{Other properties.}
+
+% >>>
 % >>>
 \section{Syntax}\label{sec:syntax} % <<<
 
