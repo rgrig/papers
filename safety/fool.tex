@@ -433,6 +433,14 @@ The paper~\cite{DeAlfaro-Henzinger} introduces an automata-based formalism for s
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method. 
 In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
 
+In~\cite{FinkelEtAl} presents sound verification techniques for typestate properties of Java  programs.
+Their approach is divided in several stages with different verifiers varying for cost and precision.
+In the early stages efficient but imprecise analyses are employed whereas 
+more expensive and precise techniques are then progressively employed in later stages.
+Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
+This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
+It is likely that our language could be fruitfully combined with their technique.
+\dinocomment{this is very weak! Need to be improved} 
 
 %>>>
 \section{Conclusions}\label{sec:conclusions} %<<<
