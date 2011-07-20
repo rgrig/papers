@@ -26,6 +26,14 @@
 \title{A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
 
+\def\grammar#1{{
+  \footnotesize
+  \def\b##1{{\rm\Verb@##1@}}\def\*{$^*$}\def\?{$^?$}
+  \smallskip
+  \hbox to\hsize{\hfil\vbox{\halign{\hfil\it##&$\;::=\;$\it##\hfil&\qquad\rm##\hfil\cr#1}}\hfil}
+  \smallskip
+}}
+
 \renewcommand{\sectionautorefname}{Section}
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
 
@@ -374,8 +382,27 @@ The idea is that it matters \emph{who} calls a certain method.
 In this case, the \textit{ComponentHelper} itself \emph{is} allowed to modify the collection, but the property above will signal it as a violation.}
 
 % >>>
+\rg{TODO: Add more examples here, preferably inspired by real code.
+Also, add examples from Disney et al.}
+
 % >>>
-\section{Syntax}\label{sec:syntax} % <<<
+\section{Syntax and Desugaring}\label{sec:syntax} % <<<
+
+The language exposed to users (as seen in \autoref{sec:example}) aims to be intuitive.
+Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \textit{start}, the \texttt{using prefix} directive offers some extra convenience, and so on.
+From the point of view of semantics, however, these conveniences are in the way.
+For this reason we define two languages, one that is seen by the users and one that is more uniform, and a translation between them.
+
+\begin{figure}
+\grammar{
+  Property& \b{property} Identifier Using\* Transition\* \cr
+  Using& \b{using prefix} StringPattern \cr
+  Transition& Arc \b: Label \cr
+  Arc& Vertex \b{->} Vertex \cr
+}
+\caption{Property language seen by users}
+\label{fig:lang.sugar}
+\end{figure}
 
 \rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
 
@@ -541,6 +568,9 @@ IDEA: apply to something like Haskell?
 
 % >>>
 \section{Future Work}\label{sec:future} %<<<
+
+\rg{TODO: Static analysis.
+Two challenges: inference (biabduction), abstraction (garbage-collection like).}
 
 %>>>
 \section{Related Work}\label{sec:related} %<<<
