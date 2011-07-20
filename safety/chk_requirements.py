@@ -19,11 +19,16 @@ for _, ps in tools:
       print('INTERNAL: %s not in install' % p)
       sys.exit(1)
 
+allok = True
 for cmd, pkgs in tools:
   if os.spawnlp(os.P_WAIT, cmd[0], *cmd) != 0:
+    allok = False
     print('You need %s.' % cmd[0])
     if os.name == 'nt':
       print("Sorry, I can't tell you how to install it")
     else:
       for platform, package in pkgs.items():
         print('  %s: sudo %s %s' % (platform, install[platform], package))
+
+if not allok:
+  sys.exit(1)
