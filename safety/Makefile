@@ -1,24 +1,42 @@
 # vim:noet:
-MAIN=safety fool
+MAIN=fool safety biabduction
 INP=.:../lib:fig_code:
 
-build: fig_code
-	@TEXINPUTS=$(INP) BSTINPUTS=$(INP) rubber -W all --force --pdf $(MAIN)
+PDF=$(addsuffix .pdf,$(MAIN))
+JAVA=$(wildcard *.java)
+JAVATEX=$(patsubst %.java,%.tex,$(JAVA))
+JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
+
+build: $(PDF)
+
+safety.pdf: safety.tex safety.bib
+
+fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex
+
+biabduction.pdf: biabduction.tex
+
+$(PDF): %.pdf: req
+	@TEXINPUTS=$(INP) python compile.py "$*"
+
+$(JAVATEX): %.tex: %.java %.class
+	@pygmentize -o $@ $<
+
+$(JAVACLASS): %.class: %.java
+	@javac $< || echo "WARNING: $< does not compile."
 
 clean:
-	@TEXINPUTS=$(INP) BSTINPUTS=$(INP) rubber --clean --pdf $(MAIN)
-	$(MAKE) -s -C fig_code clean
+	@rm -f *.aux *.bbl *.bak *.blg *.log *.out *.pdf *.class
+	@rm -f $(JAVATEX)
+	@rm -f req
 
-cleanbib:
-	cp $(MAIN).bib $(MAIN).bib.bak
-	bibtool -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib $(MAIN).bib
+cleanbib: req
+	@echo "WARNING: Target NOT tested on Mac."
+	@cp safety.bib safety.bib.bak && bibtool safety.bib -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib safety.bib; done
 
-req: sigplan.cls
+sigplanconf.cls: req
+	@python wget.py http://www.sigplan.org/sigplanconf.cls sigplanconf.cls
 
-fig_code:
-	$(MAKE) -s -C fig_code
+req:
+	@(python -V > /dev/null 2> /dev/null && python chk_requirements.py && touch req) || (echo "You need python. Sorry." && exit 1)
 
-sigplan.cls:
-	wget http://www.sigplan.org/sigplanconf.cls
-
-.PHONY: req build clean cleanbib fig_code
+.PHONY: build clean cleanbib
