@@ -80,14 +80,15 @@ In order to achive our goal we would need
   against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing {\em TPL} (Temporal Property Language). 
-\dinocomment{Come up with a better name or drop it!}
+\dinocomment{Come up with a better name or drop it!
+\rg{An idea: Temporal Object-oriented Property Language; TOPL, because is sounds similar to POPL.}}
 It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
 And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
 \rg{I would not mention separation logic here.
 We did not quite get to using it, although that's what we want for TACAS\null.
-It might look like some gratitious `name-dropping'.
+It might look like some gratuitous `name-dropping'.
 The Future Work or the Conclusions sections are better places.}
 \item It allows very high-level intuitive specifications which are given with an special form of automata.
 \item It is designed to be used to do program analysis (both static and dynamic).
@@ -142,8 +143,8 @@ property InvalidateOtherIterators
   gotOne -> gotTwo:   J := c.iterator()
   gotTwo -> jInvalid: i.remove()
   gotTwo -> iInvalid: j.remove()
-  jInvalid -> error:  call j.*()
-  iInvalid -> error:  call i.*()
+  jInvalid -> error:  call j.*[*]
+  iInvalid -> error:  call i.*[*]
 \end{Verbatim}
 \caption{Running example: Safety property}
 \label{fig:running.property}
@@ -239,10 +240,12 @@ The states corresponding to vertices \textit{start} and \textit{gotOne} remain u
 For the fifth and final step, one of the active states is \[(\mathit{jInvalid},[c:1,i:2,j:3]),\] the label on its outgoing transition is \[\mathtt{call}\;j.{*}(),\] and the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
 The pattern has two distinguishing features, the~$*$ as a method name and the tag \texttt{call}.
 Let us discuss first the method name.
+\rg{TODO: Explain the arity notation [$n$].}
+\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
 As before, the first step is to prepend the prefixes.
 \begin{align*}
-&\text{\Verb@java.util.Collection.*[1]@} \\
-&\text{\Verb@java.util.Iterator.*[1]@}
+&\text{\Verb@java.util.Collection.*[*]@} \\
+&\text{\Verb@java.util.Iterator.*[*]@}
 \end{align*}
 Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
@@ -259,6 +262,8 @@ We allow the user to use such transitions for convenience.
 Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
 
 The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \textit{error} is reached.
+Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
+In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 How is this better than just having an exception thrown by the Java~API\null?
 \begin{itemize}
@@ -273,18 +278,100 @@ How is this better than just having an exception thrown by the Java~API\null?
   Our current prototype only does run-time checking, though.
 \end{itemize}
 
+Are there any disadvantages?
+Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
+For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
 \subsection{Other Examples} \label{sec:example.others} % <<<
-\rg{TODO: continue here}
 
-\rg{A more realistic example that breaks this property?}
+Let us now see how other properties.
 
-The problem is subtle and appears in practice from time to time.
-It is clearly a temporal property (an iterator cannot be used \emph{after} another iterator modifies the collection) and it involves multiple objects (two iterators and one collection).
-\autoref{fig:running.property} 
+A property closely related to \autoref{fig:running.property} is that modifying the collection directly invalidates all iterators.
+\par\medskip\noindent
+\begin{Verbatim}
+property ModificationInvalidatesIterators
+  using prefix java.util.{Collection,Iterator}
+  start -> iterating:     I := C.iterator()
+  iterating -> modified:  c.add(*), c.remove(*)
+  modified -> error:      call i.*[*]
+\end{Verbatim}
+\par\medskip\noindent This property should list all the methods of \textit{Collection} that mutate it.
+If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
+This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
 
-\rg{Other properties.}
+Another property related to iterators, is that they should not be advanced unless we know that they are not exhausted.
+\par\medskip\noindent
+\begin{Verbatim}
+property UnsafeIteratorNext
+  using prefix java.util.{Collection,Iterator}
+  start -> iterating:         I := *.iterator()
+  iterating -> notExhausted:  true := i.hasNext()
+  notExhausted -> iterating:  i.next()
+  iterating -> error:         i.next()
+\end{Verbatim}
+\par\medskip
+
+Many resources impose a temporal property:
+Before being used they must be acquired;
+after being used they must be released.
+Examples include memory allocation and deallocation, locks for synchronization between threads, opening and closing files, and establishing and closing network connections.
+The liveness property, which we do not handle, is that each \textit{acquire} is eventually followed by a \textit{release}.
+However, ignoring programs that run forever this property can be rephrased as a safety property:
+When the program terminates, the last action must have been \textit{release}.
+Suppose that resources are represented by instances of the class \textit{Resource}, which has two methods, \textit{acquire} and \textit{release}.
+\par\medskip\noindent
+\begin{Verbatim}
+property ResourceLeak
+  start -> released:    R := new Resource()
+  released -> acquired: r.acquire()
+  acquired -> released: r.release()
+  acquired -> error:    return Main.main(*)
+\end{Verbatim}
+\par\medskip\noindent
+Even without restricting our attention to terminating programs there are two other safety properties that are imposed:
+there should be no two consecutive \textit{acquire} or two consecutive \textit{release}.
+\par\medskip\noindent
+\begin{Verbatim}
+property DoubleAcquireOrRelease
+  start -> released:    R := new Resource()
+  released -> acquired: r.acquire()
+  acquired -> released: r.release()
+  released -> error:    r.release()
+  acquired -> error:    r.acquire()
+\end{Verbatim}
+\par\medskip\noindent
+Normally this automaton would be split into two so that error messages are more informative and precise.
+
+Another common issue in Java is providing read-only access to collections.
+For example, if one wants to implement an immutable data structure, the common idiom is to make all fields private, provide getter, but not setters.
+However, if deep-immutability is desired and one of the members is a collection, then extra precautions are necessary.
+One solution is to use third-party immutable collections.
+Another solution is to make a copy of the collection in the getter.
+Another solution is to return an unmodifiable view.
+\rg{TODO: Read the API carefully and see how this works.
+I remember that the guava guys said this solution doen't really work, but I don't remember why.
+If it \emph{does} work, then there's not much point to give this example.
+Except, perhaps, that you can verify (or rather test) existing code.}
+Yet another solution is to ask in comments to not modify collections obtained using a certain getter.
+This last solution is good from a performance point of view.
+It is also used in practice.
+(See, for example, the class \textit{ComponentHelper} in Ant and its method \textit{getRestrictedDefinitions}.)
+\par\medskip\noindent
+\begin{Verbatim}
+property ModifiedReadOnlyView
+  using prefix org.apache.tools.ant.ComponentHelper
+  start -> got:       C := *.getRestrictedDefinitions()
+  got -> error:       c.add(*), c.remove(*)
+  got -> iterating:   I := c.iterator()
+  iterating -> error: i.remove()
+\end{Verbatim}
+\par\medskip\noindent
+\rg{TODO: Oops: the example above is wrong.
+It's the second hint I get that we need a pattern for \textbf{this}.
+The other wa an example in Disney et al.
+The idea is that it matters \emph{who} calls a certain method.
+In this case, the \textit{ComponentHelper} itself \emph{is} allowed to modify the collection, but the property above will signal it as a violation.}
 
 % >>>
 % >>>
