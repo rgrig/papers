@@ -218,27 +218,27 @@ property "collection was modified by iterator"
 \caption{Running example: Safety property}
 \label{fig:running.property}
 \end{figure}
-\begin{figure}
-\begin{tikzpicture}[xscale=2.5]
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
-  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
-  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
-  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
-  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
-  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
-  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
-  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
-  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
-  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
-  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
-  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
-\end{tikzpicture}
-\caption{Running example: Drawing of safety property}
-\label{fig:running.drawing}
-\end{figure}
+%\begin{figure}
+%\begin{tikzpicture}[xscale=2.5]
+%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+%  \tikzset{transition/.style={->,>=latex}}
+%  \tikzset{every label/.style={gray}}
+%  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
+%  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
+%  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
+%  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
+%  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
+%  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
+%  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
+%  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
+%  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
+%  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
+%  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
+%  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
+%\end{tikzpicture}
+%\caption{Running example: Drawing of safety property}
+%\label{fig:running.drawing}
+%\end{figure}
 \begin{figure}
 \begin{align*}
 &\{(\mathit{start}, [])\} \\
@@ -429,6 +429,10 @@ IDEA: apply to something like Haskell?
 
 %>>>
 \section{Related Work}\label{sec:related} %<<<
+The paper~\cite{DeAlfaro-Henzinger} introduces an automata-based formalism for specifying properties of software interfaces. 
+This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method. 
+In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
+
 
 %>>>
 \section{Conclusions}\label{sec:conclusions} %<<<
