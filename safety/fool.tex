@@ -401,7 +401,7 @@ For this reason we define two languages, one that is seen by the users and one t
 
 \rg{TODO: Put in \emph{context} and \emph{negations}.}
 \rg{TODO: Put in automaton transitions.}
-
+\dinocomment{Maybe we want the syntax of the language here}
 \begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
@@ -420,13 +420,13 @@ For this reason we define two languages, one that is seen by the users and one t
 
 A program's semantics is a set of event traces;
 an automaton's semantics is also a set of event traces.
-A program \emph{violates} a property when their sets intersect.
+If the automaton express undesired behaviour, then a program \emph{violates} a property when their sets intersect.
 Both the program and the automaton are nondeterministic.
-\dinocomment{So we only want to use the automata to specify bad behaviour?
-How about good behaviour?
-\rg{Ignoring the loop on \textit{start}, I think that every `good property' can be negated and converted into a negative one.
-You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
-These incoming transitions are tagged with the `end of execution' event.}}
+%\dinocomment{So we only want to use the automata to specify bad behaviour?
+%How about good behaviour?
+%\rg{Ignoring the loop on \textit{start}, I think that every `good property' can be negated and converted into a negative one.
+%You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
+%These incoming transitions are tagged with the `end of execution' event.}}
 
 \subsection{Automaton} % <<<
 
