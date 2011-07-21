@@ -19,16 +19,17 @@ def grep(fn, r):
   return False
 
 def compile(f):
+  log = '%s.log' % f
   for i in range(10):
     if latex(f) != 0:
       return
-    if grep('{0}.log'.format(f), 'No file.*bbl'):
+    if grep(log, 'No file.*bbl'):
       if bibtex(f) != 0:
         return
-    if not grep('{0}.log'.format(f), '[Rr]erun'):
+    if not grep(log, '[Rr]erun'):
       return
-  print('I run pdflatex 10 times for {0}. Something is wrong.'.format(f))
-  print('Please take a look at {0}.log and see why it says "rerun".'.format(f))
+  print('I run pdflatex 10 times for %s. Something is wrong.' % f)
+  print('Please take a look at %s and see why it says "rerun".' % log)
 
 for f in sys.argv[1:]:
   if f[-4:] == '.tex':
