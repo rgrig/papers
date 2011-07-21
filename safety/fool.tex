@@ -92,7 +92,7 @@ This paper addresses the first point by introducing \TPL  \ (Temporal Object Pro
 It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
-And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
+And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
 \rg{I would not mention separation logic here.
 We did not quite get to using it, although that's what we want for TACAS\null.
 It might look like some gratuitous `name-dropping'.
@@ -101,7 +101,12 @@ The Future Work or the Conclusions sections are better places.}
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
 In this paper we introduce the language and its formal semantics. 
-Moreover we show how this can be used for doing dynamic checking of its properties using a simple object-based language.
+Moreover we show how this can be used for doing dynamic checking of \TPL's properties using a simple object-based language. One of the advantage of dynamic checking w.r.t. using exception in the Java code is that it is possible to
+return a trace to the programmer. Traces of events triggering an error are extremely useful for debugging purposes.
+Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
+
+
+
 
 % contributions
 % - language for temporal properties
@@ -119,9 +124,8 @@ Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
 \section{Examples} \label{sec:example} % <<<
 
-The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
+The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API which causes trouble in practice from time to time.
 It is sufficiently complex to illustrate a large part of our language.
-It is also subtle and causes trouble in practice from time to time.
 Properties are essentially automata that monitor program executions.
 For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
 
@@ -272,9 +276,10 @@ The execution we stepped through violates the property \textit{InvalidateOtherIt
 Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
+\paragraph{Discussion.}
 How is this better than just having an exception thrown by the Java~API\null?
 \begin{itemize}
-\item We can record which statements trigger which transitions, so we can a trace that explains what exactly went wrong.
+\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
 \item We do not need to write the code that checks whether the property is violated.
   In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
   The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
