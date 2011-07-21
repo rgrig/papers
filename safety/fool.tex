@@ -23,7 +23,7 @@
   pdfauthor={Dino Distefano and Radu Grigore and Rasmus Lerchedahl Petersen}}
 
 \titlebanner{DRAFT}
-\title{A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
+\title{TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
 
 \def\grammar#1{{
@@ -48,6 +48,7 @@
 \newcommand{\pmap}{\rightharpoonup}
 \newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
+\newcommand{\TPL}{TOPL}
 
 \theoremstyle{definition}
 \newtheorem{example}{Example}
@@ -82,15 +83,11 @@ In order to achive our goal we would need
 \item An automatic tool that can verify the properties in the language
   against Java programs.
 \end{itemize}
-This paper addresses the first point by introducing {\em TPL} (Temporal Property Language). 
-\dinocomment{Come up with a better name or drop it!
-\rg{An idea: Temporal Object-oriented Property Language; TOPL, because is sounds similar to POPL.}}
-\rlp{What are the requirements for a good name? (We just need
-  something to refer to, I think.)}
+This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language). 
 It has the following characteristics:
 \begin{itemize}
 \item It is designed for OOP. 
-And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalist known to be effective and concise in specifying heap related properties.
+And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
 \rg{I would not mention separation logic here.
 We did not quite get to using it, although that's what we want for TACAS\null.
 It might look like some gratuitous `name-dropping'.
@@ -99,7 +96,12 @@ The Future Work or the Conclusions sections are better places.}
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
 In this paper we introduce the language and its formal semantics. 
-Moreover we show how this can be used for doing dynamic checking of its properties using a simple object-based language.
+Moreover we show how this can be used for doing dynamic checking of \TPL's properties using a simple object-based language. One of the advantage of dynamic checking w.r.t. using exception in the Java code is that it is possible to
+return a trace to the programmer. Traces of events triggering an error are extremely useful for debugging purposes.
+Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
+
+
+
 
 % contributions
 % - language for temporal properties
@@ -110,16 +112,15 @@ Moreover we show how this can be used for doing dynamic checking of its properti
 % Safety (obiquitus)
 
 The paper is organized as follows. In Section~\ref{sec:example} we start with a motivating example. 
-Section~\ref{sec:syntax} gives the syntax of TPL and Section~\ref{sec:semantics} introduces its semantics. 
-Section~\ref{sec:testing} describes the use of TPL for run-time checking of safety properties. 
+Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics. 
+Section~\ref{sec:testing} describes the use of \TPL \ for run-time checking of safety properties. 
 Section~\ref{sec:related} discusses related work and our future plans. 
 Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
 \section{Examples} \label{sec:example} % <<<
 
-The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
+The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API which causes trouble in practice from time to time.
 It is sufficiently complex to illustrate a large part of our language.
-It is also subtle and causes trouble in practice from time to time.
 Properties are essentially automata that monitor program executions.
 For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
 
@@ -157,20 +158,20 @@ property InvalidateOtherIterators
 \begin{figure}
 \begin{tikzpicture}[xscale=2.5]
  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
- \tikzset{transition/.style={->,>=latex}}
- \tikzset{every label/.style={gray}}
- \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
- \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
- \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
- \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
- \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
- \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
- \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
- \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
- \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
- \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
- \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
- \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
+  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
+  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
+  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
+  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
+  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
+  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
+  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
+  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
+  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
+  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
+  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
 \end{tikzpicture}
 \caption{Running example: Drawing of safety property}
 \label{fig:running.drawing}
@@ -270,9 +271,10 @@ The execution we stepped through violates the property \textit{InvalidateOtherIt
 Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
+\paragraph{Discussion.}
 How is this better than just having an exception thrown by the Java~API\null?
 \begin{itemize}
-\item We can record which statements trigger which transitions, so we can a trace that explains what exactly went wrong.
+\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
 \item We do not need to write the code that checks whether the property is violated.
   In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
   The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
@@ -392,6 +394,9 @@ Labels look like method calls, there is a shorthand notation for parallel transi
 From the point of view of semantics, however, these conveniences are in the way.
 For this reason we define two languages, one that is seen by the users and one that is more uniform, and a translation between them.
 
+\rg{TODO: Put in \emph{context} and \emph{negations}.}
+\rg{TODO: Put in automaton transitions.}
+\dinocomment{Maybe we want the syntax of the language here}
 \begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
@@ -410,13 +415,13 @@ For this reason we define two languages, one that is seen by the users and one t
 
 A program's semantics is a set of event traces;
 an automaton's semantics is also a set of event traces.
-A program \emph{violates} a property when their sets intersect.
+If the automaton express undesired behaviour, then a program \emph{violates} a property when their sets intersect.
 Both the program and the automaton are nondeterministic.
-\dinocomment{So we only want to use the automata to specify bad behaviour?
-How about good behaviour?
-\rg{Ignoring the loop on \textit{start}, I think that every `good property' can be negated and converted into a negative one.
-You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
-These incoming transitions are tagged with the `end of execution' event.}}
+%\dinocomment{So we only want to use the automata to specify bad behaviour?
+%How about good behaviour?
+%\rg{Ignoring the loop on \textit{start}, I think that every `good property' can be negated and converted into a negative one.
+%You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
+%These incoming transitions are tagged with the `end of execution' event.}}
 
 \subsection{Automaton} % <<<
 
