@@ -576,10 +576,10 @@ IDEA: apply to something like Haskell?
 
 
 % >>>
-\section{Future Work}\label{sec:future} %<<<
+%\section{Future Work}\label{sec:future} %<<<
 
-\rg{TODO: Static analysis.
-Two challenges: inference (biabduction), abstraction (garbage-collection like).}
+%\rg{TODO: Static analysis.
+%Two challenges: inference (biabduction), abstraction (garbage-collection like).}
 
 %>>>
 \section{Related Work}\label{sec:related} %<<<
@@ -597,11 +597,17 @@ It is likely that our language could be fruitfully combined with their technique
 \dinocomment{this is very weak! Need to be improved} 
 
 %>>>
-\section{Conclusions}\label{sec:conclusions} %<<<
+\section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 In this paper we have introduced a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect and separation logic to deal with the  heavy use of the heap in object-oriented software. 
 Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time check of the properties 
-on an idealized oop language.
+on an idealised oop language.
+
+In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
+This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximantions
+of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{popl09} which would to help with scalability of the analysis.
+%\rg{TODO: Static analysis.
+%Two challenges: inference (biabduction), abstraction (garbage-collection like).}
 
 
 %>>>
