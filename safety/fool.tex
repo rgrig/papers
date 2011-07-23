@@ -400,8 +400,8 @@ From the point of view of semantics, however, these conveniences are in the way.
 For this reason we define two languages, one that is seen by the users and one that is more uniform, and a translation between them.
 
 \rg{TODO: Put in \emph{context} and \emph{negations}.}
-\rg{TODO: Put in automaton transitions.}
 \dinocomment{Maybe we want the syntax of the language here}
+
 \begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
@@ -576,12 +576,14 @@ IDEA: apply to something like Haskell?
 
 
 % >>>
-%\section{Future Work}\label{sec:future} %<<<
+\section{Language Extensions} \label{sec:extensions} % <<<
 
-%\rg{TODO: Static analysis.
-%Two challenges: inference (biabduction), abstraction (garbage-collection like).}
+\rg{This section is for the parts of the language that we did not implement.
+I would like to keep them separate because we cannot be sure that we didn't forget something important related to them.
+Example: Transitions labeled by automata (and hence recursive automata).
+}
 
-%>>>
+% >>>
 \section{Related Work}\label{sec:related} %<<<
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces. 
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method. 
@@ -604,11 +606,8 @@ Beside the formal definition of the language and its semantics we have shown how
 on an idealised oop language.
 
 In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
-This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximantions
+This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximations
 of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{popl09} which would to help with scalability of the analysis.
-%\rg{TODO: Static analysis.
-%Two challenges: inference (biabduction), abstraction (garbage-collection like).}
-
 
 %>>>
 
