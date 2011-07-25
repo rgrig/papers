@@ -137,7 +137,7 @@ The following examples (\autoref{sec:example.others}) illustrate the expressivit
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 The automaton in \autoref{fig:running.drawing} formally captures the disallowed API usage.
-The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton given  as a list of labeled transitions. 
+The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton (in \TPL ) given  as a list of labeled transitions. 
 Each label is a statement pattern.
  
 
@@ -298,11 +298,12 @@ Yes, a big disadvantage is that checking an arbitrary property involves keeping 
 For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
-\subsection{Other Examples} \label{sec:example.others} % <<<
-
-Let us now see how other properties.
-
-A property closely related to \autoref{fig:running.property} is that modifying the collection directly invalidates all iterators.
+\subsection{Other Examples of Typestate-like properties in \TPL} \label{sec:example.others} % <<<
+A property closely related to \autoref{fig:running.property} is that 
+{\it modifying the collection directly invalidates all iterators.}
+%
+In \TPL \ this  property can be expressed as follows:
+%
 \par\medskip\noindent
 \begin{Verbatim}
 property ModificationInvalidatesIterators
@@ -315,7 +316,8 @@ property ModificationInvalidatesIterators
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
 
-Another property related to iterators, is that they should not be advanced unless we know that they are not exhausted.
+Another property related to iterators, is that {\it iterators should not be advanced unless we know that they are not exhausted.} 
+In \TPL:
 \par\medskip\noindent
 \begin{Verbatim}
 property UnsafeIteratorNext
@@ -327,6 +329,7 @@ property UnsafeIteratorNext
 \end{Verbatim}
 \par\medskip
 
+\paragraph{Temporal properties of resources.}
 Many resources impose a temporal property:
 Before being used they must be acquired;
 after being used they must be released.
@@ -334,6 +337,7 @@ Examples include memory allocation and deallocation, locks for synchronization b
 The liveness property, which we do not handle, is that each \textit{acquire} is eventually followed by a \textit{release}.
 However, ignoring programs that run forever this property can be rephrased as a safety property:
 When the program terminates, the last action must have been \textit{release}.
+\dinocomment{Really should be the last action?}
 Suppose that resources are represented by instances of the class \textit{Resource}, which has two methods, \textit{acquire} and \textit{release}.
 \par\medskip\noindent
 \begin{Verbatim}
@@ -358,6 +362,7 @@ property DoubleAcquireOrRelease
 \par\medskip\noindent
 Normally this automaton would be split into two so that error messages are more informative and precise.
 
+\paragraph{Immutable data structures.}
 Another common issue in Java is providing read-only access to collections.
 For example, if one wants to implement an immutable data structure, the common idiom is to make all fields private, provide getter, but not setters.
 However, if deep-immutability is desired and one of the members is a collection, then extra precautions are necessary.
