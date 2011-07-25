@@ -178,12 +178,6 @@ let report_error message =
 (* }}} *)
 (* functions that evolve only the automata state *) (* {{{ *)
 
-(* DBG
-let dt = function
-  | PA.Call _ -> eprintf "@[call@."
-  | PA.Return _ -> eprintf "@[return@."
-  | PA.Call_return _ -> eprintf "@[OMG@." *)
-
 module PropertyInterpreter = struct
   let rec evaluate_guard s e =
     let rv i = U.IntMap.find i e.PA.event_values in

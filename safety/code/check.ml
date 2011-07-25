@@ -37,8 +37,6 @@ module Environment : EnvironmentT = struct (* {{{ *)
     ; methods_by_class : (type_ * type_ list) U.StringMap.t U.StringMap.t
     ; line : int option }
 
-  let object_layout env = env.fields_by_class
-
   let position env = match env.line with
     | None -> "?"
     | Some n -> string_of_int n

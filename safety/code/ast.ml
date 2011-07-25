@@ -146,13 +146,6 @@ module PropertyAst = struct
         let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
         snd (List.fold_left f (0, U.IntMap.empty) vs) }
 
-  let mk_edge s t lg la =
-    { edge_source = s
-    ; edge_target = t
-    ; edge_label =
-      [ { label_guard = lg
-        ; label_action = la } ] }
-
   let edge_length e = List.length e.edge_label
 
   let outgoing a src =
