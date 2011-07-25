@@ -136,10 +136,10 @@ The following examples (\autoref{sec:example.others}) illustrate the expressivit
 
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-The automaton in \autoref{fig:running.property} formally captures the disallowed API usage.
-The automaton is given essentially as a list of labeled transitions.
+The automaton in \autoref{fig:running.drawing} formally captures the disallowed API usage.
+The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton given  as a list of labeled transitions. 
 Each label is a statement pattern.
-\autoref{fig:running.drawing} shows the same automaton in a graphical form.
+ 
 
 \begin{figure} % running example <<<
 \include{IncorrectIteratorUse}
@@ -224,12 +224,13 @@ At this point, all conditions are met to perform the transition from \textit{sta
 Performing a transition involves remembering the values on which the uppercase patterns matched.
 For concreteness, let us assume that the program variables $c$~and~$i$ hold the values $1$~and~$2$.
 Then, performing the first transition stores the values $1$~and~$2$ into the \emph{automaton variables} $c$~and~$i$.
+\dinocomment{I get confused why we need to specify that $c$ and $i$ holds 1 and 2. Or maybe I don't understand why do we need to talk about the value of $c$ and $i$ at this point....}
 The automaton variables live in a different name-space from program variables.
 In this case we use the same names for automaton variables as for program variables purely as a mnemonic device---there is no semantics to it.
 The end result of performing the transition from \textit{start} to \textit{gotOne} is that the state \[(\mathit{gotOne},[c:1,i:2])\] is activated.
 Usually, the source of a transition would not be active anymore.
 In this case, the state $(\mathit{start},[])$ remains active because it is a special state that is always active.
-Conceptually, the vertex \textit{start} has a loop on it that always matches.
+Conceptually, the vertex \textit{start} has a self-loop on it that always matches.
 
 For the second step we need to consider the two active states in turn.
 For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
@@ -244,6 +245,7 @@ In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed be
 
 In the third step, no transition is performed and the same states remain active.
 None of the outgoing transitions of \textit{start}, \textit{gotOne}, and \textit{gotTwo} match the method \textit{next}.
+\dinocomment{So I guess we should explain that the program progresses whereas the automaton wait. It's a bit strange so better to explicitly say}
 
 In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed.
 The pattern $i.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
