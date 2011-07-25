@@ -486,6 +486,8 @@ The deterministic state contains a store of values.
 \dinocomment{this deterministic state seems to come out of the blue.
 \rg{What do you mean?
 This is its definition.}}
+\dinocomment{I think it would be good to give an introduction about the determinist state. What is it? Why it is needed?
+etc. Just the definition at this point leave the reader wondering...}
 A store is a finite partial map from automaton variables to values.
 We also define an automaton deterministic execution state, which includes the input to be processed.
 \begin{align}
@@ -626,8 +628,9 @@ It is likely that our language could be fruitfully combined with their technique
 
 %>>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
-In this paper we have introduced a language for expressing temporal safety properties for object-oriented programs.
-Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect and separation logic to deal with the  heavy use of the heap in object-oriented software. 
+This paper presented ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
+Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
+We intend to make use of  separation logic to deal with the  heavy use of the heap in object-oriented software. 
 Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time check of the properties 
 on an idealised oop language.
 
