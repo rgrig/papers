@@ -67,7 +67,7 @@
 \maketitle
 
 \begin{abstract} % <<<
-In this paper we present a new specification language for temporal safety properties aimed at object-oriented languages.
+In this paper we present ongoing work related to a new specification language for temporal safety properties aimed at object-oriented languages.
 The language is expressive enough to represent relationships between objects and it is designed with the goal of performing dynamic and static analysis of object-oriented software.
 \end{abstract}
 \category{D.2.1}{Software Engineering}{Requirements/Specifications}
@@ -80,6 +80,9 @@ One popular class of properties addressed by many techniques in program verifica
 Violations of this class of properties may lead to unexpected run-time errors.
 
 Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which uses finite state automata for specifying conformance or violation w.r.t. a temporal safety property.
+These properties are related with the correct use of types operations in different contexts. 
+For example in object-oriented languages the correct use of the APIs of certain classes may be particularly 
+delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.  
 The properties should be given by the user; they should not be hard-coded.
@@ -92,18 +95,19 @@ In order to achive our goal we would need
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language). 
 It has the following characteristics:
 \begin{itemize}
-\item It is designed for OOP. 
-And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
-\rg{I would not mention separation logic here.
-We did not quite get to using it, although that's what we want for TACAS\null.
-It might look like some gratuitous `name-dropping'.
-The Future Work or the Conclusions sections are better places.}
-\item It allows very high-level intuitive specifications which are given with an special form of automata.
+\item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between object references.
+%And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
+%\rg{I would not mention separation logic here.
+%We did not quite get to using it, although that's what we want for TACAS\null.
+%It might look like some gratuitous `name-dropping'.
+%The Future Work or the Conclusions sections are better places.}
+\item It allows very high-level intuitive specifications my means of automata tailored towards object-oriented specifications.
 \item It is designed to be used to do program analysis (both static and dynamic).
 \end{itemize}  
-In this paper we introduce the language and its formal semantics. 
-Moreover we show how this can be used for doing dynamic checking of \TPL's properties using a simple object-based language. One of the advantage of dynamic checking w.r.t. using exception in the Java code is that it is possible to
-return a trace to the programmer. Traces of events triggering an error are extremely useful for debugging purposes.
+In this paper we introduce \TPL \ and its formal semantics. 
+Moreover we show its use for dynamic checking of the properties against  a simple object-based language. 
+One of the advantage of dynamic checking w.r.t. using exceptions in the Java code is that it is possible to return a trace to the programmer. 
+Traces of events triggering an error are extremely useful for debugging purposes.
 Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
 
 
