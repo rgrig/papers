@@ -18,10 +18,10 @@ biabduction.pdf: biabduction.tex
 $(PDF): %.pdf: req
 	@TEXINPUTS=$(INP) python compile.py "$*"
 
-$(JAVATEX): %.tex: %.java %.class
+$(JAVATEX): %.tex: %.java %.class req
 	@pygmentize -o $@ $<
 
-$(JAVACLASS): %.class: %.java
+$(JAVACLASS): %.class: %.java req
 	@javac $< || echo "WARNING: $< does not compile."
 
 clean:

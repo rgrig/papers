@@ -28,7 +28,8 @@
 
 \def\grammar#1{{
   \footnotesize
-  \def\b##1{{\rm\Verb@##1@}}\def\*{$^*$}\def\?{$^?$}
+  \def\b##1{{\rm\Verb@##1@}}\def\*{$^*$}\def\?{$^?$}\def\({$($}\def\){$)$}
+  \def\|{$\mid$}\def\+{$^+$}
   \smallskip
   \hbox to\hsize{\hfil\vbox{\halign{\hfil\it##&$\;::=\;$\it##\hfil&\qquad\rm##\hfil\cr#1}}\hfil}
   \smallskip
@@ -381,7 +382,7 @@ property ModifiedReadOnlyView
 \par\medskip\noindent
 \rg{TODO: Oops: the example above is wrong.
 It's the second hint I get that we need a pattern for \textbf{this}.
-The other wa an example in Disney et al.
+The other was an example in Disney et al.
 The idea is that it matters \emph{who} calls a certain method.
 In this case, the \textit{ComponentHelper} itself \emph{is} allowed to modify the collection, but the property above will signal it as a violation.}
 
@@ -393,6 +394,12 @@ Also, add examples from Disney et al.}
 % >>>
 % >>>
 \section{Syntax and Desugaring}\label{sec:syntax} % <<<
+
+% plan
+% - two languages
+% - language for users
+% - language for semantics
+% - desugaring translation
 
 The language exposed to users (as seen in \autoref{sec:example}) aims to be intuitive.
 Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \textit{start}, the \texttt{using prefix} directive offers some extra convenience, and so on.
@@ -406,8 +413,20 @@ For this reason we define two languages, one that is seen by the users and one t
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
   Using& \b{using prefix} StringPattern \cr
-  Transition& Arc \b: Label \cr
+  Transition& Arc \b: Label \(\b, Label\)\* \cr
+  StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
   Arc& Vertex \b{->} Vertex \cr
+  Label& Context\? Tag\? MethodPattern \cr
+  Vertex& Identifier \cr
+  Context& \b< ValuePattern \b> \cr
+  Tag& \b{call} \| \b{return} \cr
+  MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
+  ResultPattern& ValuePattern \b{:=} \cr
+  NamePattern& StringPattern \cr
+  ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
+  ArgumentsPattern& \b[ IntegerPattern \b] \cr
+  ValuePattern& LowercaseId \| UppercaseId \| \b* \cr
+  IntegerPattern& IntegerLiteral \| \b* \cr
 }
 \caption{Property language seen by users}
 \label{fig:lang.sugar}
