@@ -11,7 +11,7 @@
 \usepackage{tikz}
 \usepackage{xcolor}
 
-\usepackage[colorlinks]{hyperref}
+\usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
 
 \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
 \definecolor{darkblue}{rgb}{0,0,0.4}
@@ -26,6 +26,7 @@
 \title{TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Radu Grigore \and Rasmus Lerchedahl Petersen \and Dino Distefano}{Queen Mary, University of London}{{\rm\{}rgrig,rusmus,ddino{\rm\}}@eecs.qmul.ac.uk}
 
+% rg: I tend to give grammars in BFS order
 \def\grammar#1{{
   \footnotesize
   \def\b##1{{\rm\Verb@##1@}}\def\*{$^*$}\def\?{$^?$}\def\({$($}\def\){$)$}
@@ -92,7 +93,7 @@ In order to achive our goal we would need
 \item An automatic tool that can verify the properties in the language
   against Java programs.
 \end{itemize}
-This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language). 
+This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
 \begin{itemize}
 \item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between object references.
@@ -384,10 +385,10 @@ It is also used in practice.
 \par\medskip\noindent
 \begin{Verbatim}
 property ModifiedReadOnlyView
-  using prefix org.apache.tools.ant.ComponentHelper
-  start -> got:       C := *.getRestrictedDefinitions()
-  got -> error:       c.add(*), c.remove(*)
-  got -> iterating:   I := c.iterator()
+ using prefix org.apache.tools.ant.ComponentHelper
+  start -> got: C := *.getRestrictedDefinitions()
+  got -> error: c.add(*), c.remove(*)
+  got -> iterating: I := c.iterator()
   iterating -> error: i.remove()
 \end{Verbatim}
 \par\medskip\noindent
@@ -404,7 +405,13 @@ Also, add examples from Disney et al.}
 
 % >>>
 % >>>
-\section{Syntax and Desugaring}\label{sec:syntax} % <<<
+\section{Syntax}\label{sec:syntax} % <<<
+
+We begin the systematic presentation of TOPL with its syntax (\autoref{sec:syntax.topl}).
+Before moving on to semantics (\autoref{sec:semantics}) we shall also introduce the syntax of SOOL, a \textbf simple \textbf object-\textbf oriented programming \textbf language (\autoref{sec:syntax.sool}).
+Our prototype implementation is an interpreter for SOOL programs that dynamically checks TOPL properties.
+
+\subsection{TOPL and iTOPL}\label{sec:syntax.topl} % <<<
 
 % plan
 % - two languages
@@ -412,13 +419,23 @@ Also, add examples from Disney et al.}
 % - language for semantics
 % - desugaring translation
 
-The language exposed to users (as seen in \autoref{sec:example}) aims to be intuitive.
+TOPL aims to be intuitive:
 Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \textit{start}, the \texttt{using prefix} directive offers some extra convenience, and so on.
 From the point of view of semantics, however, these conveniences are in the way.
-For this reason we define two languages, one that is seen by the users and one that is more uniform, and a translation between them.
+For this reason we also define iTOPL (\textbf inner TOPL), an even simpler language into which TOPL is desugared.
 
-\rg{TODO: Put in \emph{context} and \emph{negations}.}
-\dinocomment{Maybe we want the syntax of the language here}
+\autoref{fig:syntax.topl} shows the syntax of TOPL\null.
+A property has a name, a set of \texttt{using} directives, and a set of transitions.
+Each transition has an arc (directed edge) and labels.
+Each arc has a source vertex and a target vertex.
+All vertices are identified by their name.
+Labels look roughly like method calls.
+Each label has a method pattern that is used to identify the set of methods to which the label refers.
+In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
+(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
+The more interesting case is when there are value patterns for each argument and perhaps even for the context and the result.
+The context pattern appears \Verb@<@surrounded by angle brackets\Verb@>@ at the beginning of the label and is matched against the value of the special variable \textbf{this}.
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.topl} for details).
 
 \begin{figure}
 \grammar{
@@ -436,15 +453,71 @@ For this reason we define two languages, one that is seen by the users and one t
   NamePattern& StringPattern \cr
   ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
   ArgumentsPattern& \b[ IntegerPattern \b] \cr
-  ValuePattern& LowercaseId \| UppercaseId \| \b* \cr
-  IntegerPattern& IntegerLiteral \| \b* \cr
+  ValuePattern& \b* \| Literal \| UppercaseId \| \b!\? LowercaseId \cr
+  IntegerPattern& \b* \| IntegerLiteral \cr
 }
-\caption{Property language seen by users}
-\label{fig:lang.sugar}
+\caption{Syntax of TOPL}
+\label{fig:syntax.topl}
+\end{figure}
+
+There are three types of patterns used in TOPL---for strings, for integers, and for values.
+String patterns match method names and may use wildcards.
+(For simplicity, TOPL does not use full regular expressions as string patterns.)
+Integer patterns specify method arities.
+Value patterns are the most interesting.
+\rg{TODO: Explain wildcard and literals for value patterns.}
+For each automaton variable \Verb@var@ there are three associated patterns.
+The uppercase pattern \Verb@Var@ matches any value and writes it in the automaton variable \Verb@var@.
+The lowercase pattern \Verb@var@ reads the value of the automaton variable \Verb@var@ and only matches that value.
+The negated lowercase pattern \Verb@!var@ reads the value of the automaton variable \Verb@var@ and only matches different values.
+
+A TOPL property is \emph{well-formed} when it satisfies the following conditions.
+\begin{itemize}
+\item Labels must contain uppercase value patterns at most once.
+\item Any use of a lowercase patterns must be definitely preceded the corresponding uppercase pattern.
+  In other words, automaton variables must be written before being read.
+\end{itemize}
+
+\autoref{fig:syntax.itopl} shows the syntax of iTOPL\null.
+The missing productions are the same as for TOPL\null.
+Each transition now has exactly one label.
+Each label is a list of (guard, action) pairs.
+Each guard is some boolean combination of atomic guards.
+Each action is a sequence of atomic actions.
+Both guards and actions refer to some implicit array of values using an index (see \autoref{sec:semantics.topl}).
+Atomic guards compare values either with automaton variables (\textit{Identifier}) or with constants (\textit{Literal}).
+Atomic actions write values into automaton variables.
+There is also an atomic guard that matches against method calls and always specifies a tag \Verb@call@ or \Verb@return@, but never involves examining any values.
+
+\begin{figure}
+\grammar{
+  Property& \b{property} Identifier Transition\* \cr
+  Transition& Arc \b: Label \cr
+  Label& \(\b(Guard Action\b)\)\* \cr
+  Guard& AtomicGuard \| Guard \(\(\b{\&}\|\b|\) Guard\)\* \cr
+  Action& \(AtomicAction \(\b, AtomicAction\)\*\)\? \cr
+  AtomicGuard& \b! Guard \cr
+  AtomicGuard& \b[ ValueIndex \b] \b= \(Identifier \| Literal\)\cr
+  AtomicGuard& \(\b{call} \| \b{return}\) NamePattern \b[ IntegerPattern \b] \cr
+  AtomicGuard& \b{true} \cr
+  AtomicAction& Identifier \b{:=} \b[ ValueIndex \b] \cr
+  ValueIndex& IntegerLiteral \cr
+}
+\caption{Syntax of iTOPL}
+\label{fig:syntax.itopl}
 \end{figure}
 
 \rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
 
+% >>>
+\subsection{SOOL}\label{sec:syntax.sool} % <<<
+
+SOOL is a subset of existing object-oriented languages.
+It has classes, assignments, and method calls.
+It should be possible to use TOPL with any language that is a superset of SOOL\null.
+\rg{TODO: rewrite and continue}
+
+% >>>
 % >>>
 \section{Semantics}\label{sec:semantics} % <<<
 
@@ -458,7 +531,7 @@ Both the program and the automaton are nondeterministic.
 %You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
 %These incoming transitions are tagged with the `end of execution' event.}}
 
-\subsection{Automaton} % <<<
+\subsection{Automaton}\label{sec:semantics.topl} % <<<
 
 Each event has a tag and carries an array of values.
 \begin{align}
