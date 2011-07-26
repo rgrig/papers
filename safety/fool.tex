@@ -517,6 +517,27 @@ It has classes, assignments, and method calls.
 It should be possible to use TOPL with any language that is a superset of SOOL\null.
 \rg{TODO: rewrite and continue}
 
+\begin{figure}
+\grammar{
+  Program& \(Class \| VarDecl\)\* Main\cr
+  Class& \b{class} Identifier Member\* \cr
+  VarDecl& \b{var} Type Identifier \cr
+  Main& \b{main} Body \cr
+  Member& VarDecl &field \cr
+  Member& Type Identifier \b( Arguments\? \b) Body & method\cr
+  Body& VarDecl\* Statement\* \cr
+  Arguments& Type Identfier \(\b, Type Identifier\)\* \cr
+  Statement& \b{return} Expression & return\cr
+  Statement& Identifier \b{:=} \b{new} & allocate \cr
+  Statement& Identifier \b{:=} Expression & assign \cr
+  Statement& \(Identifier \b{:=}\)\? Expression \b. Identifier & call \cr
+  Statement& \(\b{do} Body\)\? \b{while} Expression Body\? &loop\cr
+  Statement& \b{if} Expression Body \(\b{else} Body\)\? &test\cr
+}
+\caption{(Partial) Syntax of SOOL}
+\label{fig:syntax.sool}
+\end{figure}
+
 % >>>
 % >>>
 \section{Semantics}\label{sec:semantics} % <<<
