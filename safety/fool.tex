@@ -60,6 +60,8 @@
 
 \theoremstyle{definition}
 \newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
 
 \overfullrule=5pt
 \showboxdepth=10
@@ -83,16 +85,14 @@ Violations of this class of properties may lead to unexpected run-time errors.
 
 Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which uses finite state automata for specifying conformance or violation w.r.t. a temporal safety property.
 These properties are related with the correct use of types operations in different contexts. 
-For example in object-oriented languages the correct use of the APIs of certain classes may be particularly 
-delicate and it is easy for the programmer to break essential invariants.
+For example in object-oriented languages the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.  
 The properties should be given by the user; they should not be hard-coded.
 In order to achive our goal we would need
 \begin{itemize}
 \item A language for specifying temporal safety properties;
-\item An automatic tool that can verify the properties in the language
-  against Java programs.
+\item An automatic tool that can verify the properties in the language against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
@@ -125,7 +125,7 @@ Moreover, writing code for checking that a property is violated can be complex a
 
 The paper is organized as follows. In Section~\ref{sec:example} we start with a motivating example. 
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics. 
-Section~\ref{sec:testing} describes the use of \TPL \ for run-time checking of safety properties. 
+Section~\ref{sec:dynamic} describes the use of \TPL \ for run-time checking of safety properties.
 Section~\ref{sec:related} discusses related work and our future plans. 
 Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
@@ -144,8 +144,7 @@ The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 The automaton in \autoref{fig:running.drawing} formally captures the disallowed API usage.
 The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton (in \TPL ) given  as a list of labeled transitions. 
-Each label is a {\em statement pattern} which should match  a program statements in order for
-the transition to be taken be the taken by the automaton.
+Each label is a {\em statement pattern} which should match  a program statements in order for the transition to be taken be the taken by the automaton.
 The way in which labels match program statement will become clear below.
  
 
@@ -279,8 +278,7 @@ We have a match because the expansion \verbline{java.util.Iterator.next} is over
 
 The tag \texttt{call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.  
 This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between). 
-In our running example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a \textit{jInvalid} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern I:=\pattern C.\mathtt{iterator}()$ which 
-expects the transition to involve all the events of the method invocation, from call-time till the return-time. 
+In our running example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a \textit{jInvalid} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern I:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time. 
 
 \dinocomment{Move it when the semantics is clear}
 \paragraph{On call and return tags.}
@@ -450,7 +448,7 @@ In the simple case, a method pattern consists of a string pattern for the name o
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
 The more interesting case is when there are value patterns for each argument and perhaps even for the context and the result.
 The context pattern appears \Verb@<@surrounded by angle brackets\Verb@>@ at the beginning of the label and is matched against the value of the special variable \textbf{this}.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.topl} for details).
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
 
 \begin{figure}
 \grammar{
@@ -478,6 +476,7 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
 There are three types of patterns used in TOPL---for strings, for integers, and for values.
 String patterns match method names and may use wildcards.
 (For simplicity, TOPL does not use full regular expressions as string patterns.)
+\rg{I also used \Verb@{a,b}@ so I need to say something like `POSIX path patterns.'}
 Integer patterns specify method arities.
 Value patterns are the most interesting.
 \rg{TODO: Explain wildcard and literals for value patterns.}
@@ -499,7 +498,7 @@ Each transition now has exactly one label.
 Each label is a list of (guard, action) pairs.
 Each guard is some boolean combination of atomic guards.
 Each action is a sequence of atomic actions.
-Both guards and actions refer to some implicit array of values using an index (see \autoref{sec:semantics.topl}).
+Both guards and actions refer to some implicit array of values using an index (see \autoref{sec:semantics.itopl}).
 Atomic guards compare values either with automaton variables (\textit{Identifier}) or with constants (\textit{Literal}).
 Atomic actions write values into automaton variables.
 There is also an atomic guard that matches against method calls and always specifies a tag \Verb@call@ or \Verb@return@, but never involves examining any values.
@@ -530,7 +529,9 @@ There is also an atomic guard that matches against method calls and always speci
 SOOL is a subset of existing object-oriented languages.
 It has classes, assignments, and method calls.
 It should be possible to use TOPL with any language that is a superset of SOOL\null.
-\rg{TODO: rewrite and continue}
+
+\autoref{fig:syntax.sool} shows a big part of SOOL's syntax.
+Expressions, which do not have side-effects, are missing.
 
 \begin{figure}
 \grammar{
@@ -559,15 +560,12 @@ It should be possible to use TOPL with any language that is a superset of SOOL\n
 
 A program's semantics is a set of event traces;
 an automaton's semantics is also a set of event traces.
-If the automaton express undesired behaviour, then a program \emph{violates} a property when their sets intersect.
+We say that a program \emph{violates} a property when their sets of traces intersect.
+In other words, properties encode bad executions, rather than good executions.
+\rg{Show at some point how to `negate' properties?}
 Both the program and the automaton are nondeterministic.
-%\dinocomment{So we only want to use the automata to specify bad behaviour?
-%How about good behaviour?
-%\rg{Ignoring the loop on \textit{start}, I think that every `good property' can be negated and converted into a negative one.
-%You turn the accepting state into a stuck state and you add an error state that has incoming transitions from all normal states.
-%These incoming transitions are tagged with the `end of execution' event.}}
 
-\subsection{Automaton}\label{sec:semantics.topl} % <<<
+\subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
 
 Each event has a tag and carries an array of values.
 \begin{align}
@@ -578,7 +576,7 @@ The content of the undefined sets (such as \set{Value}) is not important.
 We assume that these basic sets are disjoint.
 Traces are finite.
 \begin{align}
-\set{Trace}=\bigcup_{n\in\N} n\to\set{Event}
+\set{Trace}=\bigcup_{n\in\N} n\to\set{Event} \label{eq:trace}
 \end{align}
 Intuitively, the program outputs a trace that drives the automaton.
 
@@ -605,8 +603,8 @@ A store is a finite partial map from automaton variables to values.
 We also define an automaton deterministic execution state, which includes the input to be processed.
 \begin{align}
 \set{Store}&=\set{Variable}\pmap\set{Value} \\
-\set{AState}&=\set{Vertex}\times\set{Store} \\
-\set{EAState}&=\set{AState}\times\set{Trace}
+\set{AState}&=\set{Vertex}\times\set{Store} \label{eq:astate} \\
+\set{EAState}&=\set{AState}\times\set{Trace} \label{eq:eastate}
 \end{align}
 Guards compare the values in an event with those in a store.
 Actions modify the store, using values from an event.
@@ -616,7 +614,7 @@ Actions modify the store, using values from an event.
 \end{align}
 The automaton deterministic step function evolves the execution state.
 \begin{align}
-\mathit{adStep}\in\set{EAState}\to\set{EAState}\to2
+\mathit{adStep}\in\set{EAState}\to\set{EAState}\to2 \label{eq:adstep}
 \end{align}
 \begin{example}
 Consider an automaton in state~$s_1$.
@@ -628,8 +626,8 @@ For this, we write $(s_2,e_2)\in\mathit{adStep}(s_1,e_1e_2)$.
 \end{example}
 The nondeterministic step is defined in terms of~\textit{adStep}.
 \begin{align}
-\mathit{anStep}&\in(\set{EAState}\to2)\to\set{EAState}\to2 \\
-\mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S
+\mathit{anStep}&\in(\set{EAState}\to2)\to\set{EAState}\to2\\
+\mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S \label{eq:anstep}
 \end{align}
 An iterated version of \textit{anStep} is useful for defining reachable states.
 We define it as the least fixed point for the following equation.
@@ -677,33 +675,59 @@ If transitions always have length~$1$, then \textit{adStep} becomes simpler.
 However, we could not find a desugaring into automata with transitions of length~$1$.
 
 % >>>
-\subsection{Program} % <<<
+\subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
-Let us now see how a simple object-oriented language produces event traces.
-The state of the program is the content of the memory.
-The program store (also known as stack) is similar to the automaton store.
-Program variables and automaton variables live in different name-spaces.
-Heaps map object addresses and field names to their values.
+% plan
+% - traces interface between prog lang and prop lang
+% - show how to do it for SOOL
+% - abstract: we just need *some* pStep function
+
+We want to check whether SOOL programs violate iTOPL properties.
+We know how iTOPL properties describe sets of traces (\autoref{sec:semantics.itopl}).
+We need to define the sets of traces of SOOL programs.
+Intuitively, traces are projections of executions.
+
+The statement to execute and the memory determine the \emph{program state}.
+The \emph{memory} has three regions, for global variables, for local variables, and for dynamically allocated objects.
+Global variables and local variables are held in stores.
+Dynamically allocated objects are held in the heap.
+Like a store, the \emph{heap} is a finite partial map to values.
+Unlike a store, the heap is indexed by a value (the object reference) and a variable (the field name).
 \begin{align}
-\set{PState}&=\set{Store}\times\set{Heap}\\
+\set{PState}&=\set{Statement}\times\set{Memory} \label{eq:pstate}\\
+\set{Memory}&=\set{Store}\times\set{Store}\times\set{Heap}\\
+\set{Store}&=\set{Variable}\pmap\set{Value} \\
 \set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
 \end{align}
 The input is an array of values.
 The program execution state keeps track of the input yet to be processed.
 \begin{align}
-\set{Input}&=\bigcup_{n\in\N}n\to\set{Value}\\
-\set{EPState}&=\set{PState}\times\set{Input}
+\set{Input}&=\bigcup_{n\in\N}n\to\set{Value} \label{eq:input}\\
+\set{EPState}&=\set{PState}\times\set{Input} \label{eq:epstate}
 \end{align}
-Expressions do not have side-effects.
-Events are produced by the execution of simple statements.
+The program deterministic step function evolves the execution state.
 \begin{align}
-\set{Expression}&=\set{PState}\pmap\set{Value} \\
-\mathit{pStep}&\in\set{PState}\to\set{Statement}\to(\set{PState}\times\set{Event})
+\mathit{pdStep}&\in\set{EPState}\to\set{EPState}\to2 \label{eq:pdstep}
+\end{align}
+The nondeterministic step is defined in terms of \textit{pdStep}.
+\begin{align}
+\mathit{pnStep}&\in(\set{EPState}\to2)\to\set{EPState}\to2 \\
+\mathit{pnStep}\;S&=\bigcup\;(\mathit{map}\;\mathit{pdStep}\;S) \label{eq:pnstep}
 \end{align}
 
+\begin{remark}
+\def\.#1#2{\eqref{eq:#1}~and~\eqref{eq:#2}}
+Note the similarities between \.{pstate}{astate}; \.{input}{trace}; \.{epstate}{eastate}; \.{pdstep}{adstep}; \.{pnstep}{anstep}.
+\end{remark}
+
+\rg{continue here}
 
 The program is composed of statements.
 
+Expressions do not have side-effects.
+\begin{align}
+\set{Expression}&=\set{Memory}\pmap\set{Value}
+\end{align}
 
 
 TODO: Note that any PL that produces traces of events is suitable.
@@ -711,11 +735,27 @@ IDEA: apply to something like Haskell?
 
 % >>>
 % >>>
-\section{Testing}\label{sec:testing} % <<<
+\section{Dynamic Analysis}\label{sec:dynamic} % <<<
+
+In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
+The next two sections explain how to instrument the interpreter when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+
+\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
+
+The SOOL interpreter closely mirrors the semantics (\autoref{sec:semantics.sool}).
+It is structured as a set of mutually recursive functions.
+\begin{equation}
+\begin{aligned}
+d
+\end{aligned}
+\end{equation}
 
 \rg{Explain code instrumentation.}
 
+% >>>
+\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
 
+% >>>
 % >>>
 \section{Language Extensions} \label{sec:extensions} % <<<
 
@@ -750,6 +790,8 @@ on an idealised oop language.
 In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
 This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximations
 of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{DBLP:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
+
+\rg{TODO: Boogie has trace-set semantics by definition, so it's a good PL to try.}
 
 %>>>
 
