@@ -56,6 +56,7 @@
 \newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
 \newcommand{\TPL}{TOPL}
+\newcommand{\pattern}[1]{\mathtt{\underline{#1}}}
 
 \theoremstyle{definition}
 \newtheorem{example}{Example}
@@ -132,7 +133,7 @@ Finally, Section~\ref{sec:conclusions} conclude the paper.
 
 The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API which causes trouble in practice from time to time.
 It is sufficiently complex to illustrate a large part of our language.
-Properties are essentially automata that monitor program executions.
+Properties in \TPL \ are essentially automata that monitor program executions.
 For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
 
 The following examples (\autoref{sec:example.others}) illustrate the expressivity of the property language.
@@ -143,7 +144,9 @@ The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 The automaton in \autoref{fig:running.drawing} formally captures the disallowed API usage.
 The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton (in \TPL ) given  as a list of labeled transitions. 
-Each label is a statement pattern.
+Each label is a {\em statement pattern} which should match  a program statements in order for
+the transition to be taken be the taken by the automaton.
+The way in which labels match program statement will become clear below.
  
 
 \begin{figure} % running example <<<
@@ -167,23 +170,23 @@ property InvalidateOtherIterators
 \label{fig:running.property}
 \end{figure}
 \begin{figure}
-\begin{tikzpicture}[xscale=2.5]
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
-  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
-  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
-  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
-  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
-  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
-  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
-  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
-  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
-  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
-  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
-  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
-\end{tikzpicture}
+%\begin{tikzpicture}[xscale=2.5]
+%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+%  \tikzset{transition/.style={->,>=latex}}
+%  \tikzset{every label/.style={gray}}
+%  \node[vertex] (start) at (0,0) [label=left:\textit{start}] {};
+%  \node[vertex] (gotOne) at (0,-1) [label=left:\textit{gotOne}] {};
+%  \node[vertex] (gotTwo) at (0,-2) [label=below:\textit{gotTwo}] {};
+%  \node[vertex] (iInvalid) at (1,-2.5) [label=right:\textit{iInvalid}] {};
+%  \node[vertex] (jInvalid) at (-1,-2.5) [label=left:\textit{jInvalid}] {};
+%  \node[vertex,fill] (error) at (0,-3) [label=below:\textit{error}] {};
+%  \draw[transition] (start)--node[right]{$I:=C.\mathtt{iterator}()$} (gotOne);
+%  \draw[transition] (gotOne)--node[right]{$J:=c.\mathtt{iterator}()$} (gotTwo);
+%  \draw[transition] (gotTwo) -- node[above]{$j.\mathtt{remove}()$} (iInvalid);
+%  \draw[transition] (gotTwo)--node[above]{$i.\mathtt{remove}()$} (jInvalid);
+%  \draw[transition] (iInvalid)--node[below]{$\mathtt{call}\;i.{*}()$} (error);
+%  \draw[transition] (jInvalid)--node[below]{$\mathtt{call}\;j.{*}()$} (error);
+%\end{tikzpicture}
 \caption{Running example: Drawing of safety property}
 \label{fig:running.drawing}
 \end{figure}
@@ -191,10 +194,10 @@ property InvalidateOtherIterators
 \begin{align*}
 &\{(\mathit{start}, [])\} \\
 &\text{\Verb+\PY{n}{Iterator}\PY{o}{<}\PY{n}{Integer}\PY{o}{>} \PY{n}{i} \PY{o}{=} \PY{n}{c}\PY{o}{.}\PY{n+na}{iterator}\PY{o}{(}\PY{o}{)}\PY{o}{;}+} \\
-&\text{assume $c$ holds $1$, and $i$ holds $2$ } \\
+&\text{assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
 &\{(\mathit{start},[]), (\mathit{gotOne},[c:1, i:2])\} \\
 &\text{\Verb+\PY{n}{Iterator}\PY{o}{<}\PY{n}{Integer}\PY{o}{>} \PY{n}{j} \PY{o}{=} \PY{n}{c}\PY{o}{.}\PY{n+na}{iterator}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\\
-&\text{assume $j$ holds $3$} \\
+&\text{assume {\tt j} holds $3$} \\
 &\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]),(\mathit{gotTwo},[c:1,i:2,j:3])\} \\
 &\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+} \\
 &\{(\mathit{start},[]), (\mathit{gotOne},[c:1,i:3]),(\mathit{gotTwo},[c:1,i:2,j:3])\}\\
@@ -210,7 +213,7 @@ property InvalidateOtherIterators
 \autoref{fig:running.steps} shows how an execution of the program drives the automaton.
 The automaton is nondeterministic so it has a \emph{set} of active states.
 Initially, only the state $(\mathit{start},[])$ is active.
-The outgoing transition of vertex \textit{start} is labeled by \[I:=C.\mathtt{iterator}()\] and the statement about to be executed is \verbline[.]{i = c.\PY{n+na}{iterator}()}
+The outgoing transition of vertex \textit{start} is labeled by \[\pattern{I}:=\pattern{C}.\mathtt{iterator}()\] and the first statement  about to be executed and matching this label is \verbline[.]{i = c.\PY{n+na}{iterator}()}
 To see if the pattern matches the statement we first look at the method.
 For simplicity, we identify Java methods by their fully qualified names and their arities.
 In this case, the method that is invoked is \verbline[.]{java.util.ArrayList.iterator[1]}
@@ -222,42 +225,47 @@ The pattern matches the methods
 \end{align*}
 and all the methods that override them.
 In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
-Next, we look at the patterns $I$~and~$C$.
-By convention, patterns starting with an uppercase letter match any \emph{value}.
-In this case, they match the values held by the program variables $i$~and~$c$.
+
+Automata have to set of disjoint variables: {\em pattern variables} and {\em automata variables}\footnote{To avoid confusion, we write pattern variables in underlined monotype and automata variable in italic.}.
+The pattern and automaton variables live in a different name-space from program variables.
+By convention, patterns variable starting with an uppercase letter match any \emph{value}.
+In this case, pattern variables $\pattern{I}$~and~$\pattern{C}$ match the values held by the program variables {\tt i}~and~{\tt c}.
 At this point, all conditions are met to perform the transition from \textit{start} to \textit{gotOne}.
-Performing a transition involves remembering the values on which the uppercase patterns matched.
-For concreteness, let us assume that the program variables $c$~and~$i$ hold the values $1$~and~$2$.
-Then, performing the first transition stores the values $1$~and~$2$ into the \emph{automaton variables} $c$~and~$i$.
-\dinocomment{I get confused why we need to specify that $c$ and $i$ holds 1 and 2. Or maybe I don't understand why do we need to talk about the value of $c$ and $i$ at this point....}
-The automaton variables live in a different name-space from program variables.
-In this case we use the same names for automaton variables as for program variables purely as a mnemonic device---there is no semantics to it.
+Performing a transition involves storing the values on which the uppercase patterns matched into {\em automaton variables}.
+By convention, an uppercase pattern variable writes always in the automaton variable with the same name. 
+For concreteness, let us assume that the program variables {\tt c}~and~{\tt i} hold the values $1$~and~$2$.
+Then, performing the first transition stores the values $1$~and~$2$ into the automaton variables $c$~and~$i$.
+
+%In this case we use the same names for automaton variables as for program variables purely as a mnemonic device---there is no semantics to it.
 The end result of performing the transition from \textit{start} to \textit{gotOne} is that the state \[(\mathit{gotOne},[c:1,i:2])\] is activated.
 Usually, the source of a transition would not be active anymore.
-In this case, the state $(\mathit{start},[])$ remains active because it is a special state that is always active.
+The state $(\mathit{start},[])$ is a special state that is always active.
 Conceptually, the vertex \textit{start} has a self-loop on it that always matches.
 
-For the second step we need to consider the two active states in turn.
+For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()} 
+Now we need to consider the two active states in turn.
 For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
-Note that now the automaton variable~$i$ remembers the value of the program variable~$j$.
-For \[\mathit{gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne}.
-It has the label \[J:=c.\mathtt{iterator}();\]
-the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-The method and the uppercase pattern~$J$ match in the same way as before.
-The lowercase pattern $c$ matches only the value that is held by the automaton variable~$c$.
+Note that now the automaton variable~$i$ remembers the value of the program variable~{\tt j}.
+For \[\mathit{(gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne} which has the label \[\pattern{J}:=\pattern{c}.\mathtt{iterator}();\]
+The method and the uppercase pattern~$\pattern J$ match in the same way as before.
+The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
 In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
-In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~$c$ still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
+In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
 
-In the third step, no transition is performed and the same states remain active.
-None of the outgoing transitions of \textit{start}, \textit{gotOne}, and \textit{gotTwo} match the method \textit{next}.
-\dinocomment{So I guess we should explain that the program progresses whereas the automaton wait. It's a bit strange so better to explicitly say}
+The third step involves the statement 
+\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
+which matches no label of outgoing transitions of the currently active states (i.e., \textit{start}, \textit{gotOne}, and \textit{gotTwo}).
+
 
 In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed.
-The pattern $i.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
+The pattern $\pattern{i}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
 The states corresponding to vertices \textit{start} and \textit{gotOne} remain unchanged, because their outgoing transitions do not match.
+However,  the outgoing transition of state \textit{gotTwo} can fire, and therefore \textit{jInvalid} becomes active. 
 
-For the fifth and final step, one of the active states is \[(\mathit{jInvalid},[c:1,i:2,j:3]),\] the label on its outgoing transition is \[\mathtt{call}\;j.{*}(),\] and the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The pattern has two distinguishing features, the~$*$ as a method name and the tag \texttt{call}.
+For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
+The label of the outgoing transition  \[\mathtt{call}\;\pattern{j}.{*}()\] of the active state \[(\mathit{jInvalid},[c:1,i:2,j:3]),\]  
+has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
+
 Let us discuss first the method name.
 \rg{TODO: Explain the arity notation [$n$].}
 \rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
@@ -269,8 +277,15 @@ As before, the first step is to prepend the prefixes.
 Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
 
+The tag \texttt{call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.  
+This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between). 
+In our running example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a \textit{jInvalid} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern I:=\pattern C.\mathtt{iterator}()$ which 
+expects the transition to involve all the events of the method invocation, from call-time till the return-time. 
+
+\dinocomment{Move it when the semantics is clear}
+\paragraph{On call and return tags.}
 The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
-Note that a pattern like $I:=C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
+Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
 In particular, in-between those two events other methods might be called.
 A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
 When the tag is \texttt{call}, there can be no left-hand side;
