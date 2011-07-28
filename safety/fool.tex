@@ -132,9 +132,9 @@ Finally, Section~\ref{sec:conclusions} conclude the paper.
 % >>>
 \section{Examples} \label{sec:example} % <<<
 
-The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API which causes trouble in practice from time to time.
+The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
 It is sufficiently complex to illustrate a large part of our language.
-Properties in \TPL \ are essentially automata that monitor program executions.
+TOPL properties are essentially automata that monitor program executions.
 For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
 
 The following examples (\autoref{sec:example.others}) illustrate the expressivity of the property language.
@@ -143,10 +143,11 @@ The following examples (\autoref{sec:example.others}) illustrate the expressivit
 
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-The automaton in \autoref{fig:running.drawing} formally captures the disallowed API usage.
-The automaton is essentially depicted  in a graphical form, whereas  \autoref{fig:running.property} shows the same automaton (in \TPL ) given  as a list of labeled transitions.
-Each label is a {\em statement pattern} which should match  a program statements in order for the transition to be taken be the taken by the automaton.
-The way in which labels match program statement will become clear below.
+This kind of properties are often informally explained using drawings like the one in~\autoref{fig:running.drawing}.
+In our case, the TOPL property (\autoref{fig:running.property}) is essentially a direct, textual, and formal representation of the drawing.
+TOPL properties are given as lists of labeled transitions.
+Labels should be thought of, in a first approximation, as statement patterns.
+Transitions are taken when statements that match the label are executed.
 
 \begin{notation}
 \rg{TODO: partial finite maps and updating them}
@@ -233,6 +234,7 @@ The pattern matches the methods
 and all the methods that override them.
 In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
 
+\rg{This is wrong; rewrite.}
 Automata have to set of disjoint variables: {\em pattern variables} and {\em automata variables}\footnote{To avoid confusion, we write pattern variables in underlined monotype and automata variable in italic.}.
 The pattern and automaton variables live in a different name-space from program variables.
 By convention, patterns variable starting with an uppercase letter match any \emph{value}.
@@ -324,12 +326,10 @@ Yes, a big disadvantage is that checking an arbitrary property involves keeping 
 For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
-\subsection{Other Examples of Typestate-like properties in \TPL} \label{sec:example.others} % <<<
-A property closely related to \autoref{fig:running.property} is that
-{\it modifying the collection directly invalidates all iterators.}
-%
+\subsection{Other Examples} \label{sec:example.others} % <<<
+
+A property closely related to \autoref{fig:running.property} is that {\it modifying the collection directly invalidates all iterators.}
 In \TPL \ this  property can be expressed as follows:
-%
 \par\medskip\noindent
 \begin{Verbatim}
 property ModificationInvalidatesIterators
@@ -423,6 +423,32 @@ In this case, the \textit{ComponentHelper} itself \emph{is} allowed to modify th
 Also, add examples from Disney et al.}
 
 \rg{TODO: See which bugs found by FindBugs can be expressed in our language.}
+
+\rg{Random collection starts here.}
+
+Slic 1.
+\par\medskip\noindent
+\begin{Verbatim}
+property TooManyZeros
+  start -> cnt0: Q := makeQueue()
+  cnt0 -> cnt1: q.put(0)
+  cnt1 -> cnt2: q.put(0)
+  cnt2 -> cnt3: q.put(0)
+  cnt3 -> error: q.put(0)
+  cnt3 -> cnt2: 0 := q.get()
+  cnt2 -> cnt1: 0 := q.get()
+  cnt1 -> cnt0: 0 := q.get()
+\end{Verbatim}
+
+Slic 2.
+\par\medskip\noindent
+\begin{Verbatim}
+property DoubleFree
+  start -> allocated: X := malloc()
+  allocated -> freed: free(x)
+  freed -> error: free(x)
+\end{Verbatim}
+
 
 % >>>
 % >>>
