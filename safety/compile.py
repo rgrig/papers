@@ -22,7 +22,7 @@ def compile(f):
   log = '%s.log' % f
   if latex(f) != 0:
     return
-  if grep(log, 'undefined citations'):
+  if grep(log, 'Citation .* undefined'):
     if bibtex(f) != 0:
       return
     latex(f)
