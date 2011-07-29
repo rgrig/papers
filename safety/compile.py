@@ -20,16 +20,20 @@ def grep(fn, r):
 
 def compile(f):
   log = '%s.log' % f
-  for i in range(10):
-    if latex(f) != 0:
+  if latex(f) != 0:
+    return
+  if grep(log, 'undefined citations'):
+    if bibtex(f) != 0:
       return
-    if grep(log, 'No file.*bbl'):
-      if bibtex(f) != 0:
-        return
-    if not grep(log, '[Rr]erun'):
+    latex(f)
+  count = 0
+  while grep(log, '[Rr]erun'):
+    latex(f)
+    count += 1
+    if count > 5:
+      print('I run pdflatex many times for %s. Something is wrong.' % f)
+      print('Please take a look at %s and see why it says "rerun".' % log)
       return
-  print('I run pdflatex 10 times for %s. Something is wrong.' % f)
-  print('Please take a look at %s and see why it says "rerun".' % log)
 
 for f in sys.argv[1:]:
   if f[-4:] == '.tex':

@@ -90,7 +90,7 @@ For example in object-oriented languages the correct use of the APIs of certain 
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.
 The properties should be given by the user; they should not be hard-coded.
-In order to achive our goal we would need
+In order to achieve our goal we would need
 \begin{itemize}
 \item A language for specifying temporal safety properties;
 \item An automatic tool that can verify the properties in the language against Java programs.
@@ -114,7 +114,8 @@ One of the advantage of dynamic checking w.r.t. using exceptions in the Java cod
 Traces of events triggering an error are extremely useful for debugging purposes.
 Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
 
-
+\rg{The main message I want to get across is this:
+We reduce the semantic gap between informal explanations of various temporal properties and their formal descriptions.}
 
 
 % contributions
@@ -125,23 +126,23 @@ Moreover, writing code for checking that a property is violated can be complex a
 % - High-level/simple
 % Safety (obiquitus)
 
-The paper is organized as follows. In Section~\ref{sec:example} we start with a motivating example.
+The paper is organized as follows. In Section~\ref{sec:examples} we start with a motivating example.
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
 Section~\ref{sec:dynamic} describes the use of \TPL \ for run-time checking of safety properties.
 Section~\ref{sec:related} discusses related work and our future plans.
 Finally, Section~\ref{sec:conclusions} concludes the paper.
 
 % >>>
-\section{Examples} \label{sec:example} % <<<
+\section{Examples} \label{sec:examples} % <<<
 
-The first example (\autoref{sec:example.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
+The first example (\autoref{sec:examples.steps}) is a fairly subtle property imposed on the users of the Java~API\null.
 It is sufficiently complex to illustrate a large part of our language.
 TOPL properties are essentially automata that monitor program executions.
 For this first example we illustrate the semantics of the automaton by going step-by-step through an execution.
 
-The following examples (\autoref{sec:example.others}) illustrate the expressivity of the property language.
+The following examples (\autoref{sec:examples.others}) illustrate the expressivity of the property language.
 
-\subsection{Invalidating Iterators} \label{sec:example.steps} % <<<
+\subsection{Invalidating Iterators} \label{sec:examples.steps} % <<<
 
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
@@ -180,6 +181,7 @@ property InvalidateOtherIterators
 \label{fig:running.property}
 \end{figure}
 \begin{figure}
+\rg{TODO: Fix typesetting of patterns.}
 \begin{tikzpicture}[xscale=2.5]
   \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
   \tikzset{transition/.style={->,>=latex}}
@@ -221,6 +223,8 @@ property InvalidateOtherIterators
 \end{figure} % >>>
 
 \autoref{fig:running.steps} shows how an execution of the program drives the automaton.
+\rg{TODO: Explain a bit more up-front the automaton variables $i$,~$j$ and~$c$, and what do they mean.}
+\rg{TODO: Explain the general form of a label and what it is supposed to do, perhaps after the first step.}
 The automaton is nondeterministic so it has a \emph{set} of active states.
 Initially, only the state $(\mathit{start},[])$ is active.
 The outgoing transition of vertex \textit{start} is labeled by \[\pattern{I}:=\pattern{C}.\mathtt{iterator}()\] and the first statement  about to be executed and matching this label is \verbline[.]{i = c.\PY{n+na}{iterator}()}
@@ -327,7 +331,7 @@ Yes, a big disadvantage is that checking an arbitrary property involves keeping 
 For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
-\subsection{Other Examples} \label{sec:example.others} % <<<
+\subsection{Other Examples} \label{sec:examples.others} % <<<
 
 A property closely related to \autoref{fig:running.property} is that {\it modifying the collection directly invalidates all iterators.}
 In \TPL \ this  property can be expressed as follows:
@@ -463,8 +467,8 @@ HO 2.
 \par\medskip\noindent
 \begin{Verbatim}
 property ReusedComparator
-  start -> assigned: call Sorter.sort(Comparator)
-  assigned -> error: <!sorter> call comparator.*[*]
+  start -> x: call Sorter.sort(Comparator)
+  x -> error: <!sorter> call comparator.*[*]
 \end{Verbatim}
 
 HO 3.
@@ -863,32 +867,21 @@ The next two sections explain how to instrument the interpreter when the program
 
 \subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
 
-The SOOL interpreter closely mirrors the semantics (\autoref{sec:semantics.sool}).
-Its source code is available on-line (\url{http://goo.gl/uM2q4}).
-It is structured as a set of mutually recursive functions.
-\begin{equation}
-\begin{aligned}
-d
-\end{aligned}
-\end{equation}
+The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
+A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
+This, however, would use memory to store the whole trace of events.
+Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
+A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
+A Python programmer would say that the SOOL interpreter is a generator.
+A Java programmer would say that an event-based programming model is used.
+In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
 
-\rg{Explain code instrumentation.}
-
-\rg{Say that the implementation is somewhat fancier.
-For example, it has globals.}
+\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
 
 % >>>
 \subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
 
 % >>>
-% >>>
-\section{Language Extensions} \label{sec:extensions} % <<<
-
-\rg{This section is for the parts of the language that we did not implement.
-I would like to keep them separate because we cannot be sure that we didn't forget something important related to them.
-Example: Transitions labeled by automata (and hence recursive automata).
-}
-
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
