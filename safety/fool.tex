@@ -129,7 +129,8 @@ The paper is organized as follows. In Section~\ref{sec:example} we start with a 
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
 Section~\ref{sec:dynamic} describes the use of \TPL \ for run-time checking of safety properties.
 Section~\ref{sec:related} discusses related work and our future plans.
-Finally, Section~\ref{sec:conclusions} conclude the paper.
+Finally, Section~\ref{sec:conclusions} concludes the paper.
+
 % >>>
 \section{Examples} \label{sec:example} % <<<
 
@@ -451,6 +452,61 @@ property DoubleFree
   freed -> error: free(x)
 \end{Verbatim}
 
+HO 1.
+\par\medskip\noindent
+\begin{Verbatim}
+property RecursiveSort
+  start -> inSort: call sort[2]
+  inSort -> ok: return sort[2]
+  inSort -> error: call sort[2]
+\end{Verbatim}
+
+HO 2.
+\par\medskip\noindent
+\begin{Verbatim}
+property ReusedComparator
+  start -> assigned: call Sorter.sort(Comparator)
+  assigned -> error: <!sorter> call comparator.*[*]
+\end{Verbatim}
+
+HO 3.
+\par\medskip\noindent
+\begin{Verbatim}
+property NotAtomicF
+  start -> inF: call *.f[*]
+  inF -> ok: return f[*]
+  inF -> error: ... // explicit granularity!
+\end{Verbatim}
+
+HO 4.
+\par\medskip\noindent
+\begin{Verbatim}
+property UsedAfterClose
+  start -> closed: X.close()
+  closed -> error: x.*[*]
+\end{Verbatim}
+
+Tracematch 1.
+\par\medskip\noindent
+\begin{Verbatim}
+property BadIterator
+  start -> s2: I := C.iterator()
+  s2 -> error: i.next()
+  s2 -> s4: true := i.hasNext()
+  s2 -> s3: c.add(*), c.remove(*), ...
+  s4 -> s2: i.next()
+  s4 -> s3: c.add(*), c.remove(*), ...
+  s3 -> error: call i.*[*]
+\end{Verbatim}
+
+Tracematch 2.
+\par\medskip\noindent
+\begin{Verbatim}
+property ConsecutiveNexts
+  start -> one: I.next()
+  one -> ok: true := i.hasNext()
+  one -> error: i.next()
+\end{Verbatim}
 
 % >>>
 % >>>
@@ -849,6 +905,8 @@ Every stage focuses on verifying only the parts of the code that previous stages
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
 It is likely that our language could be fruitfully combined with their technique.
 \dinocomment{this is very weak! Need to be improved}
+
+\rg{TODO: Blame assignment --- error traces}
 
 %>>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
