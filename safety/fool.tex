@@ -142,7 +142,7 @@ For this first example we illustrate the semantics of the automaton by going ste
 
 The following examples (\autoref{sec:examples.others}) illustrate the expressivity of the property language.
 
-\subsection{Invalidating Iterators} \label{sec:examples.steps} % <<<
+\subsection{Iterators} \label{sec:examples.steps} % <<<
 
 The last statement in \autoref{fig:running.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
@@ -331,7 +331,7 @@ Yes, a big disadvantage is that checking an arbitrary property involves keeping 
 For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
-\subsection{Other Examples} \label{sec:examples.others} % <<<
+\subsection{More Iterators} \label{sec:examples.others} % <<<
 
 A property closely related to \autoref{fig:running.property} is that {\it modifying the collection directly invalidates all iterators.}
 In \TPL \ this  property can be expressed as follows:
@@ -360,7 +360,11 @@ property UnsafeIteratorNext
 \end{Verbatim}
 \par\medskip
 
-\paragraph{Temporal properties of resources.}
+\rg{TODO: Say that these are also discussed in the Tracematch papers.}
+
+% >>>
+\subsection{Resources} % <<<
+
 Many resources impose a temporal property:
 Before being used they must be acquired;
 after being used they must be released.
@@ -393,7 +397,85 @@ property DoubleAcquireOrRelease
 \par\medskip\noindent
 Normally this automaton would be split into two so that error messages are more informative and precise.
 
-\paragraph{Immutable data structures.}
+\rg{TODO: Slic 2.}
+\par\medskip\noindent
+\begin{Verbatim}
+property DoubleFree
+  start -> allocated: X := malloc()
+  allocated -> freed: free(x)
+  freed -> error: free(x)
+\end{Verbatim}
+
+\rg{TODO: HO 4.}
+\par\medskip\noindent
+\begin{Verbatim}
+property UsedAfterClose
+  start -> closed: X.close()
+  closed -> error: x.*[*]
+\end{Verbatim}
+
+% >>>
+\subsection{Slic} % <<<
+
+\rg{TODO: Slic 1.}
+\par\medskip\noindent
+\begin{Verbatim}
+property TooManyZeros
+  start -> cnt0: Q := makeQueue()
+  cnt0 -> cnt1: q.put(0)
+  cnt1 -> cnt2: q.put(0)
+  cnt2 -> cnt3: q.put(0)
+  cnt3 -> error: q.put(0)
+  cnt3 -> cnt2: 0 := q.get()
+  cnt2 -> cnt1: 0 := q.get()
+  cnt1 -> cnt0: 0 := q.get()
+\end{Verbatim}
+
+% >>>
+\subsection{Sorter and Comparator} % <<<
+
+\rg{TODO: HO 1.}
+\par\medskip\noindent
+\begin{Verbatim}
+property RecursiveSort
+  start -> inSort: call sort[2]
+  inSort -> ok: return sort[2]
+  inSort -> error: call sort[2]
+\end{Verbatim}
+
+\rg{TODO: HO 2.}
+\par\medskip\noindent
+\begin{Verbatim}
+property ReusedComparator
+  start -> x: call Sorter.sort(Comparator)
+  x -> error: <!sorter> call comparator.*[*]
+\end{Verbatim}
+
+% >>>
+\subsection{Atomicity} % <<<
+
+\rg{TODO: HO 3.}
+\par\medskip\noindent
+\begin{Verbatim}
+property NotAtomicF
+  start -> inF: call *.f[*]
+  inF -> ok: return f[*]
+  inF -> error: ... // explicit granularity!
+\end{Verbatim}
+
+% >>>
+\section{JDBC} % <<<
+
+\rg{TODO}
+\par\medskip\noindent
+\begin{Verbatim}
+property BlaBla
+\end{Verbatim}
+
+% >>>
+\subsection{Immutability} % <<<
+
+\rg{I'm inclined to remove this sub-section as it isn't very `temporal.'}
 Another common issue in Java is providing read-only access to collections.
 For example, if one wants to implement an immutable data structure, the common idiom is to make all fields private, provide getter, but not setters.
 However, if deep-immutability is desired and one of the members is a collection, then extra precautions are necessary.
@@ -428,87 +510,6 @@ In this case, the \textit{ComponentHelper} itself \emph{is} allowed to modify th
 Also, add examples from Disney et al.}
 
 \rg{TODO: See which bugs found by FindBugs can be expressed in our language.}
-
-\rg{Random collection starts here.}
-
-Slic 1.
-\par\medskip\noindent
-\begin{Verbatim}
-property TooManyZeros
-  start -> cnt0: Q := makeQueue()
-  cnt0 -> cnt1: q.put(0)
-  cnt1 -> cnt2: q.put(0)
-  cnt2 -> cnt3: q.put(0)
-  cnt3 -> error: q.put(0)
-  cnt3 -> cnt2: 0 := q.get()
-  cnt2 -> cnt1: 0 := q.get()
-  cnt1 -> cnt0: 0 := q.get()
-\end{Verbatim}
-
-Slic 2.
-\par\medskip\noindent
-\begin{Verbatim}
-property DoubleFree
-  start -> allocated: X := malloc()
-  allocated -> freed: free(x)
-  freed -> error: free(x)
-\end{Verbatim}
-
-HO 1.
-\par\medskip\noindent
-\begin{Verbatim}
-property RecursiveSort
-  start -> inSort: call sort[2]
-  inSort -> ok: return sort[2]
-  inSort -> error: call sort[2]
-\end{Verbatim}
-
-HO 2.
-\par\medskip\noindent
-\begin{Verbatim}
-property ReusedComparator
-  start -> x: call Sorter.sort(Comparator)
-  x -> error: <!sorter> call comparator.*[*]
-\end{Verbatim}
-
-HO 3.
-\par\medskip\noindent
-\begin{Verbatim}
-property NotAtomicF
-  start -> inF: call *.f[*]
-  inF -> ok: return f[*]
-  inF -> error: ... // explicit granularity!
-\end{Verbatim}
-
-HO 4.
-\par\medskip\noindent
-\begin{Verbatim}
-property UsedAfterClose
-  start -> closed: X.close()
-  closed -> error: x.*[*]
-\end{Verbatim}
-
-Tracematch 1.
-\par\medskip\noindent
-\begin{Verbatim}
-property BadIterator
-  start -> s2: I := C.iterator()
-  s2 -> error: i.next()
-  s2 -> s4: true := i.hasNext()
-  s2 -> s3: c.add(*), c.remove(*), ...
-  s4 -> s2: i.next()
-  s4 -> s3: c.add(*), c.remove(*), ...
-  s3 -> error: call i.*[*]
-\end{Verbatim}
-
-Tracematch 2.
-\par\medskip\noindent
-\begin{Verbatim}
-property ConsecutiveNexts
-  start -> one: I.next()
-  one -> ok: true := i.hasNext()
-  one -> error: i.next()
-\end{Verbatim}
 
 % >>>
 % >>>
