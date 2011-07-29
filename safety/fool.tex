@@ -236,15 +236,13 @@ The pattern matches the methods
 and all the methods that override them.
 In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
 
-\rg{This is wrong; rewrite.}
-\dinocomment{what's wrong precisely?}
-Automata have to set of disjoint variables: {\em pattern variables} and {\em automata variables}\footnote{To avoid confusion, we write pattern variables in underlined monotype and automata variable in italic.}.
-The pattern and automaton variables live in a different name-space from program variables.
-By convention, patterns variable starting with an uppercase letter match any \emph{value}.
-In this case, pattern variables $\pattern{I}$~and~$\pattern{C}$ match the values held by the program variables {\tt i}~and~{\tt c}.
+
+Automata have a set of  {\em automata variables}\footnote{To avoid confusion we write  pattern  in underlined monotype and automata variable in italic.} which live in a different name-space from program variables.
+By convention, patterns starting with an uppercase letter match any \emph{value}.
+In this case, pattern  $\pattern{I}$~and~$\pattern{C}$ match the values held by the program variables {\tt i}~and~{\tt c}.
 At this point, all conditions are met to perform the transition from \textit{start} to \textit{gotOne}.
-Performing a transition involves storing the values on which the uppercase patterns matched into {\em automaton variables}.
-By convention, an uppercase pattern variable writes always in the automaton variable with the same name.
+Performing a transition involves storing the values on which the uppercase patterns matched into {\em automata variables}.
+By convention, an uppercase pattern writes always in the automaton variable with the same name.
 For concreteness, let us assume that the program variables {\tt c}~and~{\tt i} hold the values $1$~and~$2$.
 Then, performing the first transition stores the values $1$~and~$2$ into the automaton variables $c$~and~$i$.
 
