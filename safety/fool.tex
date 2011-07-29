@@ -97,6 +97,7 @@ In order to achive our goal we would need
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
+\dinocomment{How about calling it TOPStar?}
 \begin{itemize}
 \item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between object references.
 %And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
@@ -235,6 +236,7 @@ and all the methods that override them.
 In this case, the \textit{iterator} method in \textit{ArrayList} overrides the one in \textit{Collection} so we have a match.
 
 \rg{This is wrong; rewrite.}
+\dinocomment{what's wrong precisely?}
 Automata have to set of disjoint variables: {\em pattern variables} and {\em automata variables}\footnote{To avoid confusion, we write pattern variables in underlined monotype and automata variable in italic.}.
 The pattern and automaton variables live in a different name-space from program variables.
 By convention, patterns variable starting with an uppercase letter match any \emph{value}.
