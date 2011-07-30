@@ -24,7 +24,7 @@
   pdftitle={A Language for Specifying Safety Temporal Properties of Object-Oriented Programs},
   pdfauthor={Radu Grigore and Rasmus Lerchedahl Petersen and Dino Distefano}}
 
-\newcommand{\TPL}{TOPStar}
+\newcommand{\TPL}{TOPL}
 
 \titlebanner{DRAFT}
 \title{\TPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
@@ -99,7 +99,7 @@ The constraint should be given by the user; they should not be hard-coded.
 In order to achieve our goal we would need
 \begin{itemize}
 \item A language for specifying temporal safety properties;
-\item An automatic tool that can verify or check the properties in the language against Java programs.
+\item An automatic tool able to verify or check the properties expressed in the language against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
@@ -112,7 +112,7 @@ It has the following characteristics:
 %The Future Work or the Conclusions sections are better places.}
 \item It allows very high-level intuitive specifications my means of automata tailored towards object-oriented specifications.
 \item  It has a well-defined formal semantics.
-\item  It is designed to be used to do program analysis (both static and dynamic).
+\item  It is designed to be used to do program analysis (both static and dynamic) and automatic verification.
 \end{enumerate}
 Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
@@ -126,18 +126,19 @@ Moreover, writing code for checking that a property is violated can be complex a
 %\rg{The main message I want to get across is this:
 %We reduce the semantic gap between informal explanations of various temporal properties and their formal descriptions.}
 
-The paper is organized as follows. In Section~\ref{sec:examples} we start with a motivating example.
+The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
 Section~\ref{sec:dynamic} describes the use of \TPL \ for run-time checking of safety properties.
-Section~\ref{sec:related} discusses related work and our future plans.
-Finally, Section~\ref{sec:conclusions} concludes the paper.
+Section~\ref{sec:related} discusses related work.
+Finally, Section~\ref{sec:conclusions} concludes the paper
+and describes our future plans.
 
 % >>>
 \section{Examples} \label{sec:examples} % <<<
 
-The first example (\autoref{sec:examples.steps}) uses a large part of TOPL\null.
+The first example (\autoref{sec:examples.steps}) uses a large part of \TPL\null.
 Each execution step introduces a few new concepts.
-The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.jdbc}) illustrate that TOPL is expressive.
+The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.jdbc}) illustrate TOPL expressiveness.
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
