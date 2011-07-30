@@ -24,8 +24,10 @@
   pdftitle={A Language for Specifying Safety Temporal Properties of Object-Oriented Programs},
   pdfauthor={Radu Grigore and Rasmus Lerchedahl Petersen and Dino Distefano}}
 
+\newcommand{\TPL}{TOPStar}
+
 \titlebanner{DRAFT}
-\title{TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
+\title{\TPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Radu Grigore \and Rasmus Lerchedahl Petersen \and Dino Distefano}{Queen Mary, University of London}{{\rm\{}rgrig,rusmus,ddino{\rm\}}@eecs.qmul.ac.uk}
 
 % rg: I tend to give grammars in BFS order
@@ -53,7 +55,6 @@
 \newcommand{\rg}[1]{\note{rg}{#1}}
 
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
-\newcommand{\TPL}{TOPL}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
 \newcommand{\pattern}[1]{\ensuremath{\mathtt{\underline{#1}}}}
@@ -76,8 +77,9 @@
 \maketitle
 
 \begin{abstract} % <<<
-In this paper we present ongoing work related to a new specification language for temporal safety properties aimed at object-oriented languages.
-The language is expressive enough to represent relationships between objects and it is designed with the goal of performing dynamic and static analysis of object-oriented software.
+In this paper we present ongoing work related to a new specification language for temporal safety properties aimed at object-oriented software.
+The language is expressive enough to represent relationships between objects and it is designed with the goal of performing dynamic and static analysis. 
+We present the formal semantics and discuss dynamic checking w.r.t. a simple object-oriented language.
 \end{abstract}
 \category{D.2.1}{Software Engineering}{Requirements/Specifications}
 \terms Languages, Verification
@@ -85,24 +87,23 @@ The language is expressive enough to represent relationships between objects and
 
 % >>>
 \section{Introduction} % <<<
-One popular class of properties addressed by many techniques in program verification is to check whether a program satisfies some specified safety property.
-Violations of this class of properties may lead to unexpected run-time errors.
-
-Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which uses finite state automata for specifying conformance or violation w.r.t. a temporal safety property.
+Historically, verifying whether a program or a model satisfies  safety properties has been a popular research topic in the
+verification community~\cite{pnueli,spin,slam}. Safety properties are crucial for the correct behaviour of software and their  violations  may lead to unexpected run-time errors.
+%
+Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
 These properties are related with the correct use of types operations in different contexts.
 For example in object-oriented languages the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.
-The properties should be given by the user; they should not be hard-coded.
+The constraint should be given by the user; they should not be hard-coded.
 In order to achieve our goal we would need
 \begin{itemize}
 \item A language for specifying temporal safety properties;
-\item An automatic tool that can verify the properties in the language against Java programs.
+\item An automatic tool that can verify or check the properties in the language against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
-\dinocomment{How about calling it TOPStar?}
-\begin{itemize}
+\begin{enumerate}
 \item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between object references.
 %And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
 %\rg{I would not mention separation logic here.
@@ -110,25 +111,20 @@ It has the following characteristics:
 %It might look like some gratuitous `name-dropping'.
 %The Future Work or the Conclusions sections are better places.}
 \item It allows very high-level intuitive specifications my means of automata tailored towards object-oriented specifications.
-\item It is designed to be used to do program analysis (both static and dynamic).
-\end{itemize}
-In this paper we introduce \TPL \ and its formal semantics.
+\item  It has a well-defined formal semantics.
+\item  It is designed to be used to do program analysis (both static and dynamic).
+\end{enumerate}
+Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
+checking of these constraints.
+
+In this paper we focus on \TPL \ formal semantics.
 Moreover we show its use for dynamic checking of the properties against  a simple object-based language.
 One of the advantage of dynamic checking w.r.t. using exceptions in the Java code is that it is possible to return a trace to the programmer.
 Traces of events triggering an error are extremely useful for debugging purposes.
 Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
 
-\rg{The main message I want to get across is this:
-We reduce the semantic gap between informal explanations of various temporal properties and their formal descriptions.}
-
-
-% contributions
-% - language for temporal properties
-% - keep references (object) relationship
-% - designed for oop
-% - designed for doing analysis (dyn/stat)
-% - High-level/simple
-% Safety (obiquitus)
+%\rg{The main message I want to get across is this:
+%We reduce the semantic gap between informal explanations of various temporal properties and their formal descriptions.}
 
 The paper is organized as follows. In Section~\ref{sec:examples} we start with a motivating example.
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
