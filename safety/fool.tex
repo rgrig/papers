@@ -244,6 +244,7 @@ We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to v
 A partial finite map is sometimes called a \emph{dictionary}.
 The empty dictionary is denoted by~$[]$.
 The dictionary $[\sigma,k:v]$ is the same as the dictionary~$\sigma$, except it maps $k$~to~$v$.
+\dinocomment{how about the notation $\sigma[k:v]$ for a modified $\sigma$? BTW: do we ever use this notation? }
 \end{notation}
 
 The automaton has variables $x$,~$y$, and~$c$.
@@ -362,6 +363,7 @@ In practice, programmers tend to violate this property when the code is more inv
 
 \paragraph{Discussion.}
 \rg{Move the discussion in the introduction?}
+\dinocomment{it partly already there. I choose a subset of it}
 How is this better than just having an exception thrown by the Java~API\null?
 \begin{itemize}
 \item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
