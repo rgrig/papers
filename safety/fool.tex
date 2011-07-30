@@ -602,7 +602,7 @@ A TOPL property is \emph{well-formed} when it satisfies the following conditions
 \item Any use of a lowercase patterns must be definitely preceded the corresponding uppercase pattern.
   In other words, automaton variables must be written before being read.
 \end{itemize}
-
+\dinocomment{how do we guarantee that properties are well formed? Maybe we should say that we assume in the following that they are.}
 \autoref{fig:syntax.itopl} shows the syntax of iTOPL\null.
 The missing productions are the same as for TOPL\null.
 Each transition now has exactly one label.
@@ -628,6 +628,7 @@ There is also an atomic guard that matches against method calls and always speci
   AtomicAction& Identifier \b{:=} \b[ ValueIndex \b] \cr
   ValueIndex& IntegerLiteral \cr
 }
+\dinocomment{why many syntactic categories are called AtomicGuard?}
 \caption{Syntax of iTOPL}
 \label{fig:syntax.itopl}
 \end{figure}
@@ -681,19 +682,19 @@ In other words, properties encode bad executions, rather than good executions.
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
 
+In the following, let $n=\{0,1,\ldots,n-1\}$ and let \set{Value} denote a generic set of values.
 Each event has a tag and carries an array of values.
 \begin{align}
 \set{Event}&=\bigcup_{n\in\N}\set{Tag}_n\times(n\to\set{Value})
 \end{align}
-(As usual, $n=\{0,1,\ldots,n-1\}$.)
-The content of the undefined sets (such as \set{Value}) is not important.
 We assume that these basic sets are disjoint.
 Traces are finite.
 \begin{align}
 \set{Trace}=\bigcup_{n\in\N} n\to\set{Event} \label{eq:trace}
 \end{align}
 Intuitively, the program outputs a trace that drives the automaton.
-
+\dinocomment{Only one? I would say a set of traces. Right?}
+\dinocomment{Can we give the reader an intuitive reason why the event are of that form? Also, why is Tag indexed with $n$?}
 The automaton is defined on top of a finite multi-graph.
 The automaton is an array of transitions.
 Each transition has an edge and an array of labels.
@@ -800,7 +801,7 @@ The \emph{heap} is a finite partial map from (object reference, field name) pair
 \set{Store}&=\set{Variable}\pmap\set{Value} \\
 \set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
 \end{align}
-The input is stream of values;
+The input is a stream of values;
 the output is an array of events.
 The program execution state keeps track of the input yet to be consumed and of the output already produced.
 \begin{align}
