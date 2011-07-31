@@ -90,15 +90,15 @@ We present the formal semantics and discuss dynamic checking w.r.t. a simple obj
 Historically, verifying whether a program or a model satisfies  safety properties has been a popular research topic in the
 verification community~\cite{pnueli,spin,slam}. Safety properties are crucial for the correct behaviour of software and their  violations  may lead to unexpected run-time errors.
 %
-Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
-These properties are related with the correct use of types operations in different contexts.
+Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
+These constraints are related with the correct use of types operations in different contexts.
 For example in object-oriented languages the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.
-The constraint should be given by the user; they should not be hard-coded.
+The constraints should be given by the user; they should not be hard-coded.
 In order to achieve our goal we would need
 \begin{itemize}
-\item A language for specifying temporal safety properties;
+\item A language for formally specifying temporal safety properties;
 \item An automatic tool able to verify or check the properties expressed in the language against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
@@ -114,10 +114,19 @@ It has the following characteristics:
 \item  It has a well-defined formal semantics.
 \item  It is designed to be used to do program analysis (both static and dynamic) and automatic verification.
 \end{enumerate}
+The ability to express relation of several object makes  \TPL \ quite expressive. For example, for Java collections, a typical property one would want to state is:
+
+\begin{quote}
+if one iterator modifies its collection, then other existing iterators for the same collection become invalid and cannot be used later.
+\end{quote}
+\noindent 
+It is apparent that the formalisation of the above property needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
+increase the intuitiveness of the specification.
+   
 Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
 
-In this paper we focus on \TPL \ formal semantics.
+In this paper we focus on \TPL \ formal semantics and expressivity.
 Moreover we show its use for dynamic checking of the properties against  a simple object-based language.
 One of the advantage of dynamic checking w.r.t. using exceptions in the Java code is that it is possible to return a trace to the programmer.
 Traces of events triggering an error are extremely useful for debugging purposes.
