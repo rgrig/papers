@@ -886,7 +886,7 @@ However, there is no conceptual problem with repeating the exercise for a functi
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
 
 In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
-The next two sections explain how to instrument the interpreter when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
 
 \subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
 
@@ -909,6 +909,10 @@ In any case, the memory needed for storing events is proportional to the longest
 % >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
+A modular static verification method for typestate protocols is introduces in~\cite{DBLP:conf/oopsla/BierhoffA07}. 
+The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
+The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization.
+
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
@@ -924,7 +928,7 @@ It is likely that our language could be fruitfully combined with their technique
 
 \rg{TODO: Blame assignment --- error traces}
 
-%>>>
+
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 This paper presented ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
