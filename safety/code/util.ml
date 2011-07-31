@@ -95,12 +95,6 @@ let fresh_internal_id () =
 
 let todo () = failwith "todo"
 
-let replicate n x =
-  let rec f acc = function
-    | 0 -> acc
-    | n -> f (x :: acc) (pred n) in
-  f [] n
-
 let list_of_option = function
   | Some x -> [x]
   | None -> []

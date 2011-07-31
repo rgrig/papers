@@ -6,6 +6,8 @@
 - statement to havoc all (use as default body) -- deallocate all reachable heap
 - pretty-printer for AST
 - cleanup code
+- consider communicating the events thru a pipe between the SOOL interpreter
+  and the iTOPL interpreter
 
 notes (low priority todos):
 - symbolic execution
