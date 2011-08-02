@@ -909,11 +909,13 @@ In any case, the memory needed for storing events is proportional to the longest
 % >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
-Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extend this fundamental concept to integrate notions typical of object-oriented programs. 
+Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept to integrate notions typical of object-oriented programs. 
+There are several extension of typestate to object-oriented programming.
 A modular static verification method for typestate protocols is introduces in~\cite{DBLP:conf/oopsla/BierhoffA07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
-The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{DBLP:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object.
-The specified properties are reminiscent of contracts or pre/post-conditions for methods.
+The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,DBLP:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
+can deal with inheritance.
+
 
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
