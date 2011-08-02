@@ -370,25 +370,25 @@ The execution we stepped through violates the property \textit{InvalidateOtherIt
 Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
-\paragraph{Discussion.}
-\rg{Move the discussion in the introduction?}
-\dinocomment{it partly already there. I choose a subset of it}
-How is this better than just having an exception thrown by the Java~API\null?
-\begin{itemize}
-\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
-\item We do not need to write the code that checks whether the property is violated.
-  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
-  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
-  By comparison, the code in \autoref{fig:first.topl} is simple and captures how programmers think about the property.
-\item One can retro-actively document third-party libraries with such properties without having access to the code.
-\item It is possible in principle to design a static analysis for such properties.
-  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
-  Our current prototype only does run-time checking, though.
-\end{itemize}
+%\paragraph{Discussion.}
+%\rg{Move the discussion in the introduction?}
+%\dinocomment{it partly already there. I choose a subset of it}
+%How is this better than just having an exception thrown by the Java~API\null?
+%\begin{itemize}
+%\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
+%\item We do not need to write the code that checks whether the property is violated.
+%  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
+%  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
+%  By comparison, the code in \autoref{fig:first.topl} is simple and captures how programmers think about the property.
+%\item One can retro-actively document third-party libraries with such properties without having access to the code.
+%\item It is possible in principle to design a static analysis for such properties.
+%  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
+%  Our current prototype only does run-time checking, though.
+%\end{itemize}
 
-Are there any disadvantages?
-Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
-For particular properties, programmers can specialize the check and make it more efficient.
+%Are there any disadvantages?
+%Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
+%For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
 \subsection{More Iterators} \label{sec:examples.iterators} % <<<
@@ -909,9 +909,11 @@ In any case, the memory needed for storing events is proportional to the longest
 % >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
+Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extend this fundamental concept to integrate notions typical of object-oriented programs. 
 A modular static verification method for typestate protocols is introduces in~\cite{DBLP:conf/oopsla/BierhoffA07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
-The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization.
+The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{DBLP:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object.
+The specified properties are reminiscent of contracts or pre/post-conditions for methods.
 
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
