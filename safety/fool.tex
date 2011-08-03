@@ -208,8 +208,8 @@ property InvalidateOtherIterators
   using prefix java.util.Iterator
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
-  two -> jBad:   \pattern{x}.remove()
-  two -> iBad:   \pattern{y}.remove()
+  two -> yBad:   \pattern{x}.remove()
+  two -> xBad:   \pattern{y}.remove()
   jBad -> error: call \pattern{y}.*[*]
   iBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
@@ -250,9 +250,9 @@ Technically, it is a finite partial map from variables to values.
 
 \begin{notation}
 We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
-A partial finite map is sometimes called a \emph{dictionary}.
-The empty dictionary is denoted by~$[]$.
-The dictionary $[\sigma,k:v]$ is the same as the dictionary~$\sigma$, except it maps $k$~to~$v$.
+%A partial finite map is sometimes called a \emph{dictionary}.
+The empty map is denoted by~$[]$.
+The map $[\sigma,k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
 \dinocomment{how about the notation $\sigma[k:v]$ for a modified $\sigma$? BTW: do we ever use this notation? }
 \end{notation}
 
@@ -302,40 +302,37 @@ For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
 
 \paragraph{Step~2.}
-
-\rg{continue here}
-
-Usually, the source of a transition would not be active anymore.
 The state $(\mathit{start},[])$ is a special state that is always active.
 Conceptually, the vertex \textit{start} has a self-loop on it that always matches.
 
 For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states in turn.
-For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
-Note that now the automaton variable~$i$ remembers the value of the program variable~{\tt j}.
-For \[\mathit{(gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne} which has the label \[\pattern{J}:=\pattern{c}.\mathtt{iterator}();\]
-The method and the uppercase pattern~$\pattern J$ match in the same way as before.
+Now we need to consider the two active states in turn:
+\[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] 
+For $(\start,[])$ exactly the same reasoning as step 1 holds and the result is that \[(\texttt{one},[c:1,x:3])\] is active after the second step.
+Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
+For \[\texttt{(one},[c:1,x:2])\] we look at the transition outgoing from vertex {\tt one} which has the label \[\pattern{Y}:=\pattern{c}.\mathtt{iterator}();\]
+The method and the uppercase pattern~$\pattern Y$ match in the same way as before.
 The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
 In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
-In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
+In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\start\to\texttt{one}$ was performed.
 
 \paragraph{Step~3.}
 
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-which matches no label of outgoing transitions of the currently active states (i.e., \textit{start}, \textit{gotOne}, and \textit{gotTwo}).
+which matches no label of outgoing transitions of the currently active states (i.e., $\start$, {\tt one}, and {\tt  two}).
 
 \paragraph{Step~4.}
 
-In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed.
-The pattern $\pattern{i}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
-The states corresponding to vertices \textit{start} and \textit{gotOne} remain unchanged, because their outgoing transitions do not match.
-However,  the outgoing transition of state \textit{gotTwo} can fire, and therefore \textit{jInvalid} becomes active.
+In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
+The pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
+The states corresponding to vertices $\start$ and {\tt one} remain unchanged, because their outgoing transitions do not match.
+However,  the outgoing transition of state {\tt two} can fire, and therefore {\tt yBad} becomes active.
 
 \paragraph{Step~5.}
 
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The label of the outgoing transition  \[\mathtt{call}\;\pattern{j}.{*}()\] of the active state \[(\mathit{jInvalid},[c:1,i:2,j:3]),\]
+The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state \[(\texttt{yBad},[c:1,x:2,y:3]),\]
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
 
 Let us discuss first the method name.
@@ -349,9 +346,9 @@ As before, the first step is to prepend the prefixes.
 Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
 
-The tag \texttt{call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
+The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
 This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between).
-In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a \textit{jInvalid} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern I:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
+In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a {\tt yBad} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern X:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
 
 \dinocomment{Move it when the semantics is clear}
 \paragraph{On call and return tags.}
