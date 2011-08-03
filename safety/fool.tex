@@ -271,6 +271,8 @@ automaton variables do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 \end{notation}
 
+As it will become apparent below, the interaction between patterns and automata memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+
 \paragraph{Step~1.}
 
 Initially, only the state $(\start,[])$ is active.
@@ -302,18 +304,15 @@ For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
 
 \paragraph{Step~2.}
-The state $(\mathit{start},[])$ is a special state that is always active.
-Conceptually, the vertex \textit{start} has a self-loop on it that always matches.
-
 For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states in turn:
+Now we need to consider the two active states in turn\footnote{The state $(\start,[])$ is a special state that is always active.
+Conceptually, the vertex \texttt{start} has a self-loop on it that always matches.}:
 \[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] 
 For $(\start,[])$ exactly the same reasoning as step 1 holds and the result is that \[(\texttt{one},[c:1,x:3])\] is active after the second step.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
 For \[\texttt{(one},[c:1,x:2])\] we look at the transition outgoing from vertex {\tt one} which has the label \[\pattern{Y}:=\pattern{c}.\mathtt{iterator}();\]
 The method and the uppercase pattern~$\pattern Y$ match in the same way as before.
 The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
-In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\start\to\texttt{one}$ was performed.
 
 \paragraph{Step~3.}
@@ -321,29 +320,30 @@ In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because 
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
 which matches no label of outgoing transitions of the currently active states (i.e., $\start$, {\tt one}, and {\tt  two}).
+Therefore, although the program proceeds, the set of active states in the automaton remain unchanged.
 
 \paragraph{Step~4.}
 
 In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
-The pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
+Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
 The states corresponding to vertices $\start$ and {\tt one} remain unchanged, because their outgoing transitions do not match.
 However,  the outgoing transition of state {\tt two} can fire, and therefore {\tt yBad} becomes active.
 
 \paragraph{Step~5.}
 
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state \[(\texttt{yBad},[c:1,x:2,y:3]),\]
+The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3]),$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-
-Let us discuss first the method name.
-\rg{TODO: Explain the arity notation [$n$].}
-\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
-As before, the first step is to prepend the prefixes.
+%
+%Let us discuss first the method name.
+%\rg{TODO: Explain the arity notation [$n$].}
+%\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
+As before, in order to match the method name, the following prefixes are prepended  
 \begin{align*}
 &\text{\Verb@java.util.Collection.*[*]@} \\
 &\text{\Verb@java.util.Iterator.*[*]@}
 \end{align*}
-Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
+Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
 
 The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
