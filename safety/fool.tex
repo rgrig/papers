@@ -350,21 +350,22 @@ The tag {\tt call} is used when we want the automaton to take a transition preci
 This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between).
 In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a {\tt yBad} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern X:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
 
-\dinocomment{Move it when the semantics is clear}
-\paragraph{On call and return tags.}
-The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
-Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
-In particular, in-between those two events other methods might be called.
-A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
-When the tag is \texttt{call}, there can be no left-hand side;
-when the tag is \texttt{return}, the right-hand side is only a method name pattern.
-Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
-If a tag is not present, then the transition is said to be a \emph{call--return transition}.
-We allow the user to use such transitions for convenience.
-Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
+%\dinocomment{Move it when the semantics is clear}
+%\paragraph{On call and return tags.}
+%The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
+%Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
+%In particular, in-between those two events other methods might be called.
+%A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
+%When the tag is \texttt{call}, there can be no left-hand side;
+%when the tag is \texttt{return}, the right-hand side is only a method name pattern.
+%Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
+%If a tag is not present, then the transition is said to be a \emph{call--return transition}.
+%We allow the user to use such transitions for convenience.
+%Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
 
-The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \textit{error} is reached.
-Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
+\medskip
+The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \texttt{error} is reached.
+Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 %\paragraph{Discussion.}
