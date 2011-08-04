@@ -83,17 +83,17 @@ We present the formal semantics and discuss dynamic checking w.r.t. a simple obj
 % >>>
 \section{Introduction} % <<<
 Historically, verifying whether a program or a model satisfies  safety properties has been a popular research topic in the
-verification community~\cite{pnueli,spin,slam}. Safety properties are crucial for the correct behaviour of software and their  violations  may lead to unexpected run-time errors.
+verification community~\cite{pnueli,spin,slam}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
 %
-Many safety properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
-These properties are related with the correct use of types operations in different contexts.
+Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
+These constraints are related with the correct use of types operations in different contexts.
 For example in object-oriented languages the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties of Java programs of realistic size.
-The constraint should be given by the user; they should not be hard-coded.
+The constraints should be given by the user; they should not be hard-coded.
 In order to achieve our goal we would need
 \begin{itemize}
-\item A language for specifying temporal safety properties;
+\item A language for formally specifying temporal safety properties;
 \item An automatic tool able to verify or check the properties expressed in the language against Java programs.
 \end{itemize}
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
@@ -109,10 +109,19 @@ It has the following characteristics:
 \item  It has a well-defined formal semantics.
 \item  It is designed to be used to do program analysis (both static and dynamic) and automatic verification.
 \end{enumerate}
+The ability to express relations of several objects makes  \TPL \ quite expressive. For example, for Java collections, a typical property one would want to state is:
+
+\begin{quote}
+if one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used later.
+\end{quote}
+\noindent 
+It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
+increase the intuitiveness of the specification.
+   
 Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
 
-In this paper we focus on \TPL \ formal semantics.
+In this paper we focus on \TPL \ formal semantics and expressivity.
 Moreover we show its use for dynamic checking of the properties against  a simple object-based language.
 One of the advantage of dynamic checking w.r.t. using exceptions in the Java code is that it is possible to return a trace to the programmer.
 Traces of events triggering an error are extremely useful for debugging purposes.
@@ -194,8 +203,8 @@ property InvalidateOtherIterators
   using prefix java.util.Iterator
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
-  two -> jBad:   \pattern{x}.remove()
-  two -> iBad:   \pattern{y}.remove()
+  two -> yBad:   \pattern{x}.remove()
+  two -> xBad:   \pattern{y}.remove()
   jBad -> error: call \pattern{y}.*[*]
   iBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
@@ -236,9 +245,9 @@ Technically, it is a finite partial map from variables to values.
 
 \begin{notation}
 We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
-A partial finite map is sometimes called a \emph{dictionary}.
-The empty dictionary is denoted by~$[]$.
-The dictionary $[\sigma,k:v]$ is the same as the dictionary~$\sigma$, except it maps $k$~to~$v$.
+%A partial finite map is sometimes called a \emph{dictionary}.
+The empty map is denoted by~$[]$.
+The map $[\sigma,k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
 \dinocomment{how about the notation $\sigma[k:v]$ for a modified $\sigma$? BTW: do we ever use this notation? }
 \end{notation}
 
@@ -256,6 +265,8 @@ Program variables appear in the program;
 automaton variables do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 \end{notation}
+
+As it will become apparent below, the interaction between patterns and automata memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
 \paragraph{Step~1.}
 
@@ -288,93 +299,89 @@ For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
 
 \paragraph{Step~2.}
-
-\rg{continue here}
-
-Usually, the source of a transition would not be active anymore.
-The state $(\mathit{start},[])$ is a special state that is always active.
-Conceptually, the vertex \textit{start} has a self-loop on it that always matches.
-
 For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states in turn.
-For $(\mathit{start},[])$ exactly the same reasoning holds and the result is that \[(\mathit{gotOne},[c:1,i:3])\] is active after the second step.
-Note that now the automaton variable~$i$ remembers the value of the program variable~{\tt j}.
-For \[\mathit{(gotOne},[c:1,i:2])\] we look at the transition outgoing from vertex \textit{gotOne} which has the label \[\pattern{J}:=\pattern{c}.\mathtt{iterator}();\]
-The method and the uppercase pattern~$\pattern J$ match in the same way as before.
+Now we need to consider the two active states in turn\footnote{The state $(\start,[])$ is a special state that is always active.
+Conceptually, the vertex \texttt{start} has a self-loop on it that always matches.}:
+\[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] 
+For $(\start,[])$ exactly the same reasoning as step 1 holds and the result is that \[(\texttt{one},[c:1,x:3])\] is active after the second step.
+Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
+For \[\texttt{(one},[c:1,x:2])\] we look at the transition outgoing from vertex {\tt one} which has the label \[\pattern{Y}:=\pattern{c}.\mathtt{iterator}();\]
+The method and the uppercase pattern~$\pattern Y$ match in the same way as before.
 The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
-In summary, uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
-In this case, the transition $\mathit{gotOne}\to\mathit{gotTwo}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\mathit{start}\to\mathit{gotOne}$ was performed.
+In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\start\to\texttt{one}$ was performed.
 
 \paragraph{Step~3.}
 
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-which matches no label of outgoing transitions of the currently active states (i.e., \textit{start}, \textit{gotOne}, and \textit{gotTwo}).
+which matches no label of outgoing transitions of the currently active states (i.e., $\start$, {\tt one}, and {\tt  two}).
+Therefore, although the program proceeds, the set of active states in the automaton remain unchanged.
 
 \paragraph{Step~4.}
 
-In the fourth step, the transition $\mathit{gotTwo}\to\mathit{jInvalid}$ is performed.
-The pattern $\pattern{i}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value does not matter.
-The states corresponding to vertices \textit{start} and \textit{gotOne} remain unchanged, because their outgoing transitions do not match.
-However,  the outgoing transition of state \textit{gotTwo} can fire, and therefore \textit{jInvalid} becomes active.
+In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
+Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
+The states corresponding to vertices $\start$ and {\tt one} remain unchanged, because their outgoing transitions do not match.
+However,  the outgoing transition of state {\tt two} can fire, and therefore {\tt yBad} becomes active.
 
 \paragraph{Step~5.}
 
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The label of the outgoing transition  \[\mathtt{call}\;\pattern{j}.{*}()\] of the active state \[(\mathit{jInvalid},[c:1,i:2,j:3]),\]
+The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3]),$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-
-Let us discuss first the method name.
-\rg{TODO: Explain the arity notation [$n$].}
-\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
-As before, the first step is to prepend the prefixes.
+%
+%Let us discuss first the method name.
+%\rg{TODO: Explain the arity notation [$n$].}
+%\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
+As before, in order to match the method name, the following prefixes are prepended  
 \begin{align*}
 &\text{\Verb@java.util.Collection.*[*]@} \\
 &\text{\Verb@java.util.Iterator.*[*]@}
 \end{align*}
-Next, the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
+Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
 
-The tag \texttt{call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
+The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
 This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between).
-In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a \textit{jInvalid} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern I:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
+In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a {\tt yBad} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern X:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
 
-\dinocomment{Move it when the semantics is clear}
-\paragraph{On call and return tags.}
-The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
-Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
-In particular, in-between those two events other methods might be called.
-A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
-When the tag is \texttt{call}, there can be no left-hand side;
-when the tag is \texttt{return}, the right-hand side is only a method name pattern.
-Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
-If a tag is not present, then the transition is said to be a \emph{call--return transition}.
-We allow the user to use such transitions for convenience.
-Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
+%\dinocomment{Move it when the semantics is clear}
+%\paragraph{On call and return tags.}
+%The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
+%Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
+%In particular, in-between those two events other methods might be called.
+%A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
+%When the tag is \texttt{call}, there can be no left-hand side;
+%when the tag is \texttt{return}, the right-hand side is only a method name pattern.
+%Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
+%If a tag is not present, then the transition is said to be a \emph{call--return transition}.
+%We allow the user to use such transitions for convenience.
+%Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
 
-The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \textit{error} is reached.
-Notice that in order to find a counterexample we need to keep track of the relation between several objects: ``these two iterators are for the same collection.''
+\medskip
+The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \texttt{error} is reached.
+Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
-\paragraph{Discussion.}
-\rg{Move the discussion in the introduction?}
-\dinocomment{it partly already there. I choose a subset of it}
-How is this better than just having an exception thrown by the Java~API\null?
-\begin{itemize}
-\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
-\item We do not need to write the code that checks whether the property is violated.
-  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
-  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
-  By comparison, the code in \autoref{fig:first.topl} is simple and captures how programmers think about the property.
-\item One can retro-actively document third-party libraries with such properties without having access to the code.
-\item It is possible in principle to design a static analysis for such properties.
-  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
-  Our current prototype only does run-time checking, though.
-\end{itemize}
+%\paragraph{Discussion.}
+%\rg{Move the discussion in the introduction?}
+%\dinocomment{it partly already there. I choose a subset of it}
+%How is this better than just having an exception thrown by the Java~API\null?
+%\begin{itemize}
+%\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
+%\item We do not need to write the code that checks whether the property is violated.
+%  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
+%  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
+%  By comparison, the code in \autoref{fig:first.topl} is simple and captures how programmers think about the property.
+%\item One can retro-actively document third-party libraries with such properties without having access to the code.
+%\item It is possible in principle to design a static analysis for such properties.
+%  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
+%  Our current prototype only does run-time checking, though.
+%\end{itemize}
 
-Are there any disadvantages?
-Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
-For particular properties, programmers can specialize the check and make it more efficient.
+%Are there any disadvantages?
+%Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
+%For particular properties, programmers can specialize the check and make it more efficient.
 
 % >>>
 \subsection{More Iterators} \label{sec:examples.iterators} % <<<
@@ -872,7 +879,7 @@ However, there is no conceptual problem with repeating the exercise for a functi
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
 
 In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
-The next two sections explain how to instrument the interpreter when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
 
 \subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
 
@@ -895,6 +902,14 @@ In any case, the memory needed for storing events is proportional to the longest
 % >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
+Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept to integrate notions typical of object-oriented programs. 
+There are several extension of typestate to object-oriented programming.
+A modular static verification method for typestate protocols is introduces in~\cite{DBLP:conf/oopsla/BierhoffA07}. 
+The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
+The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,DBLP:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
+can deal with inheritance.
+
+
 The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
@@ -910,7 +925,7 @@ It is likely that our language could be fruitfully combined with their technique
 
 \rg{TODO: Blame assignment --- error traces}
 
-%>>>
+
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 This paper presented ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
