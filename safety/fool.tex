@@ -149,20 +149,18 @@ The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.j
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
-\rg{NOTE: I am rewriting this section.}
-
 The last statement in \autoref{fig:first.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-Such properties are often explained using diagrams~\cite{DBLP:journals/scp/FieldGRY05,DBLP:conf/oopsla/BierhoffA07,DBLP:conf/oopsla/NaeemL08,DBLP:conf/sigsoft/BoddenLH08,DBLP:conf/ecoop/BierhoffBA09}.
-The diagrams are sometimes precise, but not expressive enough~\cite{DBLP:journals/scp/FieldGRY05,DBLP:conf/issta/FinkYDRG06};
-the diagrams are sometimes expressive, but not precise enough~\cite{DBLP:conf/oopsla/BierhoffA07,DBLP:conf/oopsla/NaeemL08,DBLP:conf/sigsoft/BoddenLH08,DBLP:conf/ecoop/BierhoffBA09}.
-\autoref{fig:first.diagram}, on the other hand, precisely captures a temporal property involving three interacting objects.
+Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/BierhoffA07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/BierhoffBA09}.
+The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
+the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/BierhoffA07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/BierhoffBA09}.
+\autoref{fig:first.diagram}, on the other hand, captures precisely a temporal property involving three interacting objects.
 \autoref{fig:first.topl} describes the same property in (the textual form of) TOPL, and is clearly isomorphic to the diagram of~\autoref{fig:first.diagram}.
 The rest of this section explains the semantics of \autoref{fig:first.diagram} and \autoref{fig:first.topl}:
 \emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
 
 Vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
-transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$,\dots).
+transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
 There are two special vertices: \start, from where the execution begins; and \error, where the execution ends.
 Labels capture, roughly, the shape of statements that activate the corresponding transition.
 
@@ -245,18 +243,18 @@ At a given moment, the automaton has a set of active states.
 A state is a pair of a vertex and a store.
 The store is a memory that holds (automaton) variables.
 Technically, it is a finite partial map from variables to values.
+(A partial finite map is sometimes called a \emph{dictionary}.)
 
 \begin{notation}
 We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
-%A partial finite map is sometimes called a \emph{dictionary}.
 The empty map is denoted by~$[]$.
-The map $[\sigma,k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
-\dinocomment{how about the notation $\sigma[k:v]$ for a modified $\sigma$? BTW: do we ever use this notation? }
 \end{notation}
 
 The automaton has variables $x$,~$y$, and~$c$.
-At vertex \texttt{one} the variables $x$~and~$c$ are initialized---it means that $x$~is an iterator for the collection~$c$;
-at vertex \texttt{two} the variables $x$,~$y$, and~$c$ are initialized---it means that both $x$~and~$y$ are iterators for the same collection~$c$.
+At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
+at vertex \texttt{two} the variables $y$,~$y$ and~$c$ are initialized.
+Being at vertex \texttt{one} means that $x$~is an iterator for~$c$;
+being at vertex \texttt{two} means that $x$~and~$y$ are two iterators for the same collection~$c$.
 There is a program variable~\Verb@c@ and an automaton variable~$c$.
 The same name was chosen because the two variables always hold the same value in this example.
 In general, however, program variables and automaton variables live in different name-spaces.
@@ -332,10 +330,6 @@ However,  the outgoing transition of state {\tt two} can fire, and therefore {\t
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
 The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3]),$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-%
-%Let us discuss first the method name.
-%\rg{TODO: Explain the arity notation [$n$].}
-%\rg{TODO: Say that the lack of return (or arguments) means ``anything matches.''}
 As before, in order to match the method name, the following prefixes are prepended  
 \begin{align*}
 &\text{\Verb@java.util.Collection.*[*]@} \\
@@ -348,49 +342,17 @@ The tag {\tt call} is used when we want the automaton to take a transition preci
 This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between).
 In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a {\tt yBad} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern X:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
 
-%\dinocomment{Move it when the semantics is clear}
-%\paragraph{On call and return tags.}
-%The \texttt{call} tag touches on a subtle part of the semantics that will be fully explained later (\autoref{sec:semantics}).
-%Note that a pattern like $\pattern I:=\pattern C.\mathtt{iterator}()$ conceptually refers to \emph{two} moments in time---the call time and the return time.
-%In particular, in-between those two events other methods might be called.
-%A simple way to disambiguate what is meant is to prepend the label with the tag \texttt{call} or the tag \texttt{return}.
-%When the tag is \texttt{call}, there can be no left-hand side;
-%when the tag is \texttt{return}, the right-hand side is only a method name pattern.
-%Here is an example of a return transition \verbline[.]{x -> y: return I := iterator[1]}
-%If a tag is not present, then the transition is said to be a \emph{call--return transition}.
-%We allow the user to use such transitions for convenience.
-%Roughly speaking, we require the call and the return events of a call--return transition to be consecutive.
-
 \medskip
 The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \texttt{error} is reached.
 Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
-%\paragraph{Discussion.}
-%\rg{Move the discussion in the introduction?}
-%\dinocomment{it partly already there. I choose a subset of it}
-%How is this better than just having an exception thrown by the Java~API\null?
-%\begin{itemize}
-%\item We can record which statements trigger which transitions, so we can have a trace that explains what exactly went wrong.
-%\item We do not need to write the code that checks whether the property is violated.
-%  In this example, the programmers of the Java standard libraries hand-coded the check that throws an exception.
-%  The check involves storing some extra state in collections, is fairly complicated, and therefore error-prone itself.
-%  By comparison, the code in \autoref{fig:first.topl} is simple and captures how programmers think about the property.
-%\item One can retro-actively document third-party libraries with such properties without having access to the code.
-%\item It is possible in principle to design a static analysis for such properties.
-%  In fact, designing a static analysis is our goal and the original motivation for designing this property language.
-%  Our current prototype only does run-time checking, though.
-%\end{itemize}
-
-%Are there any disadvantages?
-%Yes, a big disadvantage is that checking an arbitrary property involves keeping track of a potentially unbounded number of states.
-%For particular properties, programmers can specialize the check and make it more efficient.
-
 % >>>
 \subsection{More Iterators} \label{sec:examples.iterators} % <<<
 
-A property closely related to \autoref{fig:first.topl} is that {\it modifying the collection directly invalidates all iterators.}
-In \TPL \ this  property can be expressed as follows:
+Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
+
+\emph{Modifying a collection invalidates all its existent iterators:}
 \par\medskip\noindent
 \begin{Verbatim}
 property ModificationInvalidatesIterators
@@ -403,8 +365,7 @@ property ModificationInvalidatesIterators
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
 
-Another property related to iterators, is that {\it iterators should not be advanced unless we know that they are not exhausted.}
-In \TPL:
+\emph{Iterators should not be advanced unless we know that they are not exhausted:}
 \par\medskip\noindent
 \begin{Verbatim}
 property UnsafeIteratorNext
@@ -415,8 +376,26 @@ property UnsafeIteratorNext
   iterating -> error:         i.next()
 \end{Verbatim}
 \par\medskip
+This example uses a Java literal (\Verb@true@) as a pattern.
+Such patterns act as guards that match only the value that they denote.
+In this case, the transition from \Verb@iterating@ to \Verb@notExhausted@ matches when the method \Verb@hasNext@ is called on the iterator~$i$ and it returns the value~\textit{true}.
 
-\rg{TODO: Say that these are also discussed in the Tracematch papers.}
+\emph{It is illegal to use the \Verb@remove@ method on an iterator that was not advanced:}
+\par\medskip\noindent
+\begin{Verbatim}
+property RemoveBeforeNext
+  using prefix java.util.{Collection,Iterator}
+  start -> created: I := *.iterator()
+  created -> ok:    i.next()
+  created -> error: i.remove()
+\end{Verbatim}
+\par\medskip
+
+
+This is an example of a property involving only one object.
+Such properties tend to be easy to formulate in previous formalisms, and remain to be easy to express in TOPL\null.
+\rg{Say that \Verb@created@ becomes inactive when \Verb@next@ is called.}
+\rg{Say that these properties easily compose: just put them together.}
 
 % >>>
 \subsection{Resources} % <<<
@@ -846,6 +825,11 @@ It has tag $\mathtt{return}m$ and carries the return value.
 Line~7 stores the return value in the heap.
 Finally, line~8 returns the updated program execution state and the unit value~$()$.
 
+\begin{notation}
+\rg{Find a good place for this.}
+The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
+\end{notation}
+
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
@@ -907,17 +891,17 @@ In any case, the memory needed for storing events is proportional to the longest
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept to integrate notions typical of object-oriented programs. 
 There are several extension of typestate to object-oriented programming.
-A modular static verification method for typestate protocols is introduces in~\cite{DBLP:conf/oopsla/BierhoffA07}. 
+A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/BierhoffA07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
-The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,DBLP:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
+The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
 can deal with inheritance.
 
 
-The paper~\cite{DBLP:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
+The paper~\cite{dblp:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
 
-In~\cite{DBLP:conf/issta/FinkYDRG06} presents sound verification techniques for typestate properties of Java  programs.
+In~\cite{dblp:conf/issta/FinkYDRG06} presents sound verification techniques for typestate properties of Java  programs.
 Their approach is divided in several stages with different verifiers varying for cost and precision.
 In the early stages efficient but imprecise analyses are employed whereas
 more expensive and precise techniques are then progressively employed in later stages.
@@ -938,7 +922,7 @@ on an idealised oop language.
 
 In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
 This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximations
-of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{DBLP:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
+of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
 
 \rg{TODO: Boogie has trace-set semantics by definition, so it's a good PL to try.}
 \rg{IDEA: apply to something like Haskell?}
