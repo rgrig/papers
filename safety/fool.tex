@@ -117,6 +117,9 @@ if one iterator modifies its collection, then other existing iterators of the sa
 \noindent 
 It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
 increase the intuitiveness of the specification.
+In this aspect \TPL \ departs from most of other techniques for typestate of object-oriented programs. They aim at decomposing properties involving several objects into several specifications which reflect 
+the point of view of a single object. Conversely,  we take for typestate specification a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariant: we believe it is more intuitive and effective to specify a constraint of 
+an aggregate structure of objects when the property involves the behavior of  several entities.
    
 Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
