@@ -99,7 +99,7 @@ In order to achieve our goal we would need
 This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
 It has the following characteristics:
 \begin{enumerate}
-\item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between object references.
+\item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between several objects and their references.
 %And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
 %\rg{I would not mention separation logic here.
 %We did not quite get to using it, although that's what we want for TACAS\null.
@@ -118,7 +118,7 @@ if one iterator modifies its collection, then other existing iterators of the sa
 It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
 increase the intuitiveness of the specification.
 In this aspect \TPL \ departs from most of other techniques for typestate of object-oriented programs. They aim at decomposing properties involving several objects into several specifications which reflect 
-the point of view of a single object. Conversely,  we take for typestate specification a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariant: we believe it is more intuitive and effective to specify a constraint of 
+the point of view of a single object. Conversely,  we take for typestate specification a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: we believe it is more intuitive and effective to specify a constraint of 
 an aggregate structure of objects when the property involves the behavior of  several entities.
    
 Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
