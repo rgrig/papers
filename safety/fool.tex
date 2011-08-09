@@ -601,12 +601,13 @@ The negated lowercase pattern \Verb@!var@ reads the value of the automaton varia
 A TOPL property is \emph{well-formed} when it satisfies the following conditions.
 \begin{itemize}
 \item Labels must contain uppercase value patterns at most once.
-\item Any use of a lowercase patterns must be definitely preceded the corresponding uppercase pattern.
+\item Any use of a lowercase patterns must be guaranteed preceded by a
+  use of the corresponding uppercase pattern.
   In other words, automaton variables must be written before being read.
 \end{itemize}
 \dinocomment{how do we guarantee that properties are well formed? Maybe we should say that we assume in the following that they are.}
 \autoref{fig:syntax.itopl} shows the syntax of iTOPL\null.
-The missing productions are the same as for TOPL\null.
+The missing productions (eg. $Arc$) are the same as for TOPL\null.
 Each transition now has exactly one label.
 Each label is a list of (guard, action) pairs.
 Each guard is some boolean combination of atomic guards.
@@ -631,6 +632,7 @@ There is also an atomic guard that matches against method calls and always speci
   ValueIndex& IntegerLiteral \cr
 }
 \dinocomment{why many syntactic categories are called AtomicGuard?}
+\rlp{Is it the case that $Action ::= (AtomicAction)^*$ or not?}
 \caption{Syntax of iTOPL}
 \label{fig:syntax.itopl}
 \end{figure}
@@ -665,6 +667,7 @@ Expressions, which do not have side-effects, are missing.
   Reference& Expression \b. Identifier \cr
   Actuals& Expression \(\b, Expression\)\* \cr
 }
+\rlp{Is $Body$ normally called $Block$?}
 \caption{(Partial) Syntax of SOOL}
 \label{fig:syntax.sool}
 \end{figure}
@@ -683,6 +686,26 @@ In other words, properties encode bad executions, rather than good executions.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
+[Start of rewrite]\\
+Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
+by the transitions: $V$ is the set of vertices mention as endpoints of
+the arcs and $E$ is the set of labeled edges mentioned by the
+transitions.
+
+For the property to be well-formed there must be a vertex start and a
+vertex error.\rlp{Is this correct, and should it be part of the grammar?}
+
+The automaton takes as input a list of events carrying values. For
+values, we assume a countable set \set{Value} and for events we assume
+a finite set \set{Event} of events with known arity.
+
+s of the following type
+\[
+\set{Event} = 
+\]
+\ \\ {}[End of rewrite]\\
+
+
 
 In the following, let $n=\{0,1,\ldots,n-1\}$ and let \set{Value} denote a generic set of values.
 Each event has a tag and carries an array of values.
@@ -927,7 +950,7 @@ It is likely that our language could be fruitfully combined with their technique
 
 
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
-This paper presented ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
+This paper presents ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
 We intend to make use of  separation logic to deal with the  heavy use of the heap in object-oriented software.
 Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time check of the properties
@@ -935,7 +958,7 @@ on an idealised oop language.
 
 In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
 This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximations
-of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{DBLP:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
+of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{DBLP:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
 
 \rg{TODO: Boogie has trace-set semantics by definition, so it's a good PL to try.}
 \rg{IDEA: apply to something like Haskell?}
