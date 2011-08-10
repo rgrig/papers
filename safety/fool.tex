@@ -405,16 +405,51 @@ However, there is no advantage of doing so.
 % >>>
 \subsection{Resources} % <<<
 
-Many resources impose a temporal property:
+\rg{Rewriting this.}
+
+Many resources impose two temporal property:
 Before being used they must be acquired;
-after being used they must be released.
+after being acquired they must be eventually released.
+Examples include memory, files, sockets, locks.
+Memory must be allocated before reading or writing and should eventually be deallocated;
+files must be opened before reading or writing and should eventually be closed;
+sockets must be created before sending and receiving data and should eventually be closed;
+locks should be acquired before the memory they protect is accessed and should eventually be released.
+The general interface is as follows.
+\delimitVerbatim
+\input{Resource}
+\delimitVerbatim
+
+\medskip\emph{A resource must be acquired when used:}
+\delimitVerbatim
+\begin{Verbatim}
+property ResourceSafety
+  start -> released:    R := makeResource()
+  released -> error:    r.use()
+  released -> acquired: r.acquire()
+  acquired -> released: r.release()
+\end{Verbatim}
+\delimitVerbatim
+The method \Verb@makeResource@ could also be a constructor.
+In simple cases, resources cannot repeatedly move between the \Verb@released@ and \Verb@acquired@ state.
+\delimitVerbatim
+\begin{Verbatim}
+property ResourceSafetySimple
+  start -> created:    R := makeResource()
+  created -> disposed: r.release()
+  disposed -> error:   r.use()
+\end{Verbatim}
+\delimitVerbatim
+\rg{TODO: Continue here.}
+
+
 Examples include memory allocation and deallocation, locks for synchronization between threads, opening and closing files, and establishing and closing network connections.
 The liveness property, which we do not handle, is that each \textit{acquire} is eventually followed by a \textit{release}.
 However, ignoring programs that run forever this property can be rephrased as a safety property:
 When the program terminates, the last action must have been \textit{release}.
 \dinocomment{Really should be the last action?}
 Suppose that resources are represented by instances of the class \textit{Resource}, which has two methods, \textit{acquire} and \textit{release}.
-\par\medskip\noindent
+\delimitVerbatim
 \begin{Verbatim}
 property ResourceLeak
   start -> released:    R := new Resource()
@@ -422,10 +457,10 @@ property ResourceLeak
   acquired -> released: r.release()
   acquired -> error:    return Main.main(*)
 \end{Verbatim}
-\par\medskip\noindent
+\delimitVerbatim
 Even without restricting our attention to terminating programs there are two other safety properties that are imposed:
 there should be no two consecutive \textit{acquire} or two consecutive \textit{release}.
-\par\medskip\noindent
+\delimitVerbatim
 \begin{Verbatim}
 property DoubleAcquireOrRelease
   start -> released:    R := new Resource()
@@ -434,7 +469,7 @@ property DoubleAcquireOrRelease
   released -> error:    r.release()
   acquired -> error:    r.acquire()
 \end{Verbatim}
-\par\medskip\noindent
+\delimitVerbatim
 Normally this automaton would be split into two so that error messages are more informative and precise.
 
 \rg{TODO: Slic 2.}
@@ -936,6 +971,10 @@ However, there is no conceptual problem with repeating the exercise for a functi
 % >>>
 % >>>
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
+
+\rg{What we want to say here is:
+The prototype and the bytecode instrumenter exist, but their description is out of scope.
+Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
 
 In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
 The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).

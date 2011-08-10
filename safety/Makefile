@@ -11,7 +11,7 @@ build: $(PDF)
 
 safety.pdf: safety.tex safety.bib
 
-fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex
+fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex Resource.tex
 
 biabduction.pdf: biabduction.tex
 
