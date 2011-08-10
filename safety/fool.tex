@@ -50,6 +50,7 @@
 \newcommand{\dinocomment}[1]{\dd{#1}}
 
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
 \newcommand{\pattern}[1]{\ensuremath{\mathtt{\underline{#1}}}}
@@ -352,8 +353,8 @@ In practice, programmers tend to violate this property when the code is more inv
 
 Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
 
-\emph{Modifying a collection invalidates all its existent iterators:}
-\par\medskip\noindent
+\medskip\emph{Modifying a collection invalidates all its existent iterators:}
+\delimitVerbatim
 \begin{Verbatim}
 property ModificationInvalidatesIterators
   using prefix java.util.{Collection,Iterator}
@@ -361,12 +362,13 @@ property ModificationInvalidatesIterators
   iterating -> modified:  c.add(*), c.remove(*)
   modified -> error:      call i.*[*]
 \end{Verbatim}
-\par\medskip\noindent This property should list all the methods of \textit{Collection} that mutate it.
+\delimitVerbatim
+This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
 
-\emph{Iterators should not be advanced unless we know that they are not exhausted:}
-\par\medskip\noindent
+\medskip\emph{Iterators should advance only if they are not exhausted:}
+\delimitVerbatim
 \begin{Verbatim}
 property UnsafeIteratorNext
   using prefix java.util.{Collection,Iterator}
@@ -375,13 +377,12 @@ property UnsafeIteratorNext
   notExhausted -> iterating:  i.next()
   iterating -> error:         i.next()
 \end{Verbatim}
-\par\medskip
-This example uses a Java literal (\Verb@true@) as a pattern.
-Such patterns act as guards that match only the value that they denote.
-In this case, the transition from \Verb@iterating@ to \Verb@notExhausted@ matches when the method \Verb@hasNext@ is called on the iterator~$i$ and it returns the value~\textit{true}.
+\delimitVerbatim
+The transition from \Verb@iterating@ to \Verb@notExhausted@ matches when \Verb@hasNext@ returns \Verb@true@.
+In general, Java literals act as guards on transitions.
 
-\emph{It is illegal to use the \Verb@remove@ method on an iterator that was not advanced:}
-\par\medskip\noindent
+\medskip\emph{Method \Verb@remove@ may only be called after \Verb@next@:}
+\delimitVerbatim
 \begin{Verbatim}
 property RemoveBeforeNext
   using prefix java.util.{Collection,Iterator}
@@ -389,13 +390,17 @@ property RemoveBeforeNext
   created -> ok:    i.next()
   created -> error: i.remove()
 \end{Verbatim}
-\par\medskip
+\delimitVerbatim
+TOPL is designed to track properties involving multiple objects.
+However, properties involving a single object are also easy to express.
+The vertex \Verb@ok@ is not special.
+The purpose of the transition going to \Verb@ok@ is to deactivate the state with vertex \Verb@created@.
 
-
-This is an example of a property involving only one object.
-Such properties tend to be easy to formulate in previous formalisms, and remain to be easy to express in TOPL\null.
-\rg{Say that \Verb@created@ becomes inactive when \Verb@next@ is called.}
-\rg{Say that these properties easily compose: just put them together.}
+\medskip
+We have now seen four properties of iterators.
+Each corresponds to a simple English sentence.
+It is possible to use only one TOPL property.
+However, there is no advantage of doing so.
 
 % >>>
 \subsection{Resources} % <<<
