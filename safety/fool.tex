@@ -670,7 +670,7 @@ In other words, properties encode bad executions, rather than good executions.
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
 [Start of rewrite]\\
 Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
-by the transitions: $V$ is the set of vertices mention as endpoints of
+by the transitions: $V$ is the set of vertices mentioned as endpoints of
 the arcs and $E$ is the set of labeled edges mentioned by the
 transitions.
 
@@ -681,10 +681,54 @@ The automaton takes as input a list of events carrying values. For
 values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
 
-s of the following type
+We will now describe how the automaton reacts to events, specifically
+how labels are evaluated. As this is a slightly non-standard
+automaton, there are some important things to point out. Firstly, the
+state of the automaton is not just a vertex but also a store. 
+That is, there is an array of automaton variables, referred to by
+index in the guards and actions, and the state of the automaton is
+given by specifying the vertex in the graph as well as the value of
+all automaton variables.
+
+We model stores as partial functions with finite domain (sometimes
+called dictionaries):
 \[
-\set{Event} = 
+\set{Store} = \N \pmap \set{Value}
 \]
+And so a state of the automaton has the type
+\[
+\set{State} = \set{Vertex}\times\set{Store}
+\]
+Given the state of the automaton and an event we would like to know
+which transitions are available. But actually, we do not have enough
+information to determine that. This is a consequence of the second
+slightly non-standard aspect of our automatons, namely that each label
+carries not only a single guard but potentially a list of guards. We
+call the lenght of this list, the \emph{depth} of the guard.
+
+In order for a transition to be available, all the guards along its
+list have to evaluate to true. We will describe this evaluation in a
+moment, but now we note that each guard along the transition consumes
+an event. Thus we have to know a whole prefix of the trace of events
+inorder to see if a transition is enabled, as many as the depth of the
+guards.
+
+Another consequence is, that the following events to be received are
+not the same at the end of each enabled transition. If two transitions
+turn out to be enabled, one with depth 2 and the other with depth 5,
+then the end state of the first transition will see the third event of
+the trace next, while the end state of the second transition will see
+the sixth event next. For this reason, it is necessary to keep track
+of which events are next to be received by each state during a run of
+the automaton.
+
+To formalize this book keeping, we introduce the notion of
+\emph{execution state}. Execution states have the type
+\[
+\set{ExeState} = \set{State}\times\set{Trace}
+\]
+We now describe when transitions are enabled.
+
 \ \\ {}[End of rewrite]\\
 
 
