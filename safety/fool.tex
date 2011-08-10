@@ -655,6 +655,8 @@ There is also an atomic guard that matches against method calls and always speci
 }
 \dinocomment{why many syntactic categories are called AtomicGuard?}
 \rlp{Is it the case that $Action ::= (AtomicAction)^*$ or not?}
+\rlp{Why is $!Guard$ an $AtomicGuard$?}
+\rlp{Is it the case that $\set{Value} = (Identifier | Literal)$?}
 \caption{Syntax of iTOPL}
 \label{fig:syntax.itopl}
 \end{figure}
@@ -719,6 +721,9 @@ vertex error.\rlp{Is this correct, and should it be part of the grammar?}
 \rg{I think it should not be part of the grammar.
 At the moment it is not enforced by the static checker, but it should.
 So I'd say that what you say is correct.}
+\rlp{Somewhere note distinction between start vertex and start
+  state. Is there an error state or just an error vertex (such that
+  all states with the error vertex are implicitly error states)?}
 
 The automaton takes as input a list of events carrying values. For
 values, we assume a countable set \set{Value} and for events we assume
@@ -753,10 +758,10 @@ In order for a transition to be available, all the guards along its
 list have to evaluate to true. We will describe this evaluation in a
 moment, but now we note that each guard along the transition consumes
 an event. Thus we have to know a whole prefix of the trace of events
-inorder to see if a transition is enabled, as many as the depth of the
-guards.
+inorder to see if a transition is enabled, as long as the depth of the
+transition.
 
-Another consequence is, that the following events to be received are
+A further consequence is, that the following events to be received are
 not the same at the end of each enabled transition. If two transitions
 turn out to be enabled, one with depth 2 and the other with depth 5,
 then the end state of the first transition will see the third event of
@@ -770,7 +775,12 @@ To formalize this book keeping, we introduce the notion of
 \[
 \set{ExeState} = \set{State}\times\set{Trace}
 \]
-We now describe when transitions are enabled.
+where the first component records the state of the automaton (vertex
+and store) and the second component records the remaining trace of
+events for that state.
+
+We now describe when transitions are enabled. For this we have to look
+at guards and actions.
 
 \ \\ {}[End of rewrite]\\
 
