@@ -716,6 +716,9 @@ transitions.
 
 For the property to be well-formed there must be a vertex start and a
 vertex error.\rlp{Is this correct, and should it be part of the grammar?}
+\rg{I think it should not be part of the grammar.
+At the moment it is not enforced by the static checker, but it should.
+So I'd say that what you say is correct.}
 
 The automaton takes as input a list of events carrying values. For
 values, we assume a countable set \set{Value} and for events we assume
