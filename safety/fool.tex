@@ -85,7 +85,7 @@ We present the formal semantics and discuss dynamic checking w.r.t. a simple obj
 % >>>
 \section{Introduction} % <<<
 Historically, verifying whether a program or a model satisfies  safety properties has been a popular research topic in the
-verification community~\cite{pnueli,spin,slam}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
+verification community~\cite{pnueli,spin,dblp:conf/cav/ballr01}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
 %
 Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
 These constraints are related with the correct use of types operations in different contexts.
@@ -406,20 +406,19 @@ However, there is no advantage of doing so.
 % >>>
 \subsection{Resources} % <<<
 
-\rg{Rewriting this.}
-
-Many resources impose two temporal property:
+Many resources impose two temporal properties:
 Before being used they must be acquired;
 after being acquired they must be eventually released.
-Examples include memory, files, sockets, locks.
+Resources include memory, files, sockets, locks.
 Memory must be allocated before reading or writing and should eventually be deallocated;
 files must be opened before reading or writing and should eventually be closed;
 sockets must be created before sending and receiving data and should eventually be closed;
-locks should be acquired before the memory they protect is accessed and should eventually be released.
-The general interface is as follows.
+locks should be acquired before accessing the memory they protect and should eventually be released.
+Resources are usually represented by objects.
 \delimitVerbatim
 \input{Resource}
 \delimitVerbatim
+To create a resource, we use the static method \Verb@makeResource@.
 
 \medskip\emph{A resource must be acquired when used:}
 \delimitVerbatim
@@ -431,81 +430,72 @@ property ResourceSafety
   acquired -> released: r.release()
 \end{Verbatim}
 \delimitVerbatim
-The method \Verb@makeResource@ could also be a constructor.
-In simple cases, resources cannot repeatedly move between the \Verb@released@ and \Verb@acquired@ state.
+In simple cases, resources cannot repeatedly move between the states \Verb@released@ and \Verb@acquired@.
 \delimitVerbatim
 \begin{Verbatim}
 property ResourceSafetySimple
-  start -> created:    R := makeResource()
-  created -> disposed: r.release()
-  disposed -> error:   r.use()
-\end{Verbatim}
-\delimitVerbatim
-\rg{TODO: Continue here.}
-
-
-Examples include memory allocation and deallocation, locks for synchronization between threads, opening and closing files, and establishing and closing network connections.
-The liveness property, which we do not handle, is that each \textit{acquire} is eventually followed by a \textit{release}.
-However, ignoring programs that run forever this property can be rephrased as a safety property:
-When the program terminates, the last action must have been \textit{release}.
-\dinocomment{Really should be the last action?}
-Suppose that resources are represented by instances of the class \textit{Resource}, which has two methods, \textit{acquire} and \textit{release}.
-\delimitVerbatim
-\begin{Verbatim}
-property ResourceLeak
-  start -> released:    R := new Resource()
-  released -> acquired: r.acquire()
+  start -> acquired:    R := makeResource()
   acquired -> released: r.release()
-  acquired -> error:    return Main.main(*)
+  released -> error:    r.use()
 \end{Verbatim}
 \delimitVerbatim
-Even without restricting our attention to terminating programs there are two other safety properties that are imposed:
-there should be no two consecutive \textit{acquire} or two consecutive \textit{release}.
+The following examples in this subsection only cover the case when \Verb@acquire@ must be called explicitly.
+
+\medskip\emph{A resource must not be released twice:}
 \delimitVerbatim
 \begin{Verbatim}
-property DoubleAcquireOrRelease
-  start -> released:    R := new Resource()
+property DoubleRelease
+  start -> released:    R := makeResource()
   released -> acquired: r.acquire()
   acquired -> released: r.release()
   released -> error:    r.release()
-  acquired -> error:    r.acquire()
 \end{Verbatim}
 \delimitVerbatim
-Normally this automaton would be split into two so that error messages are more informative and precise.
+Similarly, one can express that a resource must not be acquired twice.
 
-\rg{TODO: Slic 2.}
-\par\medskip\noindent
+\medskip\emph{A resource must eventually be released:}
+\delimitVerbatim
 \begin{Verbatim}
-property DoubleFree
-  start -> allocated: X := malloc()
-  allocated -> freed: free(x)
-  freed -> error: free(x)
+property ResourceLeak
+  start -> released:    R := makeResource()
+  released -> acquired: r.acquire()
+  acquired -> released: r.release()
+  acquired -> error:    return Main.main[1]
 \end{Verbatim}
-
-\rg{TODO: HO 4.}
-\par\medskip\noindent
-\begin{Verbatim}
-property UsedAfterClose
-  start -> closed: X.close()
-  closed -> error: x.*[*]
-\end{Verbatim}
+\delimitVerbatim
+TOPL is designed for safety properties, which have finite counter-examples.
+It is not possible to express the lack of resource leaks in non-terminating programs.
+It is possible, however, to check if resources are leaked when the program terminates.
 
 % >>>
-\subsection{Slic} % <<<
+\subsection{\textsc{Slic} Queue} % <<<
 
-\rg{TODO: Slic 1.}
-\par\medskip\noindent
+\rg{Rewriting.}
+
+\textsc{Slic}~\cite{ball2002} is the property language of SLAM~\cite{dblp:conf/cav/ballr01}.
+Its authors give the following interesting example.
+
+\medskip\emph{A queue may contain at most three zeros:}
+\delimitVerbatim
 \begin{Verbatim}
 property TooManyZeros
   start -> cnt0: Q := makeQueue()
-  cnt0 -> cnt1: q.put(0)
-  cnt1 -> cnt2: q.put(0)
-  cnt2 -> cnt3: q.put(0)
+  cnt0 -> cnt1:  q.put(0)
+  cnt1 -> cnt2:  q.put(0)
+  cnt2 -> cnt3:  q.put(0)
   cnt3 -> error: q.put(0)
-  cnt3 -> cnt2: 0 := q.get()
-  cnt2 -> cnt1: 0 := q.get()
-  cnt1 -> cnt0: 0 := q.get()
+  cnt3 -> cnt2:  0 := q.get()
+  cnt2 -> cnt1:  0 := q.get()
+  cnt1 -> cnt0:  0 := q.get()
 \end{Verbatim}
+\delimitVerbatim
+The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
+
+
+
+We will see later (\autoref{}) that TOPL is compiled into an intermediate language that can express such properties more succintly.
+It is, however, unclear whether such properties are common, so we opted to 
+
 
 % >>>
 \subsection{Sorter and Comparator} % <<<

@@ -31,7 +31,7 @@ clean:
 
 cleanbib: req
 	@echo "WARNING: Target NOT tested on Mac."
-	@cp safety.bib safety.bib.bak && bibtool safety.bib -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib safety.bib; done
+	@cp safety.bib safety.bib.bak && bibtool safety.bib -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib safety.bib
 
 sigplanconf.cls: req
 	@python wget.py http://www.sigplan.org/sigplanconf.cls sigplanconf.cls
