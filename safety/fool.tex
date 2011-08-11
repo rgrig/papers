@@ -89,7 +89,7 @@ Historically, verifying whether a program or a model satisfies  temporal safety 
 verification community~\cite{DBLP:books/daglib/0080029,dblp:conf/cav/ballr01,dblp:conf/oopsla/bierhoffa07,DBLP:journals/tse/Holzmann97}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
 %
 Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
-These constraints are related with the correct use of types operations in different contexts.
+These constraints are related to the correct use of types operations in different contexts.
 For example, in object-oriented languages, the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties for Java programs of realistic size.
@@ -121,10 +121,9 @@ if one iterator modifies its collection, then other existing iterators of the sa
 It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
 increase the intuitiveness of the specification.
 In this aspect \TPL \ departs from most of other techniques for typestate of object-oriented programs. They aim at decomposing properties involving several objects into several specifications which reflect 
-the point of view of a single object. Conversely,  we take, for typestate specification, a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: we believe it is more intuitive and effective to specify a constraint of 
-an aggregate structure of objects when the property involves the behavior of  several entities.
+the point of view of a single object. Conversely,  we take, for typestate specification, a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: when a property involves the behavior of  several entities, we believe it is more intuitive and effective to specify a constraint of  an aggregate structure of objects. 
    
-Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
+Thanks to the features 2 and 3 above, \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
 
 In this paper we focus on \TPL \ formal semantics and expressivity.
@@ -1097,32 +1096,41 @@ However, there is no conceptual problem with repeating the exercise for a functi
 % >>>
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
 
-\rg{What we want to say here is:
-The prototype and the bytecode instrumenter exist, but their description is out of scope.
-Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
+\rg{Rewriting this.}
 
-In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
-The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+A prototype implementation of TOPL is online~\cite{web:topl.prototype}.
+It consists of two parts.
 
-\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
+\paragraph{TOPL and SOOL interpreter.}
 
-The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
-A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
-This, however, would use memory to store the whole trace of events.
-Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
-A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
-A Python programmer would say that the SOOL interpreter is a generator.
-A Java programmer would say that an event-based programming model is used.
-In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
 
-\rg{Talk about non-determinism: We need to forget some states in practice.}
 
-\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
-
-% >>>
-\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
-
-% >>>
+%\rg{What we want to say here is:
+%The prototype and the bytecode instrumenter exist, but their description is out of scope.
+%Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
+%
+%In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
+%The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+%
+%\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
+%
+%The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
+%A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
+%This, however, would use memory to store the whole trace of events.
+%Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
+%A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
+%A Python programmer would say that the SOOL interpreter is a generator.
+%A Java programmer would say that an event-based programming model is used.
+%In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
+%
+%\rg{Talk about non-determinism: We need to forget some states in practice.}
+%
+%\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
+%
+%% >>>
+%\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
+%
+%% >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
@@ -1145,8 +1153,11 @@ Every stage focuses on verifying only the parts of the code that previous stages
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
 It is likely that our language could be fruitfully combined with their analysis technique.
 
-Very general specifications of program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. 
-\dd{tell something about these two. What's the difference with us?}
+While the SLAM verifier~\cite{dblp:conf/cav/ballr01} specialises on device drivers and checks client conformance rather than full protocols, 
+very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
+
+%\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
+%As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
 \rg{TODO: Blame assignment --- error traces}
 
