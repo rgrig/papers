@@ -1119,13 +1119,12 @@ It is likely that our language could be fruitfully combined with their technique
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 This paper presents ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
-We intend to make use of  separation logic to deal with the  heavy use of the heap in object-oriented software.
-Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time check of the properties
+Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time checking of the properties
 on an idealised oop language.
 
-In the future we intend to develop static analysis techniques for \TPL \ properties of Java programs.
-This will require investigating suitable abstraction techniques to obtain meaningful and precise over-approximations
-of the state space of the programs. Moreover we intend to develop tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
+In the future we intend to make use of  separation logic to deal with the  heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for \TPL \ properties of Java programs using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
+This will require investigating suitable abstraction techniques for obtaining meaningful and precise over-approximations
+of the state space of the programs. Finally, we intend to develop tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
 
 \rg{TODO: Boogie has trace-set semantics by definition, so it's a good PL to try.}
 \rg{IDEA: apply to something like Haskell?}
