@@ -1092,11 +1092,11 @@ In any case, the memory needed for storing events is proportional to the longest
 % >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
-Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept to integrate notions typical of object-oriented programs. 
-There are several extension of typestate to object-oriented programming.
-A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/BierhoffA07}. 
+Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
+We are certainly not the first in doing this: there are several extension of typestate to object-oriented programming in the literature.
+A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/bierhoffa07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
-The method is highly modular and therefore efficient.  The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provides a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
+The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
 can deal with inheritance.
 
 
@@ -1104,14 +1104,14 @@ The paper~\cite{dblp:conf/sigsoft/AlfaroH01} introduces an automata-based formal
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
 
-In~\cite{dblp:conf/issta/FinkYDRG06} presents sound verification techniques for typestate properties of Java  programs.
+In~\cite{dblp:conf/issta/FinkYDRG06} the authors present sound verification techniques for typestate properties of Java  programs.
 Their approach is divided in several stages with different verifiers varying for cost and precision.
 In the early stages efficient but imprecise analyses are employed whereas
 more expensive and precise techniques are then progressively employed in later stages.
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
-It is likely that our language could be fruitfully combined with their technique.
-\dinocomment{this is very weak! Need to be improved}
+It is likely that our language could be fruitfully combined with their analysis technique.
+
 
 \rg{TODO: Blame assignment --- error traces}
 
