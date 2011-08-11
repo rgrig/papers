@@ -1087,32 +1087,41 @@ However, there is no conceptual problem with repeating the exercise for a functi
 % >>>
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
 
-\rg{What we want to say here is:
-The prototype and the bytecode instrumenter exist, but their description is out of scope.
-Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
+\rg{Rewriting this.}
 
-In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
-The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+A prototype implementation of TOPL is online~\cite{web:topl.prototype}.
+It consists of two parts.
 
-\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
+\paragraph{TOPL and SOOL interpreter.}
 
-The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
-A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
-This, however, would use memory to store the whole trace of events.
-Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
-A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
-A Python programmer would say that the SOOL interpreter is a generator.
-A Java programmer would say that an event-based programming model is used.
-In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
 
-\rg{Talk about non-determinism: We need to forget some states in practice.}
 
-\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
-
-% >>>
-\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
-
-% >>>
+%\rg{What we want to say here is:
+%The prototype and the bytecode instrumenter exist, but their description is out of scope.
+%Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
+%
+%In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
+%The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
+%
+%\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
+%
+%The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
+%A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
+%This, however, would use memory to store the whole trace of events.
+%Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
+%A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
+%A Python programmer would say that the SOOL interpreter is a generator.
+%A Java programmer would say that an event-based programming model is used.
+%In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
+%
+%\rg{Talk about non-determinism: We need to forget some states in practice.}
+%
+%\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
+%
+%% >>>
+%\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
+%
+%% >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
@@ -1137,6 +1146,8 @@ It is likely that our language could be fruitfully combined with their analysis 
 
 Very general specifications of program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. 
 \dd{tell something about these two. What's the difference with us?}
+\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
+As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
 \rg{TODO: Blame assignment --- error traces}
 
