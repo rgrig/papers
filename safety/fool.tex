@@ -89,7 +89,7 @@ Historically, verifying whether a program or a model satisfies  temporal safety 
 verification community~\cite{DBLP:books/daglib/0080029,dblp:conf/cav/ballr01,dblp:conf/oopsla/bierhoffa07,DBLP:journals/tse/Holzmann97}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
 %
 Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
-These constraints are related with the correct use of types operations in different contexts.
+These constraints are related to the correct use of types operations in different contexts.
 For example, in object-oriented languages, the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
 The long term aim of our project is the automatic verification of typestate properties for Java programs of realistic size.
@@ -121,10 +121,9 @@ if one iterator modifies its collection, then other existing iterators of the sa
 It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
 increase the intuitiveness of the specification.
 In this aspect \TPL \ departs from most of other techniques for typestate of object-oriented programs. They aim at decomposing properties involving several objects into several specifications which reflect 
-the point of view of a single object. Conversely,  we take, for typestate specification, a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: we believe it is more intuitive and effective to specify a constraint of 
-an aggregate structure of objects when the property involves the behavior of  several entities.
+the point of view of a single object. Conversely,  we take, for typestate specification, a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: when a property involves the behavior of  several entities, we believe it is more intuitive and effective to specify a constraint of  an aggregate structure of objects. 
    
-Thanks to 2 and 3 \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints of their code and the precise formal description needed by verification tools for automatic 
+Thanks to the features 2 and 3 above, \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification tools for automatic 
 checking of these constraints.
 
 In this paper we focus on \TPL \ formal semantics and expressivity.
