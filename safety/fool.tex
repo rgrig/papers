@@ -681,6 +681,11 @@ I think there were some other examples where we needed it, but I can't remember 
 \rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
 
 % >>>
+\subsection{Translating TOPL into iTOPL}\label{sec:syntax.desugaring} % <<<
+The main translation is that of TOPL labels into iTOPL labels. To
+illustrate how that works, let $\mathit{Context}\ \mathit{Tag}\
+\mathit{MethodPattern}$ be a TOPL label. If $$
+% >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
 SOOL is a subset of existing object-oriented languages.
@@ -740,10 +745,11 @@ transitions.
 \rg{Let's use `arc' consistently for `directed edge.'}
 
 For the property to be well-formed there must be a vertex start and a
-vertex error.\rlp{Is this correct, and should it be part of the grammar?}
-\rg{I think it should not be part of the grammar.
-At the moment it is not enforced by the static checker, but it should.
-So I'd say that what you say is correct.}
+vertex error.
+%\rlp{Is this correct, and should it be part of the grammar?}
+%\rg{I think it should not be part of the grammar.
+%At the moment it is not enforced by the static checker, but it should.
+%So I'd say that what you say is correct.}
 \rlp{Somewhere note distinction between start vertex and start
   state.}
 
@@ -782,9 +788,10 @@ which transitions are available. But actually, we do not have enough
 information to determine that. This is a consequence of the second
 slightly non-standard aspect of our automatons, namely that each label
 carries not only a single guard but potentially a list of guards.
-We call the length of this list, the \emph{depth} of the guard.
+We call the length of this list, the \emph{depth} of the transition.
 \rg{I said `length' in \autoref{sec:dynamic}, which needs rewriting anyway.
 Should we say `transition depth' everywhere from now on?}
+\rlp{Yes, let us do that.}
 
 In order for a transition to be available, all the guards along its
 list have to evaluate to true. We will describe this evaluation in a
@@ -845,6 +852,9 @@ If the transition is enabled and taken, the store for the vertex at the end of t
 I like `enabled' better than `matched', because the latter seems more overloaded.
 I'm not sure about `taken'.
 I chose `performed' over taken because it suggests there are actions being done.}
+\rlp{I like `taken' because in english a transition can be taken,
+  meaning chosen, and an action can be taken, meaning
+  performed. `Performing' a transition sounds a bit wrong.}
 
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
