@@ -714,6 +714,7 @@ Each property gives rise to an automaton defined over the labeled multigraph $(V
 by the transitions: $V$ is the set of vertices mentioned as endpoints of
 the arcs and $E$ is the set of labeled edges mentioned by the
 transitions.
+\rg{Let's use `arc' consistently for `directed edge.'}
 
 For the property to be well-formed there must be a vertex start and a
 vertex error.\rlp{Is this correct, and should it be part of the grammar?}
@@ -723,9 +724,14 @@ So I'd say that what you say is correct.}
 \rlp{Somewhere note distinction between start vertex and start
   state.}
 
-The automaton takes as input a list of events carrying values. For
-values, we assume a countable set \set{Value} and for events we assume
+The automaton takes as input a list of events carrying values.
+\rg{This is ambiguous to parse: ``(list of events) carrying values'' or ``list of (events carrying values)''?}
+For values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
+\rg{Does the cardinality of \set{Value} matter?}
+\rg{Does the cardinality of \set{Event} matter?}
+\rg{I think it should be made clear that events \emph{contain} values.
+It's conceivable to interpret this paragraph as saying that the input has type $(\mathit{event}*\mathit{value}\,\mathit{list})\,\mathit{list}$.}
 
 We will now describe how the automaton reacts to events, specifically
 how labels are evaluated. As this is a slightly non-standard
@@ -736,11 +742,14 @@ index in the guards and actions, and the state of the automaton is
 given by specifying the vertex in the graph as well as the value of
 all automaton variables.
 
-We model stores as partial functions with finite domain (sometimes
-called dictionaries):
+We model stores as partial functions with finite domain (sometimes called dictionaries):
+\rg{Do you skip equation numbers on purpose?}
 \[
 \set{Store} = \N \pmap \set{Value}
 \]
+\rg{Why did you replace \set{Variable} by $\N$?
+I got \set{Variable} from separation logic articles.
+I know the Java code from the plane uses $\N$, but I'd say that's an implementation choice.}
 And so a state of the automaton has the type
 \[
 \set{State} = \set{Vertex}\times\set{Store}
@@ -749,8 +758,10 @@ Given the state of the automaton and an event we would like to know
 which transitions are available. But actually, we do not have enough
 information to determine that. This is a consequence of the second
 slightly non-standard aspect of our automatons, namely that each label
-carries not only a single guard but potentially a list of guards. We
-call the lenght of this list, the \emph{depth} of the guard.
+carries not only a single guard but potentially a list of guards.
+We call the length of this list, the \emph{depth} of the guard.
+\rg{I said `length' in \autoref{sec:dynamic}, which needs rewriting anyway.
+Should we say `transition depth' everywhere from now on?}
 
 In order for a transition to be available, all the guards along its
 list have to evaluate to true. We will describe this evaluation in a
@@ -792,6 +803,8 @@ Actions modify the store, using values from an event:
 In order for a transition of depth $n$ to be enabled for a trace of
 events, the first $n$ events of the trace has to pass the $n$ guards
 on the label with the stores modified by the guards:
+\rg{If guards take a pair then you should also change \set{Guard} above.
+Same for \set{Action}.}
 \[
 \begin{array}{c l}
 & \mathit{enabled}((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
@@ -800,26 +813,28 @@ g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1})
 \end{array}
 \]
 where
-\[
-\begin{array}{r c l}
-  s_0 & = & s \\
-  s_i & = & a_i(e_{i-1}, s_{i-1})
-\end{array}
-\]
-If the transition is enabled and taken, the store for the vertex at
-the end of the arc will be $s_n$.
+\begin{align}
+  s_0 &=  s \\
+  s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
+\end{align}
+If the transition is enabled and taken, the store for the vertex at the end of the arc will be $s_n$.
+\rg{I was saying `matched' and `performed'.
+I like `enabled' better than `matched', because the latter seems more overloaded.
+I'm not sure about `taken'.
+I chose `performed' over taken because it suggests there are actions being done.}
 
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
 state and trace of events, the automaton does not get stuck but is
 allowed to consume one event without changing its state. Note that
 this is not equivalent to an implied self-loop on all states, as
-dropping event s is not allowed if there are any enabled
+dropping events is not allowed if there are any enabled
 transitions. In that case one of the enabled transitions is taken and
 the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$ is the vertex at the
 end of the arc of the transition, $s_n$ is defined as above and
 $\mathit{events}_n$ is the current executions state's event trace with the first
 $n$ events dropped.
+\rg{An example would help to understand this paragraph.}
 
 We can define a predicate that determine the possible execution state transitions
 \[
