@@ -18,6 +18,7 @@
 \definecolor{darkred}{rgb}{0.4,0,0}
 \definecolor{darkblue}{rgb}{0,0,0.4}
 \definecolor{verylightgray}{rgb}{0.9,0.9,0.9}
+\definecolor{lightblue}{rgb}{0,0,0.9}
 % comment the next line for printing
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
 \hypersetup{
@@ -710,7 +711,7 @@ In other words, properties encode bad executions, rather than good executions.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-[Start of rewrite]\\
+\textcolor{lightblue}{[Start of rewrite]}\\
 Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
 by the transitions: $V$ is the set of vertices mentioned as endpoints of
 the arcs and $E$ is the set of labeled edges mentioned by the
@@ -722,8 +723,7 @@ vertex error.\rlp{Is this correct, and should it be part of the grammar?}
 At the moment it is not enforced by the static checker, but it should.
 So I'd say that what you say is correct.}
 \rlp{Somewhere note distinction between start vertex and start
-  state. Is there an error state or just an error vertex (such that
-  all states with the error vertex are implicitly error states)?}
+  state.}
 
 The automaton takes as input a list of events carrying values. For
 values, we assume a countable set \set{Value} and for events we assume
@@ -780,10 +780,75 @@ and store) and the second component records the remaining trace of
 events for that state.
 
 We now describe when transitions are enabled. For this we have to look
-at guards and actions.
+at labels. A label is a list of pairs of guards and actions. A
+guard compare the values in an event with those in a store and
+concludes either pass or no pass:
+\[
+\set{Guard} = \set{Event}\to\set{Store}\to2
+\]
+if the event passes, the corresponding action is taken on that event.
+Actions modify the store, using values from an event:
+\[
+\set{Action} = \set{Event}\to\set{Store}\to\set{Store}
+\]
+In order for a transition of depth $n$ to be enabled for a trace of
+events, the first $n$ events of the trace has to pass the $n$ guards
+on the label with the stores modified by the guards:
+\[
+\begin{array}{c l}
+& \mathit{enabled}((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
+ = &
+g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1}) 
+\end{array}
+\]
+where
+\[
+\begin{array}{r c l}
+  s_0 & = & s \\
+  s_i & = & a_i(e_{i-1}, s_{i-1})
+\end{array}
+\]
+If the transition is enabled and taken, the store for the vertex at
+the end of the arc will be $s_n$.
 
-\ \\ {}[End of rewrite]\\
+And now we reach the final slightly non-standard aspect of our
+automatons, namely that if no transitions are enabled for a given
+state and trace of events, the automaton does not get stuck but is
+allowed to consume one event without changing its state. Note that
+this is not equivalent to an implied self-loop on all states, as
+dropping event s is not allowed if there are any enabled
+transitions. In that case one of the enabled transitions is taken and
+the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$ is the vertex at the
+end of the arc of the transition, $s_n$ is defined as above and
+$\mathit{events}_n$ is the current executions state's event trace with the first
+$n$ events dropped.
 
+We can define a predicate that determine the possible execution state transitions
+\[
+\mathit{Step}\in\set{ExeState}\to\set{ExeState}\to2
+\]
+this predicate is defined in \autoref{fig:adStep}.
+From this we can define a non-deterministic step function, where all
+enabled transitions are taken:
+\begin{align}
+\mathit{NdetStep}&\in(\set{ExeState}\to2)\to\set{ExeState}\to2\\
+%\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
+\mathit{NdetStep}\;S&=\{ s \mid \exists s'\in S.\ \mathit{Step}(s', s) \} \label{eq:ndetstep}
+\end{align}
+An iterated version of \textit{NdetStep} is useful for defining reachable states.
+We define it as the least fixed point for the following equation.
+\begin{align}
+\mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
+\end{align}
+\rlp{Should this really include 0-sized steps?}
+Finally, we can define the set of traces described by an automaton:
+\[
+\{ e \mid
+\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},0),e)\}
+\}
+\]
+These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
+\ \\ \textcolor{lightblue}{[End of rewrite]}\\
 
 
 In the following, let $n=\{0,1,\ldots,n-1\}$ and let \set{Value} denote a generic set of values.
@@ -868,13 +933,13 @@ A transition matches when all its guards hold.
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
-\^  $\proc{adStep}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
+\^  $\proc{Step}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
 \=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
 \=  $e:=\text{$e_1$ without the suffix $e_2$}$
 \=  ~for each~ transition $((y_1,y_2),l)$
 \+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
 \=    $\sigma:=\sigma_1$
-\=    ~for each~ $k\in\mathit{len}\;l$
+\=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
 \+      $(g,a):=l\;k$
 \=      ~if~ $\lnot(g\;(e\;k)\;\sigma)$ ~then continue~ to line 3
 \=      $\sigma:=a\;(e\;k)\;\sigma$
