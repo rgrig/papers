@@ -470,8 +470,6 @@ It is possible, however, to check if resources are leaked when the program termi
 % >>>
 \subsection{\textsc{Slic} Queue} % <<<
 
-\rg{Rewriting.}
-
 \textsc{Slic}~\cite{ball2002} is the property language of SLAM~\cite{dblp:conf/cav/ballr01}.
 Its authors give the following interesting example.
 
@@ -490,12 +488,11 @@ property TooManyZeros
 \end{Verbatim}
 \delimitVerbatim
 The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
-
-
-
-We will see later (\autoref{}) that TOPL is compiled into an intermediate language that can express such properties more succintly.
-It is, however, unclear whether such properties are common, so we opted to 
-
+A natural generalization is to allow at most $n$~zeros.
+The size of the TOPL property text grows linearly with~$n$.
+A better solution would be to allow incrementing and decrementing of automaton variables when transitions are performed.
+However, it is unclear if such properties arise in practice, so we chose to keep TOPL simple.
+Moreover, we will see later (\autoref{sec:syntax.topl}) that TOPL is translated to an intermediate language that does support such actions.
 
 % >>>
 \subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
