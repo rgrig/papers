@@ -684,9 +684,43 @@ I think there were some other examples where we needed it, but I can't remember 
 
 \rg{(Re)Writing this.}
 
-SOOL is a subset of existing object-oriented languages.
-It has classes, assignments, and method calls.
-It should be possible to use TOPL with any language that is a superset of SOOL\null.
+% plan
+% - all we need is traces
+% - sool is an example of how traces are produced
+% - here's an example sool program
+% - here's the grammar; note
+%   - expressions have no side-effects
+
+Traces of events act as a thin interface between programs and iTOPL properties.
+The advantage is that iTOPL can be used with many programming languages.
+One needs to define how programs in a certain language produce events.
+Also, since iTOPL is low-level, one should also build on it a language closer to the programming language.
+TOPL is an example of a language built on top of iTOPL that is suitable in an object-oriented setting.
+We use SOOL to illustrate how an object-oriented language produces events.
+SOOL has classes, assignments, and method calls.
+
+The following is a small snippet of a SOOL program.
+\delimitVerbatim
+\begin{Verbatim}
+class User
+  Unit remove(Collection c, Object x)
+    var Bool hasNext
+    var Iterator i := c.iterator()
+    do { hasNext := i.hasNext() }
+    while hasNext
+      var Object y := i.next()
+      if x == y { i.remove() }
+    return unit
+\end{Verbatim}
+\delimitVerbatim
+In SOOL statements can be grouped by $\{$curly brackets$\}$ but also by indentation.
+The loop condition is \Verb@hasNext@ rather than \Verb@i.hasNext()@ because SOOL expressions do not have side-effects.
+Method calls do have side-effects, but they are statements, not expressions.
+Like in \TeX, loops check their condition in the middle.
+
+\begin{remark}
+In Java, \Verb@while (i.hasNext()) ...@ gives the \emph{illusion} that the loop's condition is checked in the beginning.
+\end{remark}
 
 \autoref{fig:syntax.sool} shows a big part of SOOL's syntax.
 Expressions, which do not have side-effects, are missing.
@@ -709,15 +743,12 @@ Expressions, which do not have side-effects, are missing.
   Reference& Expression \b. Identifier \cr
   Actuals& Expression \(\b, Expression\)\* \cr
 }
-\rlp{Is $Body$ normally called $Block$?}
-\rg{\emph{I} normally call it \textit{Body}.
-I think the C standard calls it ``composed statement.''
-(Conditionals and loops are ``control-flow statements,'' I think.)
-In summary:
-I don't know what's more common, so feel free to change.}
 \caption{(Partial) Syntax of SOOL}
 \label{fig:syntax.sool}
 \end{figure}
+
+It should be possible to use TOPL with any language that is a superset of SOOL\null.
+\rg{Remove previous sentence?}
 
 % >>>
 % >>>
