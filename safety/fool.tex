@@ -498,7 +498,7 @@ It is, however, unclear whether such properties are common, so we opted to
 
 
 % >>>
-\subsection{Sorter and Comparator} % <<<
+\subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
 
 \rg{TODO: HO 1.}
 \par\medskip\noindent
@@ -555,7 +555,7 @@ Our prototype implementation is an interpreter for SOOL programs that dynamicall
 % - desugaring translation
 
 TOPL aims to be intuitive:
-Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \textit{start}, the \texttt{using prefix} directive offers some extra convenience, and so on.
+Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \start, the \texttt{using prefix} directive offers some extra convenience, and so on.
 From the point of view of semantics, however, these conveniences are in the way.
 For this reason we also define iTOPL (\textbf inner TOPL), an even simpler language into which TOPL is desugared.
 
@@ -646,8 +646,13 @@ There is also an atomic guard that matches against method calls and always speci
 }
 \dinocomment{why many syntactic categories are called AtomicGuard?}
 \rlp{Is it the case that $Action ::= (AtomicAction)^*$ or not?}
+\rg{It depends on whether we give an abstract syntax or a concrete syntax.
+I prefer a concrete syntax.}
 \rlp{Why is $!Guard$ an $AtomicGuard$?}
+\rg{See \Verb@ReusedComparator@ in \autoref{sec:examples.sorter}.
+I think there were some other examples where we needed it, but I can't remember now.}
 \rlp{Is it the case that $\set{Value} = (Identifier | Literal)$?}
+\rg{\set{Value} is a set; \textit{Identifier} and \textit{Literal} are syntactic categories that can be used in Java to denote values.}
 \caption{Syntax of iTOPL}
 \label{fig:syntax.itopl}
 \end{figure}
@@ -683,6 +688,11 @@ Expressions, which do not have side-effects, are missing.
   Actuals& Expression \(\b, Expression\)\* \cr
 }
 \rlp{Is $Body$ normally called $Block$?}
+\rg{\emph{I} normally call it \textit{Body}.
+I think the C standard calls it ``composed statement.''
+(Conditionals and loops are ``control-flow statements,'' I think.)
+In summary:
+I don't know what's more common, so feel free to change.}
 \caption{(Partial) Syntax of SOOL}
 \label{fig:syntax.sool}
 \end{figure}
@@ -831,10 +841,11 @@ We define it as the least fixed point for the following equation.
 \mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
 \end{align}
 \rlp{Should this really include 0-sized steps?}
+\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
 Finally, we can define the set of traces described by an automaton:
 \[
 \{ e \mid
-\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},0),e)\}
+\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},[]),e)\}
 \}
 \]
 These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
