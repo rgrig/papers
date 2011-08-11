@@ -4,7 +4,7 @@
 
 property "out of order read"
   start -> tracking: *.init(A, B)
-  tracking -> has:   true := a.hasMore()
+  tracking -> has:   true := a.hasMore()  // TODO: stay in tracking ...
   has -> error:      b.read()
 
 class Byte {}

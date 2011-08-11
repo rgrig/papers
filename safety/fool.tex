@@ -150,13 +150,17 @@ The first example (\autoref{sec:examples.steps}) uses a large part of \TPL\null.
 Each execution step introduces a few new concepts.
 The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.jdbc}) illustrate TOPL expressiveness.
 
+\rg{TODO: Property names are not consistent:
+Should they read like an error message?
+Should they say what is good or what is bad?}
+
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
 The last statement in \autoref{fig:first.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/BierhoffA07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/BierhoffBA09}.
+Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
-the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/BierhoffA07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/BierhoffBA09}.
+the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 \autoref{fig:first.diagram}, on the other hand, captures precisely a temporal property involving three interacting objects.
 \autoref{fig:first.topl} describes the same property in (the textual form of) TOPL, and is clearly isomorphic to the diagram of~\autoref{fig:first.diagram}.
 The rest of this section explains the semantics of \autoref{fig:first.diagram} and \autoref{fig:first.topl}:
@@ -498,34 +502,53 @@ Moreover, we will see later (\autoref{sec:syntax.topl}) that TOPL is translated 
 % >>>
 \subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
 
-\rg{TODO: HO 1.}
-\par\medskip\noindent
+This section is inspired by the higher-order temporal properties of Disney et al.~\cite{disney2011}.
+We adapt their first motivating example to the object-oriented setting.
+Consider the following interface fragments.
+\delimitVerbatim
+\input{SortCompare}
+\delimitVerbatim
+Sorter objects implement comparison-based sorting algorithms.
+
+\medskip\emph{The \Verb@sort@ method is not recursive:}
+\delimitVerbatim
 \begin{Verbatim}
 property RecursiveSort
-  start -> inSort: call sort[2]
-  inSort -> ok: return sort[2]
-  inSort -> error: call sort[2]
+  using prefix Sorter
+  start -> inSort: call sort[*]
+  inSort -> ok:    return sort[*]
+  inSort -> error: call sort[*]
 \end{Verbatim}
 
-\rg{TODO: HO 2.}
-\par\medskip\noindent
+\medskip\emph{A comparator may only be used by its sorter:}
+\delimitVerbatim
 \begin{Verbatim}
 property ReusedComparator
-  start -> x: call Sorter.sort(Comparator)
-  x -> error: <!sorter> call comparator.*[*]
+  using prefix Sorter
+  start -> x: call S.sort(C)
+  x -> error: <!s> call c.*[*]
 \end{Verbatim}
+\delimitVerbatim
+The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
+The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
+The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
 
 % >>>
 \subsection{Atomicity} % <<<
 
-\rg{TODO: HO 3.}
-\par\medskip\noindent
+Another interesting property discussed by Disney et al.~\cite{disney2011} in the context of functional languages is atomicity.
+
+\medskip\emph{Method~\Verb@m@ should be atomic:}
+\delimitVerbatim
 \begin{Verbatim}
-property NotAtomicF
-  start -> inF: call *.f[*]
-  inF -> ok: return f[*]
-  inF -> error: ... // explicit granularity!
+property NotAtomicM
+  start -> inM: call m[*]
+  inM -> ok:    return m[*]
+  inM -> error: call badCall[*]
 \end{Verbatim}
+\delimitVerbatim
+All the events that should not intervene between the call to~\Verb@m@ and the return from~\Verb@m@ must be explicitly mentioned.
+Otherwise, if the granularity for atomicity is implicit, then it is easy for users to make mistakes.
 
 % >>>
 \subsection{JDBC} \label{sec:examples.jdbc} % <<<

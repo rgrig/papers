@@ -10,7 +10,7 @@ class B
     ba.ab(this)
     ba.aa()
 property "aa() called on null"
-  start -> error: *.aa()   // TODO: Add keyword 'null'.
+  start -> error: * := *.aa()   // TODO: Add keyword 'null'.
 main
   var B b := new
   b.go()
