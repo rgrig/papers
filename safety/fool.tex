@@ -61,6 +61,13 @@
 \newcommand{\start}{\ensuremath{\mathtt{start}}\xspace}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
 
+\newcommand{\functionfont}[1]{\mathit{#1}}
+\newcommand{\desugar}{\functionfont{des}}
+\newcommand{\enabled}{\functionfont{enabled}}
+
+\newcommand{\codefont}[1]{\mathtt{#1}}
+\newcommand{\this}{\codefont{this}}
+
 \theoremstyle{definition}
 \newtheorem{example}{Example}
 \theoremstyle{remark}
@@ -385,7 +392,7 @@ Notice that in order to find a counterexample we need to keep track of the relat
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 % >>>
-\subsection{More Iterators} \label{sec:examples.iterators} % <<<
+\subsection{More on Iterators} \label{sec:examples.iterators} % <<<
 
 Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
 
@@ -394,11 +401,12 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 \begin{Verbatim}
 property ModificationInvalidatesIterators
   using prefix java.util.{Collection,Iterator}
-  start -> iterating:     I := C.iterator()
-  iterating -> modified:  c.add(*), c.remove(*)
+  start -> iterating:    I := C.iterator()
+  iterating -> modified:  c.add(*),  c.remove(*)
   modified -> error:      call i.*[*]
 \end{Verbatim}
 \delimitVerbatim
+\dd{the notation of pattern has changed, they are not underlined anymore}
 This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
@@ -434,9 +442,8 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 
 \medskip
 We have now seen four properties of iterators.
-Each corresponds to a simple English sentence.
-It is possible to use only one TOPL property.
-However, there is no advantage of doing so.
+Each corresponds to a simple English sentence and to a single TOPL property.
+%However, there is no advantage of doing so.
 
 % >>>
 \subsection{Resources} % <<<
@@ -526,8 +533,8 @@ The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
 A natural generalization is to allow at most $n$~zeros.
 The size of the TOPL property text grows linearly with~$n$.
 A better solution would be to allow incrementing and decrementing of automaton variables when transitions are performed.
-However, it is unclear if such properties arise in practice, so we chose to keep TOPL simple.
-Moreover, we will see later (\autoref{sec:syntax.topl}) that TOPL is translated to an intermediate language that does support such actions.
+This feature can be easily added to TOPL\footnote{ As we will see later in \autoref{sec:syntax.topl}, TOPL is actually translated to an intermediate language that does support such feature.}.
+However, this is the only example we have encountered so far that would require such incrementing/decrementing of automata variable. For this reason, for the time being, we have chosen to keep \TPL \ simple and not include this feature.
 
 % >>>
 \subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
@@ -550,18 +557,18 @@ property RecursiveSort
   inSort -> error: call sort[*]
 \end{Verbatim}
 
-\medskip\emph{A comparator may only be used by its sorter:}
-\delimitVerbatim
-\begin{Verbatim}
-property ReusedComparator
-  using prefix Sorter
-  start -> x: call S.sort(C)
-  x -> error: <!s> call c.*[*]
-\end{Verbatim}
-\delimitVerbatim
-The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
-The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
-The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
+%\medskip\emph{A comparator may only be used by its sorter:}
+%\delimitVerbatim
+%\begin{Verbatim}
+%property ReusedComparator
+%  using prefix Sorter
+%  start -> x: call S.sort(C)
+%  x -> error: <!s> call c.*[*]
+%\end{Verbatim}
+%\delimitVerbatim
+%The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
+%The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
+%The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
 
 % >>>
 \subsection{Atomicity} % <<<
@@ -711,6 +718,60 @@ I think there were some other examples where we needed it, but I can't remember 
 \rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
 
 % >>>
+\subsection{Translating TOPL into iTOPL}\label{sec:syntax.desugaring} % <<<
+TOPL is designed to express properties over traces of events
+pertaining to method calls. A method call $x.m(v_1, \ldots, v_n)$ will
+generate the 
+following two events:
+\[
+\begin{array}{l}
+  \mathtt{call}_{m[n]}\ [x, v_1, \ldots, v_n] \qquad \mathrm{and} \\
+  \mathtt{return}_{m[n]}\ [x, v]
+\end{array}
+\]
+The call events are matched by labels of the form
+\[
+  \mathtt{call}\ m(p_1, \ldots, p_n)
+\]
+with $n$ value patterns for the arguments,
+while the return events are matched by labels of the form
+\[
+  \mathtt{return}\ m[p]
+\]
+with one value pattern for the return value.
+In both cases the TOPL labels give rise to an iTOPL label with one
+(guard, action) pair.
+
+The guard is constructed by stating that all automaton variables
+should have the approrpiate values. That is all lowercase automaton
+variables $x = p_i$ amongst the value
+patterns give rise to a guard term of the form
+\[
+event[i+2] = x
+\]
+(or $event[i] \neq x$ in the case of $p_i = !x$), referring to the
+array of values carried by the event.
+The guard is then the conjuntion of all these guard terms.
+
+The action expresses that automaton variables should be updated. So
+all uppercase automaton variables $X = p_i$ amongst the value
+patterns give rise to an update term of the form
+\[
+x := event[i+2]
+\]
+The action is then the concatenation of all such update terms.
+
+But it is also possible to write labels of a third form in TOPL,
+namely
+\[
+p := m(p_1, \ldots, p_n)
+\]
+Such a label expresses both a call of the method $m$ with the
+arguments matching $p_1, \ldots, p_n$ and a return with the value
+matching (or updating) $p$.
+In this case, the iTOPL label is a list of (guard, action)-pairs of
+length 2. The first element corresponds to the label $\mathtt{call}
+m(p_1, \ldots, p_n)$ and the second to the label $\mathtt{return} m[p]$.
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
 Traces of events act as a thin interface between programs and iTOPL properties.
@@ -784,11 +845,13 @@ Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
 For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
 We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
-We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N} \bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
+We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
+\bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
+For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a[i]$
+instead of $a\;i$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-\textcolor{lightblue}{[Start of rewrite]}\\
 Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
 by the transitions: $V$ is the set of vertices mentioned as endpoints of
 the arcs and $E$ is the set of labeled edges mentioned by the
@@ -796,39 +859,36 @@ transitions.
 \rg{Let's use `arc' consistently for `directed edge.'}
 
 For the property to be well-formed there must be a vertex start and a
-vertex error.\rlp{Is this correct, and should it be part of the grammar?}
-\rg{I think it should not be part of the grammar.
-At the moment it is not enforced by the static checker, but it should.
-So I'd say that what you say is correct.}
+vertex error.
+%\rlp{Is this correct, and should it be part of the grammar?}
+%\rg{I think it should not be part of the grammar.
+%At the moment it is not enforced by the static checker, but it should.
+%So I'd say that what you say is correct.}
 \rlp{Somewhere note distinction between start vertex and start
   state.}
 
-The automaton takes as input a list of events carrying values.
-\rg{This is ambiguous to parse: ``(list of events) carrying values'' or ``list of (events carrying values)''?}
+The automaton takes as input a list of events. The events contain
+values, which can be referred to by index in the guards and actions.
 For values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
 \rg{Does the cardinality of \set{Value} matter?}
 \rg{Does the cardinality of \set{Event} matter?}
-\rg{I think it should be made clear that events \emph{contain} values.
-It's conceivable to interpret this paragraph as saying that the input has type $(\mathit{event}*\mathit{value}\,\mathit{list})\,\mathit{list}$.}
 
 We will now describe how the automaton reacts to events, specifically
 how labels are evaluated. As this is a slightly non-standard
 automaton, there are some important things to point out. Firstly, the
 state of the automaton is not just a vertex but also a store. 
-That is, there is an array of automaton variables, referred to by
-index in the guards and actions, and the state of the automaton is
+
+That is, there is a set $\set{Variable}$ of automaton variables, and the state of the automaton is
 given by specifying the vertex in the graph as well as the value of
 all automaton variables.
 
 We model stores as partial functions with finite domain (sometimes called dictionaries):
 \rg{Do you skip equation numbers on purpose?}
+\rlp{Yes, if I am not going to refer to them.}
 \[
-\set{Store} = \N \pmap \set{Value}
+\set{Store} = \set{Variable} \pmap \set{Value}
 \]
-\rg{Why did you replace \set{Variable} by $\N$?
-I got \set{Variable} from separation logic articles.
-I know the Java code from the plane uses $\N$, but I'd say that's an implementation choice.}
 And so a state of the automaton has the type
 \[
 \set{State} = \set{Vertex}\times\set{Store}
@@ -838,9 +898,10 @@ which transitions are available. But actually, we do not have enough
 information to determine that. This is a consequence of the second
 slightly non-standard aspect of our automatons, namely that each label
 carries not only a single guard but potentially a list of guards.
-We call the length of this list, the \emph{depth} of the guard.
+We call the length of this list, the \emph{depth} of the transition.
 \rg{I said `length' in \autoref{sec:dynamic}, which needs rewriting anyway.
 Should we say `transition depth' everywhere from now on?}
+\rlp{Yes, let us do that.}
 
 In order for a transition to be available, all the guards along its
 list have to evaluate to true. We will describe this evaluation in a
@@ -859,9 +920,9 @@ of which events are next to be received by each state during a run of
 the automaton.
 
 To formalize this book keeping, we introduce the notion of
-\emph{execution state}. Execution states have the type
+\emph{execution state}. For brevity, we call execution states worlds. Worlds have the type
 \[
-\set{ExeState} = \set{State}\times\set{Trace}
+\set{World} = \set{State}\times\set{Trace}
 \]
 where the first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
@@ -871,23 +932,20 @@ We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
 guard compare the values in an event with those in a store and
 concludes either pass or no pass:
-\rg{If we drop $n=\{0,\ldots,n-1\}$, then maybe we should say $\B$ instead of~$2$.}
 \[
-\set{Guard} = \set{Event}\to\set{Store}\to2
+\set{Guard} = \set{Event}\times\set{Store}\to\B
 \]
 if the event passes, the corresponding action is taken on that event.
 Actions modify the store, using values from an event:
 \[
-\set{Action} = \set{Event}\to\set{Store}\to\set{Store}
+\set{Action} = \set{Event}\times\set{Store}\to\set{Store}
 \]
 In order for a transition of depth $n$ to be enabled for a trace of
 events, the first $n$ events of the trace has to pass the $n$ guards
 on the label with the stores modified by the guards:
-\rg{If guards take a pair then you should also change \set{Guard} above.
-Same for \set{Action}.}
 \[
 \begin{array}{c l}
-& \mathit{enabled}((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
+& \enabled((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
  = &
 g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1}) 
 \end{array}
@@ -902,6 +960,9 @@ If the transition is enabled and taken, the store for the vertex at the end of t
 I like `enabled' better than `matched', because the latter seems more overloaded.
 I'm not sure about `taken'.
 I chose `performed' over taken because it suggests there are actions being done.}
+\rlp{I like `taken' because in english a transition can be taken,
+  meaning chosen, and an action can be taken, meaning
+  performed. `Performing' a transition sounds a bit wrong.}
 
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
@@ -918,13 +979,13 @@ $n$ events dropped.
 
 We can define a predicate that determine the possible execution state transitions
 \[
-\mathit{Step}\in\set{ExeState}\to\set{ExeState}\to2
+\mathit{Step}\in\set{World}\to\set{World}\to\B
 \]
 this predicate is defined in \autoref{fig:adStep}.
 From this we can define a non-deterministic step function, where all
 enabled transitions are taken:
 \begin{align}
-\mathit{NdetStep}&\in(\set{ExeState}\to2)\to\set{ExeState}\to2\\
+\mathit{NdetStep}&\in(\set{World}\to\B)\to\set{World}\to\B\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
 \mathit{NdetStep}\;S&=\{ s \mid \exists s'\in S.\ \mathit{Step}(s', s) \} \label{eq:ndetstep}
 \end{align}
@@ -942,88 +1003,6 @@ Finally, we can define the set of traces described by an automaton:
 \}
 \]
 These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-\ \\ \textcolor{lightblue}{[End of rewrite]}\\
-
-
-In the following, let $n=\{0,1,\ldots,n-1\}$ and let \set{Value} denote a generic set of values.
-Each event has a tag and carries an array of values.
-\begin{align}
-\set{Event}&=\bigcup_{n\in\N}\set{Tag}_n\times(n\to\set{Value})
-\end{align}
-We assume that these basic sets are disjoint.
-Traces are finite.
-\begin{align}
-\set{Trace}=\bigcup_{n\in\N} n\to\set{Event} \label{eq:trace}
-\end{align}
-Intuitively, the program outputs a trace that drives the automaton.
-\dinocomment{Only one? I would say a set of traces. Right?}
-\dinocomment{Can we give the reader an intuitive reason why the event are of that form? Also, why is Tag indexed with $n$?}
-The automaton is defined on top of a finite multi-graph.
-The automaton is an array of transitions.
-Each transition has an edge and an array of labels.
-Each edge has a source vertex and a target vertex.
-Each label is a (guard, action) pair.
-There are at least two vertices.
-\begin{align}
-\set{Automaton} &= \bigcup_{n\in\N} n \to \set{Transition} \\
-\set{Transition} &= \set{Edge}\times \bigcup_{n\in\N} n\to\set{Label} \\
-\set{Edge}&=\set{Vertex}\times\set{Vertex} \\
-\set{Label}&=\set{Guard}\times\set{Action} \\
-\{\mathtt{start},\mathtt{error}\}&\subseteq\set{Vertex}
-\end{align}
-The deterministic state contains a store of values.
-\dinocomment{this deterministic state seems to come out of the blue.
-\rg{What do you mean?
-This is its definition.}}
-\dinocomment{I think it would be good to give an introduction about the determinist state. What is it? Why it is needed?
-etc. Just the definition at this point leave the reader wondering...}
-A store is a finite partial map from automaton variables to values.
-We also define an automaton deterministic execution state, which includes the input to be processed.
-\begin{align}
-\set{Store}&=\set{Variable}\pmap\set{Value} \\
-\set{AState}&=\set{Vertex}\times\set{Store} \label{eq:astate} \\
-\set{EAState}&=\set{AState}\times\set{Trace} \label{eq:eastate}
-\end{align}
-Guards compare the values in an event with those in a store.
-Actions modify the store, using values from an event.
-\begin{align}
-\set{Guard}&=\set{Event}\to\set{Store}\to2 \\
-\set{Action}&=\set{Event}\to\set{Store}\to\set{Store}
-\end{align}
-The automaton deterministic step function evolves the execution state.
-\begin{align}
-\mathit{adStep}\in\set{EAState}\to\set{EAState}\to2 \label{eq:adstep}
-\end{align}
-\begin{example}
-Consider an automaton in state~$s_1$.
-The input is a trace~$e_1e_2$ obtained by concatenating traces $e_1$~and~$e_2$.
-The automaton must make a nondeterministic choice out of some alternatives.
-A feasible alternative might be to consume $e_1$ and move to state~$s_2$.
-For this, we write $(s_2,e_2)\in\mathit{adStep}(s_1,e_1e_2)$.
-(We write $x\in f$ to mean that $f(x)=1$.)
-\end{example}
-The nondeterministic step is defined in terms of~\textit{adStep}.
-\begin{align}
-\mathit{anStep}&\in(\set{EAState}\to2)\to\set{EAState}\to2\\
-\mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S \label{eq:anstep}
-\end{align}
-An iterated version of \textit{anStep} is useful for defining reachable states.
-We define it as the least fixed point for the following equation.
-\begin{align}
-\mathit{anStep}^\star\;S &= S \cup \mathit{anStep}^\star\;(\mathit{anStep}\;S)
-\end{align}
-Finally, we can define the set of traces described by an automaton.
-\[ \{ e \mid \exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{anStep}^\star\;\{((\mathtt{start},0),e)\}\} \]
-These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-
-\autoref{fig:adStep} defines \textit{adStep}.
-Consider an automaton in state~$(x_1,\sigma_1)$ that processes trace~$e_1$.
-If there is a transition from~$x_1$ to~$x_2$ that matches the events in a prefix~$e$ of~$e_1$, then the automaton may nondeterministically choose to perform that transition (line~10).
-If no such transition exists, then the first event in $e_1$ is dropped and the automaton remains in the same state (line~11).
-The actions of a transition are performed in order.
-The guards are evaluated after all previous actions were performed.
-A transition matches when all its guards hold.
-
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
@@ -1034,9 +1013,9 @@ A transition matches when all its guards hold.
 \+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
 \=    $\sigma:=\sigma_1$
 \=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
-\+      $(g,a):=l\;k$
-\=      ~if~ $\lnot(g\;(e\;k)\;\sigma)$ ~then continue~ to line 3
-\=      $\sigma:=a\;(e\;k)\;\sigma$
+\+      $(g,a):=l[k]$
+\=      ~if~ $\lnot g(e[k],\;\sigma)$ ~then continue~ to line 3
+\=      $\sigma:=a(e[k],\;\sigma)$
 \-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
 \-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
 \end{alg}
@@ -1045,13 +1024,6 @@ A transition matches when all its guards hold.
 \caption{One automaton step}
 \label{fig:adStep}
 \end{figure}
-
-The function~\textit{adStep} is the crux of the automata semantics.
-At line~5 a copy of the store is made, which is used by the following loop.
-This copy is how \emph{roll-back} is built into the semantics of the automata.
-If transitions always have length~$1$, then \textit{adStep} becomes simpler.
-However, we could not find a desugaring into automata with transitions of length~$1$.
-
 % >>>
 \subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
@@ -1148,7 +1120,7 @@ We developed \emph{a TOPL and SOOL interpreter} with the goal of experimenting w
 Indeed, while developing the interpreter we discovered several subtle bugs in our initial model.
 There are two main differences between this paper (\autoref{sec:semantics}) and the implementation.
 First, in the interest of simplicity the interpreter tracks only one active state.
-Whenever the set of active states would be $S\in(\set{ExeState}\to2)$, the interpreter only keeps track of some $s\in S$.
+Whenever the set of active states would be $S\in(\set{World}\to\B)$, the interpreter only keeps track of some $s\in S$.
 Which exactly is the state~$s$ that is being tracked depends on a random number generator seed.
 The random number generator simulates nondeterminism.
 Second, the trace of events is communicated from the SOOL interpreter to the TOPL interpreter lazily.
