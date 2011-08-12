@@ -154,7 +154,7 @@ Finally, Section~\ref{sec:conclusions} concludes the paper and describes our pla
 
 The first example (\autoref{sec:examples.steps}) uses a large part of \TPL\null.
 Each execution step introduces a few new concepts.
-The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.jdbc}) illustrate TOPL expressiveness.
+The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.ho}) illustrate TOPL expressiveness.
 
 \rg{TODO: Property names are not consistent:
 Should they read like an error message?
@@ -221,8 +221,8 @@ property InvalidateOtherIterators
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
   two -> yBad:   \pattern{x}.remove()
   two -> xBad:   \pattern{y}.remove()
-  jBad -> error: call \pattern{y}.*[*]
-  iBad -> error: call \pattern{x}.*[*]
+  yBad -> error: call \pattern{y}.*[*]
+  xBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
 \caption{A first example: Safety property}
 \label{fig:first.topl}
@@ -398,28 +398,27 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 
 \medskip\emph{Modifying a collection invalidates all its existent iterators:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property ModificationInvalidatesIterators
   using prefix java.util.{Collection,Iterator}
-  start -> iterating:    I := C.iterator()
-  iterating -> modified:  c.add(*),  c.remove(*)
-  modified -> error:      call i.*[*]
+  start -> iterating:    \pattern{I} := \pattern{C}.iterator()
+  iterating -> modified: \pattern{c}.add(*), \pattern{c}.remove(*)
+  modified -> error:     call \pattern{i}.*[*]
 \end{Verbatim}
 \delimitVerbatim
-\dd{the notation of pattern has changed, they are not underlined anymore}
 This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
 
 \medskip\emph{Iterators should advance only if they are not exhausted:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property UnsafeIteratorNext
   using prefix java.util.{Collection,Iterator}
-  start -> iterating:         I := *.iterator()
-  iterating -> notExhausted:  true := i.hasNext()
-  notExhausted -> iterating:  i.next()
-  iterating -> error:         i.next()
+  start -> iterating:        \pattern{I} := *.iterator()
+  iterating -> notExhausted: \pattern{true} := \pattern{i}.hasNext()
+  notExhausted -> iterating: \pattern{i}.next()
+  iterating -> error:        \pattern{i}.next()
 \end{Verbatim}
 \delimitVerbatim
 The transition from \Verb@iterating@ to \Verb@notExhausted@ matches when \Verb@hasNext@ returns \Verb@true@.
@@ -427,12 +426,12 @@ In general, Java literals act as guards on transitions.
 
 \medskip\emph{Method \Verb@remove@ may only be called after \Verb@next@:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property RemoveBeforeNext
   using prefix java.util.{Collection,Iterator}
-  start -> created: I := *.iterator()
-  created -> ok:    i.next()
-  created -> error: i.remove()
+  start -> created: \pattern{I} := *.iterator()
+  created -> ok:    \pattern{i}.next()
+  created -> error: \pattern{i}.remove()
 \end{Verbatim}
 \delimitVerbatim
 TOPL is designed to track properties involving multiple objects.
@@ -443,7 +442,6 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 \medskip
 We have now seen four properties of iterators.
 Each corresponds to a simple English sentence and to a single TOPL property.
-%However, there is no advantage of doing so.
 
 % >>>
 \subsection{Resources} % <<<
@@ -464,44 +462,44 @@ To create a resource, we use the static method \Verb@makeResource@.
 
 \medskip\emph{A resource must be acquired when used:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property ResourceSafety
-  start -> released:    R := makeResource()
-  released -> error:    r.use()
-  released -> acquired: r.acquire()
-  acquired -> released: r.release()
+  start -> released:    \pattern{R} := makeResource()
+  released -> error:    \pattern{r}.use()
+  released -> acquired: \pattern{r}.acquire()
+  acquired -> released: \pattern{r}.release()
 \end{Verbatim}
 \delimitVerbatim
 In simple cases, resources cannot repeatedly move between the states \Verb@released@ and \Verb@acquired@.
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property ResourceSafetySimple
-  start -> acquired:    R := makeResource()
-  acquired -> released: r.release()
-  released -> error:    r.use()
+  start -> acquired:    \pattern{R} := makeResource()
+  acquired -> released: \pattern{r}.release()
+  released -> error:    \pattern{r}.use()
 \end{Verbatim}
 \delimitVerbatim
 The following examples in this subsection only cover the case when \Verb@acquire@ must be called explicitly.
 
 \medskip\emph{A resource must not be released twice:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property DoubleRelease
-  start -> released:    R := makeResource()
-  released -> acquired: r.acquire()
-  acquired -> released: r.release()
-  released -> error:    r.release()
+  start -> released:    \pattern{R} := makeResource()
+  released -> acquired: \pattern{r}.acquire()
+  acquired -> released: \pattern{r}.release()
+  released -> error:    \pattern{r}.release()
 \end{Verbatim}
 \delimitVerbatim
 Similarly, one can express that a resource must not be acquired twice.
 
 \medskip\emph{A resource must eventually be released:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property ResourceLeak
-  start -> released:    R := makeResource()
-  released -> acquired: r.acquire()
-  acquired -> released: r.release()
+  start -> released:    \pattern{R} := makeResource()
+  released -> acquired: \pattern{r}.acquire()
+  acquired -> released: \pattern{r}.release()
   acquired -> error:    return Main.main[1]
 \end{Verbatim}
 \delimitVerbatim
@@ -517,16 +515,16 @@ Its authors give the following interesting example.
 
 \medskip\emph{A queue may contain at most three zeros:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property TooManyZeros
-  start -> cnt0: Q := makeQueue()
-  cnt0 -> cnt1:  q.put(0)
-  cnt1 -> cnt2:  q.put(0)
-  cnt2 -> cnt3:  q.put(0)
-  cnt3 -> error: q.put(0)
-  cnt3 -> cnt2:  0 := q.get()
-  cnt2 -> cnt1:  0 := q.get()
-  cnt1 -> cnt0:  0 := q.get()
+  start -> cnt0: \pattern{Q} := makeQueue()
+  cnt0 -> cnt1:  \pattern{q}.put(0)
+  cnt1 -> cnt2:  \pattern{q}.put(0)
+  cnt2 -> cnt3:  \pattern{q}.put(0)
+  cnt3 -> error: \pattern{q}.put(0)
+  cnt3 -> cnt2:  0 := \pattern{q}.get()
+  cnt2 -> cnt1:  0 := \pattern{q}.get()
+  cnt1 -> cnt0:  0 := \pattern{q}.get()
 \end{Verbatim}
 \delimitVerbatim
 The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
@@ -537,19 +535,13 @@ This feature can be easily added to TOPL\footnote{ As we will see later in \auto
 However, this is the only example we have encountered so far that would require such incrementing/decrementing of automata variable. For this reason, for the time being, we have chosen to keep \TPL \ simple and not include this feature.
 
 % >>>
-\subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
+\subsection{Recursivity and Atomicity}\label{sec:examples.ho} % <<<
 
 This section is inspired by the higher-order temporal properties of Disney et al.~\cite{disney2011}.
-We adapt their first motivating example to the object-oriented setting.
-Consider the following interface fragments.
-\delimitVerbatim
-\input{SortCompare}
-\delimitVerbatim
-Sorter objects implement comparison-based sorting algorithms.
 
 \medskip\emph{The \Verb@sort@ method is not recursive:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property RecursiveSort
   using prefix Sorter
   start -> inSort: call sort[*]
@@ -557,27 +549,9 @@ property RecursiveSort
   inSort -> error: call sort[*]
 \end{Verbatim}
 
-%\medskip\emph{A comparator may only be used by its sorter:}
-%\delimitVerbatim
-%\begin{Verbatim}
-%property ReusedComparator
-%  using prefix Sorter
-%  start -> x: call S.sort(C)
-%  x -> error: <!s> call c.*[*]
-%\end{Verbatim}
-%\delimitVerbatim
-%The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
-%The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
-%The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
-
-% >>>
-\subsection{Atomicity} % <<<
-
-Another interesting property discussed by Disney et al.~\cite{disney2011} in the context of functional languages is atomicity.
-
 \medskip\emph{Method~\Verb@m@ should be atomic:}
 \delimitVerbatim
-\begin{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
 property NotAtomicM
   start -> inM: call m[*]
   inM -> ok:    return m[*]
@@ -586,15 +560,6 @@ property NotAtomicM
 \delimitVerbatim
 All the events that should not intervene between the call to~\Verb@m@ and the return from~\Verb@m@ must be explicitly mentioned.
 Otherwise, if the granularity for atomicity is implicit, then it is easy for users to make mistakes.
-
-% >>>
-\subsection{JDBC} \label{sec:examples.jdbc} % <<<
-
-\rg{TODO}
-\par\medskip\noindent
-\begin{Verbatim}
-property BlaBla
-\end{Verbatim}
 
 % >>>
 % >>>
@@ -772,6 +737,8 @@ matching (or updating) $p$.
 In this case, the iTOPL label is a list of (guard, action)-pairs of
 length 2. The first element corresponds to the label $\mathtt{call}
 m(p_1, \ldots, p_n)$ and the second to the label $\mathtt{return} m[p]$.
+
+% >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
 Traces of events act as a thin interface between programs and iTOPL properties.
@@ -1163,7 +1130,7 @@ very general specifications of object-oriented program behaviour can be given in
 
 %\rg{TODO: Blame assignment --- error traces}
 
-
+% >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 This paper presents ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
 Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
