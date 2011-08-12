@@ -22,13 +22,13 @@
 % comment the next line for printing
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
 \hypersetup{
-  pdftitle={A Language for Specifying Safety Temporal Properties of Object-Oriented Programs},
+  pdftitle={TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs},
   pdfauthor={Radu Grigore and Rasmus Lerchedahl Petersen and Dino Distefano}}
 
 \newcommand{\TPL}{TOPL}
 
 \titlebanner{DRAFT}
-\title{\TPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
+\title{TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Radu Grigore \and Rasmus Lerchedahl Petersen \and Dino Distefano}{Queen Mary, University of London}{{\rm\{}rgrig,rusmus,ddino{\rm\}}@eecs.qmul.ac.uk}
 
 % rg: I tend to give grammars in BFS order
@@ -45,6 +45,7 @@
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
 
 \newcommand{\note}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
+%\renewcommand{\note}[2]{}
 \newcommand{\rg}[1]{\note{rg}{#1}}
 \newcommand{\rlp}[1]{\note{rlp}{#1}}
 \newcommand{\dd}[1]{\note{dd}{#1}}
@@ -1017,7 +1018,7 @@ Finally, line~8 returns the updated program execution state and the unit value~$
 \=  $((x_1,\ldots,x_n), b) :=\mathit{methodOfName}\;m$
 \=  $\sigma_1:=[\textbf{this}:(f\;s), x_1:(g_1\;s), \ldots, x_n:(g_n\;s)]$
 \=  $o_1:=\text{$o_0$ with $(\mathtt{call}m,[f\;s,g_1\;s,\ldots,g_n\;s])$ appended}$
-\=  $(((\sigma_2,h_2),i_2,o_2),v):=\mathit{exec}\;b\;((\sigma_1,h_0),i_0,o_1)$
+\=  $(((\sigma_2,h_2),i_2,o_2),v):=\mathit{exec}\bigl(((\sigma_1,h_0),i_0,o_1),b\bigr)$
 \=  $o_3:=\text{$o_2$ with $(\mathtt{return}m,[v])$ appended}$
 \=  $h_3:=h_2[(e\;s, x) : v]$
 \=  ~return~ $(((\sigma_2,h_3),i_2,o_3), ())$
@@ -1032,7 +1033,7 @@ Other statements are interpreted as usual and are not interesting.
 
 Given a program with the main body~$b$, the output trace~$o$ corresponding to some input~$i$ is obtained by starting the execution with an empty store~$[]$, an empty heap~$[]$, and an empty output~$[]$.
 \begin{align}
-((\_,\_,o),\_):=\mathit{exec}\;b\;(([],[]),i,[])
+((\_,\_,o),\_):=\mathit{exec}\bigl((([],[]),i,[]),b\bigr)
 \end{align}
 
 % >>>
@@ -1089,30 +1090,30 @@ Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/ca
 While SLAM specialises on device drivers and checks client conformance rather than full protocols, 
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
-In~\cite{disney2011} contratcs are used to express legal traces of
+In~\cite{disney2011} contracts are used to express legal traces of
 programs in a functional language with references. The contracts
 specify traces as regular expressions over calls and returns and so
 look similar to our automatons, if for a quite different
 setting. Here, the specifications are function-centered, though, and
 again, capturing inter object relations seems somewhat awkward.
-%\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
-%As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
-%\rg{TODO: Blame assignment --- error traces}
 
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
-This paper presents ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
-Our language has been designed for verification and is based on specialized automatons to deal with the temporal aspect.
-Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time checking of the properties
-on an idealised oop language.
+This paper presents ongoing work on the design of TOPL---a language for expressing temporal safety properties for object-oriented programs.
+TOPL is translated into an intermediate language, iTOPL\null.
+The low-level iTOPL is very regular and so its semantics are easy to define.
+The high-level TOPL is designed to look like a normal object-oriented language.
+More importantly, TOPL curtails iTOPL's expressivity in a way that, we expect, will benefit static verification.
+Our implementation helped clarify TOPL's semantics.
+It only handles a simple object-oriented language, but we are in the process of adapting the implementation to Java.
 
-In the future we intend to make use of  separation logic to deal with the  heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for \TPL \ properties of Java programs using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
-This will require investigating suitable abstraction techniques for obtaining meaningful and precise over-approximations
-of the state space of the programs. Finally, we intend to develop tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would to help with scalability of the analysis.
+In the future, we intend to make use of separation logic~\cite{reynolds2002} to deal with the heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for \TPL \ properties of Java programs using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
+This will require investigating suitable abstraction techniques for obtaining meaningful and precise over-approximations of the state space of the programs.
+Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
 
-\rg{TODO: Boogie has trace-set semantics by definition, so it's a good PL to try.}
-\rg{IDEA: apply to something like Haskell?}
+Another possible development would be to design other high-level property languages on top of iTOPL\null.
+For example, it is conceivable that iTOPL could be used as an intermediate language in tools that verify temporal properties of programs written in Haskell~\cite{haskell} or Boogie~\cite{leino2008boogie}.
 
 %>>>
 
