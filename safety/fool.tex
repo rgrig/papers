@@ -1143,12 +1143,6 @@ A modular static verification method for typestate protocols is introduces in~\c
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
 The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
 can deal with inheritance.
-
-
-The paper~\cite{dblp:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
-This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
-In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
-
 In~\cite{dblp:conf/issta/FinkYDRG06} the authors present sound verification techniques for typestate properties of Java  programs.
 Their approach is divided in several stages with different verifiers varying for cost and precision.
 In the early stages efficient but imprecise analyses are employed whereas
@@ -1157,13 +1151,19 @@ Every stage focuses on verifying only the parts of the code that previous stages
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
 It is likely that our language could be fruitfully combined with their analysis technique.
 
-While the SLAM verifier~\cite{dblp:conf/cav/ballr01} specialises on device drivers and checks client conformance rather than full protocols, 
+An automata-based formalism for specifying properties of software interfaces were introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
+This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
+In contrast to \TPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level. A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.  
+Differences between SLIC and \TPL \ include: the use of non-determinism  (in SLIC) to encode universal quantification of dynamic allocated data, and the  ability to have complex code in the automaton transitions. 
+\TPL \ specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed in correspondence of an automaton transitions. 
+Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/cav/ballr01}.
+While SLAM specialises on device drivers and checks client conformance rather than full protocols, 
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
 %\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
 %As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
-\rg{TODO: Blame assignment --- error traces}
+%\rg{TODO: Blame assignment --- error traces}
 
 
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
