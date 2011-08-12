@@ -50,6 +50,7 @@
 \newcommand{\dd}[1]{\note{dd}{#1}}
 \newcommand{\dinocomment}[1]{\dd{#1}}
 
+\newcommand{\B}{\ensuremath{\mathbb{B}}}
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
@@ -847,6 +848,7 @@ We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
 guard compare the values in an event with those in a store and
 concludes either pass or no pass:
+\rg{If we drop $n=\{0,\ldots,n-1\}$, then maybe we should say $\B$ instead of~$2$.}
 \[
 \set{Guard} = \set{Event}\to\set{Store}\to2
 \]
