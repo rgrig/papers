@@ -743,7 +743,17 @@ We say that a program \emph{violates} a property when their sets of traces inter
 In other words, properties encode bad executions, rather than good executions.
 
 \begin{notation}
-\rg{TODO: Sets, $\to$, $\times$, $(a,b)$, and so on.}
+Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
+We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
+We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
+In particular, the powerset of \set A is denoted by $\set A\to\B$.
+Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
+We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
+Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
+For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
+We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
