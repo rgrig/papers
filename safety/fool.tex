@@ -386,7 +386,7 @@ Notice that in order to find a counterexample we need to keep track of the relat
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 % >>>
-\subsection{More Iterators} \label{sec:examples.iterators} % <<<
+\subsection{More on Iterators} \label{sec:examples.iterators} % <<<
 
 Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
 
@@ -395,11 +395,12 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 \begin{Verbatim}
 property ModificationInvalidatesIterators
   using prefix java.util.{Collection,Iterator}
-  start -> iterating:     I := C.iterator()
-  iterating -> modified:  c.add(*), c.remove(*)
+  start -> iterating:    I := C.iterator()
+  iterating -> modified:  c.add(*),  c.remove(*)
   modified -> error:      call i.*[*]
 \end{Verbatim}
 \delimitVerbatim
+\dd{the notation of pattern has changed, they are not underlined anymore}
 This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
@@ -435,9 +436,8 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 
 \medskip
 We have now seen four properties of iterators.
-Each corresponds to a simple English sentence.
-It is possible to use only one TOPL property.
-However, there is no advantage of doing so.
+Each corresponds to a simple English sentence and to a single TOPL property.
+%However, there is no advantage of doing so.
 
 % >>>
 \subsection{Resources} % <<<
