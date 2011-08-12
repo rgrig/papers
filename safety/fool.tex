@@ -65,6 +65,9 @@
 \newcommand{\desugar}{\functionfont{des}}
 \newcommand{\enabled}{\functionfont{enabled}}
 
+\newcommand{\codefont}[1]{\mathtt{#1}}
+\newcommand{\this}{\codefont{this}}
+
 \theoremstyle{definition}
 \newtheorem{example}{Example}
 \theoremstyle{remark}
@@ -686,24 +689,90 @@ I think there were some other examples where we needed it, but I can't remember 
 
 % >>>
 \subsection{Translating TOPL into iTOPL}\label{sec:syntax.desugaring} % <<<
-The translation $\desugar$ from TOPL to iTOPL is defined as follows:
+TOPL is designed to express properties over traces of events of the
+following two types:
 \[
-\begin{array}{r c l}
-  \desugar(\mathtt{property}\ id\ us\ ts)
-  & = &
-  \mathtt{property}\ id\ (map\ \desugar_{trans}\ ts) \\
-  \desugar_{trans}(arc : l_1\ldots l_n)
-  & = &
-  arc : \desugar_{lab}\ l_1\ldots arc : \desugar_{lab}\ l_n \\
-  \desugar_{lab} (c\ t\ mp)
-  & = &
-  
+\begin{array}{l}
+  \mathtt{call}_{m[n]}\ [c, \this, v_1, \ldots, v_n] \qquad \mathrm{and} \\
+  \mathtt{return}_{m[n]}\ [c, v]
 \end{array}
 \]
-The main translation is that of TOPL labels into iTOPL labels. To
-illustrate how that works, let $\mathit{Context}\ \mathit{Tag}\
-\mathit{MethodPattern}$ be a TOPL label. If $\mathit{Context}$ is not
-empty, it will be 
+The call events are matched by labels of the form
+\[
+  <c>\ \mathtt{call}\ m(p_1, \ldots, p_n)
+\]
+with $n$ value patterns for the arguments,
+while the return events are matched by labels of the form
+\[
+  <c>\ \mathtt{return}\ m[p]
+\]
+with one value pattern for the return value.
+In both cases the TOPL labels give rise to an iTOPL label with one
+(guard, action) pair.
+
+The guard is constructed by stating that all automaton variables
+should have the approrpiate values. That is all lowercase automaton
+variables $x = p_i$ amongst the value
+patterns give rise to a guard term of the form
+\[
+event[i] = x
+\]
+(or $event[i] \neq x$ in the case of $p_i = !x$), referring to the
+array of values carried by the event.
+The guard is then the conjuntion of all these guard terms together
+with the context guard $c = \this$.
+
+The action expresses that automaton variables should be updated. So
+all uppercase automaton variables $X = p_i$ amongst the value
+patterns give rise to an update term of the form
+\[
+x := event[i]
+\]
+The action is then the concatenation of all such update terms.
+
+But it is also possible to write labels of a third form in TOPL,
+namely
+\[
+p := m(p_1, \ldots, p_n)
+\]
+Such a label expresses both a call of the method $m$ with the
+arguments matching $p_1, \ldots, p_n$ and a return with the value
+matching (or updating) $p$.
+In this case, the iTOPL label is a list of (guard, action)-pairs of
+length 2. The first element corresponds to the label $\mathtt{call}
+m(p_1, \ldots, p_n)$ and the second to the label $\mathtt{return} m[p]$.
+% There are two main aspects of the desugaring from TOPL to iTOPL.
+% The translation $\desugar$ from TOPL to iTOPL is defined as follows:
+% \rlp{This should probably be a figure.}
+% \[
+% \begin{array}{r @{\,} c @{\,} l}
+%   \desugar(\mathtt{property}\ id\ us\ ts)
+%   & = &
+%   \mathtt{property}\ id\ (map\ \desugar_{trans}\ ts) \\
+%   \desugar_{trans}(arc : l_1\ldots l_n)
+%   & = &
+%   arc : \desugar_{lab}\ l_1\ldots arc : \desugar_{lab}\ l_n \\
+%   \desugar_{lab} (<c>\ t\ mp)
+%   & = &
+%   [0] = c \land \desugar_{lab}(t\ mp) \\
+%   \desugar_{lab} (\mathtt{call}\ r.m(args))
+%   & = &
+%   (\mathit{guard}_{call}(m, r::args), \\ && \phantom{(}
+%   \mathit{action}(r::args)) \\
+%   \desugar_{lab} (\mathtt{return}\ r := m[n])
+%   & = &
+%   (\mathit{guard}_{return}(m, r, n), \\ && \phantom{(}
+%   \mathit{action}([r])) \\
+%  \desugar_{lab} (l := r.m(args))
+%   & = &
+%   [
+%   (\mathit{guard}_{call}(m, r::args), \\ && \phantom{[(}
+%   \mathit{action}(r::args)), \\ && \phantom{[}
+%   (\mathit{guard}_{return}(m, l, |args|), \\ && \phantom{[(}
+%   \mathit{action}([l]))
+%   ]
+% \end{array}
+% \]
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
