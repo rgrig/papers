@@ -527,8 +527,8 @@ The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
 A natural generalization is to allow at most $n$~zeros.
 The size of the TOPL property text grows linearly with~$n$.
 A better solution would be to allow incrementing and decrementing of automaton variables when transitions are performed.
-However, it is unclear if such properties arise in practice, so we chose to keep TOPL simple.
-Moreover, we will see later (\autoref{sec:syntax.topl}) that TOPL is translated to an intermediate language that does support such actions.
+This feature can be easily added to TOPL\footnote{ As we will see later in \autoref{sec:syntax.topl}, TOPL is actually translated to an intermediate language that does support such feature.}.
+However, this is the only example we have encountered so far that would require such incrementing/decrementing of automata variable. For this reason, for the time being, we have chosen to keep \TPL \ simple and not include this feature.
 
 % >>>
 \subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
