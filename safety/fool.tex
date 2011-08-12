@@ -188,16 +188,17 @@ using prefix java.util.Iterator
   \tikzset{transition/.style={->,>=latex}}
   \tikzset{every label/.style={gray}}
   \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-  \node[vertex] (gotOne) at (0,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (gotTwo) at (0,-2) [label=below:\texttt{two}] {};
+  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
   \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
   \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
   \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
   \draw[transition] (0,0.5)--(start);
-  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (gotOne);
-  \draw[transition] (gotOne)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (gotTwo);
-  \draw[transition] (gotTwo) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-  \draw[transition] (gotTwo)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
   \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
   \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
 \end{tikzpicture}
@@ -210,6 +211,7 @@ property InvalidateOtherIterators
   using prefix java.util.Collection
   using prefix java.util.Iterator
   start -> one:  \pattern{X} := \pattern{C}.iterator()
+  one -> one:    *
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
   two -> yBad:   \pattern{x}.remove()
   two -> xBad:   \pattern{y}.remove()
@@ -224,19 +226,42 @@ property InvalidateOtherIterators
  \def\m#1{\PY{n+na}{#1}}
  \def\t#1{\mathtt{#1}}
 \begin{align*}
-&\{(\start,[])\} \\
+&\{\;(\start,[])\;\} \\
 &\s{Iterator<Integer> i = c.\m{iterator}();} \\
 &\text{assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
-&\{(\start,[]), (\t{one},[c:1,x:2])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2])\;\}
+  \end{aligned}\\
 &\s{Iterator<Integer> j = c.\m{iterator}();} \\
 &\text{assume {\tt j} holds $3$} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{two},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{two},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{i.\m{next}();} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{two},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{two},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{i.\m{remove}();} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{yBad},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{yBad},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{j.\m{next}()} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]), (\error,[c:1,x:2,y:3])\}
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\error,[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 \end{align*}}
 \caption{A first example: Running step by step}
 \label{fig:first.steps}
@@ -305,18 +330,24 @@ All conditions are met to perform the transition from \start to \texttt{one}.
 When the transition is performed the values that matched \pattern X~and~\pattern C are written in the automaton variables $x$~and~$c$.
 For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
+The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also performed.
 
 \paragraph{Step~2.}
-For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states in turn\footnote{The state $(\start,[])$ is a special state that is always active.
-Conceptually, the vertex \texttt{start} has a self-loop on it that always matches.}:
-\[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] 
-For $(\start,[])$ exactly the same reasoning as step 1 holds and the result is that \[(\texttt{one},[c:1,x:3])\] is active after the second step.
+For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
+Now we need to consider the two active states \[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] in turn.
+For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-For \[\texttt{(one},[c:1,x:2])\] we look at the transition outgoing from vertex {\tt one} which has the label \[\pattern{Y}:=\pattern{c}.\mathtt{iterator}();\]
-The method and the uppercase pattern~$\pattern Y$ match in the same way as before.
-The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
-In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\start\to\texttt{one}$ was performed.
+For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
+\begin{align*}
+&\text{\Verb@one -> one: *@} \\
+&\text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
+\end{align*}
+The first of these transitions always matches, and keeps states with vertex \texttt{one} active.
+The second of these transitions has two patterns, \pattern Y~and~\pattern c.
+The uppercase pattern~\pattern Y always matches;
+the lowercase pattern \pattern c matches only the value held by the automaton variable~$c$.
+In this case, the automaton variable~$c$ was set in the previous step to the value of the program variable~\texttt{c}.
+Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
 
 \paragraph{Step~3.}
 
