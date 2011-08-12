@@ -50,6 +50,7 @@
 \newcommand{\dd}[1]{\note{dd}{#1}}
 \newcommand{\dinocomment}[1]{\dd{#1}}
 
+\newcommand{\B}{\ensuremath{\mathbb{B}}}
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
@@ -706,22 +707,11 @@ empty, it will be
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
-\rg{(Re)Writing this.}
-
-% plan
-% - all we need is traces
-% - sool is an example of how traces are produced
-% - here's an example sool program
-% - here's the grammar; note
-%   - expressions have no side-effects
-
 Traces of events act as a thin interface between programs and iTOPL properties.
-The advantage is that iTOPL can be used with many programming languages.
-One needs to define how programs in a certain language produce events.
-Also, since iTOPL is low-level, one should also build on it a language closer to the programming language.
-TOPL is an example of a language built on top of iTOPL that is suitable in an object-oriented setting.
-We use SOOL to illustrate how an object-oriented language produces events.
-SOOL has classes, assignments, and method calls.
+To use iTOPL with some programming language, one must define how programs in that language produce events.
+Also, because iTOPL is low-level, one should design a high-level property language.
+TOPL is an example of a high-level property language built on top of iTOPL that is suitable in an object-oriented setting.
+SOOL is an example of an object-oriented programming language that produces events.
 
 The following is a small snippet of a SOOL program.
 \delimitVerbatim
@@ -737,17 +727,13 @@ class User
     return unit
 \end{Verbatim}
 \delimitVerbatim
-In SOOL statements can be grouped by $\{$curly brackets$\}$ but also by indentation.
-The loop condition is \Verb@hasNext@ rather than \Verb@i.hasNext()@ because SOOL expressions do not have side-effects.
-Method calls do have side-effects, but they are statements, not expressions.
-Like in \TeX, loops check their condition in the middle.
-
-\begin{remark}
-In Java, \Verb@while (i.hasNext()) ...@ gives the \emph{illusion} that the loop's condition is checked in the beginning.
-\end{remark}
+In SOOL, statements are grouped by $\{$curly brackets$\}$ or by indentation.
+SOOL expressions do not have side-effects.
+Method calls have side-effects---they are statements.
+There is only one type of loop, which checks its condition at some arbitrary point (like \Verb@\loop@ in~\TeX).
+Other aspects of SOOL are fairly standard.
 
 \autoref{fig:syntax.sool} shows a big part of SOOL's syntax.
-Expressions, which do not have side-effects, are missing.
 
 \begin{figure}
 \grammar{
@@ -771,9 +757,6 @@ Expressions, which do not have side-effects, are missing.
 \label{fig:syntax.sool}
 \end{figure}
 
-It should be possible to use TOPL with any language that is a superset of SOOL\null.
-\rg{Remove previous sentence?}
-
 % >>>
 % >>>
 \section{Semantics}\label{sec:semantics} % <<<
@@ -784,7 +767,17 @@ We say that a program \emph{violates} a property when their sets of traces inter
 In other words, properties encode bad executions, rather than good executions.
 
 \begin{notation}
-\rg{TODO: Sets, $\to$, $\times$, $(a,b)$, and so on.}
+Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
+We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
+We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
+In particular, the powerset of~\set A is denoted by $\set A\to\B$.
+Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
+We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
+Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
+For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
+We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
@@ -873,6 +866,7 @@ We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
 guard compare the values in an event with those in a store and
 concludes either pass or no pass:
+\rg{If we drop $n=\{0,\ldots,n-1\}$, then maybe we should say $\B$ instead of~$2$.}
 \[
 \set{Guard} = \set{Event}\to\set{Store}\to2
 \]
@@ -1059,9 +1053,11 @@ However, we could not find a desugaring into automata with transitions of length
 % >>>
 \subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
+\rg{Rewriting this.}
+
 The \emph{program state} holds method parameters and dynamically allocated objects.
-Method parameters are held in a store.
-Dynamically allocated objects are held in the heap.
+Method parameters are held in a store;
+dynamically allocated objects are held in the heap.
 The \emph{heap} is a finite partial map from (object reference, field name) pairs to values.
 \begin{align}
 \set{PState}&=\set{Store}\times\set{Heap}\\
