@@ -1136,7 +1136,7 @@ A detailed description, however, is outside the scope of this article, which foc
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
-We are certainly not the first in doing this: there are several extension of typestate to object-oriented programming in the literature.
+We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
 A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/bierhoffa07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
 The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
@@ -1150,14 +1150,21 @@ This work focuses on analysis whereas we focus on presenting a useful specificat
 It is likely that our language could be fruitfully combined with their analysis technique.
 
 An automata-based formalism for specifying properties of software interfaces were introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
-This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
+This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external methods.
 In contrast to \TPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level. A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.  
-Differences between SLIC and \TPL \ include: the use of non-determinism  (in SLIC) to encode universal quantification of dynamic allocated data, and the  ability to have complex code in the automaton transitions. 
-\TPL \ specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed in correspondence of an automaton transitions. 
+Differences between SLIC and \TPL \ include: the use (in SLIC) of
+non-determinism to encode universal quantification of dynamically allocated data, and the  ability to have complex code in the automaton transitions. 
+\TPL \ specifications naturally express universally quantified
+properties over data structures and for computability reasons,  we
+have chosen to limit the  actions performed during automaton transitions. 
 Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/cav/ballr01}.
 While SLAM specialises on device drivers and checks client conformance rather than full protocols, 
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
+In~\cite{disney2011} contratcs are used to express legal traces of
+programs in a functional language with references. This is where we
+found the atomicity example. In this setting, however, the granularity
+of events is implicit
 %\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
 %As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
