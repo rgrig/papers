@@ -746,7 +746,7 @@ In other words, properties encode bad executions, rather than good executions.
 Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
 We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
 We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
-In particular, the powerset of \set A is denoted by $\set A\to\B$.
+In particular, the powerset of~\set A is denoted by $\set A\to\B$.
 Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
 We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
@@ -1024,9 +1024,11 @@ However, we could not find a desugaring into automata with transitions of length
 % >>>
 \subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
+\rg{Rewriting this.}
+
 The \emph{program state} holds method parameters and dynamically allocated objects.
-Method parameters are held in a store.
-Dynamically allocated objects are held in the heap.
+Method parameters are held in a store;
+dynamically allocated objects are held in the heap.
 The \emph{heap} is a finite partial map from (object reference, field name) pairs to values.
 \begin{align}
 \set{PState}&=\set{Store}\times\set{Heap}\\
