@@ -348,7 +348,7 @@ For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {
 &\text{\Verb@one -> one: *@} \\
 &\text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
 \end{align*}
-The first of these transitions always matches, and keeps states with vertex \texttt{one} active.
+The first of these transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
 The second of these transitions has two patterns, \pattern Y~and~\pattern c.
 The uppercase pattern~\pattern Y always matches;
 the lowercase pattern \pattern c matches only the value held by the automaton variable~$c$.
@@ -359,14 +359,14 @@ Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the sta
 
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-which matches no label of outgoing transitions of the currently active states (i.e., $\start$, {\tt one}, and {\tt  two}).
-Therefore, although the program proceeds, the set of active states in the automaton remain unchanged.
+which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
+Therefore, although the program proceeds, the set of active states of the automaton remain unchanged.
 
 \paragraph{Step~4.}
 
 In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
 Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
-The states corresponding to vertices $\start$ and {\tt one} remain unchanged, because their outgoing transitions do not match.
+The states corresponding to vertices \start and {\tt one} remain unchanged, because their outgoing transitions are disabled.
 However,  the outgoing transition of state {\tt two} can fire, and therefore {\tt yBad} becomes active.
 
 \paragraph{Step~5.}
@@ -421,7 +421,7 @@ property UnsafeIteratorNext
   iterating -> error:        \pattern{i}.next()
 \end{Verbatim}
 \delimitVerbatim
-The transition from \Verb@iterating@ to \Verb@notExhausted@ matches when \Verb@hasNext@ returns \Verb@true@.
+The transition from \Verb@iterating@ to \Verb@notExhausted@ is enabled when \Verb@hasNext@ returns \Verb@true@.
 In general, Java literals act as guards on transitions.
 
 \medskip\emph{Method \Verb@remove@ may only be called after \Verb@next@:}
@@ -592,7 +592,6 @@ Each label has a method pattern that is used to identify the set of methods to w
 In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
 The more interesting case is when there are value patterns for each argument and perhaps even for the context and the result.
-The context pattern appears \Verb@<@surrounded by angle brackets\Verb@>@ at the beginning of the label and is matched against the value of the special variable \textbf{this}.
 Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
 
 \begin{figure}
@@ -602,9 +601,8 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
   Transition& Arc \b: Label \(\b, Label\)\* \cr
   StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
   Arc& Vertex \b{->} Vertex \cr
-  Label& Context\? Tag\? MethodPattern \cr
+  Label& Tag\? MethodPattern \cr
   Vertex& Identifier \cr
-  Context& \b< ValuePattern \b> \cr
   Tag& \b{call} \| \b{return} \cr
   MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
   ResultPattern& ValuePattern \b{:=} \cr
@@ -902,7 +900,7 @@ concludes either pass or no pass:
 \[
 \set{Guard} = \set{Event}\times\set{Store}\to\B
 \]
-if the event passes, the corresponding action is taken on that event.
+if the event passes, the corresponding action is performed on that event.
 Actions modify the store, using values from an event:
 \[
 \set{Action} = \set{Event}\times\set{Store}\to\set{Store}
@@ -922,14 +920,7 @@ where
   s_0 &=  s \\
   s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
 \end{align}
-If the transition is enabled and taken, the store for the vertex at the end of the arc will be $s_n$.
-\rg{I was saying `matched' and `performed'.
-I like `enabled' better than `matched', because the latter seems more overloaded.
-I'm not sure about `taken'.
-I chose `performed' over taken because it suggests there are actions being done.}
-\rlp{I like `taken' because in english a transition can be taken,
-  meaning chosen, and an action can be taken, meaning
-  performed. `Performing' a transition sounds a bit wrong.}
+If the transition is enabled and performed, the store for the vertex at the end of the arc will be $s_n$.
 
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
@@ -937,7 +928,7 @@ state and trace of events, the automaton does not get stuck but is
 allowed to consume one event without changing its state. Note that
 this is not equivalent to an implied self-loop on all states, as
 dropping events is not allowed if there are any enabled
-transitions. In that case one of the enabled transitions is taken and
+transitions. In that case one of the enabled transitions is performed and
 the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$ is the vertex at the
 end of the arc of the transition, $s_n$ is defined as above and
 $\mathit{events}_n$ is the current executions state's event trace with the first
@@ -950,7 +941,7 @@ We can define a predicate that determine the possible execution state transition
 \]
 this predicate is defined in \autoref{fig:adStep}.
 From this we can define a non-deterministic step function, where all
-enabled transitions are taken:
+enabled transitions are performed:
 \begin{align}
 \mathit{NdetStep}&\in(\set{World}\to\B)\to\set{World}\to\B\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
