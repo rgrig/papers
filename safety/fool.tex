@@ -83,9 +83,8 @@
 
 \begin{abstract} % <<<
 In this paper we present ongoing work related to a new specification language for temporal safety properties aimed at object-oriented software.
-The language is expressive enough to represent relationships between objects and it is designed with the goal of performing dynamic and static analysis. 
+The language naturally captures relationships between objects and it is designed with the goal of performing dynamic and static analysis.
 We present its formal semantics as well as several examples showing its expressivity.
-Finally,  we briefly discuss dynamic checking w.r.t. a simple object-oriented language.
 \end{abstract}
 \category{D.2.1}{Software Engineering}{Requirements/Specifications}
 \terms Languages, Verification
@@ -115,7 +114,7 @@ TOPL has the following characteristics:
 \begin{enumerate}
 \item It expresses easily relationships between several objects.
 \item It is very high-level and similar to diagrams used in informal explanations.
-\item It has a well-defined formal semantics in terms of a specific type of automata.
+\item It has a well-defined formal semantics in terms of a specific type of automatons.
 \item It is designed to be used in program analysis (both static and dynamic).
 \end{enumerate}
 The ability to express relations of several objects makes \TPL\ quite expressive.
@@ -124,7 +123,7 @@ For example, for Java collections, a typical property one would want to state is
 If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used later.
 \end{quote}
 \noindent
-It is apparent that the formalization of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction.
+It is apparent that the formalization of the above constraint needs to keep track of several objects (at least two iterators, and one collection) and their interaction.
 Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of a single object.
 In contrast, TOPL does not try to achieve such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are sometimes better than one-object invariants.
@@ -139,7 +138,7 @@ Such checks are
 \begin{itemize}
 \item hard to write,
 \item weaved with the code that solves the actual problem, and
-\item in the case of the Java API, does not provide a trace of the relevant events that lead to an error.
+\item in the case of the Java API, do not provide a trace of the relevant events that lead to an error.
 \end{itemize}
 In contrast, dynamically checking TOPL properties avoids all these problems.
 
@@ -175,7 +174,7 @@ The rest of this section explains the semantics of \autoref{fig:first.diagram} a
 Vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
 transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
 There are two special vertices: \start, from where the execution begins; and \error, where the execution ends.
-Labels capture, roughly, the shape of statements that activate the corresponding transition.
+Labels capture, roughly, the shape of statements that enable the corresponding transition.
 
 \begin{figure} % first example <<<
 \include{IncorrectIteratorUse}
@@ -290,12 +289,12 @@ The empty map is denoted by~$[]$.
 
 The automaton has variables $x$,~$y$, and~$c$.
 At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
-at vertex \texttt{two} the variables $y$,~$y$ and~$c$ are initialized.
+at vertex \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
 Being at vertex \texttt{one} means that $x$~is an iterator for~$c$;
 being at vertex \texttt{two} means that $x$~and~$y$ are two iterators for the same collection~$c$.
 There is a program variable~\Verb@c@ and an automaton variable~$c$.
 The same name was chosen because the two variables always hold the same value in this example.
-In general, however, program variables and automaton variables live in different name-spaces.
+In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
 
 \begin{notation}
 Program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
@@ -305,7 +304,7 @@ automaton variables do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 \end{notation}
 
-As it will become apparent below, the interaction between patterns and automata memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+As it will become apparent below, the interaction between patterns and automatons' memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
 \paragraph{Step~1.}
 
@@ -319,7 +318,7 @@ A method call matches a label when
 By definition, any value matches an Uppercase pattern.
 Here, the values of \Verb@i@~and~\Verb@c@ trivially match the patterns \pattern X~and~\pattern C.
 The method itself also matches the method pattern, but for a slightly more complicated reason than it appears.
-For simplicity, we ignore argument types and identify Java methods only by their fully qualified name and by their arity.
+For simplicity, we ignore argument types and identify Java methods only by their fully qualified name and their arity.
 The called method \texttt{iterator} is in the class \texttt{ArrayList} and has arity~$1$.
 We identify it as follows.
 \verbline{java.lang.ArrayList.iterator[1]}
@@ -332,15 +331,15 @@ With the directives, however, the pattern is the following.
 It means that these two methods \emph{and} all those that override them match.
 Here, \texttt{ArrayList} implements \texttt{Collection}.
 
-All conditions are met to perform the transition from \start to \texttt{one}.
+All conditions are met to enable the transition from \start to \texttt{one}.
 When the transition is performed the values that matched \pattern X~and~\pattern C are written in the automaton variables $x$~and~$c$.
 For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
-The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also performed.
+The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also enabled and performed.
 
 \paragraph{Step~2.}
 For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states \[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] in turn.
+Now we need to consider the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\] in turn.
 For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
 For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
@@ -360,14 +359,14 @@ Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the sta
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
 which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
-Therefore, although the program proceeds, the set of active states of the automaton remain unchanged.
+Therefore, although the program proceeds, the set of active states of the automaton remains unchanged.
 
 \paragraph{Step~4.}
 
 In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
 Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
 The states corresponding to vertices \start and {\tt one} remain unchanged, because their outgoing transitions are disabled.
-However,  the outgoing transition of state {\tt two} can fire, and therefore {\tt yBad} becomes active.
+However,  the outgoing transition of state {\tt two} is enabled, and therefore {\tt yBad} becomes active.
 
 \paragraph{Step~5.}
 
@@ -383,13 +382,12 @@ Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \verbline{java.util.Iterator.next} is overridden by the method that is actually called.
 
 The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
-This is useful when we need to distinguish different events that may happen during a method invocation with different automata states (e.g., at call-time or return-time or in between).
-In our example, the automaton expresses that the simple fact that a {\tt j}'s method is called from a {\tt yBad} state is enough for activating an error state. Notice that this is different from a tag of the type $\pattern X:=\pattern C.\mathtt{iterator}()$ which expects the transition to involve all the events of the method invocation, from call-time till the return-time.
+The automaton expresses that a call to one of {\tt j}'s methods while vertex \texttt{yBad} is active constitutes an error.
+Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{iterator}()$ which may match only after the return value is known.
 
 \medskip
-The execution we stepped through violates the property \textit{InvalidateOtherIterators} because the vertex \texttt{error} is reached.
+The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
 Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
-In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 % >>>
 \subsection{More on Iterators} \label{sec:examples.iterators} % <<<
@@ -400,7 +398,8 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property ModificationInvalidatesIterators
-  using prefix java.util.{Collection,Iterator}
+  using prefix java.util.Collection
+  using prefix java.util.Iterator
   start -> iterating:    \pattern{I} := \pattern{C}.iterator()
   iterating -> modified: \pattern{c}.add(*), \pattern{c}.remove(*)
   modified -> error:     call \pattern{i}.*[*]
@@ -408,13 +407,14 @@ property ModificationInvalidatesIterators
 \delimitVerbatim
 This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
-This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
+This abstraction leak is intrinsic to Java where sub-classing is not sub-typing.
 
 \medskip\emph{Iterators should advance only if they are not exhausted:}
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property UnsafeIteratorNext
-  using prefix java.util.{Collection,Iterator}
+  using prefix java.util.Collection
+  using prefix java.util.Iterator
   start -> iterating:        \pattern{I} := *.iterator()
   iterating -> notExhausted: \pattern{true} := \pattern{i}.hasNext()
   notExhausted -> iterating: \pattern{i}.next()
@@ -428,7 +428,8 @@ In general, Java literals act as guards on transitions.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property RemoveBeforeNext
-  using prefix java.util.{Collection,Iterator}
+  using prefix java.util.Collection
+  using prefix java.util.Iterator
   start -> created: \pattern{I} := *.iterator()
   created -> ok:    \pattern{i}.next()
   created -> error: \pattern{i}.remove()
@@ -441,14 +442,14 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 
 \medskip
 We have now seen four properties of iterators.
-Each corresponds to a simple English sentence and to a single TOPL property.
+Each of the previous TOPL properties corresponds to one English sentence.
 
 % >>>
 \subsection{Resources} % <<<
 
 Many resources impose two temporal properties:
 Before being used they must be acquired;
-after being acquired they must be eventually released.
+after being acquired they must eventually be released.
 Resources include memory, files, sockets, locks.
 Memory must be allocated before reading or writing and should eventually be deallocated;
 files must be opened before reading or writing and should eventually be closed;
@@ -531,8 +532,9 @@ The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
 A natural generalization is to allow at most $n$~zeros.
 The size of the TOPL property text grows linearly with~$n$.
 A better solution would be to allow incrementing and decrementing of automaton variables when transitions are performed.
-This feature can be easily added to TOPL\footnote{ As we will see later in \autoref{sec:syntax.topl}, TOPL is actually translated to an intermediate language that does support such feature.}.
-However, this is the only example we have encountered so far that would require such incrementing/decrementing of automata variable. For this reason, for the time being, we have chosen to keep \TPL \ simple and not include this feature.
+This feature can be easily added to TOPL\null.
+However, this is the only example we have encountered so far that would require incrementing and decrementing automaton variables.
+For this reason, we chose to keep \TPL \ simple and not include this feature.
 
 % >>>
 \subsection{Recursivity and Atomicity}\label{sec:examples.ho} % <<<
@@ -567,7 +569,6 @@ Otherwise, if the granularity for atomicity is implicit, then it is easy for use
 
 We begin the systematic presentation of TOPL with its syntax (\autoref{sec:syntax.topl}).
 Before moving on to semantics (\autoref{sec:semantics}) we shall also introduce the syntax of SOOL, a \textbf simple \textbf object-\textbf oriented programming \textbf language (\autoref{sec:syntax.sool}).
-Our prototype implementation is an interpreter for SOOL programs that dynamically checks TOPL properties.
 
 \subsection{TOPL and iTOPL}\label{sec:syntax.topl} % <<<
 
@@ -591,7 +592,7 @@ Labels look roughly like method calls.
 Each label has a method pattern that is used to identify the set of methods to which the label refers.
 In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the context and the result.
+The more interesting case is when there are value patterns for each argument and perhaps even for the result.
 Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
 
 \begin{figure}
@@ -616,32 +617,28 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
 \label{fig:syntax.topl}
 \end{figure}
 
-\begin{notation}
-\rg{TODO: Grammar: italics, monotype, superscript, and so on.}
-\end{notation}
-
 There are three types of patterns used in TOPL---for strings, for integers, and for values.
-String patterns match method names and may use wildcards.
+String patterns are POSIX globs~\cite{man:glob.h} and match method names.
 (For simplicity, TOPL does not use full regular expressions as string patterns.)
-\rg{I also used \Verb@{a,b}@ so I need to say something like `POSIX path patterns.'}
 Integer patterns specify method arities.
 Value patterns are the most interesting.
-\rg{TODO: Explain wildcard and literals for value patterns.}
 For each automaton variable \Verb@var@ there are three associated patterns.
 The uppercase pattern \Verb@Var@ matches any value and writes it in the automaton variable \Verb@var@.
 The lowercase pattern \Verb@var@ reads the value of the automaton variable \Verb@var@ and only matches that value.
 The negated lowercase pattern \Verb@!var@ reads the value of the automaton variable \Verb@var@ and only matches different values.
+A Java literal acts as a pattern that matches only the value it denotes.
+A wildcard~* pattern matches any value.
 
 A TOPL property is \emph{well-formed} when it satisfies the following conditions.
 \begin{itemize}
 \item Labels must contain uppercase value patterns at most once.
-\item Any use of a lowercase patterns must be guaranteed preceded by a
-  use of the corresponding uppercase pattern.
+\item Any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from the \start vertex.
   In other words, automaton variables must be written before being read.
 \end{itemize}
-\dinocomment{how do we guarantee that properties are well formed? Maybe we should say that we assume in the following that they are.}
+It is easy to check that a property is well-formed~\cite{web:topl.prototype}.
+From now on we assume TOPL properties to be well-formed.
 \autoref{fig:syntax.itopl} shows the syntax of iTOPL\null.
-The missing productions (eg. $Arc$) are the same as for TOPL\null.
+The missing productions (such as \textit{Arc}) are the same as for TOPL\null.
 Each transition now has exactly one label.
 Each label is a list of (guard, action) pairs.
 Each guard is some boolean combination of atomic guards.
@@ -665,76 +662,64 @@ There is also an atomic guard that matches against method calls and always speci
   AtomicAction& Identifier \b{:=} \b[ ValueIndex \b] \cr
   ValueIndex& IntegerLiteral \cr
 }
-\dinocomment{why many syntactic categories are called AtomicGuard?}
-\rlp{Is it the case that $Action ::= (AtomicAction)^*$ or not?}
-\rg{It depends on whether we give an abstract syntax or a concrete syntax.
-I prefer a concrete syntax.}
-\rlp{Why is $!Guard$ an $AtomicGuard$?}
-\rg{See \Verb@ReusedComparator@ in \autoref{sec:examples.sorter}.
-I think there were some other examples where we needed it, but I can't remember now.}
-\rlp{Is it the case that $\set{Value} = (Identifier | Literal)$?}
-\rg{\set{Value} is a set; \textit{Identifier} and \textit{Literal} are syntactic categories that can be used in Java to denote values.}
 \caption{Syntax of iTOPL}
 \label{fig:syntax.itopl}
 \end{figure}
 
-\rg{TODO: Present desugarings---things like methods names, going from patterns to guards and actions.}
-
 % >>>
 \subsection{Translating TOPL into iTOPL}\label{sec:syntax.desugaring} % <<<
 TOPL is designed to express properties over traces of events
-pertaining to method calls. A method call $x.m(v_1, \ldots, v_n)$ will
-generate the 
-following two events:
+pertaining to method calls.
+A method call $u.m(v_1, \ldots, v_n)$ that returns $w$ will generate the following two events:
 \[
 \begin{array}{l}
-  \mathtt{call}_{m[n]}\ [x, v_1, \ldots, v_n] \qquad \mathrm{and} \\
-  \mathtt{return}_{m[n]}\ [x, v]
+  \mathtt{call}_{m[n+1]}\ [u, v_1, \ldots, v_n] \qquad \mathrm{and} \\
+  \mathtt{return}_{m[n+1]}\ [w]
 \end{array}
 \]
 The call events are matched by labels of the form
 \[
-  \mathtt{call}\ m(p_1, \ldots, p_n)
+  \mathtt{call}\ p_0 := m(p_1, \ldots, p_n)
 \]
 with $n$ value patterns for the arguments,
 while the return events are matched by labels of the form
 \[
-  \mathtt{return}\ m[p]
+  \mathtt{return}\ p_0:=m
 \]
 with one value pattern for the return value.
 In both cases the TOPL labels give rise to an iTOPL label with one
 (guard, action) pair.
 
 The guard is constructed by stating that all automaton variables
-should have the approrpiate values. That is all lowercase automaton
-variables $x = p_i$ amongst the value
+should have the appropriate values. That is, all lowercase automaton
+patterns $\pattern{x} = p_i$ amongst the value
 patterns give rise to a guard term of the form
 \[
-event[i+2] = x
+event[i] = x
 \]
-(or $event[i] \neq x$ in the case of $p_i = !x$), referring to the
+(or $event[i] \neq x$ in the case of $p_i = {!\pattern{x}}$), referring to the
 array of values carried by the event.
-The guard is then the conjuntion of all these guard terms.
+The guard is then the conjunction of all these guard terms.
 
 The action expresses that automaton variables should be updated. So
-all uppercase automaton variables $X = p_i$ amongst the value
+all uppercase automaton variables $\pattern{X} = p_i$ amongst the value
 patterns give rise to an update term of the form
 \[
-x := event[i+2]
+x := event[i]
 \]
 The action is then the concatenation of all such update terms.
 
 But it is also possible to write labels of a third form in TOPL,
 namely
 \[
-p := m(p_1, \ldots, p_n)
+p'_0 := p_0.m(p_1, \ldots, p_n)
 \]
 Such a label expresses both a call of the method $m$ with the
-arguments matching $p_1, \ldots, p_n$ and a return with the value
-matching (or updating) $p$.
-In this case, the iTOPL label is a list of (guard, action)-pairs of
-length 2. The first element corresponds to the label $\mathtt{call}
-m(p_1, \ldots, p_n)$ and the second to the label $\mathtt{return} m[p]$.
+arguments matching $p_0, \ldots, p_n$ and a return with the value
+matching~$p'_0$.
+In this case, the iTOPL label is a list of two (guard, action) pairs.
+The first element corresponds to the label $\mathtt{call}\
+p_0.m(p_1, \ldots, p_n)$ and the second corresponds to the label $\mathtt{return}\ p'_0:=m$.
 
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
@@ -817,23 +802,12 @@ instead of $a\;i$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
-by the transitions: $V$ is the set of vertices mentioned as endpoints of
-the arcs and $E$ is the set of labeled edges mentioned by the
-transitions.
-\rg{Let's use `arc' consistently for `directed edge.'}
+Each property gives rise to an automaton defined over the labeled multigraph $(\set{Vertex}, \set{Arc})$ given by the transitions:
+$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions.
 
-For the property to be well-formed there must be a vertex start and a
-vertex error.
-%\rlp{Is this correct, and should it be part of the grammar?}
-%\rg{I think it should not be part of the grammar.
-%At the moment it is not enforced by the static checker, but it should.
-%So I'd say that what you say is correct.}
-\rlp{Somewhere note distinction between start vertex and start
-  state.}
-
-The automaton takes as input a list of events. The events contain
-values, which can be referred to by index in the guards and actions.
+The automaton takes as input a trace of events.
+Each event~$e$ contains an array of values.
+Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
 For values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
 \rg{Does the cardinality of \set{Value} matter?}
@@ -848,9 +822,7 @@ That is, there is a set $\set{Variable}$ of automaton variables, and the state o
 given by specifying the vertex in the graph as well as the value of
 all automaton variables.
 
-We model stores as partial functions with finite domain (sometimes called dictionaries):
-\rg{Do you skip equation numbers on purpose?}
-\rlp{Yes, if I am not going to refer to them.}
+We model stores as finite partial maps with finite domain.
 \[
 \set{Store} = \set{Variable} \pmap \set{Value}
 \]
@@ -859,23 +831,19 @@ And so a state of the automaton has the type
 \set{State} = \set{Vertex}\times\set{Store}
 \]
 Given the state of the automaton and an event we would like to know
-which transitions are available. But actually, we do not have enough
+which transitions are enabled. But actually, we do not have enough
 information to determine that. This is a consequence of the second
 slightly non-standard aspect of our automatons, namely that each label
 carries not only a single guard but potentially a list of guards.
 We call the length of this list, the \emph{depth} of the transition.
-\rg{I said `length' in \autoref{sec:dynamic}, which needs rewriting anyway.
-Should we say `transition depth' everywhere from now on?}
-\rlp{Yes, let us do that.}
 
-In order for a transition to be available, all the guards along its
+In order for a transition to be enabled, all the guards along its
 list have to evaluate to true. We will describe this evaluation in a
 moment, but now we note that each guard along the transition consumes
-an event. Thus we have to know a whole prefix of the trace of events
-inorder to see if a transition is enabled, as long as the depth of the
-transition.
+an event.
+Thus, if a transition has depth~$n$, then we have to examine the next~$n$ events to see if the transition is enabled.
 
-A further consequence is, that the following events to be received are
+A further consequence is that the following events to be received are
 not the same at the end of each enabled transition. If two transitions
 turn out to be enabled, one with depth 2 and the other with depth 5,
 then the end state of the first transition will see the third event of
@@ -884,18 +852,18 @@ the sixth event next. For this reason, it is necessary to keep track
 of which events are next to be received by each state during a run of
 the automaton.
 
-To formalize this book keeping, we introduce the notion of
-\emph{execution state}. For brevity, we call execution states worlds. Worlds have the type
+To formalize this bookkeeping, we introduce the notion of
+\emph{execution state}. For brevity, we call execution states worlds.
 \[
 \set{World} = \set{State}\times\set{Trace}
 \]
-where the first component records the state of the automaton (vertex
+The first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
 events for that state.
 
 We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
-guard compare the values in an event with those in a store and
+guard compares the values in an event with those in a store and
 concludes either pass or no pass:
 \[
 \set{Guard} = \set{Event}\times\set{Store}\to\B
@@ -906,7 +874,7 @@ Actions modify the store, using values from an event:
 \set{Action} = \set{Event}\times\set{Store}\to\set{Store}
 \]
 In order for a transition of depth $n$ to be enabled for a trace of
-events, the first $n$ events of the trace has to pass the $n$ guards
+events, the first $n$~events of the trace must pass the $n$~guards
 on the label with the stores modified by the guards:
 \[
 \begin{array}{c l}
@@ -920,7 +888,7 @@ where
   s_0 &=  s \\
   s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
 \end{align}
-If the transition is enabled and performed, the store for the vertex at the end of the arc will be $s_n$.
+If the transition is enabled and performed, the store for the target vertex will be $s_n$.
 
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
@@ -935,7 +903,7 @@ $\mathit{events}_n$ is the current executions state's event trace with the first
 $n$ events dropped.
 \rg{An example would help to understand this paragraph.}
 
-We can define a predicate that determine the possible execution state transitions
+We can define a predicate that determines the possible execution state transitions
 \[
 \mathit{Step}\in\set{World}\to\set{World}\to\B
 \]
@@ -943,9 +911,9 @@ this predicate is defined in \autoref{fig:adStep}.
 From this we can define a non-deterministic step function, where all
 enabled transitions are performed:
 \begin{align}
-\mathit{NdetStep}&\in(\set{World}\to\B)\to\set{World}\to\B\\
+\mathit{NdetStep}&\in(\set{World}\to\B)\to(\set{World}\to\B)\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
-\mathit{NdetStep}\;S&=\{ s \mid \exists s'\in S.\ \mathit{Step}(s', s) \} \label{eq:ndetstep}
+\mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
 \end{align}
 An iterated version of \textit{NdetStep} is useful for defining reachable states.
 We define it as the least fixed point for the following equation.
@@ -1076,6 +1044,7 @@ It consists of two parts---a TOPL and SOOL interpreter, and a tool to instrument
 
 We developed \emph{a TOPL and SOOL interpreter} with the goal of experimenting with TOPL's semantics.
 Indeed, while developing the interpreter we discovered several subtle bugs in our initial model.
+The repository includes several examples (such as the one in \autoref{sec:examples.steps}).
 There are two main differences between this paper (\autoref{sec:semantics}) and the implementation.
 First, in the interest of simplicity the interpreter tracks only one active state.
 Whenever the set of active states would be $S\in(\set{World}\to\B)$, the interpreter only keeps track of some $s\in S$.
@@ -1086,6 +1055,7 @@ Only a few events are in memory at any one time.
 \rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
 
 To illustrate that TOPL is applicable to real languages we are also implementing \emph{a tool to instrument Java bytecode} and a Java implementation of the TOPL interpreter.
+In this interpreter, we do keep track of sets of active states.
 
 Both tools have several interesting aspects.
 In particular, the Java implementation of the TOPL interpreter uses fairly interesting data structures.
@@ -1107,7 +1077,7 @@ Every stage focuses on verifying only the parts of the code that previous stages
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
 It is likely that our language could be fruitfully combined with their analysis technique.
 
-An automata-based formalism for specifying properties of software interfaces were introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
+An automaton-based formalism for specifying properties of software interfaces were introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast to \TPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level. A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.  
 Differences between SLIC and \TPL \ include: the use of non-determinism  (in SLIC) to encode universal quantification of dynamic allocated data, and the  ability to have complex code in the automaton transitions. 
@@ -1124,7 +1094,7 @@ very general specifications of object-oriented program behaviour can be given in
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 This paper presents ongoing work on the design of  \TPL \ a language for expressing temporal safety properties for object-oriented programs.
-Our language has been designed for verification and is based on specialized automata to deal with the temporal aspect.
+Our language has been designed for verification and is based on specialized automatons to deal with the temporal aspect.
 Beside the formal definition of the language and its semantics we have shown how it can be used to do run-time checking of the properties
 on an idealised oop language.
 
