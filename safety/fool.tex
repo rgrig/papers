@@ -785,6 +785,7 @@ Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
 For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
 We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
+We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N} \bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
@@ -1062,33 +1063,40 @@ Method parameters are held in a store;
 dynamically allocated objects are held in the heap.
 The \emph{heap} is a finite partial map from (object reference, field name) pairs to values.
 \begin{align}
-\set{PState}&=\set{Store}\times\set{Heap}\\
+\set{SoolState}&=\set{Store}\times\set{Heap}\\
 \set{Store}&=\set{Variable}\pmap\set{Value} \\
 \set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
 \end{align}
 The input is a stream of values;
 the output is an array of events.
-The program execution state keeps track of the input yet to be consumed and of the output already produced.
+The \emph{program world} keeps track of the program state, the input yet to be consumed, and of the output already produced.
 \begin{align}
 \set{Input}&=\N\to\set{Value} \label{eq:input}\\
-\set{Trace}&=\bigcup_{n\in\N}n\to\set{Event} \\
-\set{EPState}&=\set{PState}\times\set{Input}\times\set{Trace} \\
-((\sigma, h), i, o)&\in\set{EPState} \label{eq:epstate.element}
+\set{Trace}&=\set{Event}\,\mathsf{array} \\
+\set{SoolWorld}&=\set{SoolState}\times\set{Input}\times\set{Trace} \\
+((\sigma, h), i, o)&\in\set{SoolWorld} \label{eq:epstate.element}
 \end{align}
-Equation~\eqref{eq:epstate.element} shows the general form of an element of~\set{EPState}: $\sigma$~is the store that holds parameters, $h$~is the heap that holds dynamically allocated objects, $i$~is the input stream yet to be processed, and $o$~is the array of events already emitted.
+Equation~\eqref{eq:epstate.element} shows the general form of an element of~\set{SoolWorld}: $\sigma$~is the store that holds parameters, $h$~is the heap that holds dynamically allocated objects, $i$~is the input stream yet to be processed, and $o$~is the array of events already emitted.
+The implementation~\cite{web:topl.prototype} also has local variables, which are treated similarly to method parameters.
+
 Executing a SOOL program amounts to executing the \Verb@main@ body, which is a compound statement.
 \begin{align}
-\mathit{exec}&\in\set{Statement}\to\set{EPState}\to(\set{EPState}\times\set{Value})
+\mathit{exec}&\in(\set{SoolWorld}\times\set{Statement})\to(\set{SoolWorld}\times\set{Value})
 \end{align}
 Method calls are interesting.
 The general form of a method call is \[ e.x := f.m(g_1,\ldots,g_n)\] where $e$,~$f$, $g_1$, \dots, $g_n$ are expressions, $x$~identifies a data field, and $m$~identifies a method.
 Expressions evaluate to values and do not have side-effects.
 \begin{align}
-\set{Expression}&=\set{PState}\to\set{Value} \\
+\set{Expression}&=\set{SoolState}\to\set{Value} \\
 e,f,g_1,\ldots,g_n&\in\set{Expression}
 \end{align}
+
+\begin{notation}
+The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
+\end{notation}
+
 \autoref{fig:exec.call} shows the definition of \textit{exec} for method calls.
-In spite of the imperative-looking notation, there is no mutation.
+In spite of the imperative-looking notation, there is no mutation:
 Different versions of $\sigma$,~$h$, $i$, and~$o$ get different indices.
 Line~1 introduces a shorthand notation for the program state~$s$.
 Line~2 looks up in the program text a method named~$m$.
@@ -1106,22 +1114,17 @@ It has tag $\mathtt{return}m$ and carries the return value.
 Line~7 stores the return value in the heap.
 Finally, line~8 returns the updated program execution state and the unit value~$()$.
 
-\begin{notation}
-\rg{Find a good place for this.}
-The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
-\end{notation}
-
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
-\^  $\proc{exec}\;(e.x:=f.m(g_1,\ldots,g_n))\;((\sigma_0,h_0),i_0,o_0)$
+\^  $\proc{exec}\Bigl(\bigl((\sigma_0,h_0),i_0,o_0\bigr),\bigl(e.x:=f.m(g_1,\ldots,g_n)\bigr)\Bigr)$
 \=  $s:=(\sigma,h)$
 \=  $((x_1,\ldots,x_n), b) :=\mathit{methodOfName}\;m$
 \=  $\sigma_1:=[\textbf{this}:(f\;s), x_1:(g_1\;s), \ldots, x_n:(g_n\;s)]$
 \=  $o_1:=\text{$o_0$ with $(\mathtt{call}m,[f\;s,g_1\;s,\ldots,g_n\;s])$ appended}$
 \=  $(((\sigma_2,h_2),i_2,o_2),v):=\mathit{exec}\;b\;((\sigma_1,h_0),i_0,o_1)$
 \=  $o_3:=\text{$o_2$ with $(\mathtt{return}m,[v])$ appended}$
-\=  $h_3:=[h_2, (e\;s, x) : v]$
+\=  $h_3:=h_2[(e\;s, x) : v]$
 \=  ~return~ $(((\sigma_2,h_3),i_2,o_3), ())$
 \end{alg}
 \smallskip
@@ -1136,11 +1139,6 @@ Given a program with the main body~$b$, the output trace~$o$ corresponding to so
 \begin{align}
 ((\_,\_,o),\_):=\mathit{exec}\;b\;(([],[]),i,[])
 \end{align}
-
-Instead of SOOL, consider some programming language~X.
-In order to use iTOPL properties to verify X~programs, one needs to modify the semantics of~X so that executions produce traces of events.
-For imperative languages, the modifications are likely to be similar to the one illustrated by this section for SOOL\null.
-However, there is no conceptual problem with repeating the exercise for a functional language.
 
 % >>>
 % >>>
