@@ -850,7 +850,6 @@ We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N} \bigl(\{0,1,\ldots,n-1\}
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-\textcolor{lightblue}{[Start of rewrite]}\\
 Each property gives rise to an automaton defined over the labeled multigraph $(V, E)$ given
 by the transitions: $V$ is the set of vertices mentioned as endpoints of
 the arcs and $E$ is the set of labeled edges mentioned by the
@@ -923,9 +922,9 @@ of which events are next to be received by each state during a run of
 the automaton.
 
 To formalize this book keeping, we introduce the notion of
-\emph{execution state}. Execution states have the type
+\emph{execution state}. For brevity, we call execution states worlds. Worlds have the type
 \[
-\set{ExeState} = \set{State}\times\set{Trace}
+\set{World} = \set{State}\times\set{Trace}
 \]
 where the first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
@@ -937,7 +936,7 @@ guard compare the values in an event with those in a store and
 concludes either pass or no pass:
 \rg{If we drop $n=\{0,\ldots,n-1\}$, then maybe we should say $\B$ instead of~$2$.}
 \[
-\set{Guard} = \set{Event}\to\set{Store}\to2
+\set{Guard} = \set{Event}\to\set{Store}\to\B
 \]
 if the event passes, the corresponding action is taken on that event.
 Actions modify the store, using values from an event:
@@ -985,13 +984,13 @@ $n$ events dropped.
 
 We can define a predicate that determine the possible execution state transitions
 \[
-\mathit{Step}\in\set{ExeState}\to\set{ExeState}\to2
+\mathit{Step}\in\set{World}\to\set{World}\to\B
 \]
 this predicate is defined in \autoref{fig:adStep}.
 From this we can define a non-deterministic step function, where all
 enabled transitions are taken:
 \begin{align}
-\mathit{NdetStep}&\in(\set{ExeState}\to2)\to\set{ExeState}\to2\\
+\mathit{NdetStep}&\in(\set{World}\to\B)\to\set{World}\to\B\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
 \mathit{NdetStep}\;S&=\{ s \mid \exists s'\in S.\ \mathit{Step}(s', s) \} \label{eq:ndetstep}
 \end{align}
@@ -1009,88 +1008,6 @@ Finally, we can define the set of traces described by an automaton:
 \}
 \]
 These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-\ \\ \textcolor{lightblue}{[End of rewrite]}\\
-
-
-In the following, let $n=\{0,1,\ldots,n-1\}$ and let \set{Value} denote a generic set of values.
-Each event has a tag and carries an array of values.
-\begin{align}
-\set{Event}&=\bigcup_{n\in\N}\set{Tag}_n\times(n\to\set{Value})
-\end{align}
-We assume that these basic sets are disjoint.
-Traces are finite.
-\begin{align}
-\set{Trace}=\bigcup_{n\in\N} n\to\set{Event} \label{eq:trace}
-\end{align}
-Intuitively, the program outputs a trace that drives the automaton.
-\dinocomment{Only one? I would say a set of traces. Right?}
-\dinocomment{Can we give the reader an intuitive reason why the event are of that form? Also, why is Tag indexed with $n$?}
-The automaton is defined on top of a finite multi-graph.
-The automaton is an array of transitions.
-Each transition has an edge and an array of labels.
-Each edge has a source vertex and a target vertex.
-Each label is a (guard, action) pair.
-There are at least two vertices.
-\begin{align}
-\set{Automaton} &= \bigcup_{n\in\N} n \to \set{Transition} \\
-\set{Transition} &= \set{Edge}\times \bigcup_{n\in\N} n\to\set{Label} \\
-\set{Edge}&=\set{Vertex}\times\set{Vertex} \\
-\set{Label}&=\set{Guard}\times\set{Action} \\
-\{\mathtt{start},\mathtt{error}\}&\subseteq\set{Vertex}
-\end{align}
-The deterministic state contains a store of values.
-\dinocomment{this deterministic state seems to come out of the blue.
-\rg{What do you mean?
-This is its definition.}}
-\dinocomment{I think it would be good to give an introduction about the determinist state. What is it? Why it is needed?
-etc. Just the definition at this point leave the reader wondering...}
-A store is a finite partial map from automaton variables to values.
-We also define an automaton deterministic execution state, which includes the input to be processed.
-\begin{align}
-\set{Store}&=\set{Variable}\pmap\set{Value} \\
-\set{AState}&=\set{Vertex}\times\set{Store} \label{eq:astate} \\
-\set{EAState}&=\set{AState}\times\set{Trace} \label{eq:eastate}
-\end{align}
-Guards compare the values in an event with those in a store.
-Actions modify the store, using values from an event.
-\begin{align}
-\set{Guard}&=\set{Event}\to\set{Store}\to2 \\
-\set{Action}&=\set{Event}\to\set{Store}\to\set{Store}
-\end{align}
-The automaton deterministic step function evolves the execution state.
-\begin{align}
-\mathit{adStep}\in\set{EAState}\to\set{EAState}\to2 \label{eq:adstep}
-\end{align}
-\begin{example}
-Consider an automaton in state~$s_1$.
-The input is a trace~$e_1e_2$ obtained by concatenating traces $e_1$~and~$e_2$.
-The automaton must make a nondeterministic choice out of some alternatives.
-A feasible alternative might be to consume $e_1$ and move to state~$s_2$.
-For this, we write $(s_2,e_2)\in\mathit{adStep}(s_1,e_1e_2)$.
-(We write $x\in f$ to mean that $f(x)=1$.)
-\end{example}
-The nondeterministic step is defined in terms of~\textit{adStep}.
-\begin{align}
-\mathit{anStep}&\in(\set{EAState}\to2)\to\set{EAState}\to2\\
-\mathit{anStep}\;S&=\bigcup \mathit{map}\;\mathit{adStep}\;S \label{eq:anstep}
-\end{align}
-An iterated version of \textit{anStep} is useful for defining reachable states.
-We define it as the least fixed point for the following equation.
-\begin{align}
-\mathit{anStep}^\star\;S &= S \cup \mathit{anStep}^\star\;(\mathit{anStep}\;S)
-\end{align}
-Finally, we can define the set of traces described by an automaton.
-\[ \{ e \mid \exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{anStep}^\star\;\{((\mathtt{start},0),e)\}\} \]
-These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-
-\autoref{fig:adStep} defines \textit{adStep}.
-Consider an automaton in state~$(x_1,\sigma_1)$ that processes trace~$e_1$.
-If there is a transition from~$x_1$ to~$x_2$ that matches the events in a prefix~$e$ of~$e_1$, then the automaton may nondeterministically choose to perform that transition (line~10).
-If no such transition exists, then the first event in $e_1$ is dropped and the automaton remains in the same state (line~11).
-The actions of a transition are performed in order.
-The guards are evaluated after all previous actions were performed.
-A transition matches when all its guards hold.
-
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
@@ -1112,13 +1029,6 @@ A transition matches when all its guards hold.
 \caption{One automaton step}
 \label{fig:adStep}
 \end{figure}
-
-The function~\textit{adStep} is the crux of the automata semantics.
-At line~5 a copy of the store is made, which is used by the following loop.
-This copy is how \emph{roll-back} is built into the semantics of the automata.
-If transitions always have length~$1$, then \textit{adStep} becomes simpler.
-However, we could not find a desugaring into automata with transitions of length~$1$.
-
 % >>>
 \subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
@@ -1215,7 +1125,7 @@ We developed \emph{a TOPL and SOOL interpreter} with the goal of experimenting w
 Indeed, while developing the interpreter we discovered several subtle bugs in our initial model.
 There are two main differences between this paper (\autoref{sec:semantics}) and the implementation.
 First, in the interest of simplicity the interpreter tracks only one active state.
-Whenever the set of active states would be $S\in(\set{ExeState}\to2)$, the interpreter only keeps track of some $s\in S$.
+Whenever the set of active states would be $S\in(\set{World}\to\B)$, the interpreter only keeps track of some $s\in S$.
 Which exactly is the state~$s$ that is being tracked depends on a random number generator seed.
 The random number generator simulates nondeterminism.
 Second, the trace of events is communicated from the SOOL interpreter to the TOPL interpreter lazily.
