@@ -60,6 +60,10 @@
 \newcommand{\start}{\ensuremath{\mathtt{start}}\xspace}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
 
+\newcommand{\functionfont}[1]{\mathit{#1}}
+\newcommand{\desugar}{\functionfont{des}}
+\newcommand{\enabled}{\functionfont{enabled}}
+
 \theoremstyle{definition}
 \newtheorem{example}{Example}
 \theoremstyle{remark}
@@ -681,9 +685,24 @@ I think there were some other examples where we needed it, but I can't remember 
 
 % >>>
 \subsection{Translating TOPL into iTOPL}\label{sec:syntax.desugaring} % <<<
+The translation $\desugar$ from TOPL to iTOPL is defined as follows:
+\[
+\begin{array}{r c l}
+  \desugar(\mathtt{property}\ id\ us\ ts)
+  & = &
+  \mathtt{property}\ id\ (map\ \desugar_{trans}\ ts) \\
+  \desugar_{trans}(arc : l_1\ldots l_n)
+  & = &
+  arc : \desugar_{lab}\ l_1\ldots arc : \desugar_{lab}\ l_n \\
+  \desugar_{lab} (c\ t\ mp)
+  & = &
+  
+\end{array}
+\]
 The main translation is that of TOPL labels into iTOPL labels. To
 illustrate how that works, let $\mathit{Context}\ \mathit{Tag}\
-\mathit{MethodPattern}$ be a TOPL label. If $$
+\mathit{MethodPattern}$ be a TOPL label. If $\mathit{Context}$ is not
+empty, it will be 
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
@@ -869,7 +888,7 @@ on the label with the stores modified by the guards:
 Same for \set{Action}.}
 \[
 \begin{array}{c l}
-& \mathit{enabled}((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
+& \enabled((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
  = &
 g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1}) 
 \end{array}
