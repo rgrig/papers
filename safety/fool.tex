@@ -683,22 +683,11 @@ I think there were some other examples where we needed it, but I can't remember 
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
-\rg{(Re)Writing this.}
-
-% plan
-% - all we need is traces
-% - sool is an example of how traces are produced
-% - here's an example sool program
-% - here's the grammar; note
-%   - expressions have no side-effects
-
 Traces of events act as a thin interface between programs and iTOPL properties.
-The advantage is that iTOPL can be used with many programming languages.
-One needs to define how programs in a certain language produce events.
-Also, since iTOPL is low-level, one should also build on it a language closer to the programming language.
-TOPL is an example of a language built on top of iTOPL that is suitable in an object-oriented setting.
-We use SOOL to illustrate how an object-oriented language produces events.
-SOOL has classes, assignments, and method calls.
+To use iTOPL with some programming language, one must define how programs in that language produce events.
+Also, because iTOPL is low-level, one should design a high-level property language.
+TOPL is an example of a high-level property language built on top of iTOPL that is suitable in an object-oriented setting.
+SOOL is an example of an object-oriented programming language that produces events.
 
 The following is a small snippet of a SOOL program.
 \delimitVerbatim
@@ -714,17 +703,13 @@ class User
     return unit
 \end{Verbatim}
 \delimitVerbatim
-In SOOL statements can be grouped by $\{$curly brackets$\}$ but also by indentation.
-The loop condition is \Verb@hasNext@ rather than \Verb@i.hasNext()@ because SOOL expressions do not have side-effects.
-Method calls do have side-effects, but they are statements, not expressions.
-Like in \TeX, loops check their condition in the middle.
-
-\begin{remark}
-In Java, \Verb@while (i.hasNext()) ...@ gives the \emph{illusion} that the loop's condition is checked in the beginning.
-\end{remark}
+In SOOL, statements are grouped by $\{$curly brackets$\}$ or by indentation.
+SOOL expressions do not have side-effects.
+Method calls have side-effects---they are statements.
+There is only one type of loop, which checks its condition at some arbitrary point (like \Verb@\loop@ in~\TeX).
+Other aspects of SOOL are fairly standard.
 
 \autoref{fig:syntax.sool} shows a big part of SOOL's syntax.
-Expressions, which do not have side-effects, are missing.
 
 \begin{figure}
 \grammar{
@@ -747,9 +732,6 @@ Expressions, which do not have side-effects, are missing.
 \caption{(Partial) Syntax of SOOL}
 \label{fig:syntax.sool}
 \end{figure}
-
-It should be possible to use TOPL with any language that is a superset of SOOL\null.
-\rg{Remove previous sentence?}
 
 % >>>
 % >>>
