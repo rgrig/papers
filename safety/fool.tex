@@ -558,18 +558,18 @@ property RecursiveSort
   inSort -> error: call sort[*]
 \end{Verbatim}
 
-\medskip\emph{A comparator may only be used by its sorter:}
-\delimitVerbatim
-\begin{Verbatim}
-property ReusedComparator
-  using prefix Sorter
-  start -> x: call S.sort(C)
-  x -> error: <!s> call c.*[*]
-\end{Verbatim}
-\delimitVerbatim
-The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
-The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
-The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
+%\medskip\emph{A comparator may only be used by its sorter:}
+%\delimitVerbatim
+%\begin{Verbatim}
+%property ReusedComparator
+%  using prefix Sorter
+%  start -> x: call S.sort(C)
+%  x -> error: <!s> call c.*[*]
+%\end{Verbatim}
+%\delimitVerbatim
+%The state $(x,[c:-;s:-])$ is active when comparator~$c$ was given to sorter~$s$.
+%The pattern within \Verb@<@angle brackets\Verb@>@ is matched against the value of \textbf{this}.
+%The pattern \Verb@!s@ matches when the pattern \Verb@s@ does not match.
 
 % >>>
 \subsection{Atomicity} % <<<
