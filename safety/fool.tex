@@ -848,7 +848,7 @@ For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some 
 We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
 We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
 \bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
-For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a[i]$
+For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a_i$
 instead of $a\;i$.
 \end{notation}
 
@@ -1015,8 +1015,8 @@ These are the traces that drive the automaton from the \texttt{start} vertex (wi
 \=    $\sigma:=\sigma_1$
 \=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
 \+      $(g,a):=l[k]$
-\=      ~if~ $\lnot g(e[k],\;\sigma)$ ~then continue~ to line 3
-\=      $\sigma:=a(e[k],\;\sigma)$
+\=      ~if~ $\lnot g(e_k,\;\sigma)$ ~then continue~ to line 3
+\=      $\sigma:=a(e_k,\;\sigma)$
 \-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
 \-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
 \end{alg}
