@@ -846,7 +846,10 @@ Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
 For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
 We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
-We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N} \bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
+We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
+\bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
+For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a[i]$
+instead of $a\;i$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
@@ -865,32 +868,28 @@ vertex error.
 \rlp{Somewhere note distinction between start vertex and start
   state.}
 
-The automaton takes as input a list of events carrying values.
-\rg{This is ambiguous to parse: ``(list of events) carrying values'' or ``list of (events carrying values)''?}
+The automaton takes as input a list of events. The events contain
+values, which can be referred to by index in the guards and actions.
 For values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
 \rg{Does the cardinality of \set{Value} matter?}
 \rg{Does the cardinality of \set{Event} matter?}
-\rg{I think it should be made clear that events \emph{contain} values.
-It's conceivable to interpret this paragraph as saying that the input has type $(\mathit{event}*\mathit{value}\,\mathit{list})\,\mathit{list}$.}
 
 We will now describe how the automaton reacts to events, specifically
 how labels are evaluated. As this is a slightly non-standard
 automaton, there are some important things to point out. Firstly, the
 state of the automaton is not just a vertex but also a store. 
-That is, there is an array of automaton variables, referred to by
-index in the guards and actions, and the state of the automaton is
+
+That is, there is a set $\set{Variable}$ of automaton variables, and the state of the automaton is
 given by specifying the vertex in the graph as well as the value of
 all automaton variables.
 
 We model stores as partial functions with finite domain (sometimes called dictionaries):
 \rg{Do you skip equation numbers on purpose?}
+\rlp{Yes, if I am not going to refer to them.}
 \[
-\set{Store} = \N \pmap \set{Value}
+\set{Store} = \set{Variable} \pmap \set{Value}
 \]
-\rg{Why did you replace \set{Variable} by $\N$?
-I got \set{Variable} from separation logic articles.
-I know the Java code from the plane uses $\N$, but I'd say that's an implementation choice.}
 And so a state of the automaton has the type
 \[
 \set{State} = \set{Vertex}\times\set{Store}
@@ -934,20 +933,17 @@ We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
 guard compare the values in an event with those in a store and
 concludes either pass or no pass:
-\rg{If we drop $n=\{0,\ldots,n-1\}$, then maybe we should say $\B$ instead of~$2$.}
 \[
-\set{Guard} = \set{Event}\to\set{Store}\to\B
+\set{Guard} = \set{Event}\times\set{Store}\to\B
 \]
 if the event passes, the corresponding action is taken on that event.
 Actions modify the store, using values from an event:
 \[
-\set{Action} = \set{Event}\to\set{Store}\to\set{Store}
+\set{Action} = \set{Event}\times\set{Store}\to\set{Store}
 \]
 In order for a transition of depth $n$ to be enabled for a trace of
 events, the first $n$ events of the trace has to pass the $n$ guards
 on the label with the stores modified by the guards:
-\rg{If guards take a pair then you should also change \set{Guard} above.
-Same for \set{Action}.}
 \[
 \begin{array}{c l}
 & \enabled((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
@@ -1018,9 +1014,9 @@ These are the traces that drive the automaton from the \texttt{start} vertex (wi
 \+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
 \=    $\sigma:=\sigma_1$
 \=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
-\+      $(g,a):=l\;k$
-\=      ~if~ $\lnot(g\;(e\;k)\;\sigma)$ ~then continue~ to line 3
-\=      $\sigma:=a\;(e\;k)\;\sigma$
+\+      $(g,a):=l[k]$
+\=      ~if~ $\lnot g(e[k],\;\sigma)$ ~then continue~ to line 3
+\=      $\sigma:=a(e[k],\;\sigma)$
 \-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
 \-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
 \end{alg}
