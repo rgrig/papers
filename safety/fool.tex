@@ -93,62 +93,61 @@ Finally,  we briefly discuss dynamic checking w.r.t. a simple object-oriented la
 
 % >>>
 \section{Introduction} % <<<
-Historically, verifying whether a program or a model satisfies  temporal safety properties has been a popular research topic in the
-verification community~\cite{DBLP:books/daglib/0080029,dblp:conf/cav/ballr01,dblp:conf/oopsla/bierhoffa07,DBLP:journals/tse/Holzmann97}. Safety properties are crucial for the correct behaviour of software and their  violation  may lead to unexpected run-time errors.
-%
-Many of these properties can be expressed using the framework of {\em typestate}~\cite{strom1986} which employs finite state automata for specifying conformance or violation w.r.t. a specific temporal behaviour.
-These constraints are related to the correct use of types operations in different contexts.
-For example, in object-oriented languages, the correct use of the APIs of certain classes may be particularly delicate and it is easy for the programmer to break essential invariants.
 
-The long term aim of our project is the automatic verification of typestate properties for Java programs of realistic size.
-The constraints should be given by the user and should not be hard-coded.
-To achieve our goal we would need:
+The verification community showed interest in \emph{safety temporal properties} for a long time.
+Manna and Pnueli~\cite{dblp:books/daglib/0080029} provide a theoretical foundation and clearly argue why such properties are crucial.
+In this article, we focus on an object-oriented setting.
+The long term aim of our project is the automatic verification of safety temporal properties for Java programs of realistic size.
+To achieve our aim we need
 \begin{itemize}
-\item A language for formally specifying temporal safety properties;
-\item An automatic tool able to verify or check the properties expressed in the language against Java programs.
+\item a language for formally specifying temporal safety properties, and
+\item an automatic tool able to verify or check the properties expressed in the language against Java programs.
 \end{itemize}
-This paper addresses the first point by introducing \TPL  \ (Temporal Object Property Language, pronounced like `topple').
-It has the following characteristics:
+This paper addresses the first point by introducing \TPL\ (\textbf{t}emporal \textbf{o}bject-oriented \textbf{p}roperty language, pronounced like `topple').
+
+We draw inspiration from several existing specification languages, each of which we found not entirely suitable for our goal.
+Bierhoff and Aldrich~\cite{dblp:conf/oopsla/bierhoffa07} as well as Naeem and Lhot\'ak~\cite{dblp:conf/oopsla/naeeml08} use specification languages inspired by typestates~\cite{strom1986}.
+Specifically, Bierhoff and Aldrich~\cite{dblp:conf/oopsla/bierhoffa07} use a combination of linear logic~\cite{dblp:journals/tcs/girard87} and access permissions, while Naeem and Lhot\'ak~\cite{dblp:conf/oopsla/naeeml08} use tracematches.
+Disney et al.~\cite{disney2011} use a language based on regular grammars to specify higher-order temporal contracts.
+Finally, Ball and Rajamani~\cite{ball2002} essentially use nondeterministic aspect-oriented programming.
+
+TOPL has the following characteristics:
 \begin{enumerate}
-\item It is designed specifically for expressing properties of object-oriented software. For this reason \TPL \ allows expressing relations between several objects and their references.
-%And since object-oriented languages like Java make heavy use of the heap, we have designed our language based on separation logic~\cite{reynolds2002} a formalism known to be effective and concise in specifying heap related properties.
-%\rg{I would not mention separation logic here.
-%We did not quite get to using it, although that's what we want for TACAS\null.
-%It might look like some gratuitous `name-dropping'.
-%The Future Work or the Conclusions sections are better places.}
-\item It allows very high-level intuitive specifications my means of automata tailored towards object-oriented specifications.
-\item  It has a well-defined formal semantics.
-\item  It is designed to be used in program analysis (both static and dynamic) and automatic verification.
+\item It expresses easily relationships between several objects.
+\item It is very high-level and similar to diagrams used in informal explanations.
+\item It has a well-defined formal semantics in terms of a specific type of automata.
+\item It is designed to be used in program analysis (both static and dynamic).
 \end{enumerate}
-The ability to express relations of several objects makes  \TPL \ quite expressive. For example, for Java collections, a typical property one would want to state is:
-
+The ability to express relations of several objects makes \TPL\ quite expressive.
+For example, for Java collections, a typical property one would want to state is:
 \begin{quote}
-if one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used later.
+If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used later.
 \end{quote}
-\noindent 
-It is apparent that the formalisation of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction. Being able to express these relations in the language 
-increase the intuitiveness of the specification.
-In this aspect \TPL \ departs from most of other techniques for typestate of object-oriented programs. They aim at decomposing properties involving several objects into several specifications which reflect 
-the point of view of a single object. Conversely,  we take, for typestate specification, a similar position as Parkinson~\cite{parkinson-iwaco2007} for class invariants: when a property involves the behavior of  several entities, we believe it is more intuitive and effective to specify a constraint of  an aggregate structure of objects. 
-   
-Thanks to the features 2 and 3 above, \TPL \ helps to reduce the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification tools for automatic 
-checking of these constraints.
+\noindent
+It is apparent that the formalization of the above constraint needs to keep track of the relation of several objects (at least two iterators, and one collection) and their interaction.
+Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of a single object.
+In contrast, TOPL does not try to achieve such decomposition.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are sometimes better than one-object invariants.
+Similarly, we believe that temporal properties that naturally involve several objects are easier to reason about if they are \emph{not} decomposed.
 
-In this paper we focus on \TPL \ formal semantics and expressivity.
-Moreover we show its use for dynamic checking of the properties against  a simple object-based language.
-One of the advantage of dynamic checking w.r.t. using exceptions in the Java code is that it is possible to return a trace to the programmer.
-Traces of events triggering an error are extremely useful for debugging purposes.
-Moreover, writing code for checking that a property is violated can be complex and error prone. It simple distracts the programmer from the core algorithmic problems that is trying to solve.
+Because TOPL is a high-level language and has formal semantics (points 2~and~3 above), it reduces the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification tools for automatic checking of these constraints.
 
-%\rg{The main message I want to get across is this:
-%We reduce the semantic gap between informal explanations of various temporal properties and their formal descriptions.}
+In this paper we focus on TOPL's formal semantics and expressivity.
+Moreover, we briefly discuss dynamic checking of TOPL properties.
+The Java API, for example, has hand-crafted code for checking certain temporal properties (\autoref{sec:examples.steps}).
+Such checks are
+\begin{itemize}
+\item hard to write,
+\item weaved with the code that solves the actual problem, and
+\item in the case of the Java API, does not provide a trace of the relevant events that lead to an error.
+\end{itemize}
+In contrast, dynamically checking TOPL properties avoids all these problems.
 
 The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
 Section~\ref{sec:dynamic} briefly explores the use of \TPL \ for run-time checking of safety properties.
 Section~\ref{sec:related} discusses related work.
-Finally, Section~\ref{sec:conclusions} concludes the paper
-and describes our future plans.
+Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
 
 % >>>
 \section{Examples} \label{sec:examples} % <<<
