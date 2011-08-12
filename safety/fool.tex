@@ -195,16 +195,17 @@ using prefix java.util.Iterator
   \tikzset{transition/.style={->,>=latex}}
   \tikzset{every label/.style={gray}}
   \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-  \node[vertex] (gotOne) at (0,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (gotTwo) at (0,-2) [label=below:\texttt{two}] {};
+  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
   \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
   \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
   \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
   \draw[transition] (0,0.5)--(start);
-  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (gotOne);
-  \draw[transition] (gotOne)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (gotTwo);
-  \draw[transition] (gotTwo) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-  \draw[transition] (gotTwo)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
   \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
   \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
 \end{tikzpicture}
@@ -217,6 +218,7 @@ property InvalidateOtherIterators
   using prefix java.util.Collection
   using prefix java.util.Iterator
   start -> one:  \pattern{X} := \pattern{C}.iterator()
+  one -> one:    *
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
   two -> yBad:   \pattern{x}.remove()
   two -> xBad:   \pattern{y}.remove()
@@ -231,19 +233,42 @@ property InvalidateOtherIterators
  \def\m#1{\PY{n+na}{#1}}
  \def\t#1{\mathtt{#1}}
 \begin{align*}
-&\{(\start,[])\} \\
+&\{\;(\start,[])\;\} \\
 &\s{Iterator<Integer> i = c.\m{iterator}();} \\
 &\text{assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
-&\{(\start,[]), (\t{one},[c:1,x:2])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2])\;\}
+  \end{aligned}\\
 &\s{Iterator<Integer> j = c.\m{iterator}();} \\
 &\text{assume {\tt j} holds $3$} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{two},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{two},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{i.\m{next}();} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{two},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{two},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{i.\m{remove}();} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]),(\t{yBad},[c:1,x:2,y:3])\} \\
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\t{yBad},[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 &\s{j.\m{next}()} \\
-&\{(\start,[]), (\t{one},[c:1,x:3]), (\error,[c:1,x:2,y:3])\}
+& \begin{aligned}
+  \{\;&(\start,[]),\\
+      &(\t{one},[c:1,x:2]),\\
+      &(\t{one},[c:1,x:3]),\\
+      &(\error,[c:1,x:2,y:3])\;\}
+  \end{aligned}\\
 \end{align*}}
 \caption{A first example: Running step by step}
 \label{fig:first.steps}
@@ -312,18 +337,24 @@ All conditions are met to perform the transition from \start to \texttt{one}.
 When the transition is performed the values that matched \pattern X~and~\pattern C are written in the automaton variables $x$~and~$c$.
 For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
+The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also performed.
 
 \paragraph{Step~2.}
-For the second step the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states in turn\footnote{The state $(\start,[])$ is a special state that is always active.
-Conceptually, the vertex \texttt{start} has a self-loop on it that always matches.}:
-\[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] 
-For $(\start,[])$ exactly the same reasoning as step 1 holds and the result is that \[(\texttt{one},[c:1,x:3])\] is active after the second step.
+For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
+Now we need to consider the two active states \[\{(\start,[]), (\texttt{one},[c:1,x:2])\}\] in turn.
+For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-For \[\texttt{(one},[c:1,x:2])\] we look at the transition outgoing from vertex {\tt one} which has the label \[\pattern{Y}:=\pattern{c}.\mathtt{iterator}();\]
-The method and the uppercase pattern~$\pattern Y$ match in the same way as before.
-The lowercase pattern $\pattern c$ matches only the value that is held by the automaton variable~$c$.
-In this case, the transition $\texttt{one}\to\texttt{two}$ is performed because the program variable~{\tt c} still refers to the same collection it did when the transition $\start\to\texttt{one}$ was performed.
+For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
+\begin{align*}
+&\text{\Verb@one -> one: *@} \\
+&\text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
+\end{align*}
+The first of these transitions always matches, and keeps states with vertex \texttt{one} active.
+The second of these transitions has two patterns, \pattern Y~and~\pattern c.
+The uppercase pattern~\pattern Y always matches;
+the lowercase pattern \pattern c matches only the value held by the automaton variable~$c$.
+In this case, the automaton variable~$c$ was set in the previous step to the value of the program variable~\texttt{c}.
+Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
 
 \paragraph{Step~3.}
 
@@ -362,7 +393,7 @@ Notice that in order to find a counterexample we need to keep track of the relat
 In practice, programmers tend to violate this property when the code is more involved and uses the shorthand notation for iteration $\mathbf{for}(T\;x:c)$.
 
 % >>>
-\subsection{More Iterators} \label{sec:examples.iterators} % <<<
+\subsection{More on Iterators} \label{sec:examples.iterators} % <<<
 
 Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
 
@@ -371,11 +402,12 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 \begin{Verbatim}
 property ModificationInvalidatesIterators
   using prefix java.util.{Collection,Iterator}
-  start -> iterating:     I := C.iterator()
-  iterating -> modified:  c.add(*), c.remove(*)
+  start -> iterating:    I := C.iterator()
+  iterating -> modified:  c.add(*),  c.remove(*)
   modified -> error:      call i.*[*]
 \end{Verbatim}
 \delimitVerbatim
+\dd{the notation of pattern has changed, they are not underlined anymore}
 This property should list all the methods of \textit{Collection} that mutate it.
 If classes that implement \textit{Collection} add mutating methods, then those should be included as well.
 This ``abstraction leak'' is intrinsic to Java where sub-classing is not sub-typing.
@@ -411,9 +443,8 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 
 \medskip
 We have now seen four properties of iterators.
-Each corresponds to a simple English sentence.
-It is possible to use only one TOPL property.
-However, there is no advantage of doing so.
+Each corresponds to a simple English sentence and to a single TOPL property.
+%However, there is no advantage of doing so.
 
 % >>>
 \subsection{Resources} % <<<
@@ -503,8 +534,8 @@ The vertex \texttt{cnt}\textit{x} means that there are $x$~zeros in~$q$.
 A natural generalization is to allow at most $n$~zeros.
 The size of the TOPL property text grows linearly with~$n$.
 A better solution would be to allow incrementing and decrementing of automaton variables when transitions are performed.
-However, it is unclear if such properties arise in practice, so we chose to keep TOPL simple.
-Moreover, we will see later (\autoref{sec:syntax.topl}) that TOPL is translated to an intermediate language that does support such actions.
+This feature can be easily added to TOPL\footnote{ As we will see later in \autoref{sec:syntax.topl}, TOPL is actually translated to an intermediate language that does support such feature.}.
+However, this is the only example we have encountered so far that would require such incrementing/decrementing of automata variable. For this reason, for the time being, we have chosen to keep \TPL \ simple and not include this feature.
 
 % >>>
 \subsection{Sorter and Comparator}\label{sec:examples.sorter} % <<<
@@ -847,6 +878,7 @@ Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
 For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
 We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
+We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N} \bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
 \end{notation}
 
 \subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
@@ -1122,40 +1154,45 @@ However, we could not find a desugaring into automata with transitions of length
 % >>>
 \subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
-\rg{Rewriting this.}
-
 The \emph{program state} holds method parameters and dynamically allocated objects.
 Method parameters are held in a store;
 dynamically allocated objects are held in the heap.
 The \emph{heap} is a finite partial map from (object reference, field name) pairs to values.
 \begin{align}
-\set{PState}&=\set{Store}\times\set{Heap}\\
+\set{SoolState}&=\set{Store}\times\set{Heap}\\
 \set{Store}&=\set{Variable}\pmap\set{Value} \\
 \set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
 \end{align}
 The input is a stream of values;
 the output is an array of events.
-The program execution state keeps track of the input yet to be consumed and of the output already produced.
+The \emph{program world} keeps track of the program state, the input yet to be consumed, and of the output already produced.
 \begin{align}
 \set{Input}&=\N\to\set{Value} \label{eq:input}\\
-\set{Trace}&=\bigcup_{n\in\N}n\to\set{Event} \\
-\set{EPState}&=\set{PState}\times\set{Input}\times\set{Trace} \\
-((\sigma, h), i, o)&\in\set{EPState} \label{eq:epstate.element}
+\set{Trace}&=\set{Event}\,\mathsf{array} \\
+\set{SoolWorld}&=\set{SoolState}\times\set{Input}\times\set{Trace} \\
+((\sigma, h), i, o)&\in\set{SoolWorld} \label{eq:epstate.element}
 \end{align}
-Equation~\eqref{eq:epstate.element} shows the general form of an element of~\set{EPState}: $\sigma$~is the store that holds parameters, $h$~is the heap that holds dynamically allocated objects, $i$~is the input stream yet to be processed, and $o$~is the array of events already emitted.
+Equation~\eqref{eq:epstate.element} shows the general form of an element of~\set{SoolWorld}: $\sigma$~is the store that holds parameters, $h$~is the heap that holds dynamically allocated objects, $i$~is the input stream yet to be processed, and $o$~is the array of events already emitted.
+The implementation~\cite{web:topl.prototype} also has local variables, which are treated similarly to method parameters.
+
 Executing a SOOL program amounts to executing the \Verb@main@ body, which is a compound statement.
 \begin{align}
-\mathit{exec}&\in\set{Statement}\to\set{EPState}\to(\set{EPState}\times\set{Value})
+\mathit{exec}&\in(\set{SoolWorld}\times\set{Statement})\to(\set{SoolWorld}\times\set{Value})
 \end{align}
 Method calls are interesting.
 The general form of a method call is \[ e.x := f.m(g_1,\ldots,g_n)\] where $e$,~$f$, $g_1$, \dots, $g_n$ are expressions, $x$~identifies a data field, and $m$~identifies a method.
 Expressions evaluate to values and do not have side-effects.
 \begin{align}
-\set{Expression}&=\set{PState}\to\set{Value} \\
+\set{Expression}&=\set{SoolState}\to\set{Value} \\
 e,f,g_1,\ldots,g_n&\in\set{Expression}
 \end{align}
+
+\begin{notation}
+The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
+\end{notation}
+
 \autoref{fig:exec.call} shows the definition of \textit{exec} for method calls.
-In spite of the imperative-looking notation, there is no mutation.
+In spite of the imperative-looking notation, there is no mutation:
 Different versions of $\sigma$,~$h$, $i$, and~$o$ get different indices.
 Line~1 introduces a shorthand notation for the program state~$s$.
 Line~2 looks up in the program text a method named~$m$.
@@ -1173,22 +1210,17 @@ It has tag $\mathtt{return}m$ and carries the return value.
 Line~7 stores the return value in the heap.
 Finally, line~8 returns the updated program execution state and the unit value~$()$.
 
-\begin{notation}
-\rg{Find a good place for this.}
-The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
-\end{notation}
-
 \begin{figure}
 \hbox to\hsize{\vbox{
 \begin{alg}
-\^  $\proc{exec}\;(e.x:=f.m(g_1,\ldots,g_n))\;((\sigma_0,h_0),i_0,o_0)$
+\^  $\proc{exec}\Bigl(\bigl((\sigma_0,h_0),i_0,o_0\bigr),\bigl(e.x:=f.m(g_1,\ldots,g_n)\bigr)\Bigr)$
 \=  $s:=(\sigma,h)$
 \=  $((x_1,\ldots,x_n), b) :=\mathit{methodOfName}\;m$
 \=  $\sigma_1:=[\textbf{this}:(f\;s), x_1:(g_1\;s), \ldots, x_n:(g_n\;s)]$
 \=  $o_1:=\text{$o_0$ with $(\mathtt{call}m,[f\;s,g_1\;s,\ldots,g_n\;s])$ appended}$
 \=  $(((\sigma_2,h_2),i_2,o_2),v):=\mathit{exec}\;b\;((\sigma_1,h_0),i_0,o_1)$
 \=  $o_3:=\text{$o_2$ with $(\mathtt{return}m,[v])$ appended}$
-\=  $h_3:=[h_2, (e\;s, x) : v]$
+\=  $h_3:=h_2[(e\;s, x) : v]$
 \=  ~return~ $(((\sigma_2,h_3),i_2,o_3), ())$
 \end{alg}
 \smallskip
@@ -1203,11 +1235,6 @@ Given a program with the main body~$b$, the output trace~$o$ corresponding to so
 \begin{align}
 ((\_,\_,o),\_):=\mathit{exec}\;b\;(([],[]),i,[])
 \end{align}
-
-Instead of SOOL, consider some programming language~X.
-In order to use iTOPL properties to verify X~programs, one needs to modify the semantics of~X so that executions produce traces of events.
-For imperative languages, the modifications are likely to be similar to the one illustrated by this section for SOOL\null.
-However, there is no conceptual problem with repeating the exercise for a functional language.
 
 % >>>
 % >>>
@@ -1241,12 +1268,6 @@ A modular static verification method for typestate protocols is introduces in~\c
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
 The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
 can deal with inheritance.
-
-
-The paper~\cite{dblp:conf/sigsoft/AlfaroH01} introduces an automata-based formalism for specifying properties of software interfaces.
-This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
-In contrast with our language, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
-
 In~\cite{dblp:conf/issta/FinkYDRG06} the authors present sound verification techniques for typestate properties of Java  programs.
 Their approach is divided in several stages with different verifiers varying for cost and precision.
 In the early stages efficient but imprecise analyses are employed whereas
@@ -1255,13 +1276,19 @@ Every stage focuses on verifying only the parts of the code that previous stages
 This work focuses on analysis whereas we focus on presenting a useful specification language as the base for verification.
 It is likely that our language could be fruitfully combined with their analysis technique.
 
-While the SLAM verifier~\cite{dblp:conf/cav/ballr01} specialises on device drivers and checks client conformance rather than full protocols, 
+An automata-based formalism for specifying properties of software interfaces were introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
+This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
+In contrast to \TPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level. A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.  
+Differences between SLIC and \TPL \ include: the use of non-determinism  (in SLIC) to encode universal quantification of dynamic allocated data, and the  ability to have complex code in the automaton transitions. 
+\TPL \ specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed in correspondence of an automaton transitions. 
+Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/cav/ballr01}.
+While SLAM specialises on device drivers and checks client conformance rather than full protocols, 
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
 %\rg{Briefly: (1)~centered on one object, (2)~there's some old proposal by Huisman to add LTL to JML, but now there's nothing temporal, (3)~Cok has an article about specifying iterators an he basically encodes an automaton in JML.
 %As far as I know the spec language of Spec$^\sharp$ is pretty similar to JML.}
 
-\rg{TODO: Blame assignment --- error traces}
+%\rg{TODO: Blame assignment --- error traces}
 
 
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
