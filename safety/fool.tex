@@ -687,9 +687,45 @@ illustrate how that works, let $\mathit{Context}\ \mathit{Tag}\
 % >>>
 \subsection{SOOL}\label{sec:syntax.sool} % <<<
 
-SOOL is a subset of existing object-oriented languages.
-It has classes, assignments, and method calls.
-It should be possible to use TOPL with any language that is a superset of SOOL\null.
+\rg{(Re)Writing this.}
+
+% plan
+% - all we need is traces
+% - sool is an example of how traces are produced
+% - here's an example sool program
+% - here's the grammar; note
+%   - expressions have no side-effects
+
+Traces of events act as a thin interface between programs and iTOPL properties.
+The advantage is that iTOPL can be used with many programming languages.
+One needs to define how programs in a certain language produce events.
+Also, since iTOPL is low-level, one should also build on it a language closer to the programming language.
+TOPL is an example of a language built on top of iTOPL that is suitable in an object-oriented setting.
+We use SOOL to illustrate how an object-oriented language produces events.
+SOOL has classes, assignments, and method calls.
+
+The following is a small snippet of a SOOL program.
+\delimitVerbatim
+\begin{Verbatim}
+class User
+  Unit remove(Collection c, Object x)
+    var Bool hasNext
+    var Iterator i := c.iterator()
+    do { hasNext := i.hasNext() }
+    while hasNext
+      var Object y := i.next()
+      if x == y { i.remove() }
+    return unit
+\end{Verbatim}
+\delimitVerbatim
+In SOOL statements can be grouped by $\{$curly brackets$\}$ but also by indentation.
+The loop condition is \Verb@hasNext@ rather than \Verb@i.hasNext()@ because SOOL expressions do not have side-effects.
+Method calls do have side-effects, but they are statements, not expressions.
+Like in \TeX, loops check their condition in the middle.
+
+\begin{remark}
+In Java, \Verb@while (i.hasNext()) ...@ gives the \emph{illusion} that the loop's condition is checked in the beginning.
+\end{remark}
 
 \autoref{fig:syntax.sool} shows a big part of SOOL's syntax.
 Expressions, which do not have side-effects, are missing.
@@ -712,15 +748,12 @@ Expressions, which do not have side-effects, are missing.
   Reference& Expression \b. Identifier \cr
   Actuals& Expression \(\b, Expression\)\* \cr
 }
-\rlp{Is $Body$ normally called $Block$?}
-\rg{\emph{I} normally call it \textit{Body}.
-I think the C standard calls it ``composed statement.''
-(Conditionals and loops are ``control-flow statements,'' I think.)
-In summary:
-I don't know what's more common, so feel free to change.}
 \caption{(Partial) Syntax of SOOL}
 \label{fig:syntax.sool}
 \end{figure}
+
+It should be possible to use TOPL with any language that is a superset of SOOL\null.
+\rg{Remove previous sentence?}
 
 % >>>
 % >>>
@@ -1096,41 +1129,26 @@ However, there is no conceptual problem with repeating the exercise for a functi
 % >>>
 \section{Dynamic Analysis}\label{sec:dynamic} % <<<
 
-\rg{Rewriting this.}
-
 A prototype implementation of TOPL is online~\cite{web:topl.prototype}.
-It consists of two parts.
+It consists of two parts---a TOPL and SOOL interpreter, and a tool to instrument Java bytecode.
 
-\paragraph{TOPL and SOOL interpreter.}
+We developed \emph{a TOPL and SOOL interpreter} with the goal of experimenting with TOPL's semantics.
+Indeed, while developing the interpreter we discovered several subtle bugs in our initial model.
+There are two main differences between this paper (\autoref{sec:semantics}) and the implementation.
+First, in the interest of simplicity the interpreter tracks only one active state.
+Whenever the set of active states would be $S\in(\set{ExeState}\to2)$, the interpreter only keeps track of some $s\in S$.
+Which exactly is the state~$s$ that is being tracked depends on a random number generator seed.
+The random number generator simulates nondeterminism.
+Second, the trace of events is communicated from the SOOL interpreter to the TOPL interpreter lazily.
+Only a few events are in memory at any one time.
+\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
 
+To illustrate that TOPL is applicable to real languages we are also implementing \emph{a tool to instrument Java bytecode} and a Java implementation of the TOPL interpreter.
 
+Both tools have several interesting aspects.
+In particular, the Java implementation of the TOPL interpreter uses fairly interesting data structures.
+A detailed description, however, is outside the scope of this article, which focuses on describing the TOPL language.
 
-%\rg{What we want to say here is:
-%The prototype and the bytecode instrumenter exist, but their description is out of scope.
-%Suffice to say \emph{what} they do, rather than \emph{how} they do it.}
-%
-%In general, there are two approaches to dynamic checking: instrument the interpreter or instrument the code.
-%The next two sections explain how to instrument the 	 when the programming language is SOOL (\autoref{sec:dynamic.sool}) and how to instrument Java bytecode (\autoref{sec:dynamic.java}).
-%
-%\subsection{Instrumented SOOL Interpreter}\label{sec:dynamic.sool} % <<<
-%
-%The SOOL interpreter and the iTOPL interpreter closely follow the operational semantics (\autoref{sec:semantics}).
-%A naive implementation would run the SOOL interpreter and the iTOPL interpreter one \emph{after} the other.
-%This, however, would use memory to store the whole trace of events.
-%Our implementation~\cite{web:topl.prototype} runs the two interpreters in parallel.
-%A lazy programmer would say that the output of the SOOL interpreter is simply fed as input to the iTOPL interpreter.
-%A Python programmer would say that the SOOL interpreter is a generator.
-%A Java programmer would say that an event-based programming model is used.
-%In any case, the memory needed for storing events is proportional to the longest transition in the iTOPL automaton, rather than being proportional to the length of the execution.
-%
-%\rg{Talk about non-determinism: We need to forget some states in practice.}
-%
-%\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
-%
-%% >>>
-%\subsection{Instrumented Java bytecode}\label{sec:dynamic.java} % <<<
-%
-%% >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
