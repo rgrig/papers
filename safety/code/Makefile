@@ -1,17 +1,19 @@
-# If other sources are modified then |make| won't recompile properly.
-SOURCES=$(wildcard *.ml) $(wildcard *.mll) $(wildcard *.mly)
-CFLAGS=-dtypes,-w,a#Ae
+# Configuration
+CFLAGS=-dtypes,-w,Ae
+MAINS=interp gen
 
-byte: interp.byte gen.byte instrumenter.byte
+# Things that should seldom change
+BYTES=$(addsuffix .byte,$(MAINS))
+OCAMLBUILD=ocamlbuild -cflags $(CFLAGS)
 
-interp.byte gen.byte instrumenter.byte: $(SOURCES)
-	OCAMLPATH=~/lib/ocaml/baristaLibrary ocamlbuild -cflags $(CFLAGS) gen.byte interp.byte instrumenter.byte
+byte:
+	$(OCAMLBUILD) $(BYTES)
 
 examples: byte
 	@./test.sh
 
 clean:
-	ocamlbuild -clean
+	$(OCAMLBUILD) -clean
 	rm -f .out
 
-.PHONY: byte examples clean
+.PHONY: byte clean examples

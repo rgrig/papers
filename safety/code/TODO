@@ -8,6 +8,10 @@
 - cleanup code
 - consider communicating the events thru a pipe between the SOOL interpreter
   and the iTOPL interpreter
+- * should not be an expression, but a statement
+- cleanup code
+- compile to native code
+- README file that explains how to setup development on various OSs.
 
 notes (low priority todos):
 - symbolic execution

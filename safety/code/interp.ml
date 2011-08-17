@@ -185,10 +185,8 @@ module PropertyInterpreter = struct
       | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
       | PA.Atomic (PA.Ct (v, i)) -> v = rv i
       | PA.Atomic (PA.Event (et, m)) ->
-(*DBG printf "expecting (%s, %d); seen (%s, %d)\n"
-  (fst m) (snd m)
-  (fst e.PA.event_method) (snd e.PA.event_method);*)
           et = e.PA.event_type && m = e.PA.event_method
+      | PA.Atomic PA.Any -> true
       | PA.Not g -> not (f g)
       | PA.And gs -> List.for_all f gs
       | PA.Or gs -> List.exists f gs in
@@ -201,8 +199,7 @@ module PropertyInterpreter = struct
       Stack.init_variable s v vl in
     List.fold_left f s a
 
-  (* TODO *)
-  let call_return_warn e g = ()
+  let call_return_warn _ _ = failwith "todo"
 
   exception Return of Stack.t
   exception No_match
