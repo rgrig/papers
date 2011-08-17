@@ -126,6 +126,7 @@ let pick x xs =
 (* }}} *)
 (* global environment *) (* {{{ *)
 let automaton = ref ok_automaton
+  (* the property being checked, picked randomly *)
 let fields = ref U.StringMap.empty
   (* for each class, a list of fields *)
 let methods = ref U.StringPairMap.empty
@@ -164,6 +165,12 @@ let preprocess p =
   preprocess_classes p.program_classes;
   preprocess_properties p.program_properties
 
+(*
+  Constructs a guard that holds when there exist event values and an automaton
+  state that satisfy the given guard. All that remains tested is the event tag.
+ *)
+let rec simplify_guard = failwith "todo"
+
 (* }}} *)
 (* error reporting *) (* {{{ *)
 
@@ -179,13 +186,12 @@ let report_error message =
 (* functions that evolve only the automata state *) (* {{{ *)
 
 module PropertyInterpreter = struct
-  let rec evaluate_guard s e =
+  let evaluate_guard s e =
     let rv i = U.IntMap.find i e.PA.event_values in
     let rec f = function
       | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
       | PA.Atomic (PA.Ct (v, i)) -> v = rv i
-      | PA.Atomic (PA.Event (et, m)) ->
-          et = e.PA.event_type && m = e.PA.event_method
+      | PA.Atomic (PA.Event et) -> et = e.PA.event_tag
       | PA.Atomic PA.Any -> true
       | PA.Not g -> not (f g)
       | PA.And gs -> List.for_all f gs
@@ -208,7 +214,7 @@ module PropertyInterpreter = struct
     ; automaton_stack = s }
     { PA.edge_source = src  (* the automaton edge being examined *)
     ; PA.edge_target = tgt
-    ; PA.edge_label = ls }
+    ; PA.edge_labels = ls }
   =
     assert (src = v);
     let f (ls, s) e = match ls with
@@ -388,7 +394,7 @@ let interpret fn =
         eprintf "@[%s:%d:%d: parse error@." fn line (c1-c0+1))
     | Check.Error -> ()
 
-let _ =
+let () =
   for i = 1 to Array.length Sys.argv - 1 do
     interpret Sys.argv.(i)
   done

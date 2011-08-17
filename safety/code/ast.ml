@@ -85,10 +85,12 @@ module PropertyAst = struct
     | Call
     | Return
 
+  type event_tag = event_type * method_
+
   type atomic_guard =
     | Var of variable * int
     | Ct of value * int
-    | Event of event_type * method_
+    | Event of event_tag
     | Any
 
   type guard =
@@ -100,8 +102,7 @@ module PropertyAst = struct
   type action = (variable * int) list
 
   type event =
-    { event_type : event_type
-    ; event_method : method_
+    { event_tag : event_tag
     ; event_values : value U.IntMap.t }
 
   type label =
@@ -111,7 +112,7 @@ module PropertyAst = struct
   type edge =
     { edge_source : string
     ; edge_target : string
-    ; edge_label : label list }
+    ; edge_labels : label list }
 
   type t =
     { message : string
@@ -132,7 +133,7 @@ module PropertyAst = struct
   let vars_of_edge f
     { edge_source = _
     ; edge_target = _
-    ; edge_label = ls }
+    ; edge_labels = ls }
   =
     List.concat (List.map f ls)
 
@@ -140,16 +141,57 @@ module PropertyAst = struct
   let read_vars = vars_of_edge rvars
 
   let mk_event et m (vs : value list) =
-    { event_type = et
-    ; event_method = m
+    { event_tag = et, m
     ; event_values =
         let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
         snd (List.fold_left f (0, U.IntMap.empty) vs) }
 
-  let edge_length e = List.length e.edge_label
+  let edge_length e = List.length e.edge_labels
 
   let outgoing a src =
     List.filter (fun e -> e.edge_source = src) a.edges
+
+  let guards_of_automaton {message=_; edges=edges} =
+    let gol acc {label_guard=g; label_action=_} = g :: acc in
+    let goe acc {edge_source=_; edge_target=_; edge_labels=ls} =
+      List.fold_left gol acc ls in
+    List.fold_left goe [] edges
+
+  let rec push_not_down p = function
+    | Atomic _ as g -> if p then g else Not g
+    | Not g -> push_not_down (not p) g
+    | And gs ->
+        let gs = List.map (push_not_down p) gs in
+        if p then And gs else Or gs
+    | Or gs ->
+        let gs = List.map (push_not_down p) gs in
+        if p then Or gs else And gs
+
+  let cnf g =
+    let g = push_not_down true g in
+    let unfold_and = function | And gs -> gs | g -> [g] in
+    let unfold_or = function | Or gs -> gs | g -> [g] in
+    let is_atomic = function | And _ | Or _ -> false | _ -> true in
+    let rec expand xs =
+      if List.for_all is_atomic xs then [xs] else
+      let xs = List.concat (List.map unfold_and xs) in
+      let xss = U.cartesian (List.map unfold_or xs) in
+      List.concat (List.map expand xss) in
+    let simplify xs = (* TODO(rgrig): Do I really want this step? *)
+      let pos = Hashtbl.create 13 in
+      let neg = Hashtbl.create 13 in
+      let fls = ref false in
+      let f1 h h' g g' =
+        if Hashtbl.mem h' g then fls := true;
+        Hashtbl.replace h g g' in
+      let f2 = function
+        | Not g as g' -> f1 neg pos g g'
+        | g -> f1 pos neg g g in
+      List.iter f2 xs;
+      if !fls then [] else
+      let f3 _ x xs = x :: xs in
+      [Hashtbl.fold f3 pos (Hashtbl.fold f3 neg [])] in
+    List.concat (List.map simplify (expand [g]))
 
   (* }}} *)
 end

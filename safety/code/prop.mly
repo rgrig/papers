@@ -49,7 +49,7 @@ transition: s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) {
   let f l =
     { P.edge_source = s
     ; P.edge_target = t
-    ; P.edge_label = l } in
+    ; P.edge_labels = l } in
   List.map f ls
 }
 

@@ -98,3 +98,12 @@ let todo () = failwith "todo"
 let list_of_option = function
   | Some x -> [x]
   | None -> []
+
+let cartesian xss =
+  let rec f acc = function
+    | [] -> List.map List.rev acc
+    | xs :: xss ->
+        let ys = List.map (fun x -> List.map (fun ys -> x :: ys) acc) xs in
+        f (List.concat ys) xss in
+  f [[]] xss
+
