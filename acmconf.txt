@@ -1,0 +1,23 @@
+Average citations per article.
+
+28.45 PLDI Programming Language Design and Implementation
+21.95 POPL Principles of Programming Languages
+15.03 STOC ACM Symposium on Theory of Computing
+11.31 KDD Knowledge Discovery and Data Mining
+9.35 WWW International World Wide Web Conference
+7.80 SODA Symposium on Discrete Algorithms
+7.64 ISSTA International Symposium on Software Testing and Analysis
+7.05 PASTE Program Analysis for Software Tools and Engineering
+7.03 ISMM International Symposium on Memory Management (interested in verification!)
+6.95 SPLASH Systems, Programming, and Applications
+6.68 FSE Foundations of Software Engineering
+6.63 ICFP International Conference on Functional Programming
+6.03 CGO Code Generation and Optimization
+5.61 ICSE International Conference on Software Engineering
+5.46 PEPM Partial Evaluation and Program Manipulation
+4.42 CIKM Conference on Information and Knowledge Management
+3.89 Softvis Software Visualization
+3.48 ASE Automated Software Engineering
+3.30 CSE Computer Science Education
+1.95 UbiComp Ubiquitous Computing
+1.57 SAC Symposium on Applied Computing
