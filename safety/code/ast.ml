@@ -167,20 +167,31 @@ module PropertyAst = struct
         let gs = List.map (push_not_down p) gs in
         if p then Or gs else And gs
 
+  type conflict_var =
+    | CV_ev_var of int
+    | CV_aut_var of variable
+    | CV_const of value
+
+  let satisfiable_term t =
+    let is_falsity = function
+      | Not (Atomic Any) -> true
+      | _ -> false in
+    if List.exists is_falsity t then false else
+    let uf = UnionFind.make () in
+    let process_eq = function
+      | Atomic (Var (x, i)) -> UnionFind.union uf (CV_aut_var x) (CV_ev_var i)
+      | Atomic (Ct (v, i)) -> UnionFind.union uf (CV_const v) (CV_ev_var i)
+      | _ -> () in
+    List.iter process_eq t;
+    let unsat_diseq = function
+      | Not (Atomic (Var (x, i))) -> UnionFind.equals uf (CV_aut_var x) (CV_ev_var i)
+      | Not (Atomic (Ct (v, i))) -> UnionFind.equals uf (CV_const v) (CV_ev_var i)
+      | _ -> false in
+    not (List.exists unsat_diseq t)
+
   let simplify_term xs =
-    let pos = Hashtbl.create 13 in
-    let neg = Hashtbl.create 13 in
-    let retrieve () =
-      let f _ = U.cons in
-      Hashtbl.fold f pos (Hashtbl.fold f neg []) in
-    let rec fold = function
-      | [] -> Some (retrieve ())
-      | Not g as g' :: gs -> check pos neg g g' gs
-      | g :: gs -> check neg pos g g gs
-    and check conflicts h g g' gs =
-      if Hashtbl.mem conflicts g then None
-      else (Hashtbl.replace h g g'; fold gs) in
-    fold xs
+    let xs = U.unique xs in
+    if (satisfiable_term xs) then Some xs else None
 
   let simplify xss =
     let xss = U.map_option simplify_term xss in

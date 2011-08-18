@@ -1,4 +1,3 @@
-- filter the events relevant to the automaton, based on method ids
 - cleanup code
   - edge -> arc
 - desugar properties into statements

@@ -127,6 +127,9 @@ let pick x xs =
 (* global environment *) (* {{{ *)
 let automaton = ref ok_automaton
   (* the property being checked, picked randomly *)
+let automaton_guard = ref (PA.Atomic PA.Any)
+  (* an event is interesting if this guard evaluates to true on the event and
+  any state *)
 let fields = ref U.StringMap.empty
   (* for each class, a list of fields *)
 let methods = ref U.StringPairMap.empty
@@ -155,16 +158,6 @@ let preprocess_classes cs =
 let desugar_multi_edges es = es (* TODO
   failwith "TODO: make sure each edge has exactly one label." *)
 
-let preprocess_properties ps =
-  let ps = List.map (fun x -> x.ast) ps in
-  automaton := ((* DBG eprintf "@[pick automaton@.";*) pick ok_automaton ps);
-  automaton :=
-    { !automaton with PA.edges = desugar_multi_edges !automaton.PA.edges }
-
-let preprocess p =
-  preprocess_classes p.program_classes;
-  preprocess_properties p.program_properties
-
 let is_tag = function
   | PA.Atomic (PA.Event _) -> true
   | PA.Not (PA.Atomic (PA.Event _)) -> true
@@ -172,12 +165,24 @@ let is_tag = function
 
 (*
   Constructs a guard that holds when there exist event values and an automaton
-  state that satisfy the given guard. All that remains tested is the event tag.
- *)
+  state that satisfy some guard of the given automaton.
+*)
 let mk_property_guard p =
   let guards = PA.guards_of_automaton p in
   let dnf = PA.dnf (PA.Or guards) in
-  U.unique (List.map (List.filter is_tag) dnf)
+  let dnf = U.unique (List.map (List.filter is_tag) dnf) in
+  PA.Or (List.map (fun l -> PA.And l) dnf)
+
+let preprocess_properties ps =
+  let ps = List.map (fun x -> x.ast) ps in
+  automaton := ((* DBG eprintf "@[pick automaton@.";*) pick ok_automaton ps);
+  automaton :=
+    { !automaton with PA.edges = desugar_multi_edges !automaton.PA.edges };
+  automaton_guard := mk_property_guard !automaton
+
+let preprocess p =
+  preprocess_classes p.program_classes;
+  preprocess_properties p.program_properties
 
 (* }}} *)
 (* error reporting *) (* {{{ *)
@@ -213,7 +218,7 @@ module PropertyInterpreter = struct
       Stack.init_variable s v vl in
     List.fold_left f s a
 
-  let call_return_warn _ _ = failwith "todo"
+  let call_return_warn _ _ = () (* failwith "todo" *)
 
   exception Return of Stack.t
   exception No_match
@@ -245,20 +250,23 @@ module PropertyInterpreter = struct
           Some ({ automaton_node = tgt; automaton_stack = s}, List.length ls)
 
   let check s e =
-    Queue.push e events;
-    let outgoing = PA.outgoing !automaton s.automaton_node in
-    let n = List.fold_left max 0 (List.map PA.edge_length outgoing) in
-    if Queue.length events >= n then begin
-      let candidates = U.map_option (evolve s) outgoing in
-      let candidates = if candidates = [] then [(s,1)] else candidates in
-      let next, k = pick (automaton_start, 1) candidates in
-      for i = 1 to k do ignore (Queue.pop events) done;
-(* DBG   eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
-(* DBG   report_error "transition"; *)
-      if next.automaton_node = "error" then
-        raise (Property_fails !automaton.PA.message);
-      next
-    end else s
+    if not (evaluate_guard s.automaton_stack e !automaton_guard) then s else
+    begin
+      Queue.push e events;
+      let outgoing = PA.outgoing !automaton s.automaton_node in
+      let n = List.fold_left max 0 (List.map PA.edge_length outgoing) in
+      if Queue.length events >= n then begin
+        let candidates = U.map_option (evolve s) outgoing in
+        let candidates = if candidates = [] then [(s,1)] else candidates in
+        let next, k = pick (automaton_start, 1) candidates in
+        for i = 1 to k do ignore (Queue.pop events) done;
+  (* DBG   eprintf "@[  %s->%s@." s.automaton_node next.automaton_node; *)
+  (* DBG   report_error "transition"; *)
+        if next.automaton_node = "error" then
+          raise (Property_fails !automaton.PA.message);
+        next
+      end else s
+    end
 end
 
 (* }}} *)
