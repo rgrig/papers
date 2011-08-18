@@ -167,31 +167,32 @@ module PropertyAst = struct
         let gs = List.map (push_not_down p) gs in
         if p then Or gs else And gs
 
-  let cnf g =
-    let g = push_not_down true g in
-    let unfold_and = function | And gs -> gs | g -> [g] in
-    let unfold_or = function | Or gs -> gs | g -> [g] in
-    let is_atomic = function | And _ | Or _ -> false | _ -> true in
-    let rec expand xs =
-      if List.for_all is_atomic xs then [xs] else
-      let xs = List.concat (List.map unfold_and xs) in
-      let xss = U.cartesian (List.map unfold_or xs) in
-      List.concat (List.map expand xss) in
-    let simplify xs = (* TODO(rgrig): Do I really want this step? *)
-      let pos = Hashtbl.create 13 in
-      let neg = Hashtbl.create 13 in
-      let fls = ref false in
-      let f1 h h' g g' =
-        if Hashtbl.mem h' g then fls := true;
-        Hashtbl.replace h g g' in
-      let f2 = function
-        | Not g as g' -> f1 neg pos g g'
-        | g -> f1 pos neg g g in
-      List.iter f2 xs;
-      if !fls then [] else
-      let f3 _ x xs = x :: xs in
-      [Hashtbl.fold f3 pos (Hashtbl.fold f3 neg [])] in
-    List.concat (List.map simplify (expand [g]))
+  let simplify_term xs =
+    let pos = Hashtbl.create 13 in
+    let neg = Hashtbl.create 13 in
+    let retrieve () =
+      let f _ = U.cons in
+      Hashtbl.fold f pos (Hashtbl.fold f neg []) in
+    let rec fold = function
+      | [] -> Some (retrieve ())
+      | Not g as g' :: gs -> check pos neg g g' gs
+      | g :: gs -> check neg pos g g gs
+    and check conflicts h g g' gs =
+      if Hashtbl.mem conflicts g then None
+      else (Hashtbl.replace h g g'; fold gs) in
+    fold xs
+
+  let simplify xss =
+    let xss = U.map_option simplify_term xss in
+    U.unique xss
+
+  let dnf f =
+    let rec fold g = function
+      | ((Atomic _) | Not (Atomic _)) as x -> List.map (U.cons x) g
+      | And hs -> List.fold_left fold g hs
+      | Or hs -> List.concat (List.map (fold g) hs)
+      | _ -> failwith "I only work if not is pushed down" in
+    simplify (fold [[]] (push_not_down true f))
 
   (* }}} *)
 end

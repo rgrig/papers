@@ -25,6 +25,13 @@ let map_option f xs =
     | Some y -> y :: acc in
   List.rev (List.fold_left f' [] xs)
 
+let cons x xs = x :: xs
+
+let unique l =
+  let h = Hashtbl.create 51 in
+  List.iter (fun x -> Hashtbl.replace h x x) l;
+  Hashtbl.fold (fun _ -> cons) h []
+
 (** Function composition. *)
 let (@@) f g x = f (g x)
 
@@ -106,4 +113,3 @@ let cartesian xss =
         let ys = List.map (fun x -> List.map (fun ys -> x :: ys) acc) xs in
         f (List.concat ys) xss in
   f [[]] xss
-
