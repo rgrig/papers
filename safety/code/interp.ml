@@ -165,11 +165,19 @@ let preprocess p =
   preprocess_classes p.program_classes;
   preprocess_properties p.program_properties
 
+let is_tag = function
+  | PA.Atomic (PA.Event _) -> true
+  | PA.Not (PA.Atomic (PA.Event _)) -> true
+  | _ -> false
+
 (*
   Constructs a guard that holds when there exist event values and an automaton
   state that satisfy the given guard. All that remains tested is the event tag.
  *)
-let rec simplify_guard = failwith "todo"
+let mk_property_guard p =
+  let guards = PA.guards_of_automaton p in
+  let dnf = PA.dnf (PA.Or guards) in
+  U.unique (List.map (List.filter is_tag) dnf)
 
 (* }}} *)
 (* error reporting *) (* {{{ *)
