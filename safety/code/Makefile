@@ -12,8 +12,13 @@ byte:
 examples: byte
 	@./test.sh
 
+checker:
+	mkdir -p classes
+	javac topl/*.java -d classes
+
 clean:
 	$(OCAMLBUILD) -clean
 	rm -f .out
+	rm -rf classes
 
 .PHONY: byte clean examples
