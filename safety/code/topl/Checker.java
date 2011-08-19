@@ -13,12 +13,12 @@ public class Checker {
 
     static class State {
         // TODO: Hashing
-        public int vertex;
-        public HashMap<Integer, Object> stack;
-        public ArrayDeque<Event> events;
-        // The state {this} arose from {previous_state} when {arrival_event} was seen.
-        public State previous_state;
-        public Event arrival_event;
+        int vertex;
+        HashMap<Integer, Object> stack;
+        ArrayDeque<Event> events;
+        // The state {this} arose from {previousState} when {arrivalEvent} was seen.
+        State previousState;
+        Event arrivalEvent;
 
         static State ofVertex(int vertex) {
             State r = new State();
@@ -42,7 +42,7 @@ public class Checker {
 
     static class TransitionStep {
         // TODO: Consider bitmaps
-        public HashSet<Integer> event_ids;
+        HashSet<Integer> eventIds;
         Guard guard;
         Action action;
 
@@ -54,15 +54,15 @@ public class Checker {
     }
 
     static class Transition {
-        public TransitionStep[] steps;
-        public int target;
+        TransitionStep[] steps;
+        int target;
     }
 
     static class Automaton {
-        int start_vertex;
-        int error_vertex;
-        // {transition[vertex]} is outgoing edges.
-        public ArrayDeque<Transition>[] transitions;
+        int startVertex;
+        int errorVertex;
+        // {transition[vertex]} is outgoing arcs.
+        ArrayDeque<Transition>[] transitions;
             // TODO: rename to {outgoingArcsOf}?
 
         private int maximumTransitionDepth = -1;
@@ -95,8 +95,8 @@ public class Checker {
     }
 
     public void check(Event event) {
-        HashSet<State> departed_states = new HashSet<State>();
-        HashSet<State> arrived_states = new HashSet<State>();
+        HashSet<State> departedStates = new HashSet<State>();
+        HashSet<State> arrivedStates = new HashSet<State>();
         for (State state : states) {
             state.events.addLast(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
@@ -104,34 +104,33 @@ public class Checker {
             }
             for (Transition transition : automaton.transitions[state.vertex]) {
                 // evaluate transition
-                State step_state = state;
+                State stepState = state;
                 int i = 0;
                 Iterator<Event> j = state.events.iterator();
                 for (; i < transition.steps.length; ++i) {
                     TransitionStep step = transition.steps[i];
-                    Event step_event = j.next();
-                    // if (!step.event_ids.contains(step_event.id)) break;
-                    if (!step.evaluateGuard(step_event)) break;
-                    step_state = step_state.applyAction(step.action);
+                    Event stepEvent = j.next();
+                    // if (!step.eventIds.contains(stepEvent.id)) break;
+                    if (!step.evaluateGuard(stepEvent)) break;
+                    stepState = stepState.applyAction(step.action);
                 }
                 // record transition
                 if (i == transition.steps.length) {
-                    departed_states.add(state);
-                    arrived_states.add(step_state);
+                    departedStates.add(state);
+                    arrivedStates.add(stepState);
                     // check for error state
-                    if (transition.target == automaton.error_vertex)
+                    if (transition.target == automaton.errorVertex)
                         // TODO
                         reportError();
                 }
             }
             // perform transitions
-            states.removeAll(departed_states);
-            states.addAll(arrived_states);
+            states.removeAll(departedStates);
+            states.addAll(arrivedStates);
         }
     }
 }
 /* TODO
-    - rename edge -> arc
-    - remove (most) {public} qualifiers
+    - write some tests
  */
 // vim:sw=4:ts=4:
