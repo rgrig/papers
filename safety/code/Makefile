@@ -17,7 +17,7 @@ checker:
 	@javac topl/*.java -d classes
 
 checker_tests: checker
-	@CLASSPATH=classes java topl.Checker
+	@CLASSPATH=classes java -ea topl.Checker
 
 clean:
 	@$(OCAMLBUILD) -clean

@@ -6,9 +6,30 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 public class Checker {
+    /*
+        Some classes have a method {check()} that asserts if some object
+        invariant is broken. These functions always return {true} so that
+        you can say {assert x.check()} in case you want to skip them
+        completely when assertions are not enabled.
+     */
+
     static class Event {
         int id;
         Object[] values;
+
+        Event(int id, Object[] values) {
+            this.id = id;
+            this.values = values;
+            assert check();
+        }
+
+        boolean check() {
+            assert values != null;
+            for (Object o : values) {
+                assert o != null;
+            }
+            return true;
+        }
     }
 
     static class State {
@@ -23,6 +44,8 @@ public class Checker {
         static State ofVertex(int vertex) {
             State r = new State();
             r.vertex = vertex;
+            r.stack = new HashMap<Integer, Object>();
+            r.events = new ArrayDeque<Event>();
             return r;
         }
 
@@ -32,8 +55,53 @@ public class Checker {
         }
     }
 
-    static class Guard {
+    interface Store {
+        Object get(int variable);
         // TODO
+    }
+
+    interface Guard {
+        boolean evaluate(Event event, Store store);
+    }
+
+    static class AndGuard implements Guard {
+        Guard[] children;
+
+        @Override
+        public boolean evaluate(Event event, Store store) {
+            for (Guard g : children) {
+                if (!g.evaluate(event, store)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    static class NotGuard implements Guard {
+        Guard child;
+
+        @Override
+        public boolean evaluate(Event event, Store store) {
+            return !child.evaluate(event, store);
+        }
+    }
+
+    static class StoreEqualityGuard implements Guard {
+        int eventIndex;
+        int storeIndex;
+
+        @Override
+        public boolean evaluate(Event event, Store store) {
+            return event.values[eventIndex] == store.get(storeIndex);
+        }
+    }
+
+    static class TrueGuard implements Guard {
+        @Override
+        public boolean evaluate(Event event, Store store) {
+            return true;
+        }
     }
 
     static class Action {
@@ -56,6 +124,11 @@ public class Checker {
     static class Transition {
         TransitionStep[] steps;
         int target;
+
+        Transition(TransitionStep oneStep, int target) {
+            this.steps = new TransitionStep[]{oneStep};
+            this.target = target;
+        }
     }
 
     static class Automaton {
@@ -72,10 +145,10 @@ public class Checker {
             this.startVertex = startVertex;
             this.errorVertex = errorVertex;
             this.transitions = transitions;
-            check();
+            assert check();
         }
 
-        void check() {
+        boolean check() {
             assert 0 <= startVertex && startVertex < transitions.length;
             assert 0 <= errorVertex && errorVertex < transitions.length;
             assert transitions != null;
@@ -94,6 +167,7 @@ public class Checker {
                     }
                 }
             }
+            return true;
         }
 
         int maximumTransitionDepth() {
@@ -113,10 +187,10 @@ public class Checker {
     private Automaton automaton;
     private HashSet<State> states;
 
-    public Checker(Automaton automaton, int vertex) {
+    public Checker(Automaton automaton) {
         this.automaton = automaton;
         this.states = new HashSet<State>();
-        states.add(State.ofVertex(vertex));
+        states.add(State.ofVertex(automaton.startVertex));
     }
 
     void reportError() {
@@ -161,11 +235,13 @@ public class Checker {
 
     /** Some basic tests. */
     public static void main(String[] args) {
-        Automaton a = new Automaton(0, 1,
+        Checker c = new Checker(new Automaton(0, 1,
                 new Transition[][]{
-                        new Transition[] {},
+                        new Transition[] {
+                                new Transition(new TransitionStep(), 1)},
                         new Transition[] {}
-                });
+                }));
+        c.check(new Event(0, new Object[]{}));
     }
 }
 /* TODO
