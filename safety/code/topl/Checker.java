@@ -61,19 +61,48 @@ public class Checker {
     static class Automaton {
         int startVertex;
         int errorVertex;
-        // {transition[vertex]} is outgoing arcs.
-        ArrayDeque<Transition>[] transitions;
-            // TODO: rename to {outgoingArcsOf}?
+
+        Transition[][] transitions;
+            // {transitions[vertex]}  are the outgoing transitions of {vertex}
 
         private int maximumTransitionDepth = -1;
+
+        Automaton(int startVertex, int errorVertex,
+                Transition[][] transitions) {
+            this.startVertex = startVertex;
+            this.errorVertex = errorVertex;
+            this.transitions = transitions;
+            check();
+        }
+
+        void check() {
+            assert 0 <= startVertex && startVertex < transitions.length;
+            assert 0 <= errorVertex && errorVertex < transitions.length;
+            assert transitions != null;
+            for (Transition[] ts : transitions) {
+                assert ts != null;
+                for (Transition t : ts) {
+                    assert t != null;
+                    assert 0 <= t.target && t.target < transitions.length;
+                    assert t.steps != null;
+                    for (TransitionStep s : t.steps) {
+                        assert s != null;
+                        assert s.eventIds != null;
+                        assert s.guard != null;
+                        assert s.action != null;
+                        // TODO(rgrig): Bounds for integers in guards/actions.
+                    }
+                }
+            }
+        }
 
         int maximumTransitionDepth() {
             if (maximumTransitionDepth == -1) {
                 maximumTransitionDepth = 0;
-                for (ArrayDeque<Transition> ts : transitions) {
+                for (Transition[] ts : transitions) {
                     for (Transition t : ts) {
-                        maximumTransitionDepth =
-                            Math.max(maximumTransitionDepth, t.steps.length);
+                        maximumTransitionDepth = Math.max(
+                                maximumTransitionDepth, t.steps.length);
                     }
                 }
             }
@@ -129,8 +158,19 @@ public class Checker {
             states.addAll(arrivedStates);
         }
     }
+
+    /** Some basic tests. */
+    public static void main(String[] args) {
+        Automaton a = new Automaton(0, 1,
+                new Transition[][]{
+                        new Transition[] {},
+                        new Transition[] {}
+                });
+    }
 }
 /* TODO
     - write some tests
+    - fill in the missing methods
+    - implement persistent data structures
  */
 // vim:sw=4:ts=4:

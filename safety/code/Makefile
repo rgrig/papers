@@ -7,18 +7,21 @@ BYTES=$(addsuffix .byte,$(MAINS))
 OCAMLBUILD=ocamlbuild -cflags $(CFLAGS)
 
 byte:
-	$(OCAMLBUILD) $(BYTES)
+	@$(OCAMLBUILD) $(BYTES)
 
 examples: byte
 	@./test.sh
 
 checker:
-	mkdir -p classes
-	javac topl/*.java -d classes
+	@mkdir -p classes
+	@javac topl/*.java -d classes
+
+checker_tests: checker
+	@CLASSPATH=classes java topl.Checker
 
 clean:
-	$(OCAMLBUILD) -clean
-	rm -f .out
-	rm -rf classes
+	@$(OCAMLBUILD) -clean
+	@rm -f .out
+	@rm -rf classes
 
 .PHONY: byte clean examples
