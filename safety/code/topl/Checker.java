@@ -105,7 +105,10 @@ public class Checker {
     }
 
     static class Action {
-        // TODO
+        HashMap<Integer, Integer> assignments;
+        Action() {
+            assignments = new HashMap<Integer, Integer>();
+        }
     }
 
     static class TransitionStep {
@@ -113,6 +116,15 @@ public class Checker {
         HashSet<Integer> eventIds;
         Guard guard;
         Action action;
+
+        TransitionStep(int[] eventIds, Guard guard, Action action) {
+            this.eventIds = new HashSet<Integer>();
+            for (int e : eventIds) {
+                this.eventIds.add(e);
+            }
+            this.guard = guard;
+            this.action = action;
+        }
 
         boolean evaluateGuard(Event event) {
             // TODO
@@ -238,7 +250,11 @@ public class Checker {
         Checker c = new Checker(new Automaton(0, 1,
                 new Transition[][]{
                         new Transition[] {
-                                new Transition(new TransitionStep(), 1)},
+                                new Transition(
+                                        new TransitionStep(
+                                                new int[]{},
+                                                new TrueGuard(),
+                                                new Action()), 1)},
                         new Transition[] {}
                 }));
         c.check(new Event(0, new Object[]{}));
