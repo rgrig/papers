@@ -1,6 +1,6 @@
 # Configuration
 CFLAGS=-dtypes,-w,Ae
-MAINS=interp gen
+MAINS=interp gen javaOfProperty
 
 # Things that should seldom change
 BYTES=$(addsuffix .byte,$(MAINS))

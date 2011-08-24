@@ -172,7 +172,7 @@ module PropertyAst = struct
     | CV_aut_var of variable
     | CV_const of value
 
-  let satisfiable_term t =
+  let satisfiable_term t = (* TODO: what about Atomic Event? *)
     let is_falsity = function
       | Not (Atomic Any) -> true
       | _ -> false in

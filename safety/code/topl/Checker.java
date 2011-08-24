@@ -14,8 +14,8 @@ public class Checker {
      */
 
     static class Event {
-        int id;
-        Object[] values;
+        final int id;
+        final Object[] values;
 
         Event(int id, Object[] values) {
             this.id = id;
@@ -34,19 +34,19 @@ public class Checker {
 
     static class State {
         // TODO: Hashing
-        int vertex;
-        HashMap<Integer, Object> stack;
-        ArrayDeque<Event> events;
+        final int vertex;
+        final HashMap<Integer, Object> stack;
+        final ArrayDeque<Event> events;
         // The state {this} arose from {previousState} when {arrivalEvent} was seen.
-        State previousState;
-        Event arrivalEvent;
+        final State previousState;
+        final Event arrivalEvent;
 
-        static State ofVertex(int vertex) {
-            State r = new State();
-            r.vertex = vertex;
-            r.stack = new HashMap<Integer, Object>();
-            r.events = new ArrayDeque<Event>();
-            return r;
+        State(int vertex) {
+            this.vertex = vertex;
+            this.stack = new HashMap<Integer, Object>();
+            this.events = new ArrayDeque<Event>();
+            this.previousState = null;
+            this.arrivalEvent = null;
         }
 
         State applyAction(Action action) {
@@ -65,7 +65,11 @@ public class Checker {
     }
 
     static class AndGuard implements Guard {
-        Guard[] children;
+        final Guard[] children;
+
+        AndGuard(Guard[] children) {
+            this.children = children;
+        }
 
         @Override
         public boolean evaluate(Event event, Store store) {
@@ -79,7 +83,11 @@ public class Checker {
     }
 
     static class NotGuard implements Guard {
-        Guard child;
+        final Guard child;
+
+        NotGuard(Guard child) {
+            this.child = child;
+        }
 
         @Override
         public boolean evaluate(Event event, Store store) {
@@ -88,12 +96,34 @@ public class Checker {
     }
 
     static class StoreEqualityGuard implements Guard {
-        int eventIndex;
-        int storeIndex;
+        final int eventIndex;
+        final int storeIndex;
+
+        StoreEqualityGuard(int eventIndex, int storeIndex) {
+            this.eventIndex = eventIndex;
+            this.storeIndex = storeIndex;
+        }
 
         @Override
         public boolean evaluate(Event event, Store store) {
             return event.values[eventIndex] == store.get(storeIndex);
+        }
+    }
+
+    static class ConstantEqualityGuard implements Guard {
+        final int eventIndex;
+        final Object value;
+
+        ConstantEqualityGuard(int eventIndex, Object value) {
+            this.eventIndex = eventIndex;
+            this.value = value;
+        }
+
+        @Override
+        public boolean evaluate(Event event, Store store) {
+            return (value == null)?
+                event.values[eventIndex] == null :
+                value.equals(event.values[eventIndex]);
         }
     }
 
@@ -105,17 +135,30 @@ public class Checker {
     }
 
     static class Action {
+        static class Assignment {
+            final int storeIndex;
+            final int eventIndex;
+
+            Assignment(int storeIndex, int eventIndex) {
+                this.storeIndex = storeIndex;
+                this.eventIndex = eventIndex;
+            }
+        }
+
         HashMap<Integer, Integer> assignments;
-        Action() {
+        Action(Assignment[] init) {
             assignments = new HashMap<Integer, Integer>();
+            for (Assignment a : init) {
+//                assert as
+                assignments.put(a.storeIndex, a.eventIndex);
+            }
         }
     }
 
     static class TransitionStep {
-        // TODO: Consider bitmaps
-        HashSet<Integer> eventIds;
-        Guard guard;
-        Action action;
+        final HashSet<Integer> eventIds;
+        final Guard guard;
+        final Action action;
 
         TransitionStep(int[] eventIds, Guard guard, Action action) {
             this.eventIds = new HashSet<Integer>();
@@ -134,18 +177,22 @@ public class Checker {
     }
 
     static class Transition {
-        TransitionStep[] steps;
-        int target;
+        final TransitionStep[] steps;
+        final int target;
+
+        Transition(TransitionStep[] steps, int target) {
+            this.steps = steps;
+            this.target = target;
+        }
 
         Transition(TransitionStep oneStep, int target) {
-            this.steps = new TransitionStep[]{oneStep};
-            this.target = target;
+            this(new TransitionStep[]{oneStep}, target);
         }
     }
 
     static class Automaton {
-        int startVertex;
-        int errorVertex;
+        final int startVertex;
+        final int errorVertex;
 
         Transition[][] transitions;
             // {transitions[vertex]}  are the outgoing transitions of {vertex}
@@ -196,13 +243,15 @@ public class Checker {
         }
     }
 
-    private Automaton automaton;
+    final private String message;
+    final private Automaton automaton;
     private HashSet<State> states;
 
-    public Checker(Automaton automaton) {
+    public Checker(String message, Automaton automaton) {
+        this.message = message;
         this.automaton = automaton;
         this.states = new HashSet<State>();
-        states.add(State.ofVertex(automaton.startVertex));
+        states.add(new State(automaton.startVertex));
     }
 
     void reportError() {
@@ -243,21 +292,6 @@ public class Checker {
             states.removeAll(departedStates);
             states.addAll(arrivedStates);
         }
-    }
-
-    /** Some basic tests. */
-    public static void main(String[] args) {
-        Checker c = new Checker(new Automaton(0, 1,
-                new Transition[][]{
-                        new Transition[] {
-                                new Transition(
-                                        new TransitionStep(
-                                                new int[]{},
-                                                new TrueGuard(),
-                                                new Action()), 1)},
-                        new Transition[] {}
-                }));
-        c.check(new Event(0, new Object[]{}));
     }
 }
 /* TODO

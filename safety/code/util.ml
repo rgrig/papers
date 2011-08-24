@@ -82,7 +82,7 @@ let rec memo f f' =
       Hashtbl.add cache x r; r
     end
 
-let fresh_id =
+let fresh_id () =
   let alphabet = "abcdefghijklmnopqrstuvwxyz" in
   let n = String.length alphabet in
   let count = ref (-1) in
@@ -97,8 +97,9 @@ let fresh_id =
       Buffer.contents r
     end
 
-let fresh_internal_id () =
-  Printf.sprintf "<%s>" (fresh_id ())
+let fresh_internal_id =
+  let internal = fresh_id () in
+  (fun () -> Printf.sprintf "<%s>" (internal ()))
 
 let todo () = failwith "todo"
 

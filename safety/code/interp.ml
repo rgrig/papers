@@ -392,22 +392,12 @@ let program p =
 
 let interpret fn =
 (* DBG eprintf "@[=== START ===@."; *)
-  let f = open_in fn in
-  let lexbuf = Lexing.from_channel f in
-  let parse =
-    MenhirLib.Convert.Simplified.traditional2revised Parser.program in
-  program_name := fn;
-  S.clear location_stack;
   try
-    let p = parse (Lexer.token lexbuf) in
+    let p = Helper.parse fn in
     Check.program !program_name p;
     ignore (program p)
   with
-    | Parser.Error ->
-        (match Lexing.lexeme_start_p lexbuf with
-        { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
-          Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-        eprintf "@[%s:%d:%d: parse error@." fn line (c1-c0+1))
+    | Helper.Parsing_failed m -> eprintf "@[%s@." m
     | Check.Error -> ()
 
 let () =

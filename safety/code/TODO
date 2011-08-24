@@ -12,6 +12,8 @@
 - cleanup code
 - compile to native code
 - README file that explains how to setup development on various OSs.
+- cleanup code
+- parse all Java constants in guards
 
 notes (low priority todos):
 - symbolic execution
