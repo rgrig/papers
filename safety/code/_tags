@@ -1,5 +1,6 @@
 <*.ml> or "interp.native" or "interp.byte": pkg_menhirLib
 "javaOfProperty.byte" or "javaOfProperty.native": pkg_menhirLib
+<instrumenter.ml> or "instrumenter.byte": pkg_str, pkg_barista
 <*.mly>: explain
 <*.ml>: annot
-true: debug, use_menhir
+true: debug, use_menhir, use_str

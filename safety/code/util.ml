@@ -33,7 +33,16 @@ let unique l =
   Hashtbl.fold (fun _ -> cons) h []
 
 (** Function composition. *)
-let (@@) f g x = f (g x)
+let (@<) f g x = f (g x)
+
+(** Function composition (reversed). *)
+let (@>) f g = g @< f
+
+(** Function application (reversed). *)
+let (>>) x f = f x
+
+(** Map followed by concat. *)
+let (>>=) x f = x >> List.map f >> List.concat
 
 module Int = struct type t = int let compare = compare end
 module OrderedPair (A:Set.OrderedType) (B:Set.OrderedType) =
@@ -114,3 +123,16 @@ let cartesian xss =
         let ys = List.map (fun x -> List.map (fun ys -> x :: ys) acc) xs in
         f (List.concat ys) xss in
   f [[]] xss
+
+let rec fs_postorder m f =
+  if Sys.file_exists f then begin
+    if Sys.is_directory f then begin
+      let children = Array.map (Filename.concat f) (Sys.readdir f) in
+      Array.iter (fs_postorder m) children
+    end;
+    m f
+  end
+
+let fs_filter p f =
+  let r = ref [] in
+  fs_postorder (fun x -> if p x then r := x::!r) f; !r
