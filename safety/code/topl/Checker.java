@@ -293,6 +293,14 @@ public class Checker {
             states.addAll(arrivedStates);
         }
     }
+
+    public static void main(String[] args) {
+        CheckerTests t = new CheckerTests();
+        t.c.check(new Event(5, new Object[]{}));
+        t.c.check(new Event(4, new Object[]{}));
+        t.c.check(new Event(1, new Object[]{}));
+        t.c.check(new Event(0, new Object[]{}));
+    }
 }
 /* TODO
     - write some tests

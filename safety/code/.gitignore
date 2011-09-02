@@ -1,5 +1,7 @@
+/*.byte
+/*.native
 /.allout
 /.out
-_build
-/*.native
-/*.byte
+/_build
+/classes
+/setenv
