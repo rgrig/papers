@@ -1,6 +1,11 @@
-// Object.notifyAll should be called only when the lock is held.
 // Suppose "synchronized(x) {...}" is desugared into
 // "x.lock() ... x.unlock()" in the frontend.
+
+property "Object.notifyAll should be called only when the lock is held"
+  start -> unheld: L.new()
+  unheld -> error: l.notifyAll()
+  unheld -> held: l.lock()
+  held -> unheld: l.unlock()
 
 class Object
   Unit lock()
