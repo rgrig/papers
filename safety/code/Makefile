@@ -4,7 +4,7 @@ MAINS=interp gen javaOfProperty instrumenter
 
 # Things that should seldom change
 BYTES=$(addsuffix .byte,$(MAINS))
-OCAMLBUILD=ocamlbuild -cflags $(CFLAGS)
+OCAMLBUILD=ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
 
 byte:
 	@$(OCAMLBUILD) $(BYTES)

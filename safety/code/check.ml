@@ -82,7 +82,7 @@ module Environment : EnvironmentT = struct (* {{{ *)
     let fs, ms = List.fold_left process_member (fs, ms) d in
     (U.StringMap.add cn fs fbc, U.StringMap.add cn ms mbc)
 
-  let make { program_globals=gs; program_classes=cs; program_main=_ } =
+  let make { program_globals=gs; program_classes=cs; _ } =
     let fbc, mbc = U.StringMap.empty, U.StringMap.empty in
     let fbc, mbc = List.fold_left process_class (fbc, mbc) cs in
     let env =
