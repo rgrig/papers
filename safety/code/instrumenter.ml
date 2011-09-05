@@ -56,23 +56,53 @@ let java_io_PrintStream = utf8_for_class "java.io.PrintStream"
 let out = utf8_for_field "out" 
 let println = utf8_for_method "println" 
 
-let bc_print s = [
+let bc_print_utf8 us = [
   Instruction.GETSTATIC (java_lang_System, out, `Class java_io_PrintStream); 
-  Instruction.LDC (`String (utf8 s)); 
+  Instruction.LDC (`String us); 
   Instruction.INVOKEVIRTUAL (`Class_or_interface java_io_PrintStream, 
 			     println, 
 			     ([`Class java_lang_String], `Void)); 
 ]
+let bc_print s = bc_print_utf8 (utf8 s)
+let bc_print_par p = bc_print_utf8 (p.Signature.identifier)
 
-let instrument_code code method_name = (bc_print (method_name ^ " got called")) @ code
+(* Taken from disassembler.ml *)
+let (++) = UTF8Impl.(++)
+let space = UTF8Impl.of_string " "
+let comma = UTF8Impl.of_string ","
+let opening_parenthesis = UTF8Impl.of_string "("
+let closing_parenthesis = UTF8Impl.of_string ")"
+let utf8_of_method_desc name desc =
+  let params, return = desc in
+  (Descriptor.external_utf8_of_java_type return)
+    ++ space
+    ++ (Name.utf8_for_method name)
+    ++ opening_parenthesis
+    ++ (UTF8Impl.concat_sep_map comma Descriptor.external_utf8_of_java_type (params :> Descriptor.java_type list))
+    ++ closing_parenthesis
+
+let instrument_code method_name param_types code =
+(*
+  (bc_print (method_name ^ " : ")) @
+*)
+  (bc_print_utf8 (utf8_of_method_desc method_name param_types)) @
+  code
 
 let instrument_method = function
   | Method.Regular r -> (
+      let param_types = r.Method.descriptor in
+      let inst_code = instrument_code r.Method.name param_types in
       let fold attrs = function
-	| (`Code code) ->
-	    let method_name = r.Method.name >> Name.utf8_for_method >> Utils.UTF8.to_string in
-	    let new_instructions = instrument_code code.Attribute.code method_name in
-	    let instrumented_code = {code with Attribute.code = new_instructions} in
+	| `Code code ->
+	    let new_instructions = inst_code code.Attribute.code in
+	    (* TODO: proper calculation of stack size *)
+	    let ensure_three u = if u = Utils.u2 0 or u = Utils.u2 1 or u = Utils.u2 2 then Utils.u2 3 else u in
+	    let new_max_stack = ensure_three code.Attribute.max_stack in
+	    let instrumented_code = 
+	      {code with
+		 Attribute.code = new_instructions;
+		 Attribute.max_stack = new_max_stack
+	      } in
 	      (`Code instrumented_code) :: attrs
 	| a -> a :: attrs in
       let instrumented_attributes = List.rev (List.fold_left fold [] r.Method.attributes) in
