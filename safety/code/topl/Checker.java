@@ -13,11 +13,11 @@ public class Checker {
         completely when assertions are not enabled.
      */
 
-    static class Event {
+    public static class Event {
         final int id;
         final Object[] values;
 
-        Event(int id, Object[] values) {
+        public Event(int id, Object[] values) {
             this.id = id;
             this.values = values;
             assert check();
