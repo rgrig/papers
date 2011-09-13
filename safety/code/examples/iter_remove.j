@@ -17,6 +17,11 @@ property "advancing iterator without checking if not last"
   notAtEnd -> tracking: i.next()
   tracking -> error:    i.next()
 
+property "trying to remove before iterator has been advanced"
+  start -> created: I := *.iterator()
+  created -> ok:    i.next()
+  created -> error: i.remove()
+
 property "trying to advance an iterator past the end"
   start -> tracking:  I := *.iterator()
   tracking -> atEnd:  false := i.hasNext()
