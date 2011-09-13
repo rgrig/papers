@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 
 public class Checker {
     /*
@@ -12,6 +13,151 @@ public class Checker {
         you can say {assert x.check()} in case you want to skip them
         completely when assertions are not enabled.
      */
+
+    static class Treap<T extends Comparable<T>> {
+        static private Random random = new Random(123);
+
+        int priority;
+        T data;
+        Treap<T> left;
+        Treap<T> right;
+
+        Treap() {
+            check();
+        }
+
+        private Treap(int priority, T data, Treap<T> left, Treap<T> right) {
+            this.priority = priority;
+            this.data = data;
+            this.left = left;
+            this.right = right;
+            // Invariant {check()} may be broken!
+        }
+
+        boolean check() {
+            assert check(null, null, Integer.MAX_VALUE);
+            return true;
+        }
+
+        boolean check(T minimum, T maximum, int high) {
+            assert high > 0;
+            if (data == null) {
+                assert left == null;
+                assert right == null;
+                assert priority == 0;
+            } else {
+                assert left != null;
+                assert right != null;
+                assert priority > 0;
+                assert priority <= high;
+                if (minimum != null) {
+                    assert minimum.compareTo(data) <= 0;
+                }
+                if (maximum != null) {
+                    assert data.compareTo(maximum) <= 0;
+                }
+                assert left.check(minimum, data, priority);
+                assert right.check(data, maximum, priority);
+            }
+            return true;
+        }
+
+        private Treap<T> rotateLeft() {
+            assert data != null;
+            return new Treap<T>(
+                    right.priority, right.data,
+                    new Treap<T>(priority, data, left, right.left),
+                    right.right);
+        }
+
+        private Treap<T> rotateRight() {
+            assert data != null;
+            return new Treap<T>(
+                    left.priority, left.data,
+                    left.left,
+                    new Treap<T>(priority, data, left.right, right));
+        }
+
+        private Treap<T> balance() {
+            assert data != null;
+            assert left.priority <= priority || right.priority <= priority;
+            Treap<T> result = this;
+            if (left.priority > priority) {
+                result = result.rotateRight();
+            } else if (right.priority > priority) {
+                result = result.rotateLeft();
+            }
+            assert result.check();
+            return result;
+        }
+
+        private Treap<T> insert(int newPriority, T newData) {
+            assert newData != null;
+            assert newPriority > 0;
+            if (data == null) {
+                return new Treap<T>(newPriority, newData, this, this);
+            } else {
+                int c = newData.compareTo(data);
+                if (c < 0) {
+                    return new Treap<T>(priority, data,
+                            left.insert(newPriority, newData),
+                            right)
+                            .balance();
+                } else if (c > 0) {
+                    return new Treap<T>(priority, data,
+                            left,
+                            right.insert(newPriority, newData))
+                            .balance();
+                } else {
+                    return this;
+                }
+            }
+        }
+
+        Treap<T> insert(T data) {
+            return insert(random.nextInt(Integer.MAX_VALUE - 1) + 1, data);
+        }
+
+        static boolean priorityLess(int p, int q) {
+            return p < q || (p == q && random.nextBoolean());
+        }
+
+        Treap<T> remove(T oldData) {
+            Treap<T> result = this;
+            if (data != null) {
+                int c = oldData.compareTo(data);
+                if (c < 0) {
+                    result = new Treap<T>(priority, data,
+                            left.remove(oldData),
+                            right);
+                } else if (c > 0) {
+                    result = new Treap<T>(priority, data,
+                            left,
+                            right.remove(oldData));
+                } else {
+                    if (left.data == null && right.data == null) {
+                        return left;
+                    } else if (left.data == null) {
+                        return right.remove(oldData);
+                    } else if (right.data == null) {
+                        return left.remove(oldData);
+                    } else if (priorityLess(left.priority, right.priority)) {
+                        result = rotateLeft();
+                        result = new Treap<T>(result.priority, result.data,
+                                left.remove(oldData),
+                                right);
+                    } else {
+                        result = rotateRight();
+                        result = new Treap<T>(result.priority, result.data,
+                                left,
+                                right.remove(oldData));
+                    }
+                }
+            }
+            assert result.check();
+            return result;
+        }
+    }
 
     static class Event {
         final int id;
@@ -303,8 +449,10 @@ public class Checker {
     }
 }
 /* TODO
-    - write some tests
-    - fill in the missing methods
     - implement persistent data structures
+    - fill in the missing methods
+    - write some tests
+    - make sure that Checker does *not* call itself recursively when it uses
+      the Java API. (Use a flag.)
  */
 // vim:sw=4:ts=4:
