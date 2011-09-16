@@ -1,4 +1,4 @@
-\documentclass[preprint]{sigplanconf} % <<<
+\documentclass[10pt, conference, compsocconf]{IEEEtran} % <<<
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -27,9 +27,23 @@
 
 \newcommand{\TPL}{TOPL}
 
-\titlebanner{DRAFT}
+%\titlebanner{DRAFT}
 \title{Dynamic Checking of Temporal Safety properties for Java}
-\authorinfo{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
+\author{\IEEEauthorblockN{Dino Distefano}
+\IEEEauthorblockA{Queen Mary University of London\\
+ddino@eecs.qmul.ac.uk}
+\and
+\IEEEauthorblockN{Radu Grigore}
+\IEEEauthorblockA{Queen Mary University of London\\
+ rgrig@eecs.qmul.ac.uk}
+ \and
+\IEEEauthorblockN{Rasmus Lerchedahl Petersen}
+\IEEEauthorblockA{Queen Mary University of London\\
+ rusmus@eecs.qmul.ac.uk}
+}
+
+%\title{Dynamic Checking of Temporal Safety properties for Java}
+%\author{Dino Distefano \and Radu Grigore \and Rasmus Lerchedahl Petersen}{Queen Mary, University of London}{{\rm\{}ddino,rgrig,rusmus{\rm\}}@eecs.qmul.ac.uk}
 
 % rg: I tend to give grammars in BFS order
 \def\grammar#1{{
@@ -75,9 +89,9 @@
 \newtheorem{remark}{Remark}
 \newtheorem{notation}{Notation}
 
-\overfullrule=5pt
-\showboxdepth=10
-\showboxbreadth=30
+%\overfullrule=5pt
+%\showboxdepth=10
+%\showboxbreadth=30
 % >>>
 \begin{document}
 \maketitle
@@ -88,9 +102,13 @@ Our technique is based on a new general specification language which is able to 
 systems. The specifications are then used to instrument the program so that violations of the specification can be 
 automatically detected at run time.
 \end{abstract}
-\category{D.2.1}{Software Engineering}{Requirements/Specifications}
-\terms Languages, Verification
-\keywords Safety, Temporal Properties, Object-Oriented
+\begin{IEEEkeywords}
+Safety, Temporal Properties, Object-Oriented, Dynamic Checking
+\end{IEEEkeywords}
+
+%\category{D.2.1}{Software Engineering}{Requirements/Specifications}
+%\terms Languages, Verification
+%\keywords Safety, Temporal Properties, Object-Oriented
 
 % >>>
 \section{Introduction} % <<<
@@ -164,9 +182,9 @@ The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.h
 %Should they say what is good or what is bad?}
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
-Consider the informal safety property from the introduction:
+Consider the informal safety property from the introduction. It can be better restated as:
 \begin{quote}
-If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used later.
+\emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
 \end{quote}
 \noindent
 The last statement in \autoref{fig:first.java} violates the statements above, therefore throwing an exception.
@@ -176,10 +194,8 @@ The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journal
 the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 \autoref{fig:first.diagram}, on the other hand, captures precisely a temporal property involving three interacting objects.
 \autoref{fig:first.topl} describes the same property in (the textual form of) TOPL, and is (clearly) isomorphic to the diagram of~\autoref{fig:first.diagram}.
-The rest of this section explains the semantics of \autoref{fig:first.diagram} and \autoref{fig:first.topl}:
-\emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
 
-Vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
+In a TOPL property, vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
 transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
 There are two special vertices: \start, from where the execution begins; and \error, where the execution ends.
 Labels capture, roughly, the shape of statements that enable the corresponding transition.
@@ -452,6 +468,8 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 We have now seen four properties of iterators.
 Each of the previous TOPL properties corresponds to one English sentence.
 
+\dinocomment{Maybe we need to add also the other example of the paper.}
+
 \section{TOPL syntax and semantics}
 
 
@@ -515,8 +533,8 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 
 %>>>
 
-\softraggedright
-\bibliographystyle{abbrvnat}
+%\softraggedright
+\bibliographystyle{IEEEtran}
 \bibliography{safety}
 \end{document}
 % vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
