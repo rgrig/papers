@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 
 public class Checker {
     /*
@@ -178,6 +179,15 @@ public class Checker {
         }
     }
 
+    // TODO(rgrig): Might want to produce a set with a faster {contains}
+    static Set<Integer> setOf(int[] xs) {
+        HashSet<Integer> r = new HashSet<Integer>();
+        for (int x : xs) {
+            r.add(x);
+        }
+        return r;
+    }
+
     public static class Event {
         final int id;
         final Object[] values;
@@ -342,15 +352,12 @@ public class Checker {
     }
 
     static class TransitionStep {
-        final HashSet<Integer> eventIds;
+        final Set<Integer> eventIds;
         final Guard guard;
         final Action action;
 
         TransitionStep(int[] eventIds, Guard guard, Action action) {
-            this.eventIds = new HashSet<Integer>();
-            for (int e : eventIds) {
-                this.eventIds.add(e);
-            }
+            this.eventIds = setOf(eventIds);
             this.guard = guard;
             this.action = action;
         }
@@ -377,19 +384,35 @@ public class Checker {
     }
 
     static class Automaton {
+        private static class VertexEvent {
+            int vertex;
+            int eventId;
+            public VertexEvent(int vertex, int eventId) {
+                this.vertex = vertex;
+                this.eventId = eventId;
+            }
+        }
+        private HashSet<VertexEvent> interesting = new HashSet<VertexEvent>();
+
         final int[] startVertices;
         final String[] errorMessages;
 
-        Transition[][] transitions;
+        final Transition[][] transitions;
             // {transitions[vertex]}  are the outgoing transitions of {vertex}
 
         private int maximumTransitionDepth = -1;
 
         Automaton(int[] startVertices, String[] errorMessages,
-                Transition[][] transitions) {
+                Transition[][] transitions, int[] filterOfState,
+                int[][] filters) {
             this.startVertices = startVertices;
             this.errorMessages = errorMessages;
             this.transitions = transitions;
+            for (int s = 0; s < transitions.length; ++s) {
+                for (int e : filters[filterOfState[s]]) {
+                    interesting.add(new VertexEvent(s, e));
+                }
+            }
             assert check();
         }
 
@@ -418,6 +441,10 @@ public class Checker {
             return true;
         }
 
+        boolean isInteresting(int eventId, int vertex) {
+            return interesting.contains(new VertexEvent(vertex, eventId));
+        }
+
         int maximumTransitionDepth() {
             if (maximumTransitionDepth == -1) {
                 maximumTransitionDepth = 0;
@@ -432,12 +459,10 @@ public class Checker {
         }
     }
 
-    final private String message;
     final private Automaton automaton;
     private HashSet<State> states;
 
-    public Checker(String message, Automaton automaton) {
-        this.message = message;
+    public Checker(Automaton automaton) {
         this.automaton = automaton;
         this.states = new HashSet<State>();
         for (int v : automaton.startVertices)
@@ -452,6 +477,9 @@ public class Checker {
         HashSet<State> departedStates = new HashSet<State>();
         HashSet<State> arrivedStates = new HashSet<State>();
         for (State state : states) {
+            if (!automaton.isInteresting(event.id, state.vertex)) {
+                continue;
+            }
             state.events.addLast(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
                 continue;
@@ -485,11 +513,11 @@ public class Checker {
     }
 
     public static void main(String[] args) {
-        CheckerTests t = new CheckerTests();
-        t.c.check(new Event(5, new Object[]{}));
-        t.c.check(new Event(4, new Object[]{}));
-        t.c.check(new Event(1, new Object[]{}));
-        t.c.check(new Event(0, new Object[]{}));
+        //CheckerTests t = new CheckerTests();
+        //t.c.check(new Event(5, new Object[]{}));
+        //t.c.check(new Event(4, new Object[]{}));
+        //t.c.check(new Event(1, new Object[]{}));
+        //t.c.check(new Event(0, new Object[]{}));
     }
 }
 /* TODO

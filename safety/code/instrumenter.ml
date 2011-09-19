@@ -5,28 +5,38 @@ module PA = Ast.PropertyAst
 open Format
 open Util
 (* }}} *)
+(* used to communicate between conversion and instrumentation *) (* {{{ *)
+type method_ =
+  { name : string
+  ; arity : int }
+
+type pattern =
+  { pattern_re : Str.regexp
+  ; pattern_arity: int }
+
+let patterns : (pattern, int list) Hashtbl.t = Hashtbl.create 13
+  (* maps patterns to sets of event ids *)
+
+(* }}} *)
 (* representation of automata in Java *) (* {{{ *)
 
+type tag = int
 type vertex = int
 type variable = int
 type value = string (* Java literal *)
-
-(* TODO *)
-type tag =
-  { pattern : string (* Java regular expression *)
-  ; arity : int }
 
 type atomic_condition =
   | AC_var of variable * int
   | AC_ct of value * int
 
-type condition = atomic_condition list
+type guard =
+  { pattern : pattern
+  ; condition : atomic_condition list }
 
 type action = (variable * int) list
 
 type step =
-  { tag : tag
-  ; condition : condition
+  { guard : guard
   ; action : action }
 
 type transition =
@@ -36,14 +46,20 @@ type transition =
 type automaton =
   { starts : vertex list
   ; errors : vertex list
-  ; adjacency : transition array }
+  ; adjacency : transition list array }
 
 (* }}} *)
+(* pretty printing to Java *) (* {{{ *)
+
+let pp_automaton f { starts=starts; errors=errors; adjacency=adjacency } =
+  todo ()
+
+(* }}} *)
+(* conversion to Java representation *) (* {{{ *)
 
 (* Things that are integers in Java (for efficiency). *)
 let vertex = Hashtbl.create 31
 let variable = Hashtbl.create 13
-let tag = Hashtbl.create 13
 
 let to_ints h xs =
   let c = ref (-1) in
@@ -73,21 +89,8 @@ let get_tags p =
   let f = function PA.Event t -> Some t | _ -> None in
   map_option f (get_atomics p)
 
-type adjacency_list = ((PA.label list * int) list) list
-
-let transform_graph : PA.t list -> adjacency_list = fun es -> todo ()
-
+let transform_guard g = todo ()
 (*
-  let a = Array.make (Hashtbl.length vertex) [] in
-  let f {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
-    let s = Hashtbl.find vertex s in
-    let t = Hashtbl.find vertex t in
-    a.(s) <- (ls, t) :: a.(s) in
-  List.iter f es;
-  Array.to_list a
-*)
-
-let transform_guard g =
   let g = PA.dnf g in
   let split (t, gs) = function
     | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Can't express in Java (1)"
@@ -101,6 +104,7 @@ let transform_guard g =
     | _ :: _ :: _ -> failwith "Can't express in Java (2)"
     | [] -> [], PA.Not (PA.Atomic PA.Any)
     | [gs] -> List.map (Hashtbl.find tag) t, PA.And gs
+*)
 
 let id = fresh_id ()
 
@@ -169,6 +173,8 @@ let file f =
   with Helper.Parsing_failed m ->
     eprintf "@[%s@." m
 
+(* }}} *)
+(* bytecode instrumentation *) (* {{{ *)
 let print_list xs =
   printf "@[";
   List.iter (fun x -> printf "%s\n" x) xs;
@@ -391,18 +397,33 @@ let output_class (c, fn) =
 
 let output_classes = List.iter output_class
 
+(* }}} *)
+(* main *) (* {{{ *)
+
 let read_properties fs =
   let e p = List.map (fun x -> x.A.ast) p.A.program_properties in
   fs >> List.map Helper.parse >>= e
 
+let transform_action _ = todo ()
+
+let transform_label {PA.label_guard=g; PA.label_action=a} =
+  { guard = transform_guard g
+  ; action = transform_action a }
+
 let process_properties ps =
-  let vs p =
-      let vs = get_vertices p in
-      List.map (fun v -> (p, v)) vs in
+  let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
   to_ints vertex (ps >>= vs);
   let named s p = Hashtbl.find vertex (p, s) in
-  let starts = List.map (named "start") ps in
-  let errors = List.map (named "error") ps in
+  let q =
+    { starts = List.map (named "start") ps
+    ; errors = List.map (named "error") ps
+    ; adjacency = Array.make (Hashtbl.length vertex) [] } in
+  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
+    let s = Hashtbl.find vertex (p, s) in
+    let t = Hashtbl.find vertex (p, t) in
+    let ls = List.map transform_label ls in
+    q.adjacency.(s) <- {steps=ls; target=t} :: q.adjacency.(s) in
+  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
   todo ()
 
 let method_patterns ps = todo ()
@@ -445,4 +466,4 @@ let () =
 vim:tw=0:
 *)
 
-
+(* }}} *)

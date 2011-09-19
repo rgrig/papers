@@ -16,6 +16,9 @@
 - parse all Java constants in guards
 - configure script
 - cleanup code
+- handle "using prefix"
+- instrumenter
+- cleanup code
 
 notes (low priority todos):
 - symbolic execution
