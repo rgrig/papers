@@ -208,26 +208,26 @@ using prefix java.util.Collection
 using prefix java.util.Iterator
 \end{Verbatim}
 \par\medskip
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-%  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
-%  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
-%  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
-%  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-%  \draw[transition] (0,0.5)--(start);
-%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-%\end{tikzpicture}
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
+  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
+  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
+  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+  \draw[transition] (0,0.5)--(start);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+\end{tikzpicture}
 \caption{A first example: Diagram of safety property}
 \label{fig:first.diagram}
 \end{figure}
