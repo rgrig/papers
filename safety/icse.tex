@@ -208,26 +208,26 @@ using prefix java.util.Collection
 using prefix java.util.Iterator
 \end{Verbatim}
 \par\medskip
-\begin{tikzpicture}
-  \def\x{2.5}
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
-  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
-  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
-  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-  \draw[transition] (0,0.5)--(start);
-  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-\end{tikzpicture}
+%\begin{tikzpicture}
+%  \def\x{2.5}
+%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+%  \tikzset{transition/.style={->,>=latex}}
+%  \tikzset{every label/.style={gray}}
+%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+%  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+%  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
+%  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
+%  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
+%  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+%  \draw[transition] (0,0.5)--(start);
+%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+%\end{tikzpicture}
 \caption{A first example: Diagram of safety property}
 \label{fig:first.diagram}
 \end{figure}
@@ -626,8 +626,6 @@ The first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
 events for that state.
 
-\dinocomment{********UP TO HERE ********}
-
 We now describe when transitions are enabled. For this we have to look
 at labels. A label is a list of pairs of guards and actions. A
 guard compares the values in an event with those in a store and
@@ -657,8 +655,8 @@ where
 \end{align}
 If the transition is enabled and performed, the store for the target vertex will be $s_n$.
 
-And now we reach the final slightly non-standard aspect of our
-automatons, namely that if no transitions are enabled for a given
+Another peculiar aspect of our
+automatons is that if no transitions are enabled for a given
 state and trace of events, the automaton does not get stuck but is
 allowed to consume one event without changing its state. Note that
 this is not equivalent to an implied self-loop on all states, as
@@ -668,7 +666,13 @@ the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$
 end of the arc of the transition, $s_n$ is defined as above and
 $\mathit{events}_n$ is the current executions state's event trace with the first
 $n$ events dropped.
-\rg{An example would help to understand this paragraph.}
+\begin{example}
+Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
+\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\] 
+is not matched by any transitions starting from states {\tt one} or {\tt two} in the automaton of Fig~\ref{}. 
+This event is silently consumed but the set of active states does not change. 
+The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
+\end{example}
 
 We can define a predicate that determines the possible execution state transitions
 \[
