@@ -289,18 +289,14 @@ let bc_check =
 			      )
   ]
 
-let id_for_method s r = Hashtbl.hash (s, r)
+let get_call_id s n = Some (Hashtbl.hash (s, n, true))
+let get_return_id s n = Some (Hashtbl.hash (s, n, false))
 
-let bc_send_event method_name desc is_static =
-  let param_types, return = desc in
-(*
-  let obj_arr = "values" in
-*)
+let bc_send_event id param_types is_static =
   let fold (instructions, i) _ =
     ((bc_array_set is_static i) :: instructions, succ i) in
   let (inst_lists, _) = List.fold_left fold ([], 0) param_types in
   let instructions = List.flatten (List.rev inst_lists) in
-  let id = id_for_method method_name return in
     (bc_new_object_array (List.length param_types)) @
     instructions @
     (bc_new_event id) @
@@ -321,13 +317,30 @@ let utf8_of_method_desc name desc =
     ++ (B.UTF8Impl.concat_sep_map comma B.Descriptor.external_utf8_of_java_type (params :> B.Descriptor.java_type list))
     ++ closing_parenthesis
 
-let instrument_code method_name param_types is_static code =
+let rec add_return_code return_code = function
+  | [] -> []
+  | (B.Instruction.ARETURN :: instructions)
+  | (B.Instruction.DRETURN :: instructions)
+  | (B.Instruction.FRETURN :: instructions)
+  | (B.Instruction.IRETURN :: instructions)
+  | (B.Instruction.LRETURN :: instructions)
+  | (B.Instruction.RETURN :: instructions)  (* do not instrument RET or WIDERET *)
+    -> return_code @ (B.Instruction.RETURN :: (add_return_code return_code instructions))
+  | (instr :: instructions) -> instr :: (add_return_code return_code instructions)
+
+let instrument_code call_id return_id param_types is_static code =
+  let bc_send_call_event = match call_id with
+    | None -> []
+    | Some id -> bc_send_event id param_types is_static in
+  let bc_send_return_event = match return_id with
+    | None -> []
+    | Some id -> bc_send_event id param_types is_static in
 (*
   (bc_print (method_name ^ " : ")) @
   (bc_print_utf8 (utf8_of_method_desc method_name param_types)) @
 *)
-  (bc_send_event method_name param_types is_static) @
-  code
+  bc_send_call_event @
+  (add_return_code bc_send_return_event code)
 
 let has_static_flag flags =
   let is_static_flag = function
@@ -337,27 +350,35 @@ let has_static_flag flags =
 
 let instrument_method = function
   | B.Method.Regular r -> (
-      let param_types = r.B.Method.descriptor in
-      let is_static = has_static_flag r.B.Method.flags in
-      let inst_code = instrument_code r.B.Method.name param_types is_static in
-      let fold attrs = function
-	| `Code code ->
-	    let new_instructions = inst_code code.B.Attribute.code in
-	    (* TODO: proper calculation of stack size *)
-	    let ensure_three u = if u = B.Utils.u2 0 or u = B.Utils.u2 1 or u = B.Utils.u2 2 then B.Utils.u2 3 else u in
-	    let ensure_four u = let uu = ensure_three u in if uu = B.Utils.u2 3 then B.Utils.u2 4 else uu in
-	    let new_max_stack = ensure_four code.B.Attribute.max_stack in
-	    let new_max_locals = ensure_three code.B.Attribute.max_locals in
-	    let instrumented_code =
-	      {code with
-		 B.Attribute.code = new_instructions;
-		 B.Attribute.max_stack = new_max_stack;
-		 B.Attribute.max_locals = new_max_locals
-	      } in
-	      (`Code instrumented_code) :: attrs
-	| a -> a :: attrs in
-      let instrumented_attributes = List.rev (List.fold_left fold [] r.B.Method.attributes) in
-	B.Method.Regular {r with B.Method.attributes = instrumented_attributes} )
+      let param_types, _ = r.B.Method.descriptor in (* return is not used *)
+      let call_id = get_call_id r.B.Method.name (List.length param_types) in
+      let return_id = get_return_id r.B.Method.name (List.length param_types) in
+	match call_id, return_id with
+	  | None, None -> B.Method.Regular r
+	  | _ -> (
+	      let is_static = has_static_flag r.B.Method.flags in
+	      let inst_code = instrument_code call_id return_id param_types is_static in
+	      let inst_attrs = function
+		| `Code code ->
+		    let new_instructions = inst_code code.B.Attribute.code in
+		      (* TODO: proper calculation of stack size               *)
+		      (*       the below is not good enough for return events *)
+		    let ensure_three u = if u = B.Utils.u2 0 or u = B.Utils.u2 1 or u = B.Utils.u2 2 then B.Utils.u2 3 else u in
+		    let ensure_four u = let uu = ensure_three u in if uu = B.Utils.u2 3 then B.Utils.u2 4 else uu in
+		    let new_max_stack = ensure_four code.B.Attribute.max_stack in
+		    let new_max_locals = ensure_three code.B.Attribute.max_locals in
+		    let instrumented_code =
+		      {code with
+			 B.Attribute.code = new_instructions;
+			 B.Attribute.max_stack = new_max_stack;
+			 B.Attribute.max_locals = new_max_locals
+		      } in
+		      `Code instrumented_code
+		| a -> a in
+	      let instrumented_attributes = List.map inst_attrs r.B.Method.attributes in
+		B.Method.Regular {r with B.Method.attributes = instrumented_attributes}
+	    )
+    )
   | m -> m
 
 let instrument_class (c, fn) =
