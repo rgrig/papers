@@ -1,6 +1,5 @@
 "interp.native" or "interp.byte": package(menhirLib)
-"javaOfProperty.byte" or "javaOfProperty.native": package(menhirLib)
-"instrumenter.byte": package(str), package(barista)
+"instrumenter.byte": package(str), package(barista), package(menhirLib)
 "helper.ml": package(menhirLib)
 "instrumenter.ml": package(barista)
 <*.mly>: explain

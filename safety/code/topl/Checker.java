@@ -15,14 +15,17 @@ public class Checker {
      */
 
     static class Treap<T extends Comparable<T>> {
-        static private Random random = new Random(123);
+        static final private Random random = new Random(123);
 
-        int priority;
-        T data;
-        Treap<T> left;
-        Treap<T> right;
+        final int priority;
+        final T data;
+        final Treap<T> left;
+        final Treap<T> right;
 
         Treap() {
+            priority = 0;
+            data = null;
+            left = right = null;
             check();
         }
 
@@ -157,6 +160,22 @@ public class Checker {
             assert result.check();
             return result;
         }
+
+        public T get(T x) {
+            assert x != null;
+            if (data == null) {
+                return null;
+            } else {
+                int c = x.compareTo(data);
+                if (c < 0) {
+                    return left.get(x);
+                } else if (c > 0) {
+                    return right.get(x);
+                } else {
+                    return data;
+                }
+            }
+        }
     }
 
     public static class Event {
@@ -179,9 +198,30 @@ public class Checker {
     }
 
     static class State {
+        static class Binding implements Comparable<Binding> {
+            final int variable;
+            final Object value;
+
+            public Binding(int variable, Object value) {
+                this.variable = variable;
+                this.value = value;
+            }
+
+            @Override
+            public int compareTo(Binding other) {
+                if (variable < other.variable) {
+                    return -1;
+                } else if (variable > other.variable) {
+                    return +1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+
         // TODO: Hashing
         final int vertex;
-        final HashMap<Integer, Object> stack;
+        final Treap<Binding> stack;
         final ArrayDeque<Event> events;
         // The state {this} arose from {previousState} when {arrivalEvent} was seen.
         final State previousState;
@@ -189,7 +229,7 @@ public class Checker {
 
         State(int vertex) {
             this.vertex = vertex;
-            this.stack = new HashMap<Integer, Object>();
+            this.stack = new Treap<Binding>();
             this.events = new ArrayDeque<Event>();
             this.previousState = null;
             this.arrivalEvent = null;
@@ -337,26 +377,29 @@ public class Checker {
     }
 
     static class Automaton {
-        final int startVertex;
-        final int errorVertex;
+        final int[] startVertices;
+        final String[] errorMessages;
 
         Transition[][] transitions;
             // {transitions[vertex]}  are the outgoing transitions of {vertex}
 
         private int maximumTransitionDepth = -1;
 
-        Automaton(int startVertex, int errorVertex,
+        Automaton(int[] startVertices, String[] errorMessages,
                 Transition[][] transitions) {
-            this.startVertex = startVertex;
-            this.errorVertex = errorVertex;
+            this.startVertices = startVertices;
+            this.errorMessages = errorMessages;
             this.transitions = transitions;
             assert check();
         }
 
         boolean check() {
-            assert 0 <= startVertex && startVertex < transitions.length;
-            assert 0 <= errorVertex && errorVertex < transitions.length;
             assert transitions != null;
+            assert errorMessages.length == transitions.length;
+            for (int v : startVertices) {
+                assert 0 <= v && v < transitions.length;
+                assert errorMessages[v] == null;
+            }
             for (Transition[] ts : transitions) {
                 assert ts != null;
                 for (Transition t : ts) {
@@ -397,10 +440,11 @@ public class Checker {
         this.message = message;
         this.automaton = automaton;
         this.states = new HashSet<State>();
-        states.add(new State(automaton.startVertex));
+        for (int v : automaton.startVertices)
+            states.add(new State(v));
     }
 
-    void reportError() {
+    void reportError(String msg) {
         // TODO
     }
 
@@ -429,9 +473,9 @@ public class Checker {
                     departedStates.add(state);
                     arrivedStates.add(stepState);
                     // check for error state
-                    if (transition.target == automaton.errorVertex)
-                        // TODO
-                        reportError();
+                    String msg = automaton.errorMessages[transition.target];
+                    if (msg != null)
+                        reportError(msg);
                 }
             }
             // perform transitions
