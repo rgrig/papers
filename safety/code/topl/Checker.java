@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 
 public class Checker {
     /*
@@ -15,14 +16,17 @@ public class Checker {
      */
 
     static class Treap<T extends Comparable<T>> {
-        static private Random random = new Random(123);
+        static final private Random random = new Random(123);
 
-        int priority;
-        T data;
-        Treap<T> left;
-        Treap<T> right;
+        final int priority;
+        final T data;
+        final Treap<T> left;
+        final Treap<T> right;
 
         Treap() {
+            priority = 0;
+            data = null;
+            left = right = null;
             check();
         }
 
@@ -157,6 +161,31 @@ public class Checker {
             assert result.check();
             return result;
         }
+
+        public T get(T x) {
+            assert x != null;
+            if (data == null) {
+                return null;
+            } else {
+                int c = x.compareTo(data);
+                if (c < 0) {
+                    return left.get(x);
+                } else if (c > 0) {
+                    return right.get(x);
+                } else {
+                    return data;
+                }
+            }
+        }
+    }
+
+    // TODO(rgrig): Might want to produce a set with a faster {contains}
+    static Set<Integer> setOf(int[] xs) {
+        HashSet<Integer> r = new HashSet<Integer>();
+        for (int x : xs) {
+            r.add(x);
+        }
+        return r;
     }
 
     public static class Event {
@@ -179,9 +208,30 @@ public class Checker {
     }
 
     static class State {
+        static class Binding implements Comparable<Binding> {
+            final int variable;
+            final Object value;
+
+            public Binding(int variable, Object value) {
+                this.variable = variable;
+                this.value = value;
+            }
+
+            @Override
+            public int compareTo(Binding other) {
+                if (variable < other.variable) {
+                    return -1;
+                } else if (variable > other.variable) {
+                    return +1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+
         // TODO: Hashing
         final int vertex;
-        final HashMap<Integer, Object> stack;
+        final Treap<Binding> stack;
         final ArrayDeque<Event> events;
         // The state {this} arose from {previousState} when {arrivalEvent} was seen.
         final State previousState;
@@ -189,7 +239,7 @@ public class Checker {
 
         State(int vertex) {
             this.vertex = vertex;
-            this.stack = new HashMap<Integer, Object>();
+            this.stack = new Treap<Binding>();
             this.events = new ArrayDeque<Event>();
             this.previousState = null;
             this.arrivalEvent = null;
@@ -302,15 +352,12 @@ public class Checker {
     }
 
     static class TransitionStep {
-        final HashSet<Integer> eventIds;
+        final Set<Integer> eventIds;
         final Guard guard;
         final Action action;
 
         TransitionStep(int[] eventIds, Guard guard, Action action) {
-            this.eventIds = new HashSet<Integer>();
-            for (int e : eventIds) {
-                this.eventIds.add(e);
-            }
+            this.eventIds = setOf(eventIds);
             this.guard = guard;
             this.action = action;
         }
@@ -337,26 +384,45 @@ public class Checker {
     }
 
     static class Automaton {
-        final int startVertex;
-        final int errorVertex;
+        private static class VertexEvent {
+            int vertex;
+            int eventId;
+            public VertexEvent(int vertex, int eventId) {
+                this.vertex = vertex;
+                this.eventId = eventId;
+            }
+        }
+        private HashSet<VertexEvent> interesting = new HashSet<VertexEvent>();
 
-        Transition[][] transitions;
+        final int[] startVertices;
+        final String[] errorMessages;
+
+        final Transition[][] transitions;
             // {transitions[vertex]}  are the outgoing transitions of {vertex}
 
         private int maximumTransitionDepth = -1;
 
-        Automaton(int startVertex, int errorVertex,
-                Transition[][] transitions) {
-            this.startVertex = startVertex;
-            this.errorVertex = errorVertex;
+        Automaton(int[] startVertices, String[] errorMessages,
+                Transition[][] transitions, int[] filterOfState,
+                int[][] filters) {
+            this.startVertices = startVertices;
+            this.errorMessages = errorMessages;
             this.transitions = transitions;
+            for (int s = 0; s < transitions.length; ++s) {
+                for (int e : filters[filterOfState[s]]) {
+                    interesting.add(new VertexEvent(s, e));
+                }
+            }
             assert check();
         }
 
         boolean check() {
-            assert 0 <= startVertex && startVertex < transitions.length;
-            assert 0 <= errorVertex && errorVertex < transitions.length;
             assert transitions != null;
+            assert errorMessages.length == transitions.length;
+            for (int v : startVertices) {
+                assert 0 <= v && v < transitions.length;
+                assert errorMessages[v] == null;
+            }
             for (Transition[] ts : transitions) {
                 assert ts != null;
                 for (Transition t : ts) {
@@ -375,6 +441,10 @@ public class Checker {
             return true;
         }
 
+        boolean isInteresting(int eventId, int vertex) {
+            return interesting.contains(new VertexEvent(vertex, eventId));
+        }
+
         int maximumTransitionDepth() {
             if (maximumTransitionDepth == -1) {
                 maximumTransitionDepth = 0;
@@ -389,18 +459,17 @@ public class Checker {
         }
     }
 
-    final private String message;
     final private Automaton automaton;
     private HashSet<State> states;
 
-    public Checker(String message, Automaton automaton) {
-        this.message = message;
+    public Checker(Automaton automaton) {
         this.automaton = automaton;
         this.states = new HashSet<State>();
-        states.add(new State(automaton.startVertex));
+        for (int v : automaton.startVertices)
+            states.add(new State(v));
     }
 
-    void reportError() {
+    void reportError(String msg) {
         // TODO
     }
 
@@ -408,6 +477,9 @@ public class Checker {
         HashSet<State> departedStates = new HashSet<State>();
         HashSet<State> arrivedStates = new HashSet<State>();
         for (State state : states) {
+            if (!automaton.isInteresting(event.id, state.vertex)) {
+                continue;
+            }
             state.events.addLast(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
                 continue;
@@ -429,9 +501,9 @@ public class Checker {
                     departedStates.add(state);
                     arrivedStates.add(stepState);
                     // check for error state
-                    if (transition.target == automaton.errorVertex)
-                        // TODO
-                        reportError();
+                    String msg = automaton.errorMessages[transition.target];
+                    if (msg != null)
+                        reportError(msg);
                 }
             }
             // perform transitions
@@ -441,11 +513,11 @@ public class Checker {
     }
 
     public static void main(String[] args) {
-        CheckerTests t = new CheckerTests();
-        t.c.check(new Event(5, new Object[]{}));
-        t.c.check(new Event(4, new Object[]{}));
-        t.c.check(new Event(1, new Object[]{}));
-        t.c.check(new Event(0, new Object[]{}));
+        //CheckerTests t = new CheckerTests();
+        //t.c.check(new Event(5, new Object[]{}));
+        //t.c.check(new Event(4, new Object[]{}));
+        //t.c.check(new Event(1, new Object[]{}));
+        //t.c.check(new Event(0, new Object[]{}));
     }
 }
 /* TODO

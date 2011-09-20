@@ -93,6 +93,8 @@ module PropertyAst = struct
     | Event of event_tag
     | Any
 
+  (* TODO: perhaps go back to the representation (tag, values check), since we
+           don't do desugaring to unit transitions anyway. *)
   type guard =
     | Atomic of atomic_guard
     | Not of guard
