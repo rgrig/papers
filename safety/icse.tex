@@ -673,6 +673,40 @@ is not matched by any transitions starting from states {\tt one} or {\tt two} in
 This event is silently consumed but the set of active states does not change. 
 The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
 \end{example}
+\begin{example}
+Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume we are given the following
+trace in input
+\[
+\cdots e_1 e_1 e_2 \cdots
+\] In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ is followed by another $e_1$.
+Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive. 
+Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by 
+the trace $e_1 e_1 e_2 $ from {\tt zero}. 
+On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se. 
+Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the the second occurrence of $e_1$ is considered, and since it is followed by $e_2$ the transition from {\tt three} to {\tt four} becomes is enabled, the events $e_1e_2$ are consumed and {\tt four} becomes active whereas {\tt three} inactive.
+\end{example}
+%
+\begin{figure}
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+
+  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+  
+  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+  \draw[transition] (zero)--node[right]{$e_1$} (two);
+  
+  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+\end{tikzpicture}
+\caption{Example of unmatched events.}
+\label{fig:unmatched-example}
+\end{figure}
 
 We can define a predicate that determines the possible execution state transitions
 \[
