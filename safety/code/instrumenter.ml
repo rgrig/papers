@@ -20,6 +20,28 @@ let patterns : (pattern, int list) Hashtbl.t = Hashtbl.create 13
 (* }}} *)
 (* representation of automata in Java *) (* {{{ *)
 
+(*
+  The instrumenter has three phases:
+    - convert the automaton to an intermediate representation
+    - instrument the bytecode
+    - print the Java representation of the automaton
+  A pattern like "c.m()" in the property matches method m in all classes that
+  extend c (including c itself). For efficiency, the Java automaton does not
+  know anything about inheritance. While the bytecode is instrumented all the
+  methods m in classes extending c get unique identifiers and the pattern
+  "c.m()" is mapped to the set of those identifiers.
+
+  The (first) conversion
+    - goes from edge list to adjacency list
+    - glues all input properties into one
+    - changes the vertex representation from strings to integers
+    - changes automaton variable representation from strings to integers
+    - normalizes method patterns (by processing "using prefix", ... )
+    - collects all patterns
+  During printing a bit more processing is needed to go to the Java
+  representation, but only very simple stuff.
+ *)
+
 type tag = int
 type vertex = int
 type variable = int
@@ -29,9 +51,13 @@ type atomic_condition =
   | AC_var of variable * int
   | AC_ct of value * int
 
+type literal_condition =
+  | LC_pos of atomic_condition
+  | LC_neg of atomic_condition
+
 type guard =
   { pattern : pattern
-  ; condition : atomic_condition list }
+  ; condition : literal_condition list }
 
 type action = (variable * int) list
 
@@ -43,29 +69,28 @@ type transition =
   { steps : step list
   ; target : vertex }
 
+type vertex_data =
+  { vertex_property : PA.t
+  ; vertex_name : PA.vertex
+  ; outgoing_transitions : transition list }
+
 type automaton =
-  { starts : vertex list
-  ; errors : vertex list
-  ; adjacency : transition list array }
+  { vertices : vertex_data array
+  ; pattern_tags : (pattern, tag list) Hashtbl.t }
+  (* The keys of {pattern_tags} are filled in during the initial conversion,
+    but the values (the tag list) is filled in while the code is being
+    instrumented. *)
 
 (* }}} *)
-(* pretty printing to Java *) (* {{{ *)
-
-let pp_automaton f { starts=starts; errors=errors; adjacency=adjacency } =
-  todo ()
-
-(* }}} *)
-(* conversion to Java representation *) (* {{{ *)
-
-(* Things that are integers in Java (for efficiency). *)
-let vertex = Hashtbl.create 31
-let variable = Hashtbl.create 13
-
-let to_ints h xs =
+(* small functions that help handling automata *) (* {{{ *)
+let to_ints h xs = (* TODO: get rid of globals, make this create hashes *)
   let c = ref (-1) in
   Hashtbl.clear h;
   let f x = if not (Hashtbl.mem h x) then (incr c; Hashtbl.add h x !c) in
   List.iter f xs
+
+let get_properties x =
+  x.vertices >> Array.map (function {vertex_property=p;_} -> p) >> Array.to_list
 
 let get_vertices p =
   let f acc {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=_} =
@@ -89,6 +114,108 @@ let get_tags p =
   let f = function PA.Event t -> Some t | _ -> None in
   map_option f (get_atomics p)
 
+(* }}} *)
+(* pretty printing to Java *) (* {{{ *)
+
+let array_foldi f z xs =
+  let r = ref z in
+  for i = 0 to Array.length xs - 1 do r := f !r i xs.(i) done;
+  !r
+
+let starts x =
+  let f ks k = function
+    | {vertex_name="start";_} -> k :: ks
+    | _ -> ks in
+  array_foldi f [] x.vertices
+
+let escape_java_string s = s (* TODO *)
+
+let errors x =
+  let f = function
+    | {vertex_name="error"; vertex_property={PA.message=e;_};_} ->
+        "\"" ^ escape_java_string e ^ "\""
+    | _ -> "null" in
+  x.vertices >> Array.map f >> Array.to_list
+
+let compute_interesting_events x =
+  let iop = Hashtbl.create 13 in
+  to_ints iop (get_properties x);
+  let ieop = Array.make (Hashtbl.length iop) IntSet.empty in
+  let fs acc s = add_ints acc (Hashtbl.find x.pattern_tags s.guard.pattern) in
+  let ft acc t = List.fold_left fs acc t.steps in
+  let fv acc v = List.fold_left ft acc v.outgoing_transitions in
+  let iv v =
+    let i = Hashtbl.find iop v.vertex_property in
+    ieop.(i) <- fv ieop.(i) v in
+  Array.iter iv x.vertices;
+  let lam f x = List.map f (Array.to_list x) in
+  (lam (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
+  lam IntSet.elements ieop)
+
+let rec pp_list pe ppf = function
+  | [] -> ()
+  | [x] -> fprintf ppf "@\n%a" pe x
+  | x :: xs -> fprintf ppf "@\n%a,%a" pe x (pp_list pe) xs
+
+let pp_int f x = fprintf f "%d" x
+let pp_string f x = fprintf f "%s" x
+
+let pp_int_list f xs =
+  fprintf f "@[<2>new int[]{%a}@]" (pp_list pp_int) xs
+
+let pp_atomic_condition f = function
+  | AC_var (x, i) -> fprintf f "new StoreEqualityGuard(%d, %d)" i x
+  | AC_ct (v, i) -> fprintf f "new ConstantEqualityGuard(%d, %s)" i v
+
+let pp_pattern tags f p =
+  pp_int_list f (Hashtbl.find tags p)
+
+let pp_literal_condition f = function
+  | LC_pos c -> fprintf f "%a" pp_atomic_condition c
+  | LC_neg c -> fprintf f "new NotGuard(%a)" pp_atomic_condition c
+
+let pp_assignment f (x, i) =
+  fprintf f "new Action.Assignment(%d, %d)" x i
+
+let pp_condition f a =
+  fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_literal_condition) a
+
+let pp_guard tags f {pattern=p; condition=cs} =
+  fprintf f "@[<2>%a@],@\n@[<2>%a)@]" (pp_pattern tags) p pp_condition cs
+
+let pp_action f a =
+  fprintf f "@[<2>new Action(new Assignment[]{%a})@]" (pp_list pp_assignment) a
+
+let pp_step tags f {guard=g; action=a} =
+  fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags) g pp_action a
+
+let pp_transition tags f {steps=ss;target=t} =
+  fprintf f "@[<2>new Transition(@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags)) ss t
+
+let pp_vertex tags f {outgoing_transitions=ts;_} =
+  fprintf f "@[<2>new Transition[]{%a}@]" (pp_list (pp_transition tags)) ts
+
+let pp_automaton f x =
+  let pov, ieop = compute_interesting_events x in
+  fprintf f "package topl;@\n@\n";
+  fprintf f "import static topl.Checker.*;@\n@\n";
+  fprintf f "@[<2>public class Property {@\n";
+  fprintf f   "@[<2>public static Checker checker = new Checker(new Automaton(@\n";
+  fprintf f     "%a,@\n" pp_int_list (starts x);
+  fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
+  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_list (pp_vertex x.pattern_tags)) (Array.to_list x.vertices);
+  fprintf f     "%a,@\n" pp_int_list pov;
+  fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) ieop;
+  fprintf f   "@]));@\n";
+  fprintf f "@]@\n}@\n"
+
+(* }}} *)
+(* conversion to Java representation *) (* {{{ *)
+
+(* globals used by conversion to Java representation *)
+let vertex : ((PA.t * PA.vertex), vertex) Hashtbl.t = Hashtbl.create 13
+let variable : (A.variable, variable) Hashtbl.t = Hashtbl.create 13
+
 let transform_guard g = todo ()
 (*
   let g = PA.dnf g in
@@ -105,13 +232,6 @@ let transform_guard g = todo ()
     | [] -> [], PA.Not (PA.Atomic PA.Any)
     | [gs] -> List.map (Hashtbl.find tag) t, PA.And gs
 *)
-
-let id = fresh_id ()
-
-let rec pp_list pe ppf = function
-  | [] -> ()
-  | [x] -> fprintf ppf "@\n%a" pe x
-  | x :: xs -> fprintf ppf "@\n%a,%a" pe x (pp_list pe) xs
 
 let rec guard ppf = function
   | PA.Atomic (PA.Var (av, ev)) -> fprintf ppf "new Checker.StoreEqualityGuard(%d, %d)" ev (Hashtbl.find variable av)
@@ -164,14 +284,29 @@ let property ppf p = todo () (*
   (* TODO: print [vertex], [variable], [tag] (in comments). *)
 *)
 
-let file f =
-  try
-    printf "// from file %s@\n" f;
-    let f = Helper.parse f in
-    let ps = List.map (fun x -> x.A.ast) f.A.program_properties in
-    List.iter (property std_formatter) ps
-  with Helper.Parsing_failed m ->
-    eprintf "@[%s@." m
+let transform_action _ = todo ()
+
+let transform_label {PA.label_guard=g; PA.label_action=a} =
+  { guard = transform_guard g
+  ; action = transform_action a }
+
+let transform_properties ps = todo ()
+(*
+  let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
+  to_ints vertex (ps >>= vs);
+  let named s p = Hashtbl.find vertex (p, s) in
+  let q =
+    { starts = List.map (named "start") ps
+    ; errors = List.map (named "error") ps
+    ; adjacency = Array.make (Hashtbl.length vertex) [] } in
+  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
+    let s = Hashtbl.find vertex (p, s) in
+    let t = Hashtbl.find vertex (p, t) in
+    let ls = List.map transform_label ls in
+    q.adjacency.(s) <- {steps=ls; target=t} :: q.adjacency.(s) in
+  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
+  todo ()
+*)
 
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
@@ -404,32 +539,10 @@ let read_properties fs =
   let e p = List.map (fun x -> x.A.ast) p.A.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let transform_action _ = todo ()
-
-let transform_label {PA.label_guard=g; PA.label_action=a} =
-  { guard = transform_guard g
-  ; action = transform_action a }
-
-let process_properties ps =
-  let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
-  to_ints vertex (ps >>= vs);
-  let named s p = Hashtbl.find vertex (p, s) in
-  let q =
-    { starts = List.map (named "start") ps
-    ; errors = List.map (named "error") ps
-    ; adjacency = Array.make (Hashtbl.length vertex) [] } in
-  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
-    let s = Hashtbl.find vertex (p, s) in
-    let t = Hashtbl.find vertex (p, t) in
-    let ls = List.map transform_label ls in
-    q.adjacency.(s) <- {steps=ls; target=t} :: q.adjacency.(s) in
-  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
-  todo ()
-
 let method_patterns ps = todo ()
 
 let instrument_bytecode _ _ = todo ()
-let generate_checkers _ _ = todo ()
+let generate_checkers _ = todo ()
 
 let () =
   let fs = ref [] in
@@ -437,10 +550,9 @@ let () =
   Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
     "usage: ./instrumenter [-cp <classpath>] <property_files>";
   let ps = read_properties !fs in
-  let ps = process_properties ps in
-  let ms = method_patterns ps in
-  let ms = instrument_bytecode !cp ms in
-  generate_checkers ps ms
+  let ps = transform_properties ps in
+  instrument_bytecode !cp;
+  generate_checkers ps
 
 (*
 let () = ()
@@ -461,6 +573,11 @@ let () =
   printf "System.out.println(\"TODO\");@]@\n}";
   printf "@]@\n}@."
 *)
+
+(* TODO:
+  - Don't forget that methods in package "topl" should not be instrumented.
+ *)
+
 
 (*
 vim:tw=0:

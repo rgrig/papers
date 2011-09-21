@@ -525,6 +525,8 @@ public class Checker {
     - fill in the missing methods
     - write some tests
     - make sure that Checker does *not* call itself recursively when it uses
-      the Java API. (Use a flag.)
+      the Java API. (Use a flag. And minimize external dependencies (including
+      Java API.)
+    - report traces when something goes wrong
  */
 // vim:sw=4:ts=4:

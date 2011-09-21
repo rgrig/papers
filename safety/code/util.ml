@@ -51,14 +51,15 @@ struct
   let compare = compare
 end
 
-(* The type annotation on IntMap is a workaround for OCaml bug
-   http://caml.inria.fr/mantis/view.php?id=5302 *)
 module IntMap : (Map.S with type key = int) = Map.Make (Int)
+module IntSet : (Set.S with type elt = int) = Set.Make (Int)
 module StringMap = Map.Make (String)
 module StringPairMap = Map.Make (OrderedPair (String) (String))
 module StringSet = Set.Make (String)
 
 let flip f x y = f y x
+
+let add_ints s = List.fold_left (flip IntSet.add) s
 
 let add_strings s = List.fold_left (flip StringSet.add) s
 

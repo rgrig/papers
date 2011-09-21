@@ -79,6 +79,8 @@ type class_ = string * member list
 module PropertyAst = struct
   (* Say [module PA = PropertyAst] rather than [open PropertyAst] when using. *)
 
+  type vertex = string
+
   type method_ = string * int
 
   type event_type =
@@ -112,8 +114,8 @@ module PropertyAst = struct
     ; label_action : action }
 
   type edge =
-    { edge_source : string
-    ; edge_target : string
+    { edge_source : vertex
+    ; edge_target : vertex
     ; edge_labels : label list }
 
   type t =
