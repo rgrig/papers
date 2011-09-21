@@ -14,3 +14,15 @@ public class HiyaInstr {
 	System.out.println("Checked "+event_id+".");
     }
 }
+
+class HE extends HiyaInstr {
+    public static void greet(String s) {
+	System.out.println("Hiya Extended "+s+"!");
+    }
+}
+
+class HEE extends HE {
+    public static void check(int event_id, Object[] events, int extra) {
+	System.out.println("HEE!");
+    }
+}

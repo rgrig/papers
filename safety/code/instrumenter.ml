@@ -295,7 +295,7 @@ let bc_check =
 			      )
   ]
 
-let get_call_id s n = Some (Hashtbl.hash (s, n, true))
+let get_call_id method_names nr_params = Some (Hashtbl.hash (method_names, nr_params, true))
 let get_return_id s n = Some (Hashtbl.hash (s, n, false))
 
 let bc_send_event id param_types is_static =
@@ -354,11 +354,29 @@ let has_static_flag flags =
     | _ -> false in
   List.exists is_static_flag flags
 
-let instrument_method = function
+let rec get_ancesters h m c =
+  try
+    let (ms, parents) = Hashtbl.find h c in
+      (* should check for number of parameters somehow *)
+    let here = if List.mem m ms then [c] else [] in
+    here @ (parents >>= get_ancesters h m)
+  with Not_found -> []
+  
+let get_overrides h c (m, n) =
+  let ancestors = get_ancesters h m c in
+  let uts = B.Utils.UTF8.to_string in
+  let cts c = uts (B.Name.external_utf8_for_class c) in
+  let m = uts (B.Name.utf8_for_method m) in
+  let qualify c =  (cts c) ^ "." ^ m in
+  List.map qualify ancestors
+
+let instrument_method h c = function
   | B.Method.Regular r -> (
       let param_types, _ = r.B.Method.descriptor in (* return is not used *)
-      let call_id = get_call_id r.B.Method.name (List.length param_types) in
-      let return_id = get_return_id r.B.Method.name (List.length param_types) in
+      let nr_params = List.length param_types in
+      let overrides = get_overrides h c (r.B.Method.name, nr_params) in
+      let call_id = get_call_id overrides nr_params in
+      let return_id = get_return_id overrides nr_params in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
@@ -387,8 +405,8 @@ let instrument_method = function
     )
   | m -> m
 
-let instrument_class (c, fn) =
-  let instrumented_methods = List.map instrument_method c.B.ClassDefinition.methods in
+let instrument_class h (c, fn) =
+  let instrumented_methods = List.map (instrument_method h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
     [({c with B.ClassDefinition.methods = instrumented_methods}, fn)]
 
 let output_class (c, fn) =
@@ -399,6 +417,41 @@ let output_classes = List.iter output_class
 
 (* }}} *)
 (* main *) (* {{{ *)
+
+(*
+type inheritance_node =
+    {
+      class_name : B.Name.for_class;
+      class_methods : B.Name.for_method list;
+      class_parents : inheritance_node list
+    }
+*)
+
+let compute_inheritance classpath =
+  let h = Hashtbl.create 101 in
+(*
+  let insert_node name method_names parent_names =
+    let parent_nodes = List.map (Hashtbl.find h) parent_names in
+    Hashtbl.add h name {class_name = name; class_methods = method_names; class_parents = parent_nodes} in
+*)
+  let record_class (c, _) =
+    let name = c.B.ClassDefinition.name in
+    let fold mns = function
+      | B.Method.Regular r ->
+	  let (ps, _) = r.B.Method.descriptor in (* return is not used *)
+	  (r.B.Method.name, List.length ps) :: mns
+      | _ -> mns in
+    let method_names = List.fold_left fold [] c.B.ClassDefinition.methods in
+    let parents = match c.B.ClassDefinition.extends with
+      | None -> c.B.ClassDefinition.implements
+      | Some e -> e::c.B.ClassDefinition.implements in
+(*    insert_node name method_names parents *)
+    Hashtbl.add h name (method_names, parents)
+  in
+  classpath
+  >> classfiles_of_path
+  >>= classes_of_classfile
+  >> (List.iter record_class); h
 
 let read_properties fs =
   let e p = List.map (fun x -> x.A.ast) p.A.program_properties in
@@ -428,18 +481,20 @@ let process_properties ps =
 
 let method_patterns ps = todo ()
 
-let instrument_bytecode _ _ = todo ()
+let instrument_bytecode _ _ _ = todo ()
 let generate_checkers _ _ = todo ()
+
 
 let () =
   let fs = ref [] in
   let cp = ref (try Sys.getenv "CLASSPATH" with Not_found -> ".") in
   Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
     "usage: ./instrumenter [-cp <classpath>] <property_files>";
+  let h = compute_inheritance !cp in
   let ps = read_properties !fs in
   let ps = process_properties ps in
   let ms = method_patterns ps in
-  let ms = instrument_bytecode !cp ms in
+  let ms = instrument_bytecode h !cp ms in
   generate_checkers ps ms
 
 (*
