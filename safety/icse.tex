@@ -863,7 +863,12 @@ In the following we give a detailed description of the TOPL compile and the Prop
 \end{figure}
 
 
-\subsection{Run-time soundness}
+\subsection{Run-time completeness}
+A legitimate question about our run-time checker is whether it is {\em complete}. Informally, that can be expressed as:
+\begin{quote}
+if any run-time execution of the program leads to an error then will the checker detect the error?
+\end{quote}
+The program in Figure~\ref{fig:completeness} shows that in order to achieve completeness any run-time checker would need infinite memory.
 \dinocomment{here define the notion and show that it is impossible to achive}
 \dinocomment{talk about our strategy}
 \subsection{Checker}
