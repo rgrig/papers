@@ -4,4 +4,4 @@
 "instrumenter.ml": package(barista)
 <*.mly>: explain
 <*.ml>: annot
-true: debug, use_menhir, use_barista
+true: debug, use_menhir, use_barista, package(unix)

@@ -137,3 +137,12 @@ let rec fs_postorder m f =
 let fs_filter p f =
   let r = ref [] in
   fs_postorder (fun x -> if p x then r := x::!r) f; !r
+
+let rec mkdir_p dir =
+  if Sys.file_exists dir then begin
+    if not (Sys.is_directory dir) then
+      raise (Unix.Unix_error (Unix.EEXIST, "mkdir_p", dir))
+  end else begin
+    mkdir_p (Filename.dirname dir);
+    Unix.mkdir dir 0o755
+  end

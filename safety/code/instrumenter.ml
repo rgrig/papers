@@ -5,17 +5,22 @@ module PA = Ast.PropertyAst
 open Format
 open Util
 (* }}} *)
+(* globals *) (* {{{ *)
+let out_dir = ref "out"
+
+(* }}} *)
 (* used to communicate between conversion and instrumentation *) (* {{{ *)
 type method_ =
-  { name : string
-  ; arity : int }
+  { method_name : string
+  ; method_arity : int }
 
-type pattern =
+type re_pattern =
   { pattern_re : Str.regexp
-  ; pattern_arity: int }
+  ; pattern_type : PA.event_type
+  ; pattern_arity: int option }
 
-let patterns : (pattern, int list) Hashtbl.t = Hashtbl.create 13
-  (* maps patterns to sets of event ids *)
+type pattern = PAT_true | PAT_re of re_pattern
+
 
 (* }}} *)
 (* representation of automata in Java *) (* {{{ *)
@@ -24,7 +29,7 @@ let patterns : (pattern, int list) Hashtbl.t = Hashtbl.create 13
   The instrumenter has three phases:
     - convert the automaton to an intermediate representation
     - instrument the bytecode
-    - print the Java representation of the automaton
+    - emit the Java representation of the automaton
   A pattern like "c.m()" in the property matches method m in all classes that
   extend c (including c itself). For efficiency, the Java automaton does not
   know anything about inheritance. While the bytecode is instrumented all the
@@ -76,18 +81,24 @@ type vertex_data =
 
 type automaton =
   { vertices : vertex_data array
-  ; pattern_tags : (pattern, tag list) Hashtbl.t }
+  ; pattern_tags : (re_pattern, tag list) Hashtbl.t }
   (* The keys of {pattern_tags} are filled in during the initial conversion,
     but the values (the tag list) is filled in while the code is being
     instrumented. *)
 
 (* }}} *)
 (* small functions that help handling automata *) (* {{{ *)
-let to_ints h xs = (* TODO: get rid of globals, make this create hashes *)
+let to_ints xs =
+  let h = Hashtbl.create 101 in
   let c = ref (-1) in
-  Hashtbl.clear h;
   let f x = if not (Hashtbl.mem h x) then (incr c; Hashtbl.add h x !c) in
-  List.iter f xs
+  List.iter f xs; h
+
+let inverse_index f h =
+  let r = Array.make (Hashtbl.length h) None in
+  let one k v = assert (r.(v) = None); r.(v) <- Some (f k) in
+  Hashtbl.iter one h;
+  Array.map from_some r
 
 let get_properties x =
   x.vertices >> Array.map (function {vertex_property=p;_} -> p) >> Array.to_list
@@ -138,19 +149,24 @@ let errors x =
   x.vertices >> Array.map f >> Array.to_list
 
 let compute_interesting_events x =
-  let iop = Hashtbl.create 13 in
-  to_ints iop (get_properties x);
+  let iop = to_ints (get_properties x) in
   let ieop = Array.make (Hashtbl.length iop) IntSet.empty in
-  let fs acc s = add_ints acc (Hashtbl.find x.pattern_tags s.guard.pattern) in
+  let fs acc s = match s.guard.pattern with
+    | PAT_true -> acc
+    | PAT_re p ->  add_ints acc (Hashtbl.find x.pattern_tags p) in
   let ft acc t = List.fold_left fs acc t.steps in
   let fv acc v = List.fold_left ft acc v.outgoing_transitions in
   let iv v =
     let i = Hashtbl.find iop v.vertex_property in
     ieop.(i) <- fv ieop.(i) v in
   Array.iter iv x.vertices;
-  let lam f x = List.map f (Array.to_list x) in
-  (lam (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
-  lam IntSet.elements ieop)
+  (Array.map (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
+   Array.map IntSet.elements ieop)
+
+let pp_array pe ppf a =
+  let l = Array.length a in
+  if l > 0 then fprintf ppf "@\n%a" pe (0, a.(0));
+  for i = 1 to l - 1 do fprintf ppf "@\n%a," pe (i, a.(i)) done
 
 let rec pp_list pe ppf = function
   | [] -> ()
@@ -167,8 +183,9 @@ let pp_atomic_condition f = function
   | AC_var (x, i) -> fprintf f "new StoreEqualityGuard(%d, %d)" i x
   | AC_ct (v, i) -> fprintf f "new ConstantEqualityGuard(%d, %s)" i v
 
-let pp_pattern tags f p =
-  pp_int_list f (Hashtbl.find tags p)
+let pp_pattern tags obs f = function
+  | PAT_true -> pp_int_list f obs
+  | PAT_re p -> pp_int_list f (Hashtbl.find tags p)
 
 let pp_literal_condition f = function
   | LC_pos c -> fprintf f "%a" pp_atomic_condition c
@@ -180,20 +197,21 @@ let pp_assignment f (x, i) =
 let pp_condition f a =
   fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_literal_condition) a
 
-let pp_guard tags f {pattern=p; condition=cs} =
-  fprintf f "@[<2>%a@],@\n@[<2>%a)@]" (pp_pattern tags) p pp_condition cs
+let pp_guard tags obs f {pattern=p; condition=cs} =
+  fprintf f "@[<2>%a@],@\n@[<2>%a)@]" (pp_pattern tags obs) p pp_condition cs
 
 let pp_action f a =
   fprintf f "@[<2>new Action(new Assignment[]{%a})@]" (pp_list pp_assignment) a
 
-let pp_step tags f {guard=g; action=a} =
-  fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags) g pp_action a
+let pp_step tags obs f {guard=g; action=a} =
+  fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags obs) g pp_action a
 
-let pp_transition tags f {steps=ss;target=t} =
-  fprintf f "@[<2>new Transition(@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags)) ss t
+let pp_transition tags obs f {steps=ss;target=t} =
+  fprintf f "@[<2>new Transition(@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
 
-let pp_vertex tags f {outgoing_transitions=ts;_} =
-  fprintf f "@[<2>new Transition[]{%a}@]" (pp_list (pp_transition tags)) ts
+let pp_vertex tags pov ieop f (vi, {outgoing_transitions=ts;_}) =
+  let obs = Array.get ieop (Array.get pov vi) in
+  fprintf f "@[<2>new Transition[]{%a}@]" (pp_list (pp_transition tags obs)) ts
 
 let pp_automaton f x =
   let pov, ieop = compute_interesting_events x in
@@ -203,36 +221,16 @@ let pp_automaton f x =
   fprintf f   "@[<2>public static Checker checker = new Checker(new Automaton(@\n";
   fprintf f     "%a,@\n" pp_int_list (starts x);
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
-  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_list (pp_vertex x.pattern_tags)) (Array.to_list x.vertices);
-  fprintf f     "%a,@\n" pp_int_list pov;
-  fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) ieop;
+  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_array (pp_vertex x.pattern_tags pov ieop)) x.vertices;
+  fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
+  fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) (Array.to_list ieop);
   fprintf f   "@]));@\n";
   fprintf f "@]@\n}@\n"
 
 (* }}} *)
 (* conversion to Java representation *) (* {{{ *)
 
-(* globals used by conversion to Java representation *)
-let vertex : ((PA.t * PA.vertex), vertex) Hashtbl.t = Hashtbl.create 13
-let variable : (A.variable, variable) Hashtbl.t = Hashtbl.create 13
-
-let transform_guard g = todo ()
 (*
-  let g = PA.dnf g in
-  let split (t, gs) = function
-    | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Can't express in Java (1)"
-    | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
-    | g -> t, g :: gs in
-  let g = List.map (List.fold_left split (None, [])) g in
-  let t, gs = List.split g in
-  let t = map_option (fun x -> x) t in
-  let gs = PA.simplify gs in
-  match gs with
-    | _ :: _ :: _ -> failwith "Can't express in Java (2)"
-    | [] -> [], PA.Not (PA.Atomic PA.Any)
-    | [gs] -> List.map (Hashtbl.find tag) t, PA.And gs
-*)
-
 let rec guard ppf = function
   | PA.Atomic (PA.Var (av, ev)) -> fprintf ppf "new Checker.StoreEqualityGuard(%d, %d)" ev (Hashtbl.find variable av)
   | PA.Atomic (PA.Ct (ct, ev)) -> fprintf ppf "new Checker.ConstantEqualityGuard(%d, %d)" ev ct
@@ -283,6 +281,25 @@ let property ppf p = todo () (*
   fprintf ppf "@]@\n"
   (* TODO: print [vertex], [variable], [tag] (in comments). *)
 *)
+*)
+
+let transform_guard g = todo ()
+(*
+  let g = match PA.dnf g with [g] -> g | _ -> failwith "Not from TOPL" in
+  let split (t, gs) = function
+    | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Not from TOPL"
+    | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
+    | g -> t, g :: gs in
+  let g = List.map (List.fold_left split (None, [])) g in
+  let t, gs = List.split g in
+  let t = map_option (fun x -> x) t in
+  let gs = PA.simplify gs in
+let mk_pattern t = 
+  match gs with
+    | _ :: _ :: _ -> failwith "Can't express in Java"
+    | [] -> [], PA.Not (PA.Atomic PA.Any)
+    | [lgs] -> mk_pattern t, PA.And lgs
+*)
 
 let transform_action _ = todo ()
 
@@ -290,7 +307,27 @@ let transform_label {PA.label_guard=g; PA.label_action=a} =
   { guard = transform_guard g
   ; action = transform_action a }
 
-let transform_properties ps = todo ()
+let transform_properties ps =
+  let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
+  let iov = to_ints (ps >>= vs) in
+  let mk_vd (p, v) =
+    { vertex_property = p
+    ; vertex_name = v
+    ; outgoing_transitions = [] } in
+  let p =
+    { vertices = inverse_index mk_vd iov
+    ; pattern_tags = Hashtbl.create 13 } in
+  let add_transition vi t =
+    let ts = p.vertices.(vi).outgoing_transitions in
+    p.vertices.(vi) <- {p.vertices.(vi) with outgoing_transitions = t :: ts} in
+  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
+    let s = Hashtbl.find iov (p, s) in
+    let t = Hashtbl.find iov (p, t) in
+    let ls = List.map transform_label ls in
+    add_transition s {steps=ls; target=t} in
+  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
+  p
+ 
 (*
   let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
   to_ints vertex (ps >>= vs);
@@ -310,10 +347,6 @@ let transform_properties ps = todo ()
 
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
-let print_list xs =
-  printf "@[";
-  List.iter (fun x -> printf "%s\n" x) xs;
-  printf "@."
 
 (* TODO(rgrig): Get the classpath treatement from friendly_cli in jStar. *)
 let classpath () =
@@ -349,12 +382,21 @@ let classes_of_classfile fn =
   | _ ->
       eprintf "@[%s: error@." fn; []
 
+
 (*
 let name_of_method = function
   | B.Method.Regular r ->
       [r.B.Method.name >> B.Name.utf8_for_method >> B.Utils.UTF8.to_string]
   | _ -> []
 *)
+
+
+let string_of_method_name mn =
+  B.Utils.UTF8.to_string (B.Name.utf8_for_method mn)
+
+let mk_method mn ma =
+  { method_name = string_of_method_name mn
+  ; method_arity = ma }
 
 let utf8 = B.Utils.UTF8.of_string
 let utf8_for_class x = B.Name.make_for_class_from_external (utf8 x)
@@ -430,8 +472,28 @@ let bc_check =
 			      )
   ]
 
-let get_call_id method_names nr_params = Some (Hashtbl.hash (method_names, nr_params, true))
-let get_return_id s n = Some (Hashtbl.hash (s, n, false))
+let does_method_match
+  ({ method_name=mn; method_arity=ma }, mt)
+  { pattern_re=re; pattern_type=t; pattern_arity=a }
+=
+  option true ((=) ma) a &&
+  mt = t &&
+  Str.string_match re mn 0
+
+let get_tag x =
+  let cnt = ref (-1) in fun t (mns, ma) ->
+  let fp p _ acc =
+    let cm mn = does_method_match ({method_name=mn; method_arity=ma}, t) p in
+    if List.exists cm mns then p :: acc else acc in
+  match Hashtbl.fold fp x.pattern_tags [] with
+    | [] -> None
+    | ps ->
+        incr cnt;
+        let at p =
+          let ts = Hashtbl.find x.pattern_tags p in
+          Hashtbl.replace x.pattern_tags p (!cnt :: ts) in
+        List.iter at ps;
+        Some !cnt
 
 let bc_send_event id param_types is_static =
   let fold (instructions, i) _ =
@@ -489,29 +551,28 @@ let has_static_flag flags =
     | _ -> false in
   List.exists is_static_flag flags
 
-let rec get_ancesters h m c =
+let rec get_ancestors h m c =
   try
     let (ms, parents) = Hashtbl.find h c in
-      (* should check for number of parameters somehow *)
     let here = if List.mem m ms then [c] else [] in
-    here @ (parents >>= get_ancesters h m)
+    here @ (parents >>= get_ancestors h m)
   with Not_found -> []
-  
-let get_overrides h c (m, n) =
-  let ancestors = get_ancesters h m c in
+
+let get_overrides h c ({method_name=n; method_arity=a} as m) =
+  let ancestors = get_ancestors h m c in
   let uts = B.Utils.UTF8.to_string in
   let cts c = uts (B.Name.external_utf8_for_class c) in
-  let m = uts (B.Name.utf8_for_method m) in
-  let qualify c =  (cts c) ^ "." ^ m in
-  List.map qualify ancestors
+  let qualify c =  (cts c) ^ "." ^ n in
+  (List.map qualify ancestors, a)
 
-let instrument_method h c = function
+let instrument_method get_tag h c = function
   | B.Method.Regular r -> (
       let param_types, _ = r.B.Method.descriptor in (* return is not used *)
       let nr_params = List.length param_types in
-      let overrides = get_overrides h c (r.B.Method.name, nr_params) in
-      let call_id = get_call_id overrides nr_params in
-      let return_id = get_return_id overrides nr_params in
+      let overrides =
+        get_overrides h c (mk_method r.B.Method.name nr_params) in
+      let call_id = get_tag PA.Call overrides in
+      let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
@@ -540,27 +601,28 @@ let instrument_method h c = function
     )
   | m -> m
 
-let instrument_class h (c, fn) =
-  let instrumented_methods = List.map (instrument_method h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
-    [({c with B.ClassDefinition.methods = instrumented_methods}, fn)]
+let open_class_channel c =
+  let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
+  let fn = B.Utils.UTF8.to_string fn in
+  let fn = Filename.concat !out_dir fn in
+  mkdir_p (Filename.dirname fn);
+  open_out fn
 
-let output_class (c, fn) =
+let output_class c =
+  let ch = open_class_channel c in
   let bytes = B.ClassDefinition.encode c in
-    B.ClassFile.write bytes (B.OutputStream.make_of_channel (open_out fn))
+  B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
+  close_out ch
 
-let output_classes = List.iter output_class
+let instrument_class get_tags h (c, fn) =
+  let instrumented_methods = List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
+  output_class {c with B.ClassDefinition.methods = instrumented_methods}
 
-(* }}} *)
-(* main *) (* {{{ *)
-
-(*
-type inheritance_node =
-    {
-      class_name : B.Name.for_class;
-      class_methods : B.Name.for_method list;
-      class_parents : inheritance_node list
-    }
-*)
+let iter_classes cp f = (* TODO *)
+  cp
+  >> classfiles_of_path
+  >>= classes_of_classfile
+  >> List.iter f
 
 let compute_inheritance classpath =
   let h = Hashtbl.create 101 in
@@ -574,7 +636,7 @@ let compute_inheritance classpath =
     let fold mns = function
       | B.Method.Regular r ->
 	  let (ps, _) = r.B.Method.descriptor in (* return is not used *)
-	  (r.B.Method.name, List.length ps) :: mns
+          mk_method r.B.Method.name (List.length ps) :: mns
       | _ -> mns in
     let method_names = List.fold_left fold [] c.B.ClassDefinition.methods in
     let parents = match c.B.ClassDefinition.extends with
@@ -583,18 +645,19 @@ let compute_inheritance classpath =
 (*    insert_node name method_names parents *)
     Hashtbl.add h name (method_names, parents)
   in
-  classpath
-  >> classfiles_of_path
-  >>= classes_of_classfile
-  >> (List.iter record_class); h
+  iter_classes classpath record_class;
+  h
+
+let instrument_bytecode get_tag cp h =
+  iter_classes cp (instrument_class get_tag h)
+
+(* }}} *)
+(* main *) (* {{{ *)
 
 let read_properties fs =
   let e p = List.map (fun x -> x.A.ast) p.A.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let method_patterns ps = todo ()
-
-let instrument_bytecode _ = todo ()
 let generate_checkers _ = todo ()
 
 let () =
@@ -604,9 +667,9 @@ let () =
     "usage: ./instrumenter [-cp <classpath>] <property_files>";
   let h = compute_inheritance !cp in
   let ps = read_properties !fs in
-  let ps = transform_properties ps in
-  instrument_bytecode !cp;
-  generate_checkers ps
+  let p = transform_properties ps in
+  instrument_bytecode (get_tag p) !cp h;
+  generate_checkers p
 
 (*
 let () = ()
