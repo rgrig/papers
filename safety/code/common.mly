@@ -1,15 +1,19 @@
 %{
-  open Ast
   open Format
   open Util
+
+  module PA = PropAst
+  module SA = SoolAst
 %}
 
 %token <int> NUMBER
+%token <string> CONSTANT
 %token <string> ID
 %token <string> STRING
 %token AND
 %token ARROW
 %token ASGN
+%token CALL
 %token CLASS
 %token COLON
 %token COMMA
@@ -18,18 +22,23 @@
 %token ELSE
 %token EOF
 %token EQ
+%token GLOB
 %token IF
 %token LB
 %token LC
 %token LP
 %token MAIN
+%token NAMED
 %token NE
 %token NEW
 %token NOT
+%token OBSERVING
 %token OR
+%token PREFIX
 %token PROPERTY
 %token RB
 %token RC
+%token REGEXP
 %token RETURN
 %token RP
 %token STAR
@@ -41,29 +50,29 @@
 %nonassoc NOT
 %left DOT
 
-%start <Ast.program> program
+%start <SoolAst.program> program
 
 %%
 
 program:
     h=class_ t=program
-      { { t with program_classes = h :: t.program_classes } }
+      { { t with SA.program_classes = h :: t.SA.program_classes } }
   | h=global t=program
-      { { t with program_globals = h :: t.program_globals } }
+      { { t with SA.program_globals = h :: t.SA.program_globals } }
   | h=main t=program
-      { if t.program_main <> None then 
+      { if t.SA.program_main <> None then
           eprintf "WARNING: Only the last main matters.";
-        { t with program_main = Some h } }
+        { t with SA.program_main = Some h } }
   | h=with_line(property) t=program
-      { { t with program_properties = h :: t.program_properties } } 
+      { { t with SA.program_properties = h :: t.SA.program_properties } }
   | EOF
-      { { program_classes = []
-        ; program_globals = []
-        ; program_main = None
-        ; program_properties = []  } }
+      { { SA.program_classes = []
+        ; SA.program_globals = []
+        ; SA.program_main = None
+        ; SA.program_properties = []  } }
 
 %public with_line(X):
-    x=X { { ast = x; line = $startpos.Lexing.pos_lnum } }
+    x=X { { PA.ast = x; PA.line = $startpos.Lexing.pos_lnum } }
 
 %%
 

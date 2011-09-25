@@ -26,11 +26,16 @@
       ; "do", DO
       ; "else", ELSE
       ; "false", NUMBER 0
+      ; "glob", GLOB
       ; "if", IF
       ; "main", MAIN
+      ; "named", NAMED
       ; "new", NEW
+      ; "observing", OBSERVING
       ; "or", OR
+      ; "prefix", PREFIX
       ; "property", PROPERTY
+      ; "regexp", REGEXP
       ; "return", RETURN
       ; "true", NUMBER 1
       ; "var", VAR
@@ -66,6 +71,8 @@ rule tok1 = parse
   | '}'     { l RC }
   | ')'     { l RP }
   | '*'     { l STAR }
+  | '<' ([^ '>' '\n']* as x) '>'
+            { l (CONSTANT x) }
   | '"' ([^ '"' '\n']* as x) '"'
             { l (STRING x) }
   | '-'? ['0'-'9']+ as n

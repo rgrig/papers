@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=fool safety biabduction
+MAIN=fool safety biabduction icse
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))

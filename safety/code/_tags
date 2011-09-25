@@ -1,7 +1,7 @@
-"interp.native" or "interp.byte": package(menhirLib)
-"instrumenter.byte": package(str), package(barista), package(menhirLib)
+"interp.native" or "interp.byte": package(menhirLib), package(unix)
+"instrumenter.byte": package(str), package(barista), package(menhirLib), package(unix)
 "helper.ml": package(menhirLib)
 "instrumenter.ml": package(barista)
 <*.mly>: explain
 <*.ml>: annot
-true: debug, use_menhir, use_barista, package(unix)
+true: debug, use_menhir, use_barista

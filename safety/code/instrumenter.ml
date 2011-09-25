@@ -1,7 +1,7 @@
 (* modules *) (* {{{ *)
-module A = Ast
 module B = BaristaLibrary
-module PA = Ast.PropertyAst
+module PA = PropAst
+module SA = SoolAst
 open Format
 open Util
 (* }}} *)
@@ -32,7 +32,7 @@ type pattern = PAT_true | PAT_re of re_pattern
     - emit the Java representation of the automaton
   A pattern like "c.m()" in the property matches method m in all classes that
   extend c (including c itself). For efficiency, the Java automaton does not
-  know anything about inheritance. While the bytecode is instrumented all the
+  know anything about inheritance. SA.While the bytecode is instrumented all the
   methods m in classes extending c get unique identifiers and the pattern
   "c.m()" is mapped to the set of those identifiers.
 
@@ -192,7 +192,7 @@ let pp_literal_condition f = function
   | LC_neg c -> fprintf f "new NotGuard(%a)" pp_atomic_condition c
 
 let pp_assignment f (x, i) =
-  fprintf f "new Action.Assignment(%d, %d)" x i
+  fprintf f "new Action.SA.Assignment(%d, %d)" x i
 
 let pp_condition f a =
   fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_literal_condition) a
@@ -201,7 +201,7 @@ let pp_guard tags obs f {pattern=p; condition=cs} =
   fprintf f "@[<2>%a@],@\n@[<2>%a)@]" (pp_pattern tags obs) p pp_condition cs
 
 let pp_action f a =
-  fprintf f "@[<2>new Action(new Assignment[]{%a})@]" (pp_list pp_assignment) a
+  fprintf f "@[<2>new Action(new SA.Assignment[]{%a})@]" (pp_list pp_assignment) a
 
 let pp_step tags obs f {guard=g; action=a} =
   fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags obs) g pp_action a
@@ -244,11 +244,11 @@ let rec guard ppf = function
   | PA.Or gs -> fprintf ppf "@[<2>new Checker.OrGuard(new Checker.Guard[]{%a})@]" (pp_list guard) gs
 
 let assignment ppf (av, ev) =
-  fprintf ppf "new Checker.Action.Assignment(%d, %d)"
+  fprintf ppf "new Checker.Action.SA.Assignment(%d, %d)"
     (Hashtbl.find variable av) ev
 
 let action ppf xs =
-  fprintf ppf "@[<2>new Checker.Action(new Checker.Action.Assignment[]{%a})@]" (pp_list assignment) xs
+  fprintf ppf "@[<2>new Checker.Action(new Checker.Action.SA.Assignment[]{%a})@]" (pp_list assignment) xs
 
 let label ppf {PA.label_guard=g; PA.label_action=a} =
   let gt, gr = transform_guard g in
@@ -283,23 +283,18 @@ let property ppf p = todo () (*
 *)
 *)
 
-let transform_guard g = todo ()
-(*
-  let g = match PA.dnf g with [g] -> g | _ -> failwith "Not from TOPL" in
-  let split (t, gs) = function
-    | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Not from TOPL"
-    | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
-    | g -> t, g :: gs in
-  let g = List.map (List.fold_left split (None, [])) g in
-  let t, gs = List.split g in
-  let t = map_option (fun x -> x) t in
-  let gs = PA.simplify gs in
-let mk_pattern t = 
-  match gs with
-    | _ :: _ :: _ -> failwith "Can't express in Java"
-    | [] -> [], PA.Not (PA.Atomic PA.Any)
-    | [lgs] -> mk_pattern t, PA.And lgs
-*)
+let mk_pattern t gs = todo ()
+
+let transform_guard g =
+  match PA.dnf g with
+    | [g] ->
+      let split (t, gs) = function
+        | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Not from TOPL"
+        | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
+        | g -> t, g :: gs in
+      let t, gs = List.fold_left split (None, []) g in
+      mk_pattern t gs
+    | _ -> failwith "Not from TOPL"
 
 let transform_action _ = todo ()
 
@@ -327,7 +322,7 @@ let transform_properties ps =
     add_transition s {steps=ls; target=t} in
   List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
   p
- 
+
 (*
   let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
   to_ints vertex (ps >>= vs);
@@ -655,7 +650,7 @@ let instrument_bytecode get_tag cp h =
 (* main *) (* {{{ *)
 
 let read_properties fs =
-  let e p = List.map (fun x -> x.A.ast) p.A.program_properties in
+  let e p = List.map (fun x -> x.PA.ast) p.SA.program_properties in
   fs >> List.map Helper.parse >>= e
 
 let generate_checkers _ = todo ()

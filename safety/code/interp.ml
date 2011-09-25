@@ -1,8 +1,9 @@
 (* modules *) (* {{{ *)
-open Ast
 open Format
-module PA = Ast.PropertyAst
+
+module PA = PropAst
 module S = Stack (* save OCaml's stack module *)
+module SA = SoolAst
 module U = Util
 (* }}} *)
 
@@ -17,31 +18,31 @@ module type StackT = sig
   val empty : t
 
   (* These hide older variables with the same name. *)
-  val init_variable : t -> variable -> value -> t
-  val add_variable : t -> variable -> t
+  val init_variable : t -> SA.variable -> SA.value -> t
+  val add_variable : t -> SA.variable -> t
     (* [init_variable] with random value *)
 
   (* These two throw [Variable_missing] if the variable wasn't added earlier. *)
-  val write : t -> variable -> value -> t
-  val read : t -> variable -> value
+  val write : t -> SA.variable -> SA.value -> t
+  val read : t -> SA.variable -> SA.value
 end
 
 module type HeapT = sig
   type t
   val empty : t
-  val new_object : t -> variable list -> (t * value)
+  val new_object : t -> SA.variable list -> (t * SA.value)
 
   (* These two throw [Bad_access] if the object is not allocated
      and [Variable_missing] if there's no field with that name. *)
-  val write : t -> value -> variable -> value -> t
-  val read : t -> value -> variable -> value
+  val write : t -> SA.value -> SA.variable -> SA.value -> t
+  val read : t -> SA.value -> SA.variable -> SA.value
 end
 
 let read_input () = Scanf.scanf " %d" (fun x -> x)
 
 (* implementation *) (* {{{ *)
 module Stack : StackT = struct
-  type t = value U.StringMap.t
+  type t = SA.value U.StringMap.t
   let empty = U.StringMap.empty
   let init_variable s x v = U.StringMap.add x v s
   let add_variable s x = init_variable s x (-1)
@@ -54,7 +55,7 @@ module Stack : StackT = struct
 end
 
 module Heap : HeapT = struct
-  type t = value U.StringMap.t U.IntMap.t * int
+  type t = SA.value U.StringMap.t U.IntMap.t * int
 
   let empty = U.IntMap.empty, 0
 
@@ -95,7 +96,7 @@ let events = Queue.create ()
 (* interpreter *) (* {{{ *)
 (* helpers *) (* {{{ *)
 
-let vars ds = List.map (fun x -> x.declaration_variable) ds
+let vars ds = List.map (fun x -> x.SA.declaration_variable) ds
 
 let assign_value state x v =
   begin try
@@ -125,7 +126,7 @@ let pick x xs =
 
 (* }}} *)
 (* global environment *) (* {{{ *)
-let automaton = ref ok_automaton
+let automaton = ref PA.ok_automaton
   (* the property being checked, picked randomly *)
 let automaton_guard = ref (PA.Atomic PA.Any)
   (* an event is interesting if this guard evaluates to true on the event and
@@ -144,19 +145,16 @@ let preprocess_classes cs =
   let preprocess_class (c, ms) =
     let fs = ref U.StringSet.empty in
     let preprocess_member = function
-      | Field { declaration_variable = f; declaration_type = _ } ->
+      | SA.Field { SA.declaration_variable = f; SA.declaration_type = _ } ->
           assert (not (U.StringSet.mem f !fs)); (* otherwise fix tc.ml *)
           fs := U.StringSet.add f !fs
-      | Method m ->
-          let k = c, m.method_name in
+      | SA.Method m ->
+          let k = c, m.SA.method_name in
           assert (not (U.StringPairMap.mem k !methods)); (* otherwise fix tc.ml *)
           methods := U.StringPairMap.add k m !methods in
     List.iter preprocess_member ms;
     fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
-
-let desugar_multi_edges es = es (* TODO
-  failwith "TODO: make sure each edge has exactly one label." *)
 
 let is_tag = function
   | PA.Atomic (PA.Event _) -> true
@@ -174,15 +172,13 @@ let mk_property_guard p =
   PA.Or (List.map (fun l -> PA.And l) dnf)
 
 let preprocess_properties ps =
-  let ps = List.map (fun x -> x.ast) ps in
-  automaton := ((* DBG eprintf "@[pick automaton@.";*) pick ok_automaton ps);
-  automaton :=
-    { !automaton with PA.edges = desugar_multi_edges !automaton.PA.edges };
+  let ps = List.map (fun x -> x.PA.ast) ps in
+  automaton := ((* DBG eprintf "@[pick automaton@.";*) pick PA.ok_automaton ps);
   automaton_guard := mk_property_guard !automaton
 
 let preprocess p =
-  preprocess_classes p.program_classes;
-  preprocess_properties p.program_properties
+  preprocess_classes p.SA.program_classes;
+  preprocess_properties p.SA.program_properties
 
 (* }}} *)
 (* error reporting *) (* {{{ *)
@@ -203,7 +199,7 @@ module PropertyInterpreter = struct
     let rv i = U.IntMap.find i e.PA.event_values in
     let rec f = function
       | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
-      | PA.Atomic (PA.Ct (v, i)) -> v = rv i
+      | PA.Atomic (PA.Ct (v, i)) -> int_of_string v = rv i
       | PA.Atomic (PA.Event et) -> et = e.PA.event_tag
       | PA.Atomic PA.Any -> true
       | PA.Not g -> not (f g)
@@ -278,20 +274,20 @@ let rec expression (state : 'a program_state) =
     assert (0 <= r && r < 2);
     r in
   let convert_value x = function
-    | Bool -> x land 1
-    | Unit -> 0
+    | SA.Bool -> x land 1
+    | SA.Unit -> 0
     | _ -> x in
   function
-    | Ac (Or, xs) -> List.fold_left max 0 (List.map bool_expression xs)
-    | Ac (And, xs) -> List.fold_left min 1 (List.map bool_expression xs)
-    | Bin (l, op, r) ->
-        if (expression state l = expression state r) = (op = Eq) then 1 else 0
-    | Not e -> (match expression state e with 0 -> 1 | _ -> 0)
-    | Deref (e, f) -> Heap.read state.heap (expression state e) f
-    | Ref x -> read_value state x
-    | Literal (_, {contents=None}) -> failwith "INTERNAL: TC should fill this"
-    | Literal (None, {contents=Some t}) -> convert_value (read_input ()) t
-    | Literal (Some x, {contents=Some t}) -> convert_value x t
+    | SA.Ac (SA.Or, xs) -> List.fold_left max 0 (List.map bool_expression xs)
+    | SA.Ac (SA.And, xs) -> List.fold_left min 1 (List.map bool_expression xs)
+    | SA.Bin (l, op, r) ->
+        if (expression state l = expression state r) = (op = SA.Eq) then 1 else 0
+    | SA.Not e -> (match expression state e with 0 -> 1 | _ -> 0)
+    | SA.Deref (e, f) -> Heap.read state.heap (expression state e) f
+    | SA.Ref x -> read_value state x
+    | SA.Literal (_, {contents=None}) -> failwith "INTERNAL: TC should fill this"
+    | SA.Literal (None, {contents=Some t}) -> convert_value (read_input ()) t
+    | SA.Literal (Some x, {contents=Some t}) -> convert_value x t
 
 let rec assignment (state : 'a program_state) x e =
   assign_value state x (expression state e)
@@ -299,45 +295,45 @@ let rec assignment (state : 'a program_state) x e =
 and call
   (chk : 'a -> 'b -> 'a)
   (state : 'a program_state)
-  (c : call_statement)
+  (c : SA.call_statement)
 =
   let event s e = { s with automaton_state = chk s.automaton_state e } in
   let m = (* method *)
-    U.StringPairMap.find (U.from_some c.call_class, c.call_method) !methods in
-  let mn = m.method_name in
-  let formals = "this" :: vars m.method_formals in
-  let args = List.map (expression state) (c.call_receiver::c.call_arguments) in
+    U.StringPairMap.find (U.from_some c.SA.call_class, c.SA.call_method) !methods in
+  let mn = m.SA.method_name in
+  let formals = "this" :: vars m.SA.method_formals in
+  let args = List.map (expression state) (c.SA.call_receiver::c.SA.call_arguments) in
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let method_id = (mn, List.length m.method_formals) in
+  let method_id = (mn, List.length m.SA.method_formals) in
   let state = event state (PA.mk_event PA.Call method_id args) in
-  let state, value = body chk { state with locals = m_locals } m.method_body in
+  let state, value = body chk { state with locals = m_locals } m.SA.method_body in
   let state = event state
     (PA.mk_event PA.Return method_id (U.list_of_option value)) in
   let state = { state with locals = locals } in
-  match c.call_lhs with
+  match c.SA.call_lhs with
     | Some x -> (* DBG eprintf "@[    %s returns %d@." c.call_method
     (U.from_some value);*) assign_value state x (U.from_some value)
     | None -> state, None
 
-and allocate (state : 'a program_state) { allocate_lhs = x; allocate_type = t} =
+and allocate (state : 'a program_state) { SA.allocate_lhs = x; SA.allocate_type = t} =
   match U.from_some t with
-    | Unit -> assign_value state x 0
-    | Bool -> assign_value state x (read_input () land 1)
-    | Class c ->
+    | SA.Unit -> assign_value state x 0
+    | SA.Bool -> assign_value state x (read_input () land 1)
+    | SA.Class c ->
         let fields = U.StringMap.find c !fields in
         let nh, no = Heap.new_object state.heap fields in
         let ns = { state with heap = nh } in
         assign_value ns x no
-    | AnyType _ ->
+    | SA.AnyType _ ->
         failwith "Huh? Only literals are polymorphic, and they're not on lhs."
 
 and while_ chk (state : 'a program_state) loop =
-  let state, value = body chk state loop.while_pre_body in
+  let state, value = body chk state loop.SA.while_pre_body in
   if value <> None then state, value else
-  if expression state loop.while_condition land 1 = 0 then state, None else
-  let state, value = body chk state loop.while_post_body in
+  if expression state loop.SA.while_condition land 1 = 0 then state, None else
+  let state, value = body chk state loop.SA.while_post_body in
   if value <> None then state, value else
   while_ chk state loop
 
@@ -348,17 +344,17 @@ and if_ chk (state : 'a program_state) c b =
     state, None
 
 and statement chk (state : 'a program_state) = function
-  | Return e -> (state, Some (expression state e))
-  | Assignment (x, e) -> assignment state x e
-  | Call c -> call chk state c
-  | Allocate a -> allocate state a
-  | While w -> while_ chk state w
-  | If (c, b) -> if_ chk state c b
+  | SA.Return e -> (state, Some (expression state e))
+  | SA.Assignment (x, e) -> assignment state x e
+  | SA.Call c -> call chk state c
+  | SA.Allocate a -> allocate state a
+  | SA.While w -> while_ chk state w
+  | SA.If (c, b) -> if_ chk state c b
 
-and body chk (state : 'a program_state) (Body (ds, ss)) =
+and body chk (state : 'a program_state) (SA.Body (ds, ss)) =
   let state = { state with
     locals = List.fold_left Stack.add_variable state.locals (vars ds) } in
-  let f acc { ast = s; line = line } = match acc with
+  let f acc { PA.ast = s; PA.line = line } = match acc with
     | (state, None) ->
         S.push line location_stack;
         let r = statement chk state s in
@@ -377,7 +373,7 @@ let main state = U.option () (fun m ->
      wrong type. This may happen with [var Foo x := *]. *)
 
 let program p =
-  let gs = vars p.program_globals in
+  let gs = vars p.SA.program_globals in
   let globals = List.fold_left Stack.add_variable Stack.empty gs in
   let state =
     { globals = globals
@@ -385,7 +381,7 @@ let program p =
     ; locals = Stack.empty
     ; automaton_state = automaton_start } in
   preprocess p;
-  main state p.program_main
+  main state p.SA.program_main
 
 (* }}} *)
 (* driver *) (* {{{ *)
@@ -405,3 +401,6 @@ let () =
     interpret Sys.argv.(i)
   done
 (* }}} *)
+(*  TODO
+  - statically check that constants are integers
+*)
