@@ -134,31 +134,32 @@ we found them not entirely suitable for our goal. For this reasons we have defin
 
 \TPL \ takes inspiration from several of such existing specification languages, but has  the following distinctive features:
 \begin{enumerate}
-\item It easily expresses relationships between several objects.
+\item It naturally expresses relationships between several objects.
 \item It is high-level and similar to diagrams used in informal explanations.
-\item It has a well-defined formal semantics in terms of a specific type of automatons.
+\item It has a well-defined formal semantics in terms of a specific type of automata.
 \item It is designed to be used in program analysis (both static and dynamic).
 \end{enumerate}
 The ability to express relations of several objects makes \TPL\ quite expressive.
-Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of a single object.
+Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of {\em one} single object.
 In contrast, TOPL does not try to achieve such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are sometimes better than one-object invariants.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
 Similarly, we believe that temporal properties that naturally involve several objects are easier to reason about if they are \emph{not} decomposed.
 Because TOPL is a high-level language and has formal semantics (points 2~and~3 above), it reduces the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification tools for automatic checking of these constraints.
 
 %\paragraph{Checking TOPL properties.}
 Having defined how to specify temporal properties in a convenient way, we then develop a technique for checking them at run-time on Java programs.
-Our method involves instrumenting the Java byte code in such a way it reflects the TOPL property of interest.
-Automatically checking TOPL properties is beneficial for the programmer since it relieves him/her from the burden of
-inserting ad-hoc checks interspersed in the code for tracing the violation of a correct temporal behaviour.
+Our method involves instrumenting the Java byte code in a way it reflects the TOPL property of interest.
+Automatic runt-time checking of TOPL properties is beneficial for the programmer. 
+In fact, it relieves him/her from the burden of 
+interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
 The Java API, for example, has hand-crafted code for checking certain temporal properties (\autoref{sec:examples.steps}).
 Such checks are
 \begin{itemize}
 \item hard to write,
-\item weaved with the code that solves the actual problem, and
-\item in the case of the Java API, do not provide a trace of the relevant events that lead to an error.
+\item weaved with the code solving the actual problem, and
+\item in the case of the Java API, do not provide with a trace of the relevant events leading to an error.
 \end{itemize}
-In contrast, dynamically checking TOPL properties  with our technique is transparent to the programmer therefore avoiding all these problems.
+In contrast, dynamically checking TOPL properties  with our technique is transparent to the programmer therefore avoiding all these issues.
 
 \dinocomment{below to be done more precisely when the paper is more concrete}
 The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
