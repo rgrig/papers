@@ -866,6 +866,7 @@ In the following we give a detailed description of the TOPL compile and the Prop
 
 
 \subsection{Run-time completeness}
+\dinocomment{Rewrite in term of "security".}
 A legitimate question about our run-time checker is whether it is {\em complete}. Informally, that can be expressed as:
 \begin{quote}
 if any run-time execution of the program leads to an error then will the checker detect the error?
@@ -883,7 +884,7 @@ if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception need t
 \end{center}
 \end{figure}
 
-\dinocomment{here define the notion and show that it is impossible to achive}
+\dinocomment{discuss about: conservative and transparent properties of an inliner}
 \dinocomment{talk about our strategy}
 \subsection{Checker}
 \subsection{Byte code instrumentation}
