@@ -38,7 +38,8 @@
 
 %public property: PROPERTY m=STRING LC observing* prefix* t=transition* RC {
   { PA.message = m
-  ; PA.edges = List.concat t }
+  ; PA.transitions = List.concat t
+  ; PA.name = "TODO" }
 }
 
 observing: OBSERVING { () }
@@ -47,9 +48,9 @@ prefix: PREFIX { () }
 
 transition: s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) {
   let f l =
-    { PA.edge_source = s
-    ; PA.edge_target = t
-    ; PA.edge_labels = l } in
+    { PA.source = s
+    ; PA.target = t
+    ; PA.labels = l } in
   List.map f ls
 }
 
@@ -57,23 +58,23 @@ label: l=call_label | l=return_label | l=mixed_label { l }
 
 call_label:
     CALL r=pexpr DOT m=ID LP a=separated_list(COMMA, pexpr) RP
-      { [ { PA.label_guard = mk_call_guard m (r :: a);
-           PA.label_action = mk_action (r :: a) } ] }
+      { [ { PA.guard = mk_call_guard m (r :: a);
+           PA.action = mk_action (r :: a) } ] }
 
 return_label:
     RETURN r=pexpr ASGN m=ID LB a=NUMBER RB
-      { [ { PA.label_guard = mk_return_guard m r a;
-            PA.label_action = mk_action [r] } ] }
+      { [ { PA.guard = mk_return_guard m r a;
+            PA.action = mk_action [r] } ] }
 
 mixed_label:
     l=pexpr r=receiver? DOT m=ID LP a=separated_list(COMMA, pexpr) RP
       { let l, r = match r with
           | None -> GuardAny, l
           | Some r -> l, r in [
-        { PA.label_guard = mk_call_guard m (r :: a);
-          PA.label_action = mk_action (r :: a) };
-        { PA.label_guard = mk_return_guard m l (List.length a);
-          PA.label_action = mk_action [l] } ] }
+        { PA.guard = mk_call_guard m (r :: a);
+          PA.action = mk_action (r :: a) };
+        { PA.guard = mk_return_guard m l (List.length a);
+          PA.action = mk_action [l] } ] }
 
 receiver: ASGN a=pexpr { a }
 

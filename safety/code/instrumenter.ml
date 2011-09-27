@@ -152,20 +152,24 @@ let compute_interesting_events x =
   let ieop = Array.make (Hashtbl.length iop) IntSet.empty in
   let fs acc s = match s.guard.pattern with
     | PAT_true -> acc
-    | PAT_re p ->  add_ints acc (Hashtbl.find x.pattern_tags p) in
+    | PAT_re p ->
+	try
+	  add_ints acc (Hashtbl.find x.pattern_tags p)
+	with Not_found -> failwith "cie" in
   let ft acc t = List.fold_left fs acc t.steps in
   let fv acc v = List.fold_left ft acc v.outgoing_transitions in
   let iv v =
     let i = Hashtbl.find iop v.vertex_property in
     ieop.(i) <- fv ieop.(i) v in
   Array.iter iv x.vertices;
-  (Array.map (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
-   Array.map IntSet.elements ieop)
+ (Array.map (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
+  Array.map IntSet.elements ieop)
+
 
 let pp_array pe ppf a =
   let l = Array.length a in
-  if l > 0 then fprintf ppf "@\n%a" pe (0, a.(0));
-  for i = 1 to l - 1 do fprintf ppf "@\n%a," pe (i, a.(i)) done
+  if l > 0 then fprintf ppf "@\n%a," pe (0, a.(0));
+  for i = 1 to l - 1 do fprintf ppf "@\n%a" pe (i, a.(i)) done
 
 let rec pp_list pe ppf = function
   | [] -> ()
@@ -197,10 +201,10 @@ let pp_condition f a =
   fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_literal_condition) a
 
 let pp_guard tags obs f {pattern=p; condition=cs} =
-  fprintf f "@[<2>%a@],@\n@[<2>%a)@]" (pp_pattern tags obs) p pp_condition cs
+  fprintf f "@[<2>%a@],@\n@[<2>%a@]" (pp_pattern tags obs) p pp_condition cs
 
 let pp_action f a =
-  fprintf f "@[<2>new Action(new SA.Assignment[]{%a})@]" (pp_list pp_assignment) a
+  fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_list pp_assignment) a
 
 let pp_step tags obs f {guard=g; action=a} =
   fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags obs) g pp_action a
@@ -297,13 +301,17 @@ let transform_pattern = function
 	; pattern_type = t
 	; pattern_arity = Some a }
 
-let transform_pg ifv = todo ()
+let transform_pgs ifv gs = [] (* TODO *)
 
-let mk_pattern ifv t gs =  (* TODO: revisit after parser rewrite *)
-  { pattern = transform_pattern t
-  ; condition = List.map (transform_pg ifv) gs}
+let mk_pattern ifv ptags t gs =  (* TODO: revisit after parser rewrite *)
+  let p = transform_pattern t in
+  (match p with
+    | PAT_true -> () 
+    | PAT_re pat -> Hashtbl.replace ptags pat []); (* TODO: update properly *)
+  { pattern = p
+  ; condition = transform_pgs ifv gs}
 
-let transform_guard ifv g =
+let transform_guard ifv ptags g =
   match PA.dnf g with
     | [g] ->
       let split (t, gs) = function
@@ -311,7 +319,7 @@ let transform_guard ifv g =
         | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
         | g -> t, g :: gs in
       let t, gs = List.fold_left split (None, []) g in
-      mk_pattern ifv t gs
+      mk_pattern ifv ptags t gs
     | _ -> failwith "Not from TOPL"
 
 let transform_condition ifv (store_var, event_index) =
@@ -320,8 +328,8 @@ let transform_condition ifv (store_var, event_index) =
 
 let transform_action ifv a = List.map (transform_condition ifv) a
 
-let transform_label ifv {PA.guard=g; PA.action=a} =
-  { guard = transform_guard ifv g
+let transform_label ifv ptags {PA.guard=g; PA.action=a} =
+  { guard = transform_guard ifv ptags g
   ; action = transform_action ifv a }
 
 let transform_properties ps =
@@ -331,20 +339,20 @@ let transform_properties ps =
     { vertex_property = p
     ; vertex_name = v
     ; outgoing_transitions = [] } in
-  let p =
+  let full_p =
     { vertices = inverse_index mk_vd iov
     ; pattern_tags = Hashtbl.create 13 } in
   let add_transition vi t =
-    let ts = p.vertices.(vi).outgoing_transitions in
-    p.vertices.(vi) <- {p.vertices.(vi) with outgoing_transitions = t :: ts} in
+    let ts = full_p.vertices.(vi).outgoing_transitions in
+    full_p.vertices.(vi) <- {full_p.vertices.(vi) with outgoing_transitions = t :: ts} in
   let ifv = Hashtbl.create 101 in
   let pe p {PA.source=s;PA.target=t;PA.labels=ls} =
     let s = Hashtbl.find iov (p, s) in
     let t = Hashtbl.find iov (p, t) in
-    let ls = List.map (transform_label ifv) ls in
+    let ls = List.map (transform_label ifv full_p.pattern_tags) ls in
     add_transition s {steps=ls; target=t} in
   List.iter (fun p -> List.iter (pe p) p.PA.transitions) ps;
-  p
+  full_p
 
 (*
   let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
