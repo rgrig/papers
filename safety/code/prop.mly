@@ -36,37 +36,64 @@
 
 %%
 
-%public property: PROPERTY m=STRING LC observing* prefix* t=transition* RC {
-  { PA.message = m
-  ; PA.edges = List.concat t }
-}
+%public property: PROPERTY ID LC item* RC
+      { { PA.name = "TODO"
+        ; PA.message = "TODO"
+        ; PA.transitions = [] } }
 
-observing: OBSERVING { () }
+item:
+    observing { () }
+  | prefix { () }
+  | message { () }
+  | transition { () }
 
-prefix: PREFIX { () }
+observing:
+    OBSERVING GLOB string_pattern { () }
+  | OBSERVING REGEXP string_pattern { () }
 
-transition: s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) {
-  let f l =
-    { PA.edge_source = s
-    ; PA.edge_target = t
-    ; PA.edge_labels = l } in
-  List.map f ls
-}
+prefix: PREFIX string_pattern { () }
 
-label: l=call_label | l=return_label | l=mixed_label { l }
+message: MESSAGE STRING { () }
+
+transition:
+    s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) { () }
+
+label:
+    RETURN value_pattern ASGN label_rhs(STAR)
+  | RETURN label_rhs(STAR)
+  | CALL STAR ASGN label_rhs(value_pattern)
+  | CALL label_rhs(value_pattern)
+  | label_rhs(value_pattern)
+  | value_pattern ASGN label_rhs(value_pattern) { () }
+
+label_rhs(ValuePattern):
+    ValuePattern DOT method_pattern(ValuePattern) { () }
+  | STAR { () }
+
+method_pattern(ValuePattern):
+    string_pattern args_pattern(ValuePattern) { () }
+  | STAR { () }
+
+args_pattern(Pattern):
+    LB integer_pattern RB
+  | LP separated_list(COMMA, Pattern) RP { () }
+
+integer_pattern:
+    NUMBER
+  | STAR { () }
 
 call_label:
-    CALL r=pexpr DOT m=ID LP a=separated_list(COMMA, pexpr) RP
+    CALL r=value_pattern DOT m=ID LP a=separated_list(COMMA, value_pattern) RP
       { [ { PA.label_guard = mk_call_guard m (r :: a);
            PA.label_action = mk_action (r :: a) } ] }
 
 return_label:
-    RETURN r=pexpr ASGN m=ID LB a=NUMBER RB
+    RETURN r=value_pattern ASGN m=ID LB a=NUMBER RB
       { [ { PA.label_guard = mk_return_guard m r a;
             PA.label_action = mk_action [r] } ] }
 
 mixed_label:
-    l=pexpr r=receiver? DOT m=ID LP a=separated_list(COMMA, pexpr) RP
+    l=value_pattern r=receiver? DOT m=ID LP a=separated_list(COMMA, value_pattern) RP
       { let l, r = match r with
           | None -> GuardAny, l
           | Some r -> l, r in [
@@ -75,9 +102,14 @@ mixed_label:
         { PA.label_guard = mk_return_guard m l (List.length a);
           PA.label_action = mk_action [l] } ] }
 
-receiver: ASGN a=pexpr { a }
+receiver: ASGN a=value_pattern { a }
 
-pexpr:
+string_pattern:
+    ID { () }
+  | CONSTANT { () }
+  | STAR { () }
+
+value_pattern:
     s=ID
       { if is_action s then Action (var s) else GuardVar s }
   | n=CONSTANT

@@ -1,10 +1,10 @@
 # Configuration
-CFLAGS=-dtypes,-w,Ae
+OCFLAGS=-dtypes,-w,a#Ae
 MAINS=interp gen instrumenter
 
 # Things that should seldom change
 BYTES=$(addsuffix .byte,$(MAINS))
-OCAMLBUILD=ocamlbuild -use-ocamlfind -cflags $(CFLAGS)
+OCAMLBUILD=ocamlbuild -use-ocamlfind -cflags $(OCFLAGS)
 
 byte:
 	@$(OCAMLBUILD) $(BYTES)
