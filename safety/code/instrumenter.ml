@@ -283,9 +283,28 @@ let property ppf p = todo () (*
 *)
 *)
 
-let mk_pattern t gs = todo ()
+let index_for_var ifv v =
+  try
+    Hashtbl.find ifv v
+  with Not_found ->
+    let i = Hashtbl.length ifv in
+      Hashtbl.replace ifv v i; i
 
-let transform_guard g =
+let transform_pattern = function
+  | None -> PAT_true
+  | Some (t, (m, a)) -> 
+      PAT_re 
+	{ pattern_re = Str.regexp m
+	; pattern_type = t
+	; pattern_arity = Some a }
+
+let transform_pg ifv = todo ()
+
+let mk_pattern ifv t gs =  (* TODO: revisit after parser rewrite *)
+  { pattern = transform_pattern t
+  ; condition = List.map (transform_pg ifv) gs}
+
+let transform_guard ifv g =
   match PA.dnf g with
     | [g] ->
       let split (t, gs) = function
@@ -293,14 +312,18 @@ let transform_guard g =
         | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
         | g -> t, g :: gs in
       let t, gs = List.fold_left split (None, []) g in
-      mk_pattern t gs
+      mk_pattern ifv t gs
     | _ -> failwith "Not from TOPL"
 
-let transform_action _ = todo ()
+let transform_condition ifv (store_var, event_index) =
+  let store_index = index_for_var ifv store_var in
+    (store_index, event_index)
 
-let transform_label {PA.label_guard=g; PA.label_action=a} =
-  { guard = transform_guard g
-  ; action = transform_action a }
+let transform_action ifv a = List.map (transform_condition ifv) a
+
+let transform_label ifv {PA.label_guard=g; PA.label_action=a} =
+  { guard = transform_guard ifv g
+  ; action = transform_action ifv a }
 
 let transform_properties ps =
   let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
@@ -315,10 +338,11 @@ let transform_properties ps =
   let add_transition vi t =
     let ts = p.vertices.(vi).outgoing_transitions in
     p.vertices.(vi) <- {p.vertices.(vi) with outgoing_transitions = t :: ts} in
+  let ifv = Hashtbl.create 101 in
   let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
     let s = Hashtbl.find iov (p, s) in
     let t = Hashtbl.find iov (p, t) in
-    let ls = List.map transform_label ls in
+    let ls = List.map (transform_label ifv) ls in
     add_transition s {steps=ls; target=t} in
   List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
   p
@@ -653,7 +677,10 @@ let read_properties fs =
   let e p = List.map (fun x -> x.PA.ast) p.SA.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let generate_checkers _ = todo ()
+let generate_checkers p =
+  let out_channel = open_out "topl/Property.java" in
+  let f = formatter_of_out_channel out_channel in
+  pp_automaton f p
 
 let () =
   let fs = ref [] in
