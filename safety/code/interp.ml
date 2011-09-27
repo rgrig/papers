@@ -221,20 +221,20 @@ module PropertyInterpreter = struct
   let evolve
     { automaton_node = v
     ; automaton_stack = s }
-    { PA.edge_source = src  (* the automaton edge being examined *)
-    ; PA.edge_target = tgt
-    ; PA.edge_labels = ls }
+    { PA.source = src  (* the automaton edge being examined *)
+    ; PA.target = tgt
+    ; PA.labels = ls }
   =
     assert (src = v);
     let f (ls, s) e = match ls with
       | [] -> raise (Return s)
       | l :: ls ->
-          let g = l.PA.label_guard in
+          let g = l.PA.guard in
           if not (evaluate_guard s e g) then begin
             if ls = [] then call_return_warn e g;
             raise No_match
           end;
-          let s = perform_action s l.PA.label_action e in
+          let s = perform_action s l.PA.action e in
           if ls = [] then raise (Return s);
           (ls, s) in
     try

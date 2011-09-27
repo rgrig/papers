@@ -28,6 +28,7 @@
 %token LC
 %token LP
 %token MAIN
+%token MESSAGE
 %token NAMED
 %token NE
 %token NEW
