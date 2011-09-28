@@ -15,27 +15,32 @@ type variable = string
 
 type vertex = string
 
-type method_ = string * int
+type value_guard =
+  | Variable of variable * int
+  | Constant of value * int
 
 type event_type =
   | Call
   | Return
 
-type event_tag = event_type * method_
+type ('a, 'b, 'c) tag =
+  { event_type : 'a
+  ; method_name : 'b
+  ; method_arity : 'c }
 
-type atomic_guard =
-  | Var of variable * int
-  | Ct of value * int
-  | Event of event_tag
-  | Any
+type tag_guard = ((event_type option), Str.regexp, (int option)) tag
 
-(* TODO: perhaps go back to the representation (tag, values check), since we
-         don't do desugaring to unit transitions anyway. *)
-type guard =
-  | Atomic of atomic_guard
-  | Not of guard
-  | And of guard list
-  | Or of guard list
+type event_tag = (event_type, string, int) tag
+
+type event_guard =
+  { tag_guard : tag_guard
+  ; value_guards : value_guard list }
+
+let check_event_guard g =
+  let chk n = function Variable (_, m) | Constant (_, m) ->
+    assert (0 <= m && m < n) in
+  let chk_all m = List.iter (chk m) g.value_guards in
+  U.option () chk_all g.tag_guard.method_arity
 
 type action = (variable * int) list
 
@@ -44,7 +49,7 @@ type 'a event =
   ; event_values : 'a U.IntMap.t }
 
 type label =
-  { guard : guard
+  { guard : event_guard
   ; action : action }
 
 type transition =
@@ -61,13 +66,9 @@ type t =
 let wvars l =
   List.map fst l.action
 
-let rvars { guard = g; _ } =
-  let rec f = function
-    | Atomic (Var (v, _)) -> [v]
-    | Not g -> f g
-    | And gs | Or gs -> List.concat (List.map f gs)
-    | _ -> [] in
-  f g
+let rvars l =
+  let f = function Variable (x, _) -> Some x | _ -> None in
+  U.map_option f l.guard.value_guards
 
 let vars_of_edge f e =
   List.concat (List.map f e.labels)
@@ -75,8 +76,11 @@ let vars_of_edge f e =
 let written_vars = vars_of_edge wvars
 let read_vars = vars_of_edge rvars
 
-let mk_event et m vs =
-  { event_tag = et, m
+let mk_event et mn ma vs =
+  { event_tag =
+    { event_type = et
+    ; method_name = mn
+    ; method_arity = ma }
   ; event_values =
       let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
       snd (List.fold_left f (0, U.IntMap.empty) vs) }
@@ -91,53 +95,18 @@ let guards_of_automaton {transitions=ts; _ } =
   let goe acc e = List.fold_left gol acc e.labels in
   List.fold_left goe [] ts
 
-let rec push_not_down p = function
-  | Atomic _ as g -> if p then g else Not g
-  | Not g -> push_not_down (not p) g
-  | And gs ->
-      let gs = List.map (push_not_down p) gs in
-      if p then And gs else Or gs
-  | Or gs ->
-      let gs = List.map (push_not_down p) gs in
-      if p then Or gs else And gs
+let get_tag_guards p =
+  let gs = guards_of_automaton p in
+  List.map (fun x -> x.tag_guard) gs
+
+let get_value_guards p =
+  let gs = guards_of_automaton p in
+  List.concat (List.map (fun x -> x.value_guards) gs)
 
 type conflict_var =
   | CV_ev_var of int
   | CV_aut_var of variable
   | CV_const of value
-
-let satisfiable_term t = (* TODO: what about Atomic Event? *)
-  let is_falsity = function
-    | Not (Atomic Any) -> true
-    | _ -> false in
-  if List.exists is_falsity t then false else
-  let uf = UnionFind.make () in
-  let process_eq = function
-    | Atomic (Var (x, i)) -> UnionFind.union uf (CV_aut_var x) (CV_ev_var i)
-    | Atomic (Ct (v, i)) -> UnionFind.union uf (CV_const v) (CV_ev_var i)
-    | _ -> () in
-  List.iter process_eq t;
-  let unsat_diseq = function
-    | Not (Atomic (Var (x, i))) -> UnionFind.equals uf (CV_aut_var x) (CV_ev_var i)
-    | Not (Atomic (Ct (v, i))) -> UnionFind.equals uf (CV_const v) (CV_ev_var i)
-    | _ -> false in
-  not (List.exists unsat_diseq t)
-
-let simplify_term xs =
-  let xs = U.unique xs in
-  if (satisfiable_term xs) then Some xs else None
-
-let simplify xss =
-  let xss = U.map_option simplify_term xss in
-  U.unique xss
-
-let dnf f =
-  let rec fold g = function
-    | ((Atomic _) | Not (Atomic _)) as x -> List.map (U.cons x) g
-    | And hs -> List.fold_left fold g hs
-    | Or hs -> List.concat (List.map (fold g) hs)
-    | _ -> failwith "I only work if not is pushed down" in
-  simplify (fold [[]] (push_not_down true f))
 
 let ok_automaton =
   { name = "AlwaysOk"
@@ -146,3 +115,7 @@ let ok_automaton =
   ; transitions = [] }
 
 (* }}} *)
+(* TODO
+    - variable and value should be parameters of a functor?
+    - change [event_values] to an array?
+ *)

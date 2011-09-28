@@ -107,22 +107,9 @@ let get_vertices p =
   let f acc t = t.PA.source :: t.PA.target :: acc in
   "start" :: "error" :: List.fold_left f [] p.PA.transitions
 
-let rec atomics_of_guard = function
-  | PA.Atomic a -> [a]
-  | PA.Not g -> atomics_of_guard g
-  | PA.And gs | PA.Or gs -> List.concat (List.map atomics_of_guard gs)
-
-let get_atomics p =
-  let gs = PA.guards_of_automaton p in
-  List.concat (List.map atomics_of_guard gs)
-
 let get_variables p =
-  let f = function PA.Var (v, _) -> Some v | _ -> None in
-  map_option f (get_atomics p)
-
-let get_tags p =
-  let f = function PA.Event t -> Some t | _ -> None in
-  map_option f (get_atomics p)
+  let f = function PA.Variable (v, _) -> Some v | _ -> None in
+  map_option f (PA.get_value_guards p)
 
 (* }}} *)
 (* pretty printing to Java *) (* {{{ *)
@@ -289,13 +276,7 @@ let index_for_var ifv v =
     let i = Hashtbl.length ifv in
       Hashtbl.replace ifv v i; i
 
-let transform_pattern = function
-  | None -> PAT_true
-  | Some (t, (m, a)) -> 
-      PAT_re 
-	{ pattern_re = Str.regexp m
-	; pattern_type = t
-	; pattern_arity = Some a }
+let transform_pattern = todo ()
 
 let transform_pg ifv = todo ()
 
@@ -303,7 +284,8 @@ let mk_pattern ifv t gs =  (* TODO: revisit after parser rewrite *)
   { pattern = transform_pattern t
   ; condition = List.map (transform_pg ifv) gs}
 
-let transform_guard ifv g =
+let transform_guard ifv g = todo ()
+(*
   match PA.dnf g with
     | [g] ->
       let split (t, gs) = function
@@ -313,6 +295,7 @@ let transform_guard ifv g =
       let t, gs = List.fold_left split (None, []) g in
       mk_pattern ifv t gs
     | _ -> failwith "Not from TOPL"
+*)
 
 let transform_condition ifv (store_var, event_index) =
   let store_index = index_for_var ifv store_var in

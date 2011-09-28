@@ -128,7 +128,7 @@ let pick x xs =
 (* global environment *) (* {{{ *)
 let automaton = ref PA.ok_automaton
   (* the property being checked, picked randomly *)
-let automaton_guard = ref (PA.Atomic PA.Any)
+let automaton_tag_guards = ref []
   (* an event is interesting if this guard evaluates to true on the event and
   any state *)
 let fields = ref U.StringMap.empty
@@ -156,25 +156,10 @@ let preprocess_classes cs =
     fields := U.StringMap.add c (U.StringSet.elements !fs) !fields in
   List.iter preprocess_class cs
 
-let is_tag = function
-  | PA.Atomic (PA.Event _) -> true
-  | PA.Not (PA.Atomic (PA.Event _)) -> true
-  | _ -> false
-
-(*
-  Constructs a guard that holds when there exist event values and an automaton
-  state that satisfy some guard of the given automaton.
-*)
-let mk_property_guard p =
-  let guards = PA.guards_of_automaton p in
-  let dnf = PA.dnf (PA.Or guards) in
-  let dnf = U.unique (List.map (List.filter is_tag) dnf) in
-  PA.Or (List.map (fun l -> PA.And l) dnf)
-
 let preprocess_properties ps =
   let ps = List.map (fun x -> x.PA.ast) ps in
   automaton := ((* DBG eprintf "@[pick automaton@.";*) pick PA.ok_automaton ps);
-  automaton_guard := mk_property_guard !automaton
+  automaton_tag_guards := PA.get_tag_guards !automaton
 
 let preprocess p =
   preprocess_classes p.SA.program_classes;
@@ -195,17 +180,18 @@ let report_error message =
 (* functions that evolve only the automata state *) (* {{{ *)
 
 module PropertyInterpreter = struct
-  let evaluate_guard s e =
-    let rv i = U.IntMap.find i e.PA.event_values in
-    let rec f = function
-      | PA.Atomic (PA.Var (x, i)) -> Stack.read s x = rv i
-      | PA.Atomic (PA.Ct (v, i)) -> int_of_string v = rv i
-      | PA.Atomic (PA.Event et) -> et = e.PA.event_tag
-      | PA.Atomic PA.Any -> true
-      | PA.Not g -> not (f g)
-      | PA.And gs -> List.for_all f gs
-      | PA.Or gs -> List.exists f gs in
-    f
+  let evaluate_tag_guard e g =
+    U.option true ((=) e.PA.event_type) g.PA.event_type &&
+    U.option true ((=) e.PA.method_arity) g.PA.method_arity &&
+    Str.string_match g.PA.method_name e.PA.method_name 0
+
+  let evaluate_value_guard s vs = function
+    | PA.Variable (x, i) -> Stack.read s x = U.IntMap.find i vs
+    | PA.Constant (v, i) -> int_of_string v = U.IntMap.find i vs
+
+  let evaluate_guard s e g =
+    evaluate_tag_guard e.PA.event_tag g.PA.tag_guard &&
+    List.for_all (evaluate_value_guard s e.PA.event_values) g.PA.value_guards
 
   let perform_action s a e =
     let f s (v, i) =
@@ -246,7 +232,8 @@ module PropertyInterpreter = struct
           Some ({ automaton_node = tgt; automaton_stack = s}, List.length ls)
 
   let check s e =
-    if not (evaluate_guard s.automaton_stack e !automaton_guard) then s else
+    if not (List.exists (evaluate_tag_guard e.PA.event_tag) !automaton_tag_guards)
+    then s else
     begin
       Queue.push e events;
       let outgoing = PA.outgoing !automaton s.automaton_node in
@@ -306,11 +293,11 @@ and call
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let method_id = (mn, List.length m.SA.method_formals) in
-  let state = event state (PA.mk_event PA.Call method_id args) in
+  let arity = List.length m.SA.method_formals in
+  let state = event state (PA.mk_event PA.Call mn arity args) in
   let state, value = body chk { state with locals = m_locals } m.SA.method_body in
   let state = event state
-    (PA.mk_event PA.Return method_id (U.list_of_option value)) in
+    (PA.mk_event PA.Return mn arity (U.list_of_option value)) in
   let state = { state with locals = locals } in
   match c.SA.call_lhs with
     | Some x -> (* DBG eprintf "@[    %s returns %d@." c.call_method

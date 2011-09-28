@@ -4,6 +4,7 @@
 
   module PA = PropAst
   module SA = SoolAst
+  module U = Util
 %}
 
 %token <int> NUMBER

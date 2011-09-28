@@ -10,22 +10,11 @@
   let is_action s = 'A' <= s.[0] && s.[0] < 'Z'
   let var = String.uncapitalize
 
-  let mk_guard ps =
-    let f (g, i) = function
-      | GuardVar v -> PA.Var (v, i) :: g, succ i
-      | GuardCt x -> PA.Ct (x, i) :: g, succ i
-      | _ -> g, i in
-    fst (List.fold_left f ([], 0) ps)
+  let mk_guard ps = U.todo ()
 
-  let mk_call_guard m ps =
-    let es = PA.Event (PA.Call, (m, List.length ps - 1)) :: mk_guard ps in
-    let es = List.map (fun x -> PA.Atomic x) es in
-    PA.And es
+  let mk_call_guard m ps = U.todo ()
 
-  let mk_return_guard m p n =
-    let es = PA.Event (PA.Return, (m, n)) :: mk_guard [p] in
-    let es = List.map (fun x -> PA.Atomic x) es in
-    PA.And es
+  let mk_return_guard m p n = U.todo ()
 
   let mk_action ps =
     let f (a, i) = function
