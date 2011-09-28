@@ -86,10 +86,10 @@ mixed_label:
       { let l, r = match r with
           | None -> GuardAny, l
           | Some r -> l, r in [
-        { PA.label_guard = mk_call_guard m (r :: a);
-          PA.label_action = mk_action (r :: a) };
-        { PA.label_guard = mk_return_guard m l (List.length a);
-          PA.label_action = mk_action [l] } ] }
+        { PA.guard = mk_call_guard m (r :: a);
+          PA.action = mk_action (r :: a) };
+        { PA.guard = mk_return_guard m l (List.length a);
+          PA.action = mk_action [l] } ] }
 
 receiver: ASGN a=value_pattern { a }
 
