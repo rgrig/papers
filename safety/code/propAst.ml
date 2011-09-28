@@ -44,23 +44,24 @@ type 'a event =
   ; event_values : 'a U.IntMap.t }
 
 type label =
-  { label_guard : guard
-  ; label_action : action }
+  { guard : guard
+  ; action : action }
 
-type edge =
-  { edge_source : vertex
-  ; edge_target : vertex
-  ; edge_labels : label list }
+type transition =
+  { source : vertex
+  ; target : vertex
+  ; labels : label list }
 
 type t =
-  { message : string
-  ; edges: edge list }
+  { name : string
+  ; message : string
+  ; transitions: transition list }
 (* }}} *)
 (* utilities *) (* {{{ *)
-let wvars { label_guard = _; label_action = a } =
-  List.map fst a
+let wvars l =
+  List.map fst l.action
 
-let rvars { label_guard = g; label_action = _ } =
+let rvars { guard = g; _ } =
   let rec f = function
     | Atomic (Var (v, _)) -> [v]
     | Not g -> f g
@@ -68,12 +69,8 @@ let rvars { label_guard = g; label_action = _ } =
     | _ -> [] in
   f g
 
-let vars_of_edge f
-  { edge_source = _
-  ; edge_target = _
-  ; edge_labels = ls }
-=
-  List.concat (List.map f ls)
+let vars_of_edge f e =
+  List.concat (List.map f e.labels)
 
 let written_vars = vars_of_edge wvars
 let read_vars = vars_of_edge rvars
@@ -84,16 +81,15 @@ let mk_event et m vs =
       let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
       snd (List.fold_left f (0, U.IntMap.empty) vs) }
 
-let edge_length e = List.length e.edge_labels
+let edge_length e = List.length e.labels
 
 let outgoing a src =
-  List.filter (fun e -> e.edge_source = src) a.edges
+  List.filter (fun e -> e.source = src) a.transitions
 
-let guards_of_automaton {message=_; edges=edges} =
-  let gol acc {label_guard=g; label_action=_} = g :: acc in
-  let goe acc {edge_source=_; edge_target=_; edge_labels=ls} =
-    List.fold_left gol acc ls in
-  List.fold_left goe [] edges
+let guards_of_automaton {transitions=ts; _ } =
+  let gol acc l = l.guard :: acc in
+  let goe acc e = List.fold_left gol acc e.labels in
+  List.fold_left goe [] ts
 
 let rec push_not_down p = function
   | Atomic _ as g -> if p then g else Not g
@@ -144,8 +140,9 @@ let dnf f =
   simplify (fold [[]] (push_not_down true f))
 
 let ok_automaton =
-  { message =
+  { name = "AlwaysOk"
+  ; message =
       "internal error: ok_automaton should be happy with all programs"
-  ; edges = [] }
+  ; transitions = [] }
 
 (* }}} *)

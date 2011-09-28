@@ -104,9 +104,8 @@ let get_properties x =
   x.vertices >> Array.map (function {vertex_property=p;_} -> p) >> Array.to_list
 
 let get_vertices p =
-  let f acc {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=_} =
-    s :: t :: acc in
-  "start" :: "error" :: List.fold_left f [] p.PA.edges
+  let f acc t = t.PA.source :: t.PA.target :: acc in
+  "start" :: "error" :: List.fold_left f [] p.PA.transitions
 
 let rec atomics_of_guard = function
   | PA.Atomic a -> [a]
@@ -321,7 +320,7 @@ let transform_condition ifv (store_var, event_index) =
 
 let transform_action ifv a = List.map (transform_condition ifv) a
 
-let transform_label ifv {PA.label_guard=g; PA.label_action=a} =
+let transform_label ifv {PA.guard=g; PA.action=a} =
   { guard = transform_guard ifv g
   ; action = transform_action ifv a }
 
@@ -339,12 +338,12 @@ let transform_properties ps =
     let ts = p.vertices.(vi).outgoing_transitions in
     p.vertices.(vi) <- {p.vertices.(vi) with outgoing_transitions = t :: ts} in
   let ifv = Hashtbl.create 101 in
-  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
+  let pe p {PA.source=s;PA.target=t;PA.labels=ls} =
     let s = Hashtbl.find iov (p, s) in
     let t = Hashtbl.find iov (p, t) in
     let ls = List.map (transform_label ifv) ls in
     add_transition s {steps=ls; target=t} in
-  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
+  List.iter (fun p -> List.iter (pe p) p.PA.transitions) ps;
   p
 
 (*

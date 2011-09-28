@@ -29,6 +29,7 @@
       ; "glob", GLOB
       ; "if", IF
       ; "main", MAIN
+      ; "message", MESSAGE
       ; "named", NAMED
       ; "new", NEW
       ; "observing", OBSERVING

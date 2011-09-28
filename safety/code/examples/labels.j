@@ -1,10 +1,11 @@
-property "Nonsense, but covering lots of labels"
-  observing glob java.util.{Iterator,Collection}.*
+property Labels
+  message "Nonsense, but covering lots of labels"
+  observing glob <java.util.{Iterator,Collection}.*>
   // observing names
   // observing relative
   // observing specific
-  using prefix java.util.Iterator
-  using prefix java.util.Collection
+  prefix <java.util.Iterator>
+  prefix <java.util.Collection>
   a -> b: x.m(y, z)
   a -> b: x.m(*, z)
   a -> b: *.m(y, z)
@@ -67,3 +68,4 @@ property "Nonsense, but covering lots of labels"
   a -> b: return *.*[2]
   a -> b: return *.*
   a -> b: return *
+  a -> b: return *.<return>[*]
