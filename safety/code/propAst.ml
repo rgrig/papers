@@ -15,9 +15,13 @@ type variable = string
 
 type vertex = string
 
-type value_guard =
-  | Variable of variable * int
-  | Constant of value * int
+(*
+ 'a denotes variable
+ 'b denotes value
+*)
+type ('a, 'b) value_guard =
+  | Variable of 'a * int
+  | Constant of 'b * int
 
 type event_type =
   | Call
@@ -32,9 +36,13 @@ type tag_guard = ((event_type option), Str.regexp, (int option)) tag
 
 type event_tag = (event_type, string, int) tag
 
-type event_guard =
+(*
+ 'a denotes variable
+ 'b denotes value
+*)
+type ('a, 'b) event_guard =
   { tag_guard : tag_guard
-  ; value_guards : value_guard list }
+  ; value_guards : ('a, 'b) value_guard list }
 
 let check_event_guard g =
   let chk n = function Variable (_, m) | Constant (_, m) ->
@@ -42,25 +50,34 @@ let check_event_guard g =
   let chk_all m = List.iter (chk m) g.value_guards in
   U.option () chk_all g.tag_guard.method_arity
 
-type action = (variable * int) list
+(* 'a denotes variable *)
+type 'a action = ('a * int) list
 
 type 'a event =
   { event_tag : event_tag
   ; event_values : 'a U.IntMap.t }
 
-type label =
-  { guard : event_guard
-  ; action : action }
+(*
+ 'a denotes variable
+ 'b denotes value
+*)
+type ('a, 'b) label =
+  { guard : ('a, 'b) event_guard
+  ; action : 'a action }
 
-type transition =
+(*
+ 'a denotes variable
+ 'b denotes value
+*)
+type ('a, 'b) transition =
   { source : vertex
   ; target : vertex
-  ; labels : label list }
+  ; labels : ('a, 'b) label list }
 
 type t =
   { name : string
   ; message : string
-  ; transitions: transition list }
+  ; transitions: (variable, value) transition list }
 (* }}} *)
 (* utilities *) (* {{{ *)
 let wvars l =
@@ -73,8 +90,8 @@ let rvars l =
 let vars_of_edge f e =
   List.concat (List.map f e.labels)
 
-let written_vars = vars_of_edge wvars
-let read_vars = vars_of_edge rvars
+let written_vars : (variable, value) transition -> variable list = vars_of_edge wvars
+let read_vars : (variable, value) transition -> variable list = vars_of_edge rvars
 
 let mk_event et mn ma vs =
   { event_tag =

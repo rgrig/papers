@@ -1,4 +1,5 @@
-property "called badMethod()"
+property BadCall
+  message "called badMethod()"
   start -> error: *.badMethod()
 
 class Object

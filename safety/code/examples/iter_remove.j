@@ -1,4 +1,5 @@
-property "trying to advance an iterator on a collection modified by another iterator"
+property OtherModified
+  message "trying to advance an iterator on a collection modified by another iterator"
   start -> gotOne:    I := C.iterator()
   gotOne -> gotTwo:   J := c.iterator()
   gotTwo -> jInvalid: i.remove()
@@ -6,25 +7,29 @@ property "trying to advance an iterator on a collection modified by another iter
   jInvalid -> error:  j.next()
   iInvalid -> error:  i.next()
 
-property "trying to advance an iterator on a modified collection"
+property AdvanceModified
+  message "trying to advance an iterator on a modified collection"
   start -> tracking:    I := C.iterator()
   tracking -> modified: c.add(*), c.remove(*)
   modified -> error:    i.next()
 
-property "advancing iterator without checking if not last"
+property AdvanceBlind
+  message "advancing iterator without checking if not last"
   start -> tracking:    I := *.iterator()
-  tracking -> notAtEnd: true := i.hasNext()
+  tracking -> notAtEnd: <true> := i.hasNext()
   notAtEnd -> tracking: i.next()
   tracking -> error:    i.next()
 
-property "trying to remove before iterator has been advanced"
+property RemoveStart
+  message "trying to remove before iterator has been advanced"
   start -> created: I := *.iterator()
   created -> ok:    i.next()
   created -> error: i.remove()
 
-property "trying to advance an iterator past the end"
+property AdvanceEnd
+  message "trying to advance an iterator past the end"
   start -> tracking:  I := *.iterator()
-  tracking -> atEnd:  false := i.hasNext()
+  tracking -> atEnd:  <false> := i.hasNext()
   atEnd -> error:     i.next()
 
 class Object {}

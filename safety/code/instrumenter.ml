@@ -14,14 +14,6 @@ type method_ =
   { method_name : string
   ; method_arity : int }
 
-type re_pattern =
-  { pattern_re : Str.regexp
-  ; pattern_type : PA.event_type
-  ; pattern_arity: int option }
-
-type pattern = PAT_true | PAT_re of re_pattern
-
-
 (* }}} *)
 (* representation of automata in Java *) (* {{{ *)
 
@@ -52,26 +44,8 @@ type vertex = int
 type variable = int
 type value = string (* Java literal *)
 
-type atomic_condition =
-  | AC_var of variable * int
-  | AC_ct of value * int
-
-type literal_condition =
-  | LC_pos of atomic_condition
-  | LC_neg of atomic_condition
-
-type guard =
-  { pattern : pattern
-  ; condition : literal_condition list }
-
-type action = (variable * int) list
-
-type step =
-  { guard : guard
-  ; action : action }
-
 type transition =
-  { steps : step list
+  { steps : (variable, value) PA.label list
   ; target : vertex }
 
 type vertex_data =
@@ -81,7 +55,7 @@ type vertex_data =
 
 type automaton =
   { vertices : vertex_data array
-  ; pattern_tags : (re_pattern, tag list) Hashtbl.t }
+  ; pattern_tags : (PA.tag_guard, tag list) Hashtbl.t }
   (* The keys of {pattern_tags} are filled in during the initial conversion,
     but the values (the tag list) is filled in while the code is being
     instrumented. *)
@@ -137,12 +111,7 @@ let errors x =
 let compute_interesting_events x =
   let iop = to_ints (get_properties x) in
   let ieop = Array.make (Hashtbl.length iop) IntSet.empty in
-  let fs acc s = match s.guard.pattern with
-    | PAT_true -> acc
-    | PAT_re p ->
-	try
-	  add_ints acc (Hashtbl.find x.pattern_tags p)
-	with Not_found -> failwith "cie" in
+  let fs acc s = add_ints acc (Hashtbl.find x.pattern_tags s.PA.guard.PA.tag_guard) in
   let ft acc t = List.fold_left fs acc t.steps in
   let fv acc v = List.fold_left ft acc v.outgoing_transitions in
   let iv v =
@@ -169,41 +138,35 @@ let pp_string f x = fprintf f "%s" x
 let pp_int_list f xs =
   fprintf f "@[<2>new int[]{%a}@]" (pp_list pp_int) xs
 
-let pp_atomic_condition f = function
-  | AC_var (x, i) -> fprintf f "new StoreEqualityGuard(%d, %d)" i x
-  | AC_ct (v, i) -> fprintf f "new ConstantEqualityGuard(%d, %s)" i v
+let pp_pattern tags obs f p = pp_int_list f (Hashtbl.find tags p)
 
-let pp_pattern tags obs f = function
-  | PAT_true -> pp_int_list f obs
-  | PAT_re p -> pp_int_list f (Hashtbl.find tags p)
-
-let pp_literal_condition f = function
-  | LC_pos c -> fprintf f "%a" pp_atomic_condition c
-  | LC_neg c -> fprintf f "new NotGuard(%a)" pp_atomic_condition c
+let pp_value_guard f = function
+  | PA.Variable (v, i) -> fprintf f "new StoreEqualityGuard(%d, %d)" i v
+  | PA.Constant (c, i) -> fprintf f "new ConstantEqualityGuard(%d, %s)" i c
 
 let pp_assignment f (x, i) =
   fprintf f "new Action.SA.Assignment(%d, %d)" x i
 
 let pp_condition f a =
-  fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_literal_condition) a
+  fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_value_guard) a
 
-let pp_guard tags obs f {pattern=p; condition=cs} =
+let pp_guard tags obs f {PA.tag_guard=p; PA.value_guards=cs} =
   fprintf f "@[<2>%a@],@\n@[<2>%a@]" (pp_pattern tags obs) p pp_condition cs
 
 let pp_action f a =
   fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_list pp_assignment) a
 
-let pp_step tags obs f {guard=g; action=a} =
+let pp_step tags obs f {PA.guard=g; PA.action=a} =
   fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags obs) g pp_action a
 
 let pp_transition tags obs f {steps=ss;target=t} =
   fprintf f "@[<2>new Transition(@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
 
-let pp_vertex tags pov ieop f (vi, {outgoing_transitions=ts;_}) =
+let pp_vertex tags pov ieop ifv f (vi, {outgoing_transitions=ts;_}) =
   let obs = Array.get ieop (Array.get pov vi) in
   fprintf f "@[<2>new Transition[]{%a}@]" (pp_list (pp_transition tags obs)) ts
 
-let pp_automaton f x =
+let pp_automaton ifv f x =
   let pov, ieop = compute_interesting_events x in
   fprintf f "package topl;@\n@\n";
   fprintf f "import static topl.Checker.*;@\n@\n";
@@ -211,7 +174,7 @@ let pp_automaton f x =
   fprintf f   "@[<2>public static Checker checker = new Checker(new Automaton(@\n";
   fprintf f     "%a,@\n" pp_int_list (starts x);
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
-  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_array (pp_vertex x.pattern_tags pov ieop)) x.vertices;
+  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_array (pp_vertex x.pattern_tags pov ieop ifv)) x.vertices;
   fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
   fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) (Array.to_list ieop);
   fprintf f   "@]));@\n";
@@ -220,59 +183,6 @@ let pp_automaton f x =
 (* }}} *)
 (* conversion to Java representation *) (* {{{ *)
 
-(*
-let rec guard ppf = function
-  | PA.Atomic (PA.Var (av, ev)) -> fprintf ppf "new Checker.StoreEqualityGuard(%d, %d)" ev (Hashtbl.find variable av)
-  | PA.Atomic (PA.Ct (ct, ev)) -> fprintf ppf "new Checker.ConstantEqualityGuard(%d, %d)" ev ct
-  | PA.Atomic (PA.Any) -> fprintf ppf "new Checker.TrueGuard()"
-  | PA.Atomic (PA.Event _) -> failwith "INTERNAL: should be pruned by transform_guard"
-  | PA.Not g -> fprintf ppf "new Checker.NotGuard(%a)" guard g
-  | PA.And [] -> guard ppf (PA.Atomic PA.Any)
-  | PA.Or [] -> guard ppf (PA.Not (PA.Atomic PA.Any))
-  | PA.And [g] | PA.Or [g] -> guard ppf g
-  | PA.And gs -> fprintf ppf "@[<2>new Checker.AndGuard(new Checker.Guard[]{%a})@]" (pp_list guard) gs
-  | PA.Or gs -> fprintf ppf "@[<2>new Checker.OrGuard(new Checker.Guard[]{%a})@]" (pp_list guard) gs
-
-let assignment ppf (av, ev) =
-  fprintf ppf "new Checker.Action.SA.Assignment(%d, %d)"
-    (Hashtbl.find variable av) ev
-
-let action ppf xs =
-  fprintf ppf "@[<2>new Checker.Action(new Checker.Action.SA.Assignment[]{%a})@]" (pp_list assignment) xs
-
-let label ppf {PA.label_guard=g; PA.label_action=a} =
-  let gt, gr = transform_guard g in
-  fprintf ppf "@[<2>new Checker.TransitionStep(";
-  fprintf ppf   "@\n@[<2>new int[]{%a}@],"
-    (pp_list (fun ppf x -> fprintf ppf "%d" x)) gt;
-  fprintf ppf   "@\n%a," guard gr;
-  fprintf ppf   "@\n%a)@]" action a
-
-let one_outgoing ppf (ls, tgt) =
-  fprintf ppf "@[<2>new Checker.Transition(@\n@[<2>new Checker.TransitionStep[]{%a}@],@\n%d)@]"
-    (pp_list label) ls
-    tgt
-
-let all_outgoing ppf ts =
-  fprintf ppf "@[<2>new Checker.Transition[]{%a}@]" (pp_list one_outgoing) ts
-
-let property ppf p = todo () (*
-  to_ints vertex (get_vertices p);
-  to_ints variable (get_variables p);
-  to_ints tag (get_tags p);
-  fprintf ppf "@[<2>";
-  fprintf ppf "Checker %s = new Checker(" (id ());
-  fprintf ppf   "@\n\"%s\"," p.PA.message;
-  fprintf ppf   "@\n@[<2>new Checker.Automaton(%d, %d, new Checker.Transition[][]{%a})@]"
-    (Hashtbl.find vertex "start")
-    (Hashtbl.find vertex "error")
-    (pp_list all_outgoing) (transform_graph p.PA.edges);
-  fprintf ppf ");";
-  fprintf ppf "@]@\n"
-  (* TODO: print [vertex], [variable], [tag] (in comments). *)
-*)
-*)
-
 let index_for_var ifv v =
   try
     Hashtbl.find ifv v
@@ -280,30 +190,16 @@ let index_for_var ifv v =
     let i = Hashtbl.length ifv in
       Hashtbl.replace ifv v i; i
 
-let transform_pattern = todo ()
+(* just record the tag in ptags *)
+let transform_tag_guard ptags tg = Hashtbl.replace ptags tg []; tg
 
-let transform_pgs ifv gs = [] (* TODO *)
+let transform_value_guard ifv = function
+  | PA.Variable (v, i) -> PA.Variable (index_for_var ifv v, i)
+  | PA.Constant (c, i) -> PA.Constant (c, i)
 
-let mk_pattern ifv ptags t gs =  (* TODO: revisit after parser rewrite *)
-  let p = transform_pattern t in
-  (match p with
-    | PAT_true -> () 
-    | PAT_re pat -> Hashtbl.replace ptags pat []); (* TODO: update properly *)
-  { pattern = p
-  ; condition = transform_pgs ifv gs}
-
-let transform_guard ifv g = todo ()
-(*
-  match PA.dnf g with
-    | [g] ->
-      let split (t, gs) = function
-        | PA.Not (PA.Atomic (PA.Event _)) -> failwith "Not from TOPL"
-        | PA.Atomic (PA.Event t') -> assert (t = None); Some t', gs
-        | g -> t, g :: gs in
-      let t, gs = List.fold_left split (None, []) g in
-      mk_pattern ifv ptags t gs
-    | _ -> failwith "Not from TOPL"
-*)
+let transform_guard ifv ptags {PA.tag_guard=tg; PA.value_guards=vgs} =
+  { PA.tag_guard = transform_tag_guard ptags tg
+  ; PA.value_guards = List.map (transform_value_guard ifv) vgs }
 
 let transform_condition ifv (store_var, event_index) =
   let store_index = index_for_var ifv store_var in
@@ -312,8 +208,8 @@ let transform_condition ifv (store_var, event_index) =
 let transform_action ifv a = List.map (transform_condition ifv) a
 
 let transform_label ifv ptags {PA.guard=g; PA.action=a} =
-  { guard = transform_guard ifv ptags g
-  ; action = transform_action ifv a }
+  { PA.guard = transform_guard ifv ptags g
+  ; PA.action = transform_action ifv a }
 
 let transform_properties ps =
   let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
@@ -335,24 +231,7 @@ let transform_properties ps =
     let ls = List.map (transform_label ifv full_p.pattern_tags) ls in
     add_transition s {steps=ls; target=t} in
   List.iter (fun p -> List.iter (pe p) p.PA.transitions) ps;
-  full_p
-
-(*
-  let vs p = p >> get_vertices >> List.map (fun v -> (p, v)) in
-  to_ints vertex (ps >>= vs);
-  let named s p = Hashtbl.find vertex (p, s) in
-  let q =
-    { starts = List.map (named "start") ps
-    ; errors = List.map (named "error") ps
-    ; adjacency = Array.make (Hashtbl.length vertex) [] } in
-  let pe p {PA.edge_source=s;PA.edge_target=t;PA.edge_labels=ls} =
-    let s = Hashtbl.find vertex (p, s) in
-    let t = Hashtbl.find vertex (p, t) in
-    let ls = List.map transform_label ls in
-    q.adjacency.(s) <- {steps=ls; target=t} :: q.adjacency.(s) in
-  List.iter (fun p -> List.iter (pe p) p.PA.edges) ps;
-  todo ()
-*)
+  full_p, ifv
 
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
@@ -373,10 +252,6 @@ let endswith suffix s =
 
 let classfiles_of_path =
   fs_filter (endswith ".class")
-
-(*
-let classes_of_lowlevel_classes _ = failwith "todo"
-*)
 
 let classes_of_classfile fn =
   try fn
@@ -483,7 +358,7 @@ let bc_check =
 
 let does_method_match
   ({ method_name=mn; method_arity=ma }, mt)
-  { pattern_re=re; pattern_type=t; pattern_arity=a }
+  { PA.event_type=t; PA.method_name=re; PA.method_arity=a }
 =
   option true ((=) ma) a &&
   mt = t &&
@@ -580,8 +455,8 @@ let instrument_method get_tag h c = function
       let nr_params = List.length param_types in
       let overrides =
         get_overrides h c (mk_method r.B.Method.name nr_params) in
-      let call_id = get_tag PA.Call overrides in
-      let return_id = get_tag PA.Return overrides in
+      let call_id = get_tag (Some PA.Call) overrides in
+      let return_id = get_tag (Some PA.Return) overrides in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
@@ -667,10 +542,10 @@ let read_properties fs =
   let e p = List.map (fun x -> x.PA.ast) p.SA.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let generate_checkers p =
+let generate_checkers ifv p =
   let out_channel = open_out "topl/Property.java" in
   let f = formatter_of_out_channel out_channel in
-  pp_automaton f p
+  pp_automaton ifv f p
 
 let () =
   let fs = ref [] in
@@ -679,9 +554,9 @@ let () =
     "usage: ./instrumenter [-cp <classpath>] <property_files>";
   let h = compute_inheritance !cp in
   let ps = read_properties !fs in
-  let p = transform_properties ps in
+  let p, ifv = transform_properties ps in
   instrument_bytecode (get_tag p) !cp h;
-  generate_checkers p
+  generate_checkers ifv p
 
 (*
 let () = ()
