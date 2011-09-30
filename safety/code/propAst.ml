@@ -5,11 +5,10 @@ module U = Util
 
 (* }}} *)
 (* data types *) (* {{{ *)
+
 type 'a with_line = { ast : 'a; line : int }
 
 type value = string
-  (* for Java, an expression that builds a value;
-     for SOOL, an integer *)
 
 type variable = string
 
@@ -32,17 +31,13 @@ type ('a, 'b, 'c) tag =
   ; method_name : 'b
   ; method_arity : 'c }
 
-type tag_guard = ((event_type option), Str.regexp, (int option)) tag
+type 'a tag_guard = ((event_type option), 'a, (int option)) tag
 
 type event_tag = (event_type, string, int) tag
 
-(*
- 'a denotes variable
- 'b denotes value
-*)
 type ('a, 'b) event_guard =
-  { tag_guard : tag_guard
-  ; value_guards : ('a, 'b) value_guard list }
+  { tag_guard : 'a tag_guard
+  ; value_guards : 'b list }
 
 let check_event_guard g =
   let chk n = function Variable (_, m) | Constant (_, m) ->
@@ -56,28 +51,23 @@ type 'a action = ('a * int) list
 type 'a event =
   { event_tag : event_tag
   ; event_values : 'a U.IntMap.t }
+  (* I'm using an IntMap rather than an array because I prefer immutability.
+    Performance is unlikely to be a problem as the typical size is <5. *)
 
-(*
- 'a denotes variable
- 'b denotes value
-*)
-type ('a, 'b) label =
+type ('a, 'b, 'c) label =
   { guard : ('a, 'b) event_guard
-  ; action : 'a action }
+  ; action : 'c action }
+  (* TODO 'b and 'c relation *)
 
-(*
- 'a denotes variable
- 'b denotes value
-*)
-type ('a, 'b) transition =
+type ('a, 'b, 'c) transition =
   { source : vertex
   ; target : vertex
-  ; labels : ('a, 'b) label list }
+  ; labels : ('a, ('b, 'c) value_guard, 'b) label list }
 
 type t =
   { name : string
   ; message : string
-  ; transitions: (variable, value) transition list }
+  ; transitions: (Str.regexp, variable, value) transition list }
 (* }}} *)
 (* utilities *) (* {{{ *)
 let wvars l =
@@ -90,8 +80,8 @@ let rvars l =
 let vars_of_edge f e =
   List.concat (List.map f e.labels)
 
-let written_vars : (variable, value) transition -> variable list = vars_of_edge wvars
-let read_vars : (variable, value) transition -> variable list = vars_of_edge rvars
+let written_vars t = vars_of_edge wvars t
+let read_vars t = vars_of_edge rvars t
 
 let mk_event et mn ma vs =
   { event_tag =
@@ -101,6 +91,10 @@ let mk_event et mn ma vs =
   ; event_values =
       let f (i, acc) v = (succ i, U.IntMap.add i v acc) in
       snd (List.fold_left f (0, U.IntMap.empty) vs) }
+
+let mk_event_guard t v =
+  let r = { tag_guard = t; value_guards = v } in
+  check_event_guard r; r
 
 let edge_length e = List.length e.labels
 
@@ -120,11 +114,6 @@ let get_value_guards p =
   let gs = guards_of_automaton p in
   List.concat (List.map (fun x -> x.value_guards) gs)
 
-type conflict_var =
-  | CV_ev_var of int
-  | CV_aut_var of variable
-  | CV_const of value
-
 let ok_automaton =
   { name = "AlwaysOk"
   ; message =
@@ -132,7 +121,3 @@ let ok_automaton =
   ; transitions = [] }
 
 (* }}} *)
-(* TODO
-    - variable and value should be parameters of a functor?
-    - change [event_values] to an array?
- *)

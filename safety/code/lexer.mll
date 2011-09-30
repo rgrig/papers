@@ -26,19 +26,15 @@
       ; "do", DO
       ; "else", ELSE
       ; "false", NUMBER 0
-      ; "glob", GLOB
       ; "if", IF
       ; "main", MAIN
       ; "message", MESSAGE
-      ; "named", NAMED
       ; "new", NEW
       ; "observing", OBSERVING
       ; "or", OR
       ; "prefix", PREFIX
       ; "property", PROPERTY
-      ; "regexp", REGEXP
       ; "return", RETURN
-      ; "true", NUMBER 1
       ; "var", VAR
       ; "while", WHILE ];
     fun id -> l (try Hashtbl.find table id with Not_found -> ID id)

@@ -45,7 +45,7 @@ type variable = int
 type value = string (* Java literal *)
 
 type transition =
-  { steps : (variable, value) PA.label list
+  { steps : (Str.regexp, (variable, value) PA.value_guard, variable) PA.label list
   ; target : vertex }
 
 type vertex_data =
@@ -55,7 +55,7 @@ type vertex_data =
 
 type automaton =
   { vertices : vertex_data array
-  ; pattern_tags : (PA.tag_guard, tag list) Hashtbl.t }
+  ; pattern_tags : (Str.regexp PA.tag_guard, tag list) Hashtbl.t }
   (* The keys of {pattern_tags} are filled in during the initial conversion,
     but the values (the tag list) is filled in while the code is being
     instrumented. *)

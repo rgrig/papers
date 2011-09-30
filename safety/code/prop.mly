@@ -7,104 +7,175 @@
     | GuardCt of PA.value
     | GuardAny
 
+  type item =
+    | I_message of string
+    | I_observing of string
+    | I_prefix of string
+    | I_transitions of (string, PA.variable, PA.value) PA.transition list
+
   let is_action s = 'A' <= s.[0] && s.[0] < 'Z'
   let var = String.uncapitalize
 
-  let mk_guard ps = U.todo ()
+  let re_of_glob_map =
+    let f m (k, v) = U.CharMap.add k v m in
+    List.fold_left f U.CharMap.empty
+      [ '\\', "\\\\"
+      ; '$', "\\$"
+      ; '^', "\\^"
+      ; '.', "\\."
+      ; '+', "\\+"
+      ; '?', "\\?"
+      ; '[', "\\["
+      ; ']', "\\]"
+      ; '*', ".*"
+      ; '{', "\\(\\("
+      ; '}', "\\)\\)"
+      ; ',', "\\)\\|\\(" ]
 
-  let mk_call_guard m ps = U.todo ()
+  let re_of_glob e g =
+    let lg = String.length g in
+    let r = Buffer.create (2 * lg) in
+    let c = ref 0 in
+    for i = 0 to lg - 1 do begin
+      if g.[i] = '{' then incr c;
+      if g.[i] = '}' then decr c;
+      try  Buffer.add_string r (U.CharMap.find g.[i] re_of_glob_map)
+      with Not_found -> Buffer.add_char r g.[i]
+    end done;
+    if !c <> 0 then e (); (* syntax error *)
+    Buffer.contents r
 
-  let mk_return_guard m p n = U.todo ()
+  let mk_args_pattern a ps =
+    { PA.tag_guard =
+      { PA.event_type = None
+      ; PA.method_name = ".*"
+      ; PA.method_arity = a }
+    ; PA.value_guards = ps }
 
-  let mk_action ps =
-    let f (a, i) = function
-      | Action v -> (v, i) :: a, succ i
-      | _ -> a, succ i in
-    fst (List.fold_left f ([], 0) ps)
+  let any_tag_guard =
+    { PA.tag_guard =
+      { PA.event_type = None
+      ; PA.method_name = ".*"
+      ; PA.method_arity = None }
+    ; PA.value_guards = [] }
+
+  let fold_with_index f init xs =
+    let g (i, acc) x = succ i, f acc i x in
+    snd (List.fold_left g (0, init) xs)
+
+  let mk_value_guards =
+    let f acc i = function
+      | GuardVar x -> PA.Variable (x, i) :: acc
+      | GuardCt v -> PA.Constant (v, i) :: acc
+      | _ -> acc in
+    fold_with_index f []
+
+  let mk_action =
+    let f acc i = function
+      | Action v -> (v, i) :: acc
+      | _ -> acc in
+    fold_with_index f []
+
+  let mk_label g t vs =
+    let g =
+      { g with
+        PA.tag_guard = { g.PA.tag_guard with PA.event_type = Some t }
+      ; PA.value_guards = mk_value_guards vs } in
+    PA.check_event_guard g;
+    { PA.guard = g
+    ; PA.action = mk_action vs }
+
+  let mk_transitions s t lss =
+    let f ls = { PA.source = s; PA.target = t; PA.labels = ls } in
+    List.map f lss
+
+  let mk_property e n xs =
+    let m = U.map_option (function I_message x -> Some x | _ -> None) xs in
+    let o = U.map_option (function I_observing x -> Some x | _ -> None) xs in
+    let p = U.map_option (function I_prefix x -> Some x | _ -> None) xs in
+    let t = U.map_option (function I_transitions x -> Some x | _ -> None) xs in
+    let m = match m with
+      | [] -> sprintf "@[%s failed@]" n
+      | [m] -> m
+      | _ -> eprintf "@[ERROR: Property %s has more than one message.@." n; e () in
+    U.todo ()
 %}
 
 %%
 
-%public property: PROPERTY ID LC item* RC
-      { { PA.name = "TODO"
-        ; PA.message = "TODO"
-        ; PA.transitions = [] } }
+%public property:
+  PROPERTY n=ID LC xs=item* RC
+  { mk_property (fun () -> $syntaxerror) n xs }
 
 item:
-    observing { () }
-  | prefix { () }
-  | message { () }
-  | transition { () }
+    i=message
+  | i=observing
+  | i=prefix
+  | i=transition
+  { i }
 
 observing:
-    OBSERVING GLOB string_pattern { () }
-  | OBSERVING REGEXP string_pattern { () }
+    OBSERVING p=string_pattern { I_observing p }
 
-prefix: PREFIX string_pattern { () }
+prefix: PREFIX p=string_pattern { I_prefix p }
 
-message: MESSAGE STRING { () }
+message: MESSAGE m=STRING { I_message m }
 
 transition:
-    s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, label) { () }
+    s=ID ARROW t=ID COLON ls=separated_nonempty_list(COMMA, big_label)
+    { I_transitions (mk_transitions s t ls) }
 
-label:
-    RETURN value_pattern ASGN label_rhs(STAR)
-  | RETURN label_rhs(STAR)
-  | CALL STAR ASGN label_rhs(value_pattern)
-  | CALL label_rhs(value_pattern)
-  | label_rhs(value_pattern)
-  | value_pattern ASGN label_rhs(value_pattern) { () }
+big_label:
+    RETURN v=value_pattern ASGN g=label_rhs(any_value)
+      { [mk_label g PA.Return [v]] }
+  | RETURN g=label_rhs(any_value)
+      { [mk_label g PA.Return []] }
+  | CALL STAR ASGN g=label_rhs(value_pattern)
+      { [mk_label g PA.Call g.PA.value_guards] }
+  | CALL g=label_rhs(value_pattern)
+      { [mk_label g PA.Call []] }
+  | g=label_rhs(value_pattern)
+      { [ mk_label g PA.Call g.PA.value_guards
+        ; mk_label g PA.Return [GuardAny] ] }
+  | v=value_pattern ASGN g=label_rhs(value_pattern)
+      { [ mk_label g PA.Call g.PA.value_guards
+        ; mk_label g PA.Return [v] ] }
 
 label_rhs(ValuePattern):
-    ValuePattern DOT method_pattern(ValuePattern) { () }
-  | STAR { () }
+    v=ValuePattern DOT m=method_pattern(ValuePattern)
+      { { m with PA.value_guards = v :: m.PA.value_guards } }
+  | STAR { any_tag_guard }
 
 method_pattern(ValuePattern):
-    string_pattern args_pattern(ValuePattern) { () }
-  | STAR { () }
+    m=string_pattern x=args_pattern(ValuePattern)
+      { { x with PA.tag_guard = { x.PA.tag_guard with PA.method_name = m } } }
+  | STAR { any_tag_guard }
 
-args_pattern(Pattern):
-    LB integer_pattern RB
-  | LP separated_list(COMMA, Pattern) RP { () }
+args_pattern(ValuePattern):
+    LB a=integer_pattern RB
+      { mk_args_pattern a [] }
+  | LP ps=separated_list(COMMA, ValuePattern) RP
+      { mk_args_pattern (Some (List.length ps)) ps }
 
 integer_pattern:
-    NUMBER
-  | STAR { () }
-
-call_label:
-    CALL r=value_pattern DOT m=ID LP a=separated_list(COMMA, value_pattern) RP
-      { [ { PA.label_guard = mk_call_guard m (r :: a);
-           PA.label_action = mk_action (r :: a) } ] }
-
-return_label:
-    RETURN r=value_pattern ASGN m=ID LB a=NUMBER RB
-      { [ { PA.label_guard = mk_return_guard m r a;
-            PA.label_action = mk_action [r] } ] }
-
-mixed_label:
-    l=value_pattern r=receiver? DOT m=ID LP a=separated_list(COMMA, value_pattern) RP
-      { let l, r = match r with
-          | None -> GuardAny, l
-          | Some r -> l, r in [
-        { PA.guard = mk_call_guard m (r :: a);
-          PA.action = mk_action (r :: a) };
-        { PA.guard = mk_return_guard m l (List.length a);
-          PA.action = mk_action [l] } ] }
-
-receiver: ASGN a=value_pattern { a }
+    n=NUMBER { Some n }
+  | STAR { None }
 
 string_pattern:
-    ID { () }
-  | CONSTANT { () }
-  | STAR { () }
+    x=ID { x }
+  | x=CONSTANT { re_of_glob (fun () -> $syntaxerror) x }
+  | x=STAR { ".*" }
 
 value_pattern:
-    s=ID
-      { if is_action s then Action (var s) else GuardVar s }
-  | n=CONSTANT
-      { GuardCt n }
+    x=ID
+      { if is_action x then Action (var x) else GuardVar x }
+  | v=CONSTANT
+      { GuardCt v }
   | STAR
       { GuardAny }
+
+any_value:
+    STAR { GuardAny }
 
 %%
 

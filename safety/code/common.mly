@@ -23,14 +23,12 @@
 %token ELSE
 %token EOF
 %token EQ
-%token GLOB
 %token IF
 %token LB
 %token LC
 %token LP
 %token MAIN
 %token MESSAGE
-%token NAMED
 %token NE
 %token NEW
 %token NOT
@@ -40,7 +38,6 @@
 %token PROPERTY
 %token RB
 %token RC
-%token REGEXP
 %token RETURN
 %token RP
 %token STAR

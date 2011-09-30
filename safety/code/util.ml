@@ -51,6 +51,7 @@ struct
   let compare = compare
 end
 
+module CharMap = Map.Make (Char)
 module IntMap : (Map.S with type key = int) = Map.Make (Int)
 module IntSet : (Set.S with type elt = int) = Set.Make (Int)
 module StringMap = Map.Make (String)
