@@ -5,39 +5,32 @@ module U = Util
 
 (* }}} *)
 (* data types *) (* {{{ *)
-
 type 'a with_line = { ast : 'a; line : int }
-
-type value = string
-
-type variable = string
 
 type vertex = string
 
-(*
- 'a denotes variable
- 'b denotes value
-*)
-type ('a, 'b) value_guard =
-  | Variable of 'a * int
-  | Constant of 'b * int
+type ('variable, 'value) value_guard =
+  | Variable of 'variable * int
+  | Constant of 'value * int
 
 type event_type =
   | Call
   | Return
 
-type ('a, 'b, 'c) tag =
-  { event_type : 'a
-  ; method_name : 'b
-  ; method_arity : 'c }
+type ('event_type, 'method_name, 'method_arity) tag =
+  { event_type : 'event_type
+  ; method_name : 'method_name
+  ; method_arity : 'method_arity }
+  (* Common shape for [tag_guard] and [event_tag]. *)
 
-type 'a tag_guard = ((event_type option), 'a, (int option)) tag
+type 'method_name tag_guard =
+  ((event_type option), 'method_name, (int option)) tag
 
 type event_tag = (event_type, string, int) tag
 
-type ('a, 'b) event_guard =
-  { tag_guard : 'a tag_guard
-  ; value_guards : 'b list }
+type ('method_name, 'value_guard) event_guard =
+  { tag_guard : 'method_name tag_guard
+  ; value_guards : 'value_guard list }
 
 let check_event_guard g =
   let chk n = function Variable (_, m) | Constant (_, m) ->
@@ -45,29 +38,31 @@ let check_event_guard g =
   let chk_all m = List.iter (chk m) g.value_guards in
   U.option () chk_all g.tag_guard.method_arity
 
-(* 'a denotes variable *)
-type 'a action = ('a * int) list
+type 'variable action = ('variable * int) list
 
-type 'a event =
+type 'value event =
   { event_tag : event_tag
-  ; event_values : 'a U.IntMap.t }
+  ; event_values : 'value U.IntMap.t }
   (* I'm using an IntMap rather than an array because I prefer immutability.
     Performance is unlikely to be a problem as the typical size is <5. *)
 
-type ('a, 'b, 'c) label =
-  { guard : ('a, 'b) event_guard
-  ; action : 'c action }
-  (* TODO 'b and 'c relation *)
+type ('method_name, 'value_guard, 'variable) label_p =
+  { guard : ('method_name, 'value_guard) event_guard
+  ; action : 'variable action }
+  (* used by [Parser] *)
 
-type ('a, 'b, 'c) transition =
+type ('method_name, 'variable, 'value) label =
+  ('method_name, ('variable, 'value) value_guard, 'variable) label_p
+
+type ('method_name, 'variable, 'value) transition =
   { source : vertex
   ; target : vertex
-  ; labels : ('a, ('b, 'c) value_guard, 'b) label list }
+  ; labels : ('method_name, 'variable, 'value) label list }
 
-type t =
+type ('variable, 'value) t =
   { name : string
   ; message : string
-  ; transitions: (Str.regexp, variable, value) transition list }
+  ; transitions: (Str.regexp, 'variable, 'value) transition list }
 (* }}} *)
 (* utilities *) (* {{{ *)
 let wvars l =

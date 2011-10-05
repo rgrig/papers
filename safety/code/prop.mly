@@ -2,16 +2,16 @@
 
 %{
   type pattern =
-    | Action of PA.variable
-    | GuardVar of PA.variable
-    | GuardCt of PA.value
+    | Action of variable
+    | GuardVar of variable
+    | GuardCt of value
     | GuardAny
 
   type item =
     | I_message of string
     | I_observing of string
     | I_prefix of string
-    | I_transitions of (string, PA.variable, PA.value) PA.transition list
+    | I_transitions of (string, variable, value) PA.transition list
 
   let is_action s = 'A' <= s.[0] && s.[0] < 'Z'
   let var = String.uncapitalize

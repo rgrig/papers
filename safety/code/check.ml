@@ -22,7 +22,7 @@ let fatal p c m = error p c m; raise Error
 (* NOTE: Fields and methods live in different namespaces. *)
 module type EnvironmentT = sig
   type t
-  val make : SA.program -> t
+  val make : (string, string) SA.program -> t (* TODO: (variable, value) *)
   val update_line : t -> int -> t
   val add_variables : t -> SA.declaration list -> t
   val position : t -> string

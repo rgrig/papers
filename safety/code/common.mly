@@ -5,6 +5,9 @@
   module PA = PropAst
   module SA = SoolAst
   module U = Util
+
+  type variable = string
+  type value = string
 %}
 
 %token <int> NUMBER
@@ -49,7 +52,7 @@
 %nonassoc NOT
 %left DOT
 
-%start <SoolAst.program> program
+%start <(string, string) SoolAst.program> program
 
 %%
 

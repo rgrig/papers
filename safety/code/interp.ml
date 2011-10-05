@@ -6,7 +6,6 @@ module S = Stack (* save OCaml's stack module *)
 module SA = SoolAst
 module U = Util
 (* }}} *)
-
 (* State *) (* {{{ *)
 
 exception Variable_missing

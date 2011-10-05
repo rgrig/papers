@@ -1,9 +1,11 @@
 (* modules *) (* {{{ *)
+open Format
+open Util
+
 module B = BaristaLibrary
 module PA = PropAst
 module SA = SoolAst
-open Format
-open Util
+
 (* }}} *)
 (* globals *) (* {{{ *)
 let out_dir = ref "out"
@@ -45,18 +47,18 @@ type variable = int
 type value = string (* Java literal *)
 
 type transition =
-  { steps : (Str.regexp, (variable, value) PA.value_guard, variable) PA.label list
+  { steps : (Str.regexp, variable, value) PA.label list
   ; target : vertex }
 
 type vertex_data =
-  { vertex_property : PA.t
+  { vertex_property : (string, string) PA.t (* TODO: Parser.vertex.... *)
   ; vertex_name : PA.vertex
   ; outgoing_transitions : transition list }
 
 type automaton =
   { vertices : vertex_data array
   ; pattern_tags : (Str.regexp PA.tag_guard, tag list) Hashtbl.t }
-  (* The keys of {pattern_tags} are filled in during the initial conversion,
+  (* The keys of [pattern_tags] are filled in during the initial conversion,
     but the values (the tag list) is filled in while the code is being
     instrumented. *)
 

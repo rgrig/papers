@@ -72,11 +72,12 @@ type class_ = string * member list
 (* }}} *)
 (* Root of AST, see common.mly. *) (* {{{ *)
 
-type program =
+type ('variable, 'value) program =
   { program_globals : declaration list
   ; program_classes : class_ list
   ; program_main : body option
-  ; program_properties : PA.t PA.with_line list }
+  ; program_properties : ('variable, 'value) PA.t PA.with_line list }
+  (* TODO: should convert to [(variable, value) PA.t] after parsing *)
 
 (* }}} *)
 (* utilities *) (* {{{ *)
