@@ -39,7 +39,7 @@ type ('method_name, 'value_guard) event_guard =
 let check_event_guard g =
   let chk n = function Variable (_, m) | Constant (_, m) ->
     assert (0 <= m && m < n) in
-  let chk_all m = List.iter (chk m) g.value_guards in
+  let chk_all n = List.iter (chk n) g.value_guards in
   U.option () chk_all g.tag_guard.method_arity
 
 type 'variable action = ('variable * int) list

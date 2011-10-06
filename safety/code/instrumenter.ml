@@ -126,8 +126,8 @@ let compute_interesting_events x =
 
 let pp_array pe ppf a =
   let l = Array.length a in
-  if l > 0 then fprintf ppf "@\n%a," pe (0, a.(0));
-  for i = 1 to l - 1 do fprintf ppf "@\n%a" pe (i, a.(i)) done
+  if l > 0 then fprintf ppf "@\n%a" pe (0, a.(0));
+  for i = 1 to l - 1 do fprintf ppf ",@\n%a" pe (i, a.(i)) done
 
 let rec pp_list pe ppf = function
   | [] -> ()
@@ -147,7 +147,7 @@ let pp_value_guard f = function
   | PA.Constant (c, i) -> fprintf f "new ConstantEqualityGuard(%d, %s)" i c
 
 let pp_assignment f (x, i) =
-  fprintf f "new Action.SA.Assignment(%d, %d)" x i
+  fprintf f "new Action.Assignment(%d, %d)" x i
 
 let pp_condition f a =
   fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_value_guard) a
@@ -159,10 +159,10 @@ let pp_action f a =
   fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_list pp_assignment) a
 
 let pp_step tags obs f {PA.guard=g; PA.action=a} =
-  fprintf f "@[<2>new TransitionStep(%a, %a)@]" (pp_guard tags obs) g pp_action a
+  fprintf f "@[<2>new TransitionStep(@\n%a,@\n%a)@]" (pp_guard tags obs) g pp_action a
 
 let pp_transition tags obs f {steps=ss;target=t} =
-  fprintf f "@[<2>new Transition(@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
+  fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
 
 let pp_vertex tags pov ieop ifv f (vi, {outgoing_transitions=ts;_}) =
   let obs = Array.get ieop (Array.get pov vi) in
@@ -559,26 +559,6 @@ let () =
   let p, ifv = transform_properties ps in
   instrument_bytecode (get_tag p) !cp h;
   generate_checkers ifv p
-
-(*
-let () = ()
-  >> classpath
-  >>= classfiles_of_path
-  >>= classes_of_classfile
-  >>= instrument_class
-  >> output_classes
-
-let () =
-  printf "@[";
-  printf "package topl;@\n";
-  printf "@[<2>public class CheckerTests {@\n";
-  for i = 1 to Array.length Sys.argv - 1 do
-    file Sys.argv.(i)
-  done;
-  printf "@[<2>public static void main(String[] args) {@\n";
-  printf "System.out.println(\"TODO\");@]@\n}";
-  printf "@]@\n}@."
-*)
 
 (* TODO:
   - Don't forget that methods in package "topl" should not be instrumented.

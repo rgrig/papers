@@ -49,7 +49,8 @@
     { PA.tag_guard =
       { PA.event_type = None
       ; PA.method_name = ".*"
-      ; PA.method_arity = a }
+      ; PA.method_arity = match a with None -> None | Some x -> Some (succ x) }
+        (* count the receiver *)
     ; PA.value_guards = ps }
 
   let any_tag_guard =
@@ -101,11 +102,14 @@
     | _ ->
         eprintf "@[ERROR: Property %s has more than one message.@." n; e ()
 
+  let pp_or_re f p =
+    let pp f s = fprintf f "\\(%s\\)" s in
+    fprintf f "\\(%a\\)" (U.pp_list "\\|" pp) p
+
   let prefix_of_list = function
     | [] -> ""
     | p ->
-        let pp f s = fprintf f "\\(%s\\)" s in
-        fprintf str_formatter "\\(\\(%a\\)\\.\\)?" (U.pp_list "\\|" pp) p;
+        fprintf str_formatter "\\(%a\\.\\)?" pp_or_re p;
         flush_str_formatter ()
 
   let mk_property e n xs =
@@ -118,7 +122,8 @@
     let pt t = { t with PA.labels = List.map pl t.PA.labels } in
     { PA.name = n
     ; PA.message = extract_message e n m
-    ; PA.observable = U.todo ()
+    ; PA.observable = Str.regexp
+        (fprintf str_formatter "%a" pp_or_re o; flush_str_formatter ())
     ; PA.transitions = List.map pt (List.concat t) }
 
 %}
