@@ -1,6 +1,6 @@
 property Labels
   message "Nonsense, but covering lots of labels"
-  observing glob <java.util.{Iterator,Collection}.*>
+  observing <java.util.{Iterator,Collection}.*>
   // observing names
   // observing relative
   // observing specific

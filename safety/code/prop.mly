@@ -89,16 +89,38 @@
     let f ls = { PA.source = s; PA.target = t; PA.labels = ls } in
     List.map f lss
 
+  let split_items xs =
+    U.map_option (function I_message x -> Some x | _ -> None) xs,
+    U.map_option (function I_observing x -> Some x | _ -> None) xs,
+    U.map_option (function I_prefix x -> Some x | _ -> None) xs,
+    U.map_option (function I_transitions x -> Some x | _ -> None) xs
+
+  let extract_message e n = function
+    | [] -> sprintf "@[%s failed@]" n
+    | [m] -> m
+    | _ ->
+        eprintf "@[ERROR: Property %s has more than one message.@." n; e ()
+
+  let prefix_of_list = function
+    | [] -> ""
+    | p ->
+        let pp f s = fprintf f "\\(%s\\)" s in
+        fprintf str_formatter "\\(\\(%a\\)\\.\\)?" (U.pp_list "\\|" pp) p;
+        flush_str_formatter ()
+
   let mk_property e n xs =
-    let m = U.map_option (function I_message x -> Some x | _ -> None) xs in
-    let o = U.map_option (function I_observing x -> Some x | _ -> None) xs in
-    let p = U.map_option (function I_prefix x -> Some x | _ -> None) xs in
-    let t = U.map_option (function I_transitions x -> Some x | _ -> None) xs in
-    let m = match m with
-      | [] -> sprintf "@[%s failed@]" n
-      | [m] -> m
-      | _ -> eprintf "@[ERROR: Property %s has more than one message.@." n; e () in
-    U.todo ()
+    let m, o, p, t = split_items xs in
+    let p = prefix_of_list p in
+    let pm m = Str.regexp (sprintf "^%s%s$" p m) in
+    let ptg tg = { tg with PA.method_name = pm tg.PA.method_name } in
+    let pg g = { g with PA.tag_guard = ptg g.PA.tag_guard } in
+    let pl l = { l with PA.guard = pg l.PA.guard } in
+    let pt t = { t with PA.labels = List.map pl t.PA.labels } in
+    { PA.name = n
+    ; PA.message = extract_message e n m
+    ; PA.observable = U.todo ()
+    ; PA.transitions = List.map pt (List.concat t) }
+
 %}
 
 %%

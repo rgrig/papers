@@ -28,6 +28,10 @@ type 'method_name tag_guard =
 
 type event_tag = (event_type, string, int) tag
 
+let check_event_tag t =
+  assert (t.method_name <> "");
+  assert (0 <= t.method_arity)
+
 type ('method_name, 'value_guard) event_guard =
   { tag_guard : 'method_name tag_guard
   ; value_guards : 'value_guard list }
@@ -62,6 +66,7 @@ type ('method_name, 'variable, 'value) transition =
 type ('variable, 'value) t =
   { name : string
   ; message : string
+  ; observable : Str.regexp
   ; transitions: (Str.regexp, 'variable, 'value) transition list }
 (* }}} *)
 (* utilities *) (* {{{ *)
@@ -113,6 +118,7 @@ let ok_automaton =
   { name = "AlwaysOk"
   ; message =
       "internal error: ok_automaton should be happy with all programs"
+  ; observable = Str.regexp "^$"
   ; transitions = [] }
 
 (* }}} *)
