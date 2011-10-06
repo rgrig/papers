@@ -165,8 +165,10 @@ let pp_transition tags obs f {steps=ss;target=t} =
   fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
 
 let pp_vertex tags pov ieop ifv f (vi, {outgoing_transitions=ts;_}) =
-  let obs = Array.get ieop (Array.get pov vi) in
-  fprintf f "@[<2>new Transition[]{%a}@]" (pp_list (pp_transition tags obs)) ts
+  let obs = ieop.(pov.(vi)) in
+  fprintf f "@[<2>new Transition[]{/* from %d */%a}@]"
+    vi
+    (pp_list (pp_transition tags obs)) ts
 
 let pp_automaton ifv f x =
   let pov, ieop = compute_interesting_events x in
@@ -550,15 +552,18 @@ let generate_checkers ifv p =
   pp_automaton ifv f p
 
 let () =
-  let fs = ref [] in
-  let cp = ref (try Sys.getenv "CLASSPATH" with Not_found -> ".") in
-  Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
-    "usage: ./instrumenter [-cp <classpath>] <property_files>";
-  let h = compute_inheritance !cp in
-  let ps = read_properties !fs in
-  let p, ifv = transform_properties ps in
-  instrument_bytecode (get_tag p) !cp h;
-  generate_checkers ifv p
+  try
+    let fs = ref [] in
+    let cp = ref (try Sys.getenv "CLASSPATH" with Not_found -> ".") in
+    Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
+      "usage: ./instrumenter [-cp <classpath>] <property_files>";
+    let h = compute_inheritance !cp in
+    let ps = read_properties !fs in
+    let p, ifv = transform_properties ps in
+    instrument_bytecode (get_tag p) !cp h;
+    generate_checkers ifv p
+  with
+    | Helper.Parsing_failed m -> eprintf "@[%s@." m
 
 (* TODO:
   - Don't forget that methods in package "topl" should not be instrumented.

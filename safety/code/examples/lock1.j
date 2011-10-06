@@ -1,8 +1,11 @@
 // Suppose "synchronized(x) {...}" is desugared into
 // "x.lock() ... x.unlock()" in the frontend.
 
-property "Object.notifyAll should be called only when the lock is held"
-  start -> unheld: L.new()
+property NotifyAll
+  message "Object.notifyAll should be called only when the lock is held"
+  prefix <java.lang.Object>
+  observing <java.lang.Object.*>
+  start -> unheld: L.<new>()
   unheld -> error: l.notifyAll()
   unheld -> held: l.lock()
   held -> unheld: l.unlock()
