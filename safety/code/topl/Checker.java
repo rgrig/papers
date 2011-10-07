@@ -512,6 +512,49 @@ public class Checker {
         }
     }
 
+    public String toDOT() {
+	StringBuffer s = new StringBuffer();
+	s.append("digraph {\n");
+	// add states as circles
+	for (int i = 0; i < automaton.transitions.length; i++) {
+	    s.append("  S_");
+	    s.append(i);
+	    s.append(" [label=\"");
+	    s.append(i);
+	    if (automaton.errorMessages[i] != null) {
+		s.append(" : ");
+		s.append(automaton.errorMessages[i]);
+		s.append("\", shape=square];\n");
+	    }
+	    else s.append("\", shape=circle];\n");
+	}
+	// make start states double circles
+	for (int i : automaton.startVertices) {
+	    s.append("  S_");
+	    s.append(i);
+	    s.append(" [shape=doublecircle];\n");
+	}
+	// add transitions
+	for (int i = 0; i < automaton.transitions.length; i++)
+	    for (Transition transition : automaton.transitions[i]) {
+		s.append("  S_");
+		s.append(i);
+		s.append(" -> S_");
+		s.append(transition.target);
+		s.append(" [label=\"");
+		for (TransitionStep step : transition.steps) {
+		    s.append(step.eventIds.size());
+		    // s.append(step.guard.toString());
+		    // s.append(step.action.toString());
+		    s.append("; ");
+		}
+		s.delete(s.length()-2, s.length());
+		s.append("\"];\n");
+	    }
+	s.append("}\n");
+	return s.toString();
+    }
+
     public static void main(String[] args) {
         //CheckerTests t = new CheckerTests();
         //t.c.check(new Event(5, new Object[]{}));
