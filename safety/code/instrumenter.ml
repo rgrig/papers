@@ -1,4 +1,5 @@
 (* modules *) (* {{{ *)
+open Debug
 open Format
 open Util
 
@@ -12,7 +13,7 @@ let out_dir = ref "out"
 
 (* }}} *)
 (* used to communicate between conversion and instrumentation *) (* {{{ *)
-type method_ =
+type method_ =  (* TODO: Use [PropAst.event_tag] instead? *)
   { method_name : string
   ; method_arity : int }
 
@@ -112,7 +113,7 @@ let errors x =
 
 let compute_interesting_events x =
   let iop = to_ints (get_properties x) in
-  let ieop = Array.make (Hashtbl.length iop) IntSet.empty in
+  let ieop = Array.make (Hashtbl.length iop) IntSet.empty in (* observables *)
   let fs acc s = add_ints acc (Hashtbl.find x.pattern_tags s.PA.guard.PA.tag_guard) in
   let ft acc t = List.fold_left fs acc t.steps in
   let fv acc v = List.fold_left ft acc v.outgoing_transitions in
@@ -503,6 +504,7 @@ let output_class c =
   close_out ch
 
 let instrument_class get_tags h (c, fn) =
+  if log log_cp then fprintf logf "@[instrument %s@." fn;
   let instrumented_methods = List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
   output_class {c with B.ClassDefinition.methods = instrumented_methods}
 
@@ -565,13 +567,11 @@ let () =
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m
 
+(* }}} *)
 (* TODO:
   - Don't forget that methods in package "topl" should not be instrumented.
+  - a way to select properties (by name) from the command line
  *)
-
-
 (*
 vim:tw=0:
 *)
-
-(* }}} *)
