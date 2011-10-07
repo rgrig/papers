@@ -160,7 +160,7 @@ big_label:
   | CALL STAR ASGN g=label_rhs(value_pattern)
       { [mk_label g PA.Call g.PA.value_guards] }
   | CALL g=label_rhs(value_pattern)
-      { [mk_label g PA.Call []] }
+      { [mk_label g PA.Call g.PA.value_guards] }
   | g=label_rhs(value_pattern)
       { [ mk_label g PA.Call g.PA.value_guards
         ; mk_label g PA.Return [GuardAny] ] }
