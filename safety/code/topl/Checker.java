@@ -2,6 +2,7 @@ package topl;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
@@ -276,6 +277,21 @@ public class Checker {
             }
             return true;
         }
+
+	@Override
+	public String toString() {
+	    if (children.length == 0) return "*";
+	    if (children.length == 1) return children[0].toString();
+	    StringBuffer s = new StringBuffer();
+	    s.append("and (");
+	    for (Guard g : children) {
+		s.append(g);
+		s.append(", ");
+            }
+	    s.delete(s.length()-2, s.length());
+	    s.append(")");
+	    return s.toString();
+	}
     }
 
     static class NotGuard implements Guard {
@@ -289,6 +305,11 @@ public class Checker {
         public boolean evaluate(Event event, Store store) {
             return !child.evaluate(event, store);
         }
+
+	@Override
+	public String toString() {
+	    return "not (" + child + ")";
+	}
     }
 
     static class StoreEqualityGuard implements Guard {
@@ -304,6 +325,11 @@ public class Checker {
         public boolean evaluate(Event event, Store store) {
             return event.values[eventIndex] == store.get(storeIndex);
         }
+
+	@Override
+	public String toString() {
+	    return "event[" + eventIndex + "] == store[" + storeIndex + "]";
+	}
     }
 
     static class ConstantEqualityGuard implements Guard {
@@ -321,6 +347,11 @@ public class Checker {
                 event.values[eventIndex] == null :
                 value.equals(event.values[eventIndex]);
         }
+
+	@Override
+	public String toString() {
+	    return value + " == event[" + eventIndex + "]";
+	}
     }
 
     static class TrueGuard implements Guard {
@@ -328,6 +359,11 @@ public class Checker {
         public boolean evaluate(Event event, Store store) {
             return true;
         }
+
+	@Override
+	public String toString() {
+	    return "*";
+	}
     }
 
     static class Action {
@@ -543,12 +579,21 @@ public class Checker {
 		s.append(transition.target);
 		s.append(" [label=\"");
 		for (TransitionStep step : transition.steps) {
-		    s.append(step.eventIds.size());
-		    // s.append(step.guard.toString());
-		    // s.append(step.action.toString());
-		    s.append("; ");
+		    s.append(step.eventIds.toString());
+		    s.append(step.guard.toString());
+		    s.append("<");
+		    boolean anyEntry = false;
+		    for(Map.Entry a : step.action.assignments.entrySet()) {
+			anyEntry = true;
+			s.append(a.getKey());
+			s.append(" <- ");
+			s.append(a.getValue());
+			s.append(", ");
+		    }
+		    if (anyEntry) s.delete(s.length()-2, s.length());
+		    s.append(">; ");
 		}
-		s.delete(s.length()-2, s.length());
+		if (transition.steps.length > 0) s.delete(s.length()-2, s.length());
 		s.append("\"];\n");
 	    }
 	s.append("}\n");
