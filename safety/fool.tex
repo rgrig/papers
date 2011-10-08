@@ -924,6 +924,12 @@ where
 \end{align}
 If the transition is enabled and performed, the store for the target vertex will be $s_n$.
 
+\begin{remark}
+It is natural to ask whether transitions of depth $>1$ could be desugared into transitions of depth~$1$.
+We tried (1)~to rewrite guards and do all the actions at the end, (2)~to exploit nondeterminism, and (3)~to use a special \textit{undo} action.
+All three approaches run into fundamental barriers~\cite{web:desugar}.
+\end{remark}
+
 And now we reach the final slightly non-standard aspect of our
 automatons, namely that if no transitions are enabled for a given
 state and trace of events, the automaton does not get stuck but is
