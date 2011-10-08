@@ -550,7 +550,7 @@ public class Checker {
 
     public String toDOT() {
 	StringBuffer s = new StringBuffer();
-	s.append("digraph {\n");
+	s.append("digraph Property {\n");
 	// add states as circles
 	for (int i = 0; i < automaton.transitions.length; i++) {
 	    s.append("  S_");
@@ -560,7 +560,7 @@ public class Checker {
 	    if (automaton.errorMessages[i] != null) {
 		s.append(" : ");
 		s.append(automaton.errorMessages[i]);
-		s.append("\", shape=square];\n");
+		s.append("\", shape=box];\n");
 	    }
 	    else s.append("\", shape=circle];\n");
 	}
@@ -582,15 +582,13 @@ public class Checker {
 		    s.append(step.eventIds.toString());
 		    s.append(step.guard.toString());
 		    s.append("<");
-		    boolean anyEntry = false;
 		    for(Map.Entry a : step.action.assignments.entrySet()) {
-			anyEntry = true;
 			s.append(a.getKey());
 			s.append(" <- ");
 			s.append(a.getValue());
 			s.append(", ");
 		    }
-		    if (anyEntry) s.delete(s.length()-2, s.length());
+		    if (step.action.assignments.size() > 0) s.delete(s.length()-2, s.length());
 		    s.append(">; ");
 		}
 		if (transition.steps.length > 0) s.delete(s.length()-2, s.length());

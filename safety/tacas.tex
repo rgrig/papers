@@ -103,7 +103,7 @@
 \begin{abstract} % <<<
 In this paper we introduce a new technique for checking, at run time, temporal safety properties for Java programs.
 Our technique is based on a new general specification language which is able to express fundamental properties of 
-systems. The specifications are then used to instrument the byte-code  so that violations of the specification can be 
+systems. The specifications are then used to instrument the byte-code  so that violations of the specifications can be 
 automatically detected at run time. We have experimented our technique by checking several safety properties
 on large open source projects.
 \end{abstract}
@@ -119,7 +119,7 @@ on large open source projects.
 \section{Introduction} % <<<
 
 Objects interaction is at the core of the object-oriented paradigm. When designing object-oriented software, 
-programmers have often  a global picture of the co-operation that the objects will have in different moment and the 
+programmers have often  a global picture of the co-operation that the objects will have in different moments and the 
 invariants that all the player should adhere to for the correct functioning of the system.
 These invariants are often naturally expressible as {\em temporal safety properties} which, in turn, have been 
 the studied in several contexts by the formal methods and the verification community. 
@@ -154,7 +154,7 @@ For this reasons,  we have defined  \TPL\ (Temporal Object-oriented Property Lan
 \end{enumerate}
 The ability to express relations of a variety of objects makes \TPL\ quite expressive.
 Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of {\em one} single object.
-In contrast, TOPL intentionally avoid such decomposition.
+In contrast, TOPL intentionally avoids such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
 Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
 Because TOPL is a high-level language and has formal semantics (points 2~and~3 above), it reduces the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
@@ -171,7 +171,7 @@ In contrast, dynamically checking TOPL properties  with the technique we present
 
 %\dinocomment{below to be done more precisely when the paper is more concrete}
 The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
-Section~\ref{sec:syntax} gives the syntax of \TPL \ and  its semantics.
+Section~\ref{sec:syntax} gives  \TPL's syntax  and semantics.
 Section~\ref{sec:dynamic} explores the use of \TPL \ for run-time checking of safety properties and presents our experimental results. Section~\ref{sec:related} discusses related work.
 Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
 
@@ -180,8 +180,7 @@ Finally, Section~\ref{sec:conclusions} concludes the paper and describes our pla
 
 % >>>
 \section{TOPL by Examples} \label{sec:examples} % <<<
-In this section we introduce TOPL in an informal way by means of examples; in Section~\ref{sec:syntax} we will give a formal development of the language.
-
+In this section we introduce TOPL in an informal way by means of examples.
 The first example (\autoref{sec:examples.steps}) uses a large part of \TPL\null.
 Each execution step introduces a few new concepts.
 The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.ho}) illustrate TOPL expressiveness.
@@ -193,7 +192,7 @@ Consider the informal safety property from the introduction. It can be better re
 \emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
 \end{quote}
 \noindent
-The last statement in \autoref{fig:first.java} violates the statements above, therefore throwing an exception.
+The last statement in \autoref{fig:first.java} violates this property, therefore throwing an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
@@ -211,6 +210,7 @@ Labels capture, roughly, the shape of statements that enable the corresponding t
 \caption{A first example: Java code}
 \label{fig:first.java}
 \end{figure}
+%
 \begin{figure}
 \begin{Verbatim}
 using prefix java.util.Collection
@@ -237,10 +237,10 @@ using prefix java.util.Iterator
   \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
   \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
 \end{tikzpicture}
-\caption{A first example: Diagram of safety property}
-\label{fig:first.diagram}
-\end{figure}
-\begin{figure}
+%\caption{A first example: Diagram of safety property}
+%\label{fig:first.diagram}
+%\end{figure}
+%\begin{figure}
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
   using prefix java.util.Collection
@@ -253,9 +253,11 @@ property InvalidateOtherIterators
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
-\caption{A first example: Safety property}
+\caption{The property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
+}
 \label{fig:first.topl}
 \end{figure}
+%
 \begin{figure}
 {\def\s#1{\text{\Verb@#1@}}
  \def\m#1{\PY{n+na}{#1}}
