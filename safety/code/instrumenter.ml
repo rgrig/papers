@@ -111,6 +111,7 @@ let errors x =
     | _ -> "null" in
   x.vertices >> Array.map f >> Array.to_list
 
+(* Not used now. Can be used for keywors for observing, like all_guards *)
 let compute_interesting_events x =
   let iop = to_ints (get_properties x) in
   let ieop = Array.make (Hashtbl.length iop) IntSet.empty in (* observables *)
@@ -124,6 +125,9 @@ let compute_interesting_events x =
  (Array.map (fun v -> Hashtbl.find iop v.vertex_property) x.vertices,
   Array.map IntSet.elements ieop)
 
+let compute_pov x =
+  let iop = to_ints (get_properties x) in
+    Array.map (fun v -> Hashtbl.find iop v.vertex_property) x.vertices
 
 let pp_array pe ppf a =
   let l = Array.length a in
@@ -132,8 +136,13 @@ let pp_array pe ppf a =
 
 let rec pp_list pe ppf = function
   | [] -> ()
+  | [x] -> fprintf ppf "%a" pe x
+  | x :: xs -> fprintf ppf "%a, %a" pe x (pp_list pe) xs
+
+let rec pp_v_list pe ppf = function
+  | [] -> ()
   | [x] -> fprintf ppf "@\n%a" pe x
-  | x :: xs -> fprintf ppf "@\n%a,%a" pe x (pp_list pe) xs
+  | x :: xs -> fprintf ppf "@\n%a,%a" pe x (pp_v_list pe) xs
 
 let pp_int f x = fprintf f "%d" x
 let pp_string f x = fprintf f "%s" x
@@ -141,7 +150,7 @@ let pp_string f x = fprintf f "%s" x
 let pp_int_list f xs =
   fprintf f "@[<2>new int[]{%a}@]" (pp_list pp_int) xs
 
-let pp_pattern tags obs f p = pp_int_list f (Hashtbl.find tags p)
+let pp_pattern tags f p = pp_int_list f (Hashtbl.find tags p)
 
 let pp_value_guard f = function
   | PA.Variable (v, i) -> fprintf f "new StoreEqualityGuard(%d, %d)" i v
@@ -153,40 +162,43 @@ let pp_assignment f (x, i) =
 let pp_condition f a =
   fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_value_guard) a
 
-let pp_guard tags obs f {PA.tag_guard=p; PA.value_guards=cs} =
-  fprintf f "@[<2>%a@],@\n@[<2>%a@]" (pp_pattern tags obs) p pp_condition cs
+let pp_guard tags f {PA.tag_guard=p; PA.value_guards=cs} =
+  fprintf f "@[<2>%a@],@\n@[<2>%a@]" (pp_pattern tags) p pp_condition cs
 
 let pp_action f a =
   fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_list pp_assignment) a
 
-let pp_step tags obs f {PA.guard=g; PA.action=a} =
-  fprintf f "@[<2>new TransitionStep(@\n%a,@\n%a)@]" (pp_guard tags obs) g pp_action a
+let pp_step tags f {PA.guard=g; PA.action=a} =
+  fprintf f "@[<2>new TransitionStep(@\n%a,@\n%a)@]" (pp_guard tags) g pp_action a
 
-let pp_transition tags obs f {steps=ss;target=t} =
-  fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a}@],@\n%d)@]" (pp_list (pp_step tags obs)) ss t
+let pp_transition tags f {steps=ss;target=t} =
+  fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a@]@\n}, %d)@]" (pp_v_list (pp_step tags)) ss t
 
-let pp_vertex tags pov ieop ifv f (vi, {outgoing_transitions=ts;_}) =
-  let obs = ieop.(pov.(vi)) in
-  fprintf f "@[<2>new Transition[]{/* from %d */%a}@]"
+let pp_vertex tags pov ifv f (vi, {outgoing_transitions=ts;_}) =
+  fprintf f "@[<2>new Transition[]{/* from %d */%a@]@\n}"
     vi
-    (pp_list (pp_transition tags obs)) ts
+    (pp_v_list (pp_transition tags)) ts
 
-let pp_automaton ifv f x =
-  let pov, ieop = compute_interesting_events x in
+let pp_automaton ifv otfp f x =
+  let pov = compute_pov x in
+  let obs_p p = Hashtbl.find x.pattern_tags (Hashtbl.find otfp p) in
+  let obs_tags = List.map obs_p (get_properties x) in
   fprintf f "package topl;@\n@\n";
   fprintf f "import static topl.Checker.*;@\n@\n";
   fprintf f "@[<2>public class Property {@\n";
   fprintf f   "@[<2>public static Checker checker = new Checker(new Automaton(@\n";
   fprintf f     "%a,@\n" pp_int_list (starts x);
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
-  fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_array (pp_vertex x.pattern_tags pov ieop ifv)) x.vertices;
+  fprintf f     "@[<2>new Transition[][]{%a@]@\n},@\n" (pp_array (pp_vertex x.pattern_tags pov ifv)) x.vertices;
 (*
   printf "known tags:";
   Hashtbl.iter (fun g ts -> pp_int_list std_formatter ts) x.pattern_tags;
   printf "\n";
 *)
+  fprintf f     "/* property the vertex comes from */@\n";
   fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
-  fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) (Array.to_list ieop);
+  fprintf f     "/* events each property is interested in */@\n";
+  fprintf f     "@[<2>new int[][]{%a@]@\n}" (pp_v_list pp_int_list) obs_tags;
   fprintf f   "@]));@\n";
   fprintf f "@]@\n}@\n"
 
@@ -201,14 +213,20 @@ let index_for_var ifv v =
       Hashtbl.replace ifv v i; i
 
 (* just record the tag in ptags *)
-let transform_tag_guard ptags tg = Hashtbl.replace ptags tg []; tg
+let transform_tag_guard ptags any_tag = function
+(*
+  | { PA.event_type = None
+    ; PA.method_name = (Str.regexp ".*" )
+    ; PA.method_arity = None } -> any_tag
+*)
+  | tg -> Hashtbl.replace ptags tg []; tg
 
 let transform_value_guard ifv = function
   | PA.Variable (v, i) -> PA.Variable (index_for_var ifv v, i)
   | PA.Constant (c, i) -> PA.Constant (c, i)
 
-let transform_guard ifv ptags {PA.tag_guard=tg; PA.value_guards=vgs} =
-  { PA.tag_guard = transform_tag_guard ptags tg
+let transform_guard ifv ptags at {PA.tag_guard=tg; PA.value_guards=vgs} =
+  { PA.tag_guard = transform_tag_guard ptags at tg
   ; PA.value_guards = List.map (transform_value_guard ifv) vgs }
 
 let transform_condition ifv (store_var, event_index) =
@@ -217,8 +235,8 @@ let transform_condition ifv (store_var, event_index) =
 
 let transform_action ifv a = List.map (transform_condition ifv) a
 
-let transform_label ifv ptags {PA.guard=g; PA.action=a} =
-  { PA.guard = transform_guard ifv ptags g
+let transform_label ifv ptags at {PA.guard=g; PA.action=a} =
+  { PA.guard = transform_guard ifv ptags at g
   ; PA.action = transform_action ifv a }
 
 let transform_properties ps =
@@ -231,6 +249,15 @@ let transform_properties ps =
   let full_p =
     { vertices = inverse_index mk_vd iov
     ; pattern_tags = Hashtbl.create 13 } in
+  let otfp = Hashtbl.create 13 in
+  let add_obs_tags p =
+    let obs_tag =
+      { PA.event_type = None
+      ; PA.method_name = p.PA.observable
+      ; PA.method_arity = None } in
+    Hashtbl.replace full_p.pattern_tags obs_tag [];
+    Hashtbl.replace otfp p obs_tag in
+  List.iter add_obs_tags ps;
   let add_transition vi t =
     let ts = full_p.vertices.(vi).outgoing_transitions in
     full_p.vertices.(vi) <- {full_p.vertices.(vi) with outgoing_transitions = t :: ts} in
@@ -238,10 +265,10 @@ let transform_properties ps =
   let pe p {PA.source=s;PA.target=t;PA.labels=ls} =
     let s = Hashtbl.find iov (p, s) in
     let t = Hashtbl.find iov (p, t) in
-    let ls = List.map (transform_label ifv full_p.pattern_tags) ls in
+    let ls = List.map (transform_label ifv full_p.pattern_tags (Hashtbl.find otfp p)) ls in
     add_transition s {steps=ls; target=t} in
   List.iter (fun p -> List.iter (pe p) p.PA.transitions) ps;
-  full_p, ifv
+  full_p, ifv, otfp
 
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
@@ -371,7 +398,7 @@ let does_method_match
   { PA.event_type=t; PA.method_name=re; PA.method_arity=a }
 =
   let ba = option true ((=) ma) a in
-  let bt = mt = t in
+  let bt = option true ((=) mt) t in
   let bn = Str.string_match re mn 0 in
 (*    printf "(%s, %d) matches: mn: %b, ma: %b, mt: %b\n" mn ma bn ba bt; *)
     ba && bt && bn
@@ -471,8 +498,8 @@ let instrument_method get_tag h c = function
       let overrides =
         get_overrides h c (mk_method r.B.Method.name nr_params) in
       (* printf "  number of overrides: %d\n" (List.length (fst overrides)); *)
-      let call_id = get_tag (Some PA.Call) overrides in
-      let return_id = get_tag (Some PA.Return) overrides in
+      let call_id = get_tag PA.Call overrides in
+      let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
@@ -560,10 +587,10 @@ let read_properties fs =
   let e p = List.map (fun x -> x.PA.ast) p.SA.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let generate_checkers ifv p =
+let generate_checkers ifv otfp p =
   let out_channel = open_out "topl/Property.java" in
   let f = formatter_of_out_channel out_channel in
-  pp_automaton ifv f p
+  pp_automaton ifv otfp f p
 
 let () =
   try
@@ -573,9 +600,9 @@ let () =
       "usage: ./instrumenter [-cp <classpath>] <property_files>";
     let h = compute_inheritance !cp in
     let ps = read_properties !fs in
-    let p, ifv = transform_properties ps in
+    let p, ifv, otfp = transform_properties ps in
     instrument_bytecode (get_tag p) !cp h;
-    generate_checkers ifv p
+    generate_checkers ifv otfp p
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m
 
