@@ -91,6 +91,10 @@
 % - try to give one more example with two objects
 % - explain why SOOL is introduced; include that events must be included in
 %   the semantics of the programming language
+% - explain early the convention with the implicit loop on start
+% - picture for call-return: one arrow TOPL; semicolon iTOPL
+% - S5: explain that lazy communication does NOT mean that you keep running
+%   after the property is violated
 % - pass thru running example
 %   - use alpha, beta, ... for values
 %   - say "c==alpha" rather than "holds"
@@ -99,8 +103,6 @@
 % - future work
 %   - dynamic checking for Java with knob for soundness
 %   - static checking
-% - Rasmus
-%   - picture for call-return: one arrow TOPL; semicolon iTOPL
 % >>>
 \begin{abstract} % <<<
 In this paper we present ongoing work related to a new specification language for temporal safety properties aimed at object-oriented software.
@@ -114,16 +116,16 @@ We present its formal semantics as well as several examples showing its expressi
 % >>>
 \section{Introduction} % <<<
 
-The verification community showed interest in \emph{safety temporal properties} for a long time.
+The verification community showed interest in \emph{temporal safety properties} for a long time.
 Manna and Pnueli~\cite{dblp:books/daglib/0080029} provide a theoretical foundation and clearly argue why such properties are crucial.
 In this article, we focus on an object-oriented setting.
-The long term aim of our project is the automatic verification of safety temporal properties for Java programs of realistic size.
+The long term aim of our project is the automatic verification of temporal safety properties for Java programs of realistic size.
 To achieve our aim we need
 \begin{itemize}
 \item a language for formally specifying temporal safety properties, and
 \item an automatic tool able to verify or check the properties expressed in the language against Java programs.
 \end{itemize}
-This paper addresses the first point by introducing \TPL\ (\textbf{t}emporal \textbf{o}bject-oriented \textbf{p}roperty language, pronounced like `topple').
+This paper addresses the first point by introducing \TPL\ (\textbf{t}emporal \textbf{o}bject-oriented \textbf{p}roperty \textbf{l}anguage, pronounced like `topple').
 
 We draw inspiration from several existing specification languages, each of which we found not entirely suitable for our goal.
 Bierhoff and Aldrich~\cite{dblp:conf/oopsla/bierhoffa07} as well as Naeem and Lhot\'ak~\cite{dblp:conf/oopsla/naeeml08} use specification languages inspired by typestates~\cite{strom1986}.
@@ -165,7 +167,6 @@ In contrast, dynamically checking TOPL properties avoids all these problems.
 
 The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives the syntax of \TPL \ and in Section~\ref{sec:semantics} introduces its semantics.
-Section~\ref{sec:dynamic} briefly explores the use of \TPL \ for run-time checking of safety properties.
 Section~\ref{sec:related} discusses related work.
 Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
 
@@ -325,6 +326,7 @@ automaton variables do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 \end{notation}
 
+\rg{Must define \emph{uppercase pattern} and \emph{lowercase pattern}.}
 As it will become apparent below, the interaction between patterns and automatons' memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
 \paragraph{Step~1.}
@@ -342,7 +344,7 @@ The method itself also matches the method pattern, but for a slightly more compl
 For simplicity, we ignore argument types and identify Java methods only by their fully qualified name and their arity.
 The called method \texttt{iterator} is in the class \texttt{ArrayList} and has arity~$1$.
 We identify it as follows.
-\verbline{java.lang.ArrayList.iterator[1]}
+\verbline{java.util.ArrayList.iterator[1]}
 Without \texttt{using prefix} directives, the method pattern would be \Verb@iterator[1]@.
 With the directives, however, the pattern is the following.
 \begin{align*}
@@ -357,6 +359,7 @@ When the transition is performed the values that matched \pattern X~and~\pattern
 For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
 The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also enabled and performed.
+\rg{Say that this is a convention.}
 
 \paragraph{Step~2.}
 For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
@@ -379,8 +382,15 @@ Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the sta
 
 The third step involves the statement
 \[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
-Therefore, although the program proceeds, the set of active states of the automaton remains unchanged.
+which enables the transitions
+\begin{align*}
+&\text{\Verb@one -> one: *@}\\
+&\text{\Verb@start -> start: *@}.
+\end{align*}
+All the active states remain active, but for different reasons.
+The active states with the vertex \start and those with the vertex \texttt{one} remain active because the enabled transitions are loops.
+The active state with the vertex \texttt{two} remains active because no outgoing transition is enabled.
+Therefore the set of active states of the automaton remains unchanged.
 
 \paragraph{Step~4.}
 
@@ -409,6 +419,8 @@ Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{
 \medskip
 The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
 Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
+
+\rg{Add a summary that explains why this is easy to write, not weaved with the code, and can provide traces.}
 
 % >>>
 \subsection{More on Iterators} \label{sec:examples.iterators} % <<<
@@ -652,9 +664,10 @@ A wildcard~* pattern matches any value.
 
 A TOPL property is \emph{well-formed} when it satisfies the following conditions.
 \begin{itemize}
-\item Labels must contain uppercase value patterns at most once.
-\item Any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from the \start vertex.
-  In other words, automaton variables must be written before being read.
+\item A transition may prescribe at most one write to an automaton variable.
+In other words, an uppercase value pattern may appear at most once within a label.
+\item Automaton variables must be written before being read.
+In other words, lowercase value patterns must be preceded by corresponding uppercase value patterns on all paths comming from \start.
 \end{itemize}
 It is easy to check that a property is well-formed~\cite{web:topl.prototype}.
 From now on we assume TOPL properties to be well-formed.
@@ -700,7 +713,7 @@ A method call $u.m(v_1, \ldots, v_n)$ that returns $w$ will generate the followi
 \]
 The call events are matched by labels of the form
 \[
-  \mathtt{call}\ p_0 := m(p_1, \ldots, p_n)
+  \mathtt{call}\ p_0.m(p_1, \ldots, p_n)
 \]
 with $n$ value patterns for the arguments,
 while the return events are matched by labels of the form
@@ -808,7 +821,7 @@ In other words, properties encode bad executions, rather than good executions.
 Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
 We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
 We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
-In particular, the powerset of~\set A is denoted by $\set A\to\B$.
+In particular, the powerset of~\set A is isomorphic to~$\set A\to\B$.
 Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
 For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
 We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
@@ -1057,36 +1070,31 @@ Given a program with the main body~$b$, the output trace~$o$ corresponding to so
 \end{align}
 
 % >>>
-% >>>
-\section{Dynamic Analysis}\label{sec:dynamic} % <<<
+\subsection{Implementation}\label{sec:implementation} % <<<
 
-A prototype implementation of TOPL is online~\cite{web:topl.prototype}.
-It consists of two parts---a TOPL and SOOL interpreter, and a tool to instrument Java bytecode.
+In order to test the semantics, we implemented a TOPL and SOOL interpreter~\cite{web:topl.prototype}.
+Indeed, the implementation helped us understand TOPL\null.
+There are two main differences with the presentation above.
 
-We developed \emph{a TOPL and SOOL interpreter} with the goal of experimenting with TOPL's semantics.
-Indeed, while developing the interpreter we discovered several subtle bugs in our initial model.
-The repository includes several examples (such as the one in \autoref{sec:examples.steps}).
-There are two main differences between this paper (\autoref{sec:semantics}) and the implementation.
-First, in the interest of simplicity the interpreter tracks only one active state.
-Whenever the set of active states would be $S\in(\set{World}\to\B)$, the interpreter only keeps track of some $s\in S$.
-Which exactly is the state~$s$ that is being tracked depends on a random number generator seed.
-The random number generator simulates nondeterminism.
+First, we under-approximate nondeterminism by randomness.
+Where the semantics prescribe a set~$S$ of active states, the interpreter tracks only one active state~$s\in S$.
+A random number generator guides the choice of~$s$ at each step.
+Thus, different seeds of the random number generator explore different traces.
+Simulating nondeterminism by randomness is unsound.
+However, the TOPL and SOOL interpreter is not meant to prescribe how dynamic analysis of TOPL properties should be done.
+
 Second, the trace of events is communicated from the SOOL interpreter to the TOPL interpreter lazily.
-Only a few events are in memory at any one time.
-\rg{TODO: put in the repo all examples from \autoref{sec:examples} and say so}
+The only consequence is that less memory is used.
+At most two events are remembered at any one time, rather than the whole trace.
 
-To illustrate that TOPL is applicable to real languages we are also implementing \emph{a tool to instrument Java bytecode} and a Java implementation of the TOPL interpreter.
-In this interpreter, we do keep track of sets of active states.
+If the reader finds any part of \autoref{sec:semantics} ambiguous or incomplete, then the code should clarify the details.
 
-Both tools have several interesting aspects.
-In particular, the Java implementation of the TOPL interpreter uses fairly interesting data structures.
-A detailed description, however, is outside the scope of this article, which focuses on describing the TOPL language.
-
+% >>>
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 Our work is based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
 We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
-A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/bierhoffa07}. 
+A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}. 
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
 The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
 can deal with inheritance.
@@ -1120,17 +1128,24 @@ again, capturing inter object relations seems somewhat awkward.
 
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
+
 This paper presents ongoing work on the design of TOPL---a language for expressing temporal safety properties for object-oriented programs.
 TOPL is translated into an intermediate language, iTOPL\null.
 The low-level iTOPL is very regular and so its semantics are easy to define.
-The high-level TOPL is designed to look like a normal object-oriented language.
+The high-level TOPL is designed to look familiar to an object-oriented programmer.
 More importantly, TOPL curtails iTOPL's expressivity in a way that, we expect, will benefit static verification.
 Our implementation helped clarify TOPL's semantics.
-It only handles a simple object-oriented language, but we are in the process of adapting the implementation to Java.
 
-In the future, we intend to make use of separation logic~\cite{reynolds2002} to deal with the heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for \TPL \ properties of Java programs using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
-This will require investigating suitable abstraction techniques for obtaining meaningful and precise over-approximations of the state space of the programs.
-Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
+We designed TOPL for dynamic and static analysis of Java programs.
+The next steps are to develop a dynamic analyzer and a static analyzer.
+For dynamic analysis, we intend to instrument Java bytecode and run a checker in parallel with the real program.
+The challenge we expect here is to reduce the run-time overhead.
+For static analysis, we intend to build on the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
+Remember that TOPL's guards are basically aliasing checks.
+Separation logic~\cite{reynolds2002} is a good formalism for reasoning about aliasing and is the foundation of jStar.
+The challenges we expect here are convergence and scalability.
+For convergence, we must find suitable abstractions, which obtain meaningful and precise over-approximations of the state space of the programs.
+For scalability, we may need a tailored version of bi-abduction inference~\cite{dblp:conf/popl/CalcagnoDOY09}.
 
 Another possible development would be to design other high-level property languages on top of iTOPL\null.
 For example, it is conceivable that iTOPL could be used as an intermediate language in tools that verify temporal properties of programs written in Haskell~\cite{haskell} or Boogie~\cite{leino2008boogie}.
