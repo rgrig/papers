@@ -180,6 +180,11 @@ let pp_automaton ifv f x =
   fprintf f     "%a,@\n" pp_int_list (starts x);
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
   fprintf f     "@[<2>new Transition[][]{%a}@],@\n" (pp_array (pp_vertex x.pattern_tags pov ieop ifv)) x.vertices;
+(*
+  printf "known tags:";
+  Hashtbl.iter (fun g ts -> pp_int_list std_formatter ts) x.pattern_tags;
+  printf "\n";
+*)
   fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
   fprintf f     "@[<2>new int[][]{%a}@]" (pp_list pp_int_list) (Array.to_list ieop);
   fprintf f   "@]));@\n";
@@ -365,9 +370,11 @@ let does_method_match
   ({ method_name=mn; method_arity=ma }, mt)
   { PA.event_type=t; PA.method_name=re; PA.method_arity=a }
 =
-  option true ((=) ma) a &&
-  mt = t &&
-  Str.string_match re mn 0
+  let ba = option true ((=) ma) a in
+  let bt = mt = t in
+  let bn = Str.string_match re mn 0 in
+(*    printf "(%s, %d) matches: mn: %b, ma: %b, mt: %b\n" mn ma bn ba bt; *)
+    ba && bt && bn
 
 let get_tag x =
   let cnt = ref (-1) in fun t (mns, ma) ->
@@ -380,6 +387,7 @@ let get_tag x =
         incr cnt;
         let at p =
           let ts = Hashtbl.find x.pattern_tags p in
+	  (* printf "added tag %d\n" !cnt; *)
           Hashtbl.replace x.pattern_tags p (!cnt :: ts) in
         List.iter at ps;
         Some !cnt
@@ -456,16 +464,18 @@ let get_overrides h c ({method_name=n; method_arity=a} as m) =
 
 let instrument_method get_tag h c = function
   | B.Method.Regular r -> (
+      (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
       let param_types, _ = r.B.Method.descriptor in (* return is not used *)
-      let nr_params = List.length param_types in
+      let is_static = has_static_flag r.B.Method.flags in
+      let nr_params = List.length param_types + if is_static then 0 else 1 in
       let overrides =
         get_overrides h c (mk_method r.B.Method.name nr_params) in
+      (* printf "  number of overrides: %d\n" (List.length (fst overrides)); *)
       let call_id = get_tag (Some PA.Call) overrides in
       let return_id = get_tag (Some PA.Return) overrides in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
-	      let is_static = has_static_flag r.B.Method.flags in
 	      let inst_code = instrument_code call_id return_id param_types is_static in
 	      let inst_attrs = function
 		| `Code code ->
@@ -525,8 +535,10 @@ let compute_inheritance classpath =
     let name = c.B.ClassDefinition.name in
     let fold mns = function
       | B.Method.Regular r ->
+	  let is_static = has_static_flag r.B.Method.flags in
 	  let (ps, _) = r.B.Method.descriptor in (* return is not used *)
-          mk_method r.B.Method.name (List.length ps) :: mns
+	  let nr_params = List.length ps + if is_static then 0 else 1 in
+          mk_method r.B.Method.name (nr_params) :: mns
       | _ -> mns in
     let method_names = List.fold_left fold [] c.B.ClassDefinition.methods in
     let parents = match c.B.ClassDefinition.extends with
