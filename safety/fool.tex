@@ -27,7 +27,7 @@
 
 \newcommand{\TPL}{TOPL}
 
-\titlebanner{DRAFT}
+%\titlebanner{DRAFT}
 \title{TOPL: A Language for Specifying Safety Temporal Properties of Object-Oriented Programs}
 \authorinfo{Radu Grigore \and Rasmus Lerchedahl Petersen \and Dino Distefano}{Queen Mary, University of London}{{\rm\{}rgrig,rusmus,ddino{\rm\}}@eecs.qmul.ac.uk}
 
@@ -45,7 +45,7 @@
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
 
 \newcommand{\note}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
-%\renewcommand{\note}[2]{}
+\renewcommand{\note}[2]{}
 \newcommand{\rg}[1]{\note{rg}{#1}}
 \newcommand{\rlp}[1]{\note{rlp}{#1}}
 \newcommand{\dd}[1]{\note{dd}{#1}}
@@ -177,18 +177,14 @@ The first example (\autoref{sec:examples.steps}) uses a large part of \TPL\null.
 Each execution step introduces a few new concepts.
 The other examples (Sections~\ref*{sec:examples.iterators}--\ref*{sec:examples.ho}) illustrate TOPL expressiveness.
 
-\rg{TODO: Property names are not consistent:
-Should they read like an error message?
-Should they say what is good or what is bad?}
-
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
 The last statement in \autoref{fig:first.java} throws an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
-The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
-the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
-\autoref{fig:first.diagram}, on the other hand, captures precisely a temporal property involving three interacting objects.
+The diagrams sometimes have semantics, but are not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
+the diagrams are sometimes expressive, but do not have formal semantics~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
+\autoref{fig:first.diagram}, on the other hand, captures a temporal property involving three interacting objects and has formal semantics.
 \autoref{fig:first.topl} describes the same property in (the textual form of) TOPL, and is clearly isomorphic to the diagram of~\autoref{fig:first.diagram}.
 The rest of this section explains the semantics of \autoref{fig:first.diagram} and \autoref{fig:first.topl}:
 \emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
@@ -205,8 +201,7 @@ Labels capture, roughly, the shape of statements that enable the corresponding t
 \end{figure}
 \begin{figure}
 \begin{Verbatim}
-using prefix java.util.Collection
-using prefix java.util.Iterator
+prefix <java.util.{Collection,Iterator}>
 \end{Verbatim}
 \par\medskip
 \begin{tikzpicture}
@@ -222,21 +217,22 @@ using prefix java.util.Iterator
   \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
   \draw[transition] (0,0.5)--(start);
   \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition,gray] (start) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (start);
   \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
   \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
   \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
   \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}$} (error);
+  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}$} (error);
 \end{tikzpicture}
 \caption{A first example: Diagram of safety property}
 \label{fig:first.diagram}
 \end{figure}
 \begin{figure}
 \begin{Verbatim}[commandchars=\\\{\}]
-property InvalidateOtherIterators
-  using prefix java.util.Collection
-  using prefix java.util.Iterator
+property IteratorComodification
+  prefix <java.util.\{Collection,Iterator\}>
+  \textcolor{gray}{start -> start:* // implicit by convention}
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> one:    *
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
@@ -255,46 +251,46 @@ property InvalidateOtherIterators
 \begin{align*}
 &\{\;(\start,[])\;\} \\
 &\s{Iterator<Integer> i = c.\m{iterator}();} \\
-&\text{assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
+&\text{// assume ${\tt c}==\gamma$ and ${\tt i}==\alpha$ } \\
 & \begin{aligned}
   \{\;&(\start,[]),\\
-      &(\t{one},[c:1,x:2])\;\}
+      &(\t{one},[c:\gamma,x:\alpha])\;\}
   \end{aligned}\\
 &\s{Iterator<Integer> j = c.\m{iterator}();} \\
-&\text{assume {\tt j} holds $3$} \\
+&\text{// assume ${\tt j}==\beta$} \\
 & \begin{aligned}
   \{\;&(\start,[]),\\
-      &(\t{one},[c:1,x:2]),\\
-      &(\t{one},[c:1,x:3]),\\
-      &(\t{two},[c:1,x:2,y:3])\;\}
+      &(\t{one},[c:\gamma,x:\alpha]),\\
+      &(\t{one},[c:\gamma,x:\beta]),\\
+      &(\t{two},[c:\gamma,x:\alpha,y:\beta])\;\}
   \end{aligned}\\
 &\s{i.\m{next}();} \\
 & \begin{aligned}
   \{\;&(\start,[]),\\
-      &(\t{one},[c:1,x:2]),\\
-      &(\t{one},[c:1,x:3]),\\
-      &(\t{two},[c:1,x:2,y:3])\;\}
+      &(\t{one},[c:\gamma,x:\alpha]),\\
+      &(\t{one},[c:\gamma,x:\beta]),\\
+      &(\t{two},[c:\gamma,x:\alpha,y:\beta])\;\}
   \end{aligned}\\
 &\s{i.\m{remove}();} \\
 & \begin{aligned}
   \{\;&(\start,[]),\\
-      &(\t{one},[c:1,x:2]),\\
-      &(\t{one},[c:1,x:3]),\\
-      &(\t{yBad},[c:1,x:2,y:3])\;\}
+      &(\t{one},[c:\gamma,x:\alpha]),\\
+      &(\t{one},[c:\gamma,x:\beta]),\\
+      &(\t{yBad},[c:\gamma,x:\alpha,y:\beta])\;\}
   \end{aligned}\\
 &\s{j.\m{next}()} \\
 & \begin{aligned}
   \{\;&(\start,[]),\\
-      &(\t{one},[c:1,x:2]),\\
-      &(\t{one},[c:1,x:3]),\\
-      &(\error,[c:1,x:2,y:3])\;\}
+      &(\t{one},[c:\gamma,x:\alpha]),\\
+      &(\t{one},[c:\gamma,x:\beta]),\\
+      &(\error,[c:\gamma,x:\alpha,y:\beta])\;\}
   \end{aligned}\\
 \end{align*}}
 \caption{A first example: Running step by step}
 \label{fig:first.steps}
 \end{figure} % >>>
 
-\autoref{fig:first.steps} shows an execution of the program and of an automaton for the property \texttt{InvalidateOtherIterators}.
+\autoref{fig:first.steps} shows an execution of the program and of a \emph{nondeterministic} automaton for the property \texttt{IteratorComodification}.
 The lines \{in curly brackets\} describe the state of the automaton;
 the lines in \texttt{monotype} show the statements that execute;
 the other lines are comments.
@@ -310,8 +306,8 @@ The empty map is denoted by~$[]$.
 \end{notation}
 
 The automaton has variables $x$,~$y$, and~$c$.
-At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
-at vertex \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
+At vertex \texttt{one} the variables $x$~and~$c$ are initialized, and the variable~$c$ is not initialized;
+at vertex \texttt{two} all the variables $x$,~$y$, and~$c$ are initialized.
 Being at vertex \texttt{one} means that $x$~is an iterator for~$c$;
 being at vertex \texttt{two} means that $x$~and~$y$ are two iterators for the same collection~$c$.
 There is a program variable~\Verb@c@ and an automaton variable~$c$.
@@ -324,9 +320,10 @@ Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$).
 Program variables appear in the program;
 automaton variables do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
+We say \emph{uppercase pattern} for an automaton variable pattern that starts with an uppercase letter;
+we say \emph{lowercase pattern} for an automaton variable pattern that starts with a lowercase letter.
 \end{notation}
 
-\rg{Must define \emph{uppercase pattern} and \emph{lowercase pattern}.}
 As it will become apparent below, the interaction between patterns and automatons' memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
 \paragraph{Step~1.}
@@ -345,8 +342,8 @@ For simplicity, we ignore argument types and identify Java methods only by their
 The called method \texttt{iterator} is in the class \texttt{ArrayList} and has arity~$1$.
 We identify it as follows.
 \verbline{java.util.ArrayList.iterator[1]}
-Without \texttt{using prefix} directives, the method pattern would be \Verb@iterator[1]@.
-With the directives, however, the pattern is the following.
+Without the \texttt{prefix} directive, the method pattern would be \Verb@iterator[1]@.
+With the directive, however, the pattern is the following.
 \begin{align*}
 &\text{\Verb@java.util.Collection.iterator[1]@} \\
 &\text{\Verb@java.util.Iterator.iterator[1]@}
@@ -356,17 +353,18 @@ Here, \texttt{ArrayList} implements \texttt{Collection}.
 
 All conditions are met to enable the transition from \start to \texttt{one}.
 When the transition is performed the values that matched \pattern X~and~\pattern C are written in the automaton variables $x$~and~$c$.
-For concreteness, let us assume these values are $1$~and~$2$.
-After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
-The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also enabled and performed.
-\rg{Say that this is a convention.}
+For concreteness, let us assume these values are, respectively, the references $\alpha$~and~$\gamma$.
+(Note that the program variables $x$~and~$c$ may change their values, which is why we need a name for their values $\alpha$~and~$\gamma$ at this point.)
+After the transition is performed, the state $(\mathtt{one},[c:\gamma,x:\alpha])$ is active.
+The state $(\start,[])$ remains active because the implicit transition \verbline{\start -> \start: *} is also enabled and performed.
+For convenience, TOPL assumes that there is a loop on \start even if the user did not explicitly write it.
 
 \paragraph{Step~2.}
 For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\] in turn.
-For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
+Now we need to consider the two active states \[(\start,[])\quad\text{and}\quad(\texttt{one},[c:\gamma,x:\alpha])\] in turn.
+For $(\start,[])$ the same reasoning as for step~1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:\gamma,x:\beta])$ are active after step~2.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
+For $(\texttt{one},[c:\gamma,x:\alpha])$ we look at the transitions outgoing from vertex {\tt one}.
 \begin{align*}
 &\text{\Verb@one -> one: *@} \\
 &\text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
@@ -376,7 +374,7 @@ The second of these transitions has two patterns, \pattern Y~and~\pattern c.
 The uppercase pattern~\pattern Y always matches;
 the lowercase pattern \pattern c matches only the value held by the automaton variable~$c$.
 In this case, the automaton variable~$c$ was set in the previous step to the value of the program variable~\texttt{c}.
-Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
+Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:\gamma,x:\alpha,y:\beta])$ is activated.
 
 \paragraph{Step~3.}
 
@@ -402,7 +400,7 @@ However,  the outgoing transition of state {\tt two} is enabled, and therefore {
 \paragraph{Step~5.}
 
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3]),$
+The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}\] of the active state $(\texttt{yBad},[c:\gamma,x:\alpha,y:\beta]),$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
 As before, in order to match the method name, the following prefixes are prepended  
 \begin{align*}
@@ -419,8 +417,7 @@ Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{
 \medskip
 The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
 Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
-
-\rg{Add a summary that explains why this is easy to write, not weaved with the code, and can provide traces.}
+One can write the TOPL property without understanding some implementation of Java's collections library.
 
 % >>>
 \subsection{More on Iterators} \label{sec:examples.iterators} % <<<
@@ -430,9 +427,8 @@ Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:c
 \medskip\emph{Modifying a collection invalidates all its existent iterators:}
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property ModificationInvalidatesIterators
-  using prefix java.util.Collection
-  using prefix java.util.Iterator
+property CollectionComodification
+  prefix <java.util.\{Collection,Iterator\}>
   start -> iterating:    \pattern{I} := \pattern{C}.iterator()
   iterating -> modified: \pattern{c}.add(*), \pattern{c}.remove(*)
   modified -> error:     call \pattern{i}.*[*]
@@ -446,10 +442,9 @@ This abstraction leak is intrinsic to Java where sub-classing is not sub-typing.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property UnsafeIteratorNext
-  using prefix java.util.Collection
-  using prefix java.util.Iterator
+  prefix <java.util.\{Collection,Iterator\}>
   start -> iterating:        \pattern{I} := *.iterator()
-  iterating -> notExhausted: \pattern{true} := \pattern{i}.hasNext()
+  iterating -> notExhausted: <true> := \pattern{i}.hasNext()
   notExhausted -> iterating: \pattern{i}.next()
   iterating -> error:        \pattern{i}.next()
 \end{Verbatim}
@@ -461,8 +456,7 @@ In general, Java literals act as guards on transitions.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property RemoveBeforeNext
-  using prefix java.util.Collection
-  using prefix java.util.Iterator
+  prefix <java.util.\{Collection,Iterator\}>
   start -> created: \pattern{I} := *.iterator()
   created -> ok:    \pattern{i}.next()
   created -> error: \pattern{i}.remove()
@@ -497,7 +491,7 @@ To create a resource, we use the static method \Verb@makeResource@.
 \medskip\emph{A resource must be acquired when used:}
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property ResourceSafety
+property UseReleasedResource
   start -> released:    \pattern{R} := makeResource()
   released -> error:    \pattern{r}.use()
   released -> acquired: \pattern{r}.acquire()
@@ -507,7 +501,7 @@ property ResourceSafety
 In simple cases, resources cannot repeatedly move between the states \Verb@released@ and \Verb@acquired@.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property ResourceSafetySimple
+property UseReleasedSimpleResource 
   start -> acquired:    \pattern{R} := makeResource()
   acquired -> released: \pattern{r}.release()
   released -> error:    \pattern{r}.use()
@@ -578,7 +572,7 @@ This section is inspired by the higher-order temporal properties of Disney et al
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property RecursiveSort
-  using prefix Sorter
+  prefix <Sorter>
   start -> inSort: call sort[*]
   inSort -> ok:    return sort[*]
   inSort -> error: call sort[*]
@@ -588,13 +582,14 @@ property RecursiveSort
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property NotAtomicM
-  start -> inM: call m[*]
+  observing <SomeClass.*>
+  start -> inM: call *.m[*]
   inM -> ok:    return m[*]
   inM -> error: call badCall[*]
 \end{Verbatim}
 \delimitVerbatim
-All the events that should not intervene between the call to~\Verb@m@ and the return from~\Verb@m@ must be explicitly mentioned.
-Otherwise, if the granularity for atomicity is implicit, then it is easy for users to make mistakes.
+The \texttt{observing} directive explicitly lists the observable events, thus choosing the proper granularity.
+In this case, all method calls within \texttt{SomeClass} are observed.
 
 % >>>
 % >>>
@@ -612,7 +607,7 @@ Before moving on to semantics (\autoref{sec:semantics}) we shall also introduce 
 % - desugaring translation
 
 TOPL aims to be intuitive:
-Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \start, the \texttt{using prefix} directive offers some extra convenience, and so on.
+Labels look like method calls, there is a shorthand notation for parallel transitions, there is an implied loop on the vertex \start, the \texttt{prefix} directive offers some extra convenience, and so on.
 From the point of view of semantics, however, these conveniences are in the way.
 For this reason we also define iTOPL (\textbf inner TOPL), an even simpler language into which TOPL is desugared.
 
@@ -631,7 +626,7 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
 \begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
-  Using& \b{using prefix} StringPattern \cr
+  Using& \b{prefix} \b< StringPattern \b> \cr
   Transition& Arc \b: Label \(\b, Label\)\* \cr
   StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
   Arc& Vertex \b{->} Vertex \cr
@@ -643,7 +638,7 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
   NamePattern& StringPattern \cr
   ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
   ArgumentsPattern& \b[ IntegerPattern \b] \cr
-  ValuePattern& \b* \| Literal \| UppercaseId \| \b!\? LowercaseId \cr
+  ValuePattern& \b* \| \b< Literal \b> \| UppercaseId \| LowercaseId \cr
   IntegerPattern& \b* \| IntegerLiteral \cr
 }
 \caption{Syntax of TOPL}
@@ -658,9 +653,8 @@ Value patterns are the most interesting.
 For each automaton variable \Verb@var@ there are three associated patterns.
 The uppercase pattern \Verb@Var@ matches any value and writes it in the automaton variable \Verb@var@.
 The lowercase pattern \Verb@var@ reads the value of the automaton variable \Verb@var@ and only matches that value.
-The negated lowercase pattern \Verb@!var@ reads the value of the automaton variable \Verb@var@ and only matches different values.
 A Java literal acts as a pattern that matches only the value it denotes.
-A wildcard~* pattern matches any value.
+A wildcard~\Verb@*@ pattern matches any value.
 
 A TOPL property is \emph{well-formed} when it satisfies the following conditions.
 \begin{itemize}
@@ -689,7 +683,6 @@ There is also an atomic guard that matches against method calls and always speci
   Label& \(\b(Guard Action\b)\)\* \cr
   Guard& AtomicGuard \| Guard \(\(\b{\&}\|\b|\) Guard\)\* \cr
   Action& \(AtomicAction \(\b, AtomicAction\)\*\)\? \cr
-  AtomicGuard& \b! Guard \cr
   AtomicGuard& \b[ ValueIndex \b] \b= \(Identifier \| Literal\)\cr
   AtomicGuard& \(\b{call} \| \b{return}\) NamePattern \b[ IntegerPattern \b] \cr
   AtomicGuard& \b{true} \cr
@@ -721,18 +714,16 @@ while the return events are matched by labels of the form
   \mathtt{return}\ p_0:=m
 \]
 with one value pattern for the return value.
-In both cases the TOPL labels give rise to an iTOPL label with one
-(guard, action) pair.
+In both cases the TOPL labels give rise to an iTOPL label with one (guard, action) pair.
 
 The guard is constructed by stating that all automaton variables
 should have the appropriate values. That is, all lowercase automaton
 patterns $\pattern{x} = p_i$ amongst the value
 patterns give rise to a guard term of the form
 \[
-event[i] = x
+event[i] = x,
 \]
-(or $event[i] \neq x$ in the case of $p_i = {!\pattern{x}}$), referring to the
-array of values carried by the event.
+referring to the array of values carried by the event.
 The guard is then the conjunction of all these guard terms.
 
 The action expresses that automaton variables should be updated. So
@@ -844,8 +835,6 @@ Each event~$e$ contains an array of values.
 Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
 For values, we assume a countable set \set{Value} and for events we assume
 a finite set \set{Event} of events with known arity.
-\rg{Does the cardinality of \set{Value} matter?}
-\rg{Does the cardinality of \set{Event} matter?}
 
 We will now describe how the automaton reacts to events, specifically
 how labels are evaluated. As this is a slightly non-standard
@@ -960,8 +949,6 @@ We define it as the least fixed point for the following equation.
 \begin{align}
 \mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
 \end{align}
-\rlp{Should this really include 0-sized steps?}
-\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
 Finally, we can define the set of traces described by an automaton:
 \[
 \{ e \mid
@@ -1131,6 +1118,8 @@ look similar to our automatons, if for a quite different
 setting. Here, the specifications are function-centered, though, and
 again, capturing inter object relations seems somewhat awkward.
 
+ConSpec~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
+Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{IteratorComodification} (\autoref{sec:examples.steps}).
 
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
@@ -1155,6 +1144,8 @@ For scalability, we may need a tailored version of bi-abduction inference~\cite{
 
 Another possible development would be to design other high-level property languages on top of iTOPL\null.
 For example, it is conceivable that iTOPL could be used as an intermediate language in tools that verify temporal properties of programs written in Haskell~\cite{haskell} or Boogie~\cite{leino2008boogie}.
+
+Finally, we intend to define TOPL's semantics also in a concurrent setting.
 
 %>>>
 
