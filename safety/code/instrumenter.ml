@@ -175,29 +175,27 @@ let pp_transition tags f {steps=ss;target=t} =
   fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a@]@\n}, %d)@]" (pp_v_list (pp_step tags)) ss t
 
 let pp_vertex tags pov ifv f (vi, {outgoing_transitions=ts;_}) =
-  fprintf f "@[<2>new Transition[]{/* from %d */%a@]@\n}"
+  fprintf f "@[<2>new Transition[]{ /* from %d */%a@]@\n}"
     vi
     (pp_v_list (pp_transition tags)) ts
 
 let pp_automaton ifv otfp f x =
   let pov = compute_pov x in
   let obs_p p = Hashtbl.find x.pattern_tags (Hashtbl.find otfp p) in
-  let obs_tags = List.map obs_p (get_properties x) in
+  let obs_tags = List.map obs_p (unique (get_properties x)) in
   fprintf f "package topl;@\n@\n";
   fprintf f "import static topl.Checker.*;@\n@\n";
   fprintf f "@[<2>public class Property {@\n";
   fprintf f   "@[<2>public static Checker checker = new Checker(new Automaton(@\n";
+  fprintf f     "/* start nodes, one for each property */@\n";
   fprintf f     "%a,@\n" pp_int_list (starts x);
+  fprintf f     "/* error messages, one non-null for each property */@\n";
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
+  fprintf f     "/* transitions as an adjacency list */@\n";
   fprintf f     "@[<2>new Transition[][]{%a@]@\n},@\n" (pp_array (pp_vertex x.pattern_tags pov ifv)) x.vertices;
-(*
-  printf "known tags:";
-  Hashtbl.iter (fun g ts -> pp_int_list std_formatter ts) x.pattern_tags;
-  printf "\n";
-*)
   fprintf f     "/* property the vertex comes from */@\n";
   fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
-  fprintf f     "/* events each property is interested in */@\n";
+  fprintf f     "/* events each property is observing */@\n";
   fprintf f     "@[<2>new int[][]{%a@]@\n}" (pp_v_list pp_int_list) obs_tags;
   fprintf f   "@]));@\n";
   fprintf f "@]@\n}@\n"
@@ -530,6 +528,7 @@ let instrument_method get_tag h c = function
 let open_class_channel c =
   let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
   let fn = B.Utils.UTF8.to_string fn in
+  let fn = fn ^ ".class" in
   let fn = Filename.concat !out_dir fn in
   mkdir_p (Filename.dirname fn);
   open_out fn
