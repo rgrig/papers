@@ -195,10 +195,10 @@ Consider the informal safety property from the introduction. It can be better re
 The last statement in \autoref{fig:first.java} violates this property, therefore throwing an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 Such properties are often explained using diagrams~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
-The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06};
-the diagrams are sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
-\autoref{fig:first.diagram}, on the other hand, captures precisely a temporal property involving three interacting objects.
-\autoref{fig:first.topl} describes the same property in (the textual form of) TOPL, and is (clearly) isomorphic to the diagram of~\autoref{fig:first.diagram}.
+The diagrams are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06} or sometimes expressive, but not precise enough~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
+\dinocomment{what does it mean exactly? That they do not have defined formal semantics?}
+\autoref{fig:first.topl} (left), on the other hand, captures precisely a temporal property involving three interacting objects.
+\autoref{fig:first.topl} on the right hand side describes the same property in (the textual form of) TOPL, and is  isomorphic to the diagram.
 
 In a TOPL property, vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
 transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
@@ -562,23 +562,23 @@ Similarly, an automaton's semantics is also defined as a set of event traces.
 We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-\begin{notation}
-Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
-We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
-We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
-In particular, the powerset of~\set A is denoted by $\set A\to\B$.
-Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
-For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
-We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
-Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
-However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
-For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
-We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
-We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
-\bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
-For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a_i$
-instead of $a\;i$.
-\end{notation}
+%\begin{notation}
+%Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
+%We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
+%We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
+%In particular, the powerset of~\set A is denoted by $\set A\to\B$.
+%Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+%For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
+%We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
+%Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
+%However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
+%For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
+%We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
+%We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
+%\bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
+%For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a_i$
+%instead of $a\;i$.
+%\end{notation}
 
 %\subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
 Each property gives rise to an automaton defined over the labeled multigraph $(\set{Vertex}, \set{Arc})$ given by the transitions:
@@ -605,7 +605,7 @@ given by specifying the vertex in the graph as well as the value of defined auto
 %
 We model stores as finite partial maps with finite domain.
 \[
-\set{Store} = \set{Variable} \pmap \set{Value}
+\set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
 %
 Given the state of the automaton and an event we would like to know
@@ -642,7 +642,7 @@ at labels. A label is a list of pairs of guards and actions. A
 guard compares the values in an event with those in a store and
 concludes either pass or no pass:
 \[
-\set{Guard} = \set{Event}\times\set{Store}\to\B
+\set{Guard} =2^{ \set{Event}\times\set{Store}}
 \]
 if the event passes, the corresponding action is performed on that event.
 Actions modify the store, using values from an event:
@@ -721,13 +721,17 @@ Notice that the only outgoing transition on the active state {\tt three} needs a
 
 We can define a predicate that determines the possible execution state transitions
 \[
-\mathit{Step}\in\set{World}\to\set{World}\to\B
+\mathit{Step}\in 2^{\set{World}\to\set{World}}
 \]
+\dinocomment{Rasmus can you check that the type above is right? Or should it be: 
+$\mathit{Step}\in \set{World}\to 2^{\set{World}}$}
+
 this predicate is defined in \autoref{fig:adStep}.
 From this we can define a non-deterministic step function, where all
 enabled transitions are performed:
 \begin{align}
-\mathit{NdetStep}&\in(\set{World}\to\B)\to(\set{World}\to\B)\\
+%\mathit{NdetStep}&\in(\set{World}\to\B)\to(\set{World}\to\B)\\
+\mathit{NdetStep}&\in 2^{\set{World}} \to 2^{\set{World}}\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
 \mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
 \end{align}
@@ -867,7 +871,7 @@ In the following we give a detailed description of the TOPL compile and the Prop
 %
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[scale=.45]{TOPL.pdf}
+\includegraphics[scale=.35]{TOPL.pdf}
 \caption{Architecture of TOPL properties' run-time checking.}
 \label{architecture}
 \end{center}
