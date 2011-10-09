@@ -424,7 +424,7 @@ Notice that in order to find a counterexample we need to keep track of the relat
 % >>>
 \subsection{More on Iterators} \label{sec:examples.iterators} % <<<
 
-Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are also easy to express in TOPL\null.
+Other interesting properties of iterators~\cite{dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,haack2009} are easily  to express in TOPL\null.
 
 \medskip\emph{Modifying a collection invalidates all its existent iterators:}
 \delimitVerbatim
@@ -476,7 +476,7 @@ The purpose of the transition going to \Verb@ok@ is to deactivate the state with
 We have now seen four properties of iterators.
 Each of the previous TOPL properties corresponds to one English sentence.
 
-\dinocomment{Maybe we need to add also the other example of the paper.}
+\dinocomment{Maybe we need to add also the other example of the paper. Or put the other properties which are not related to iterators}
 
 \section{TOPL Syntax and Semantics}
 
@@ -600,7 +600,7 @@ Each event~$e$ contains an array of values.
 Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
 We assume a countable set \set{Value} of values, a countable set \set{Event} of events with known arity,
 and a countable set $\set{Variable}$ of automaton variables.
-A state of the automaton is not just a vertex but also a store: 
+A {\em  automaton state} is not just a vertex but also a store: 
 \[
 \set{State} = \set{Vertex}\times\set{Store}
 \]
@@ -612,10 +612,7 @@ We model stores as finite partial maps with finite domain.
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
 %
-Given the state of the automaton and an event we would like to know
-which transitions are enabled. 
-%But actually, we do not have enough information to determine that. This is a consequence of the second
-%slightly non-standard aspect of our automatons, namely that 
+Given the state a peculiar aspect of our automata is deciding whether a transition is enabled.
 Each label carries (potentially) a list of guards and 
 we call the length of this list, the \emph{depth} of the transition.
 %
@@ -623,19 +620,22 @@ In order for a transition to be enabled, all the guards along its
 list have to evaluate to true. Since each guard along the transition consumes
 an event |  therefore | if a transition has depth~$n$, then we have to examine the next~$n$ events to see if the transition is enabled.
 
-A further consequence is that the following events to be received are
-not the same at the end of each enabled transition. If two transitions
+A further consequence of the concept of transition depth is that the events to be received by  target states 
+of different enabled transitions with different depth are
+not the same.  For example for a trace of events $e_1 e_2 e_3\cdots$, if two transitions
 turn out to be enabled, one with depth 2 and the other with depth 5,
-then the end state of the first transition will see the third event of
-the trace next, while the end state of the second transition will see
-the sixth event next. For this reason, it is necessary to keep track
+then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
+
+
+For this reason, it is necessary to keep track
 of which events are next to be received by each state during a run of
 the automaton.
 
 To formalize this bookkeeping, we introduce the notion of
-\emph{execution state}. For brevity, we call execution states worlds.
+\emph{execution state}. 
+\newcommand{\World}{ExecState}
 \[
-\set{World} = \set{State}\times\set{Trace}
+\set{\World} = \set{State}\times\set{Trace}
 \]
 The first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
@@ -646,7 +646,7 @@ at labels. A label is a list of pairs of guards and actions. A
 guard compares the values in an event with those in a store and
 concludes either pass or no pass:
 \[
-\set{Guard} =2^{ \set{Event}\times\set{Store}}
+\set{Guard} =\set{Event}\times\set{Store} \to \B
 \]
 if the event passes, the corresponding action is performed on that event.
 Actions modify the store, using values from an event:
@@ -668,26 +668,20 @@ where
   s_0 &=  s \\
   s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
 \end{align}
-If the transition is enabled and performed, the store for the target vertex will be $s_n$.
+The store for the target vertex of enabled and performed transition will be $s_n$.
 
+\paragraph{Silent steps.}
 Another peculiar aspect of our
 automatons is that if no transitions are enabled for a given
 state and trace of events, the automaton does not get stuck but is
-allowed to consume one event without changing its state. Note that
-this is not equivalent to an implied self-loop on all states, as
+allowed to consume one event without changing its state (called a silent step). Note that
+a silent step is not equivalent to an implied self-loop on all states, as
 dropping events is not allowed if there are any enabled
 transitions. In that case one of the enabled transitions is performed and
 the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$ is the vertex at the
 end of the arc of the transition, $s_n$ is defined as above and
 $\mathit{events}_n$ is the current executions state's event trace with the first
 $n$ events dropped.
-\begin{example}
-Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
-\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\] 
-is not matched by any transitions starting from states {\tt one} or {\tt two} in the automaton of Fig~\ref{}. 
-This event is silently consumed but the set of active states does not change. 
-The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
-\end{example}
 \begin{example}
 Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume we are given the following
 trace in input
@@ -698,8 +692,16 @@ Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active
 Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by 
 the trace $e_1 e_1 e_2 $ from {\tt zero}. 
 On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se. 
-Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the the second occurrence of $e_1$ is considered, and since it is followed by $e_2$ the transition from {\tt three} to {\tt four} becomes is enabled, the events $e_1e_2$ are consumed and {\tt four} becomes active whereas {\tt three} inactive.
+Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$ the transition from {\tt three} to {\tt four} becomes is enabled, the events $e_1e_2$ are consumed and {\tt four} becomes active whereas {\tt three} inactive.
 \end{example}
+\begin{example}
+Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
+\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\] 
+is not matched by any transitions starting from states {\tt one} or {\tt two} in the automaton of Fig~\ref{}. 
+This event is silently consumed but the set of active states does not change. 
+The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
+\end{example}
+%
 %
 \begin{figure}
 \begin{tikzpicture}
@@ -725,17 +727,14 @@ Notice that the only outgoing transition on the active state {\tt three} needs a
 
 We can define a predicate that determines the possible execution state transitions
 \[
-\mathit{Step}\in 2^{\set{World}\to\set{World}}
+\mathit{Step} \in \set{\World}\to\set{\World} \to \B
 \]
-\dinocomment{Rasmus can you check that the type above is right? Or should it be: 
-$\mathit{Step}\in \set{World}\to 2^{\set{World}}$}
-
-this predicate is defined in \autoref{fig:adStep}.
-From this we can define a non-deterministic step function, where all
+This predicate is defined in \autoref{fig:adStep} and 
+from it we can define a non-deterministic step function, where all
 enabled transitions are performed:
 \begin{align}
-%\mathit{NdetStep}&\in(\set{World}\to\B)\to(\set{World}\to\B)\\
-\mathit{NdetStep}&\in 2^{\set{World}} \to 2^{\set{World}}\\
+%\mathit{NdetStep}&\in(\set{\World}\to\B)\to(\set{\World}\to\B)\\
+\mathit{NdetStep}&\in 2^{\set{\World}} \to 2^{\set{\World}}\\
 %\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
 \mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
 \end{align}
@@ -744,8 +743,8 @@ We define it as the least fixed point for the following equation.
 \begin{align}
 \mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
 \end{align}
-\rlp{Should this really include 0-sized steps?}
-\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
+%\rlp{Should this really include 0-sized steps?}
+%\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
 Finally, we can define the set of traces described by an automaton:
 \[
 \{ e \mid
