@@ -478,7 +478,7 @@ Each of the previous TOPL properties corresponds to one English sentence.
 
 \dinocomment{Maybe we need to add also the other example of the paper.}
 
-\section{TOPL syntax and semantics}
+\section{TOPL Syntax and Semantics}
 
 
 %\subsection{TOPL and iTOPL}\label{sec:syntax.topl} % <<<
@@ -493,13 +493,14 @@ A property has a name, a set of \texttt{using} directives, and a set of transiti
 Each transition has an arc (directed edge) and labels.
 Each arc has a source vertex and a target vertex.
 All vertices are identified by their name.
-Labels look roughly like method calls.
+Labels look like method calls.
 Each label has a method pattern that is used to identify the set of methods to which the label refers.
 In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
 The more interesting case is when there are value patterns for each argument and perhaps even for the result.
 Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
-
+\dinocomment{Does anybody else has the ability to distinguish between call/return?}
+%
 \begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
@@ -527,10 +528,10 @@ String patterns are POSIX globs~\cite{man:glob.h} and match method names.
 (For simplicity, TOPL does not use full regular expressions as string patterns.)
 Integer patterns specify method arities.
 Value patterns are the most interesting.
-For each automaton variable \Verb@var@ there are three associated patterns.
-The uppercase pattern \Verb@Var@ matches any value and writes it in the automaton variable \Verb@var@.
-The lowercase pattern \Verb@var@ reads the value of the automaton variable \Verb@var@ and only matches that value.
-The negated lowercase pattern \Verb@!var@ reads the value of the automaton variable \Verb@var@ and only matches different values.
+For each automaton variable \Verb@v@ there are three associated patterns.
+The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
+The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
+The negated lowercase pattern \Verb@!v@ reads the value of the automaton variable \Verb@v@ and only matches different values.
 A Java literal acts as a pattern that matches only the value it denotes.
 A wildcard~* pattern matches any value.
 
@@ -543,19 +544,19 @@ A TOPL property is \emph{well-formed} when it satisfies the following conditions
 It is easy to check that a property is well-formed~\cite{web:topl.prototype}.
 From now on we assume TOPL properties to be well-formed.
 
-\paragraph{TOPL semantics}
-The TOPL formal semantics is defined by first mapping TOPL to  a simpler version of it (called iTOPL) with some restrictions (see~\cite{fool-paper} for details). In particular:
-\begin{itemize}
-\item Each transition has exactly one label.
-\item Each label is a list of (guard, action) pairs.
-\item Each guard is some boolean combination of atomic guards.
-\item Each action is a sequence of atomic actions.
-\item  An atomic guard that matches against method calls and always specifies a tag \Verb@call@ or \Verb@return@, but never involves examining any values.
-\end{itemize}
-These restrictions do not affect the expressivity of the language, rather they give us a more suitable  language for 
-a simpler formal development. 
+%\paragraph{TOPL semantics}
+%The TOPL formal semantics is defined by first mapping TOPL to  a simpler version of it (called iTOPL) with some restrictions (see~\cite{fool-paper} for details). In particular:
+%\begin{itemize}
+%\item Each transition has exactly one label.
+%\item Each label is a list of (guard, action) pairs.
+%\item Each guard is some boolean combination of atomic guards.
+%\item Each action is a sequence of atomic actions.
+%\item  An atomic guard that matches against method calls and always specifies a tag \Verb@call@ or \Verb@return@, but never involves examining any values.
+%\end{itemize}
+%These restrictions do not affect the expressivity of the language, rather they give us a more suitable  language for 
+%a simpler formal development. 
 
-\section{Semantics}\label{sec:semantics} % <<<
+\subsection{Semantics}\label{sec:semantics} % <<<
 
 We consider a program's semantics to be a set of event traces.
 Similarly, an automaton's semantics is also defined as a set of event traces.
