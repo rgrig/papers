@@ -582,21 +582,24 @@ In other words, properties encode bad executions, rather than good executions.
 %\end{notation}
 
 %\subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-Each property gives rise to an automaton defined over the labeled multigraph $(\set{Vertex}, \set{Arc})$ given by the transitions:
-$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions.
-\dinocomment{don't we have special vertex: start and error? In particular should we say that start is the initial state?}
+\begin{definition}
+A TOPL property is a tuple $(\set{Vertex}, \set{Arc}, \set{Label}, \texttt{start}, \texttt{error})$ where
+\begin{itemize}
+\item $\set{Vertex}$ is a set of vertices;
+\item $\set{Arc} \subseteq \set{Vertex} \times \set{Label} \times \set{Vertex}$ is a set of labelled arcs;
+\item $\texttt{start} \in \set{Vertex}$ is the initial vertex;
+\item $\texttt{error} \in \set{Vertex}$ is the accepting vertex.
+\end{itemize} 
+\end{definition}
+Each TOPL's property gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
+%$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs %mentioned in transitions. 
+The automaton has two special vertices, {\tt start} and {\tt error}, the initial and accepting vertex respectively.
+
 The automaton takes as input a trace of events.
 Each event~$e$ contains an array of values.
 Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
-For values, we assume a countable set \set{Value} and for events we assume
-a finite set \set{Event} of events with known arity.
-\rg{Does the cardinality of \set{Value} matter?}
-\rg{Does the cardinality of \set{Event} matter?}
-
-%We will now describe how the automaton reacts to events, specifically
-%how labels are evaluated. As this is a slightly non-standard
-%automaton, there are some important things to point out.
-We assume a set $\set{Variable}$ of automaton variables.
+We assume a countable set \set{Value} of values, a countable set \set{Event} of events with known arity,
+and a countable set $\set{Variable}$ of automaton variables.
 A state of the automaton is not just a vertex but also a store: 
 \[
 \set{State} = \set{Vertex}\times\set{Store}
