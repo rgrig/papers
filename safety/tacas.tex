@@ -960,7 +960,13 @@ again, capturing inter object relations seems somewhat awkward.
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 
-\paragraph{Future work}
+\paragraph{}
+We introduced TOPL---a language for expressing temporal safety properties for object-oriented programs.
+TOPL properties can express constraints involving the relation of many objects at the same time. 
+Furthermore, we introduced a technique for checking at run-time the violation of the properties
+on Java program. We have applied our technique to a variety of programs including large open source Java projects.
+%
+\paragraph{Future work.}
 In the future, we intend to make use of separation logic~\cite{reynolds2002} to deal with the heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for \TPL \ properties of Java programs using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
 This will require investigating suitable abstraction techniques for obtaining meaningful and precise over-approximations of the state space of the programs.
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
