@@ -427,6 +427,18 @@ public class Checker {
                 this.vertex = vertex;
                 this.eventId = eventId;
             }
+	    @Override
+            public boolean equals(Object o) {
+		if (o instanceof VertexEvent) {
+		    VertexEvent ve = (VertexEvent)o;
+		    return (vertex == ve.vertex && eventId == ve.eventId);
+		}
+		else return false;
+	    }
+	    @Override
+	    public int hashCode() {
+		return 31*vertex + 101*eventId;
+	    }
         }
         private HashSet<VertexEvent> interesting = new HashSet<VertexEvent>();
 
@@ -507,33 +519,43 @@ public class Checker {
 
     void reportError(String msg) {
         // TODO
+	System.out.println(msg);
     }
 
     public void check(Event event) {
+	System.out.print("Received event id " + event.id + ". States: [");
+	for (State state : states) System.out.print(state.vertex + ": " + state.events.size() + ", ");
+	System.out.println("]");
         HashSet<State> departedStates = new HashSet<State>();
         HashSet<State> arrivedStates = new HashSet<State>();
         for (State state : states) {
             if (!automaton.isInteresting(event.id, state.vertex)) {
-                continue;
+		continue;
             }
             state.events.addLast(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
                 continue;
             }
+	    boolean anyEnabled = false;
             for (Transition transition : automaton.transitions[state.vertex]) {
                 // evaluate transition
                 State stepState = state;
                 int i = 0;
                 Iterator<Event> j = state.events.iterator();
+		//System.out.print("  stream: <");
                 for (; i < transition.steps.length; ++i) {
                     TransitionStep step = transition.steps[i];
                     Event stepEvent = j.next();
+		    //System.out.print("  " + stepEvent.id);
                     // if (!step.eventIds.contains(stepEvent.id)) break;
                     if (!step.evaluateGuard(stepEvent)) break;
+		    System.out.print(", ");
                     stepState = stepState.applyAction(step.action);
                 }
+		//System.out.println(">");
                 // record transition
                 if (i == transition.steps.length) {
+		    anyEnabled = true;
                     departedStates.add(state);
                     arrivedStates.add(stepState);
                     // check for error state
@@ -542,10 +564,12 @@ public class Checker {
                         reportError(msg);
                 }
             }
-            // perform transitions
-            states.removeAll(departedStates);
-            states.addAll(arrivedStates);
+	    if (!anyEnabled) // drop an event from the state's queue
+		state.events.removeFirst();
         }
+	// perform transitions
+	states.removeAll(departedStates);
+	states.addAll(arrivedStates);
     }
 
     public String toDOT() {

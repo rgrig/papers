@@ -330,6 +330,8 @@ let println = utf8_for_method "println"
 let event = utf8_for_class "topl.Checker$Event"
 (* let event_init = utf8_for_method "topl.Checker$Event.<init>" *)
 let init = utf8_for_method "<init>"
+let property = utf8_for_class "topl.Property"
+let property_checker = utf8_for_field "checker"
 let checker = utf8_for_class "topl.Checker"
 let check = utf8_for_method "check"
 
@@ -383,7 +385,7 @@ let bc_new_event id =
 
 let bc_check =
   [
-    B.Instruction.ACONST_NULL; (* This should be a reference to the checker *)
+    B.Instruction.GETSTATIC (property, property_checker, `Class checker);
     B.Instruction.SWAP;
     B.Instruction.INVOKEVIRTUAL (`Class_or_interface checker,
 			       check,
@@ -444,13 +446,13 @@ let utf8_of_method_desc name desc =
 
 let rec add_return_code return_code = function
   | [] -> []
-  | (B.Instruction.ARETURN :: instructions)
-  | (B.Instruction.DRETURN :: instructions)
-  | (B.Instruction.FRETURN :: instructions)
-  | (B.Instruction.IRETURN :: instructions)
-  | (B.Instruction.LRETURN :: instructions)
-  | (B.Instruction.RETURN :: instructions)  (* do not instrument RET or WIDERET *)
-    -> return_code @ (B.Instruction.RETURN :: (add_return_code return_code instructions))
+  | ((B.Instruction.ARETURN as r) :: instructions)
+  | ((B.Instruction.DRETURN as r) :: instructions)
+  | ((B.Instruction.FRETURN as r) :: instructions)
+  | ((B.Instruction.IRETURN as r) :: instructions)
+  | ((B.Instruction.LRETURN as r) :: instructions)
+  | ((B.Instruction.RETURN as r) :: instructions)  (* do not instrument RET or WIDERET *)
+    -> return_code @ (r :: (add_return_code return_code instructions))
   | (instr :: instructions) -> instr :: (add_return_code return_code instructions)
 
 let instrument_code call_id return_id param_types is_static code =
@@ -487,8 +489,23 @@ let get_overrides h c ({method_name=n; method_arity=a} as m) =
   let qualify c =  (cts c) ^ "." ^ n in
   (List.map qualify ancestors, a)
 
+(* stolen from assembler *)
+(* will have to understand this code better at some point *)
+let compute_stacks c m instructions =
+  let exception_table = [] in (* TODO: check if this should be threaded through *)
+  let graph = B.ControlFlow.graph_of_instructions instructions exception_table in
+  let init_state = B.StackState.make_of_method c m in
+(*  let class_loader = B.ClassLoader.make (B.ClassPath.make_of_list ["."]) in *)
+    (try
+       B.Code.compute_stack_infos
+(*         (B.StackState.unify_to_closest_common_parent class_loader [c, None])    this one gives error *)
+	 B.StackState.unify_to_java_lang_Object
+         graph
+         init_state
+     with e -> failwith "problem computing stack frame sizes")
+
 let instrument_method get_tag h c = function
-  | B.Method.Regular r -> (
+  | B.Method.Regular r as m -> (
       (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
       let param_types, _ = r.B.Method.descriptor in (* return is not used *)
       let is_static = has_static_flag r.B.Method.flags in
@@ -505,12 +522,7 @@ let instrument_method get_tag h c = function
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
-		      (* TODO: proper calculation of stack size               *)
-		      (*       the below is not good enough for return events *)
-		    let ensure_three u = if u = B.Utils.u2 0 or u = B.Utils.u2 1 or u = B.Utils.u2 2 then B.Utils.u2 3 else u in
-		    let ensure_four u = let uu = ensure_three u in if uu = B.Utils.u2 3 then B.Utils.u2 4 else uu in
-		    let new_max_stack = ensure_four code.B.Attribute.max_stack in
-		    let new_max_locals = ensure_three code.B.Attribute.max_locals in
+		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;
