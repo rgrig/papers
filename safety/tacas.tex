@@ -119,10 +119,10 @@ on large open source projects.
 \section{Introduction} % <<<
 
 Objects interaction is at the core of the object-oriented paradigm. When designing object-oriented software, 
-programmers have often  a global picture of the co-operation that the objects will have in different moments and the 
+programmers have often  a global picture of the co-operation that objects will have in different moments and the 
 invariants that all the player should adhere to for the correct functioning of the system.
 These invariants are often naturally expressible as {\em temporal safety properties} which, in turn, have been 
-the studied in several contexts by the formal methods and the verification community. 
+studied in several contexts by the formal methods and the verification community. 
 %
 %The verification community showed interest in \emph{safety temporal properties} for a long time.
 %Manna and Pnueli~\cite{dblp:books/daglib/0080029} provide a theoretical foundation and clearly argue why such %properties are crucial.
@@ -145,22 +145,27 @@ For this reasons,  we have defined  \TPL\ (Temporal Object-oriented Property Lan
 %Disney et al.~\cite{disney2011} use a language based on regular grammars to specify higher-order temporal contracts.
 %Finally, Ball and Rajamani~\cite{ball2002} essentially use nondeterministic aspect-oriented programming.
 %
-\TPL \ takes inspiration from several of such existing specification languages, and  has  the following features:
-\begin{enumerate}
-\item It naturally expresses relationships between several objects.
-\item It is high-level and similar to diagrams used in informal explanations.
-\item It has a well-defined formal semantics in terms of a specific type of automata.
-\item It is designed to be used in program analysis (both static and dynamic).
-\end{enumerate}
-The ability to express relations of a variety of objects makes \TPL\ quite expressive.
+\TPL \ takes inspiration from several of such existing specification languages, but it extends the expressive power by
+being able to naturally express  the relationships and interactions among several objects.
+%\begin{enumerate}
+%\item It naturally expresses relationships between several objects.
+%\item It is high-level and similar to diagrams used in informal explanations.
+%\item It has a well-defined formal semantics in terms of a specific type of automata.
+%\item It is designed to be used in program analysis (both static and dynamic).
+%\end{enumerate}
+%The ability to express relations of a variety of objects makes \TPL\ quite expressive.
 Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of {\em one} single object.
 In contrast, TOPL intentionally avoids such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
 Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
-Because TOPL is a high-level language and has formal semantics (points 2~and~3 above), it reduces the semantic gap between the intuitive notion that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
-%\paragraph{Checking TOPL properties.}
-Having defined how to specify temporal properties in a convenient way, we then develop a technique for checking them at run-time on Java programs.
+For TOPL we have defined a precise formal semantics which makes the language suitable for program analysis (both static and dynamic) and verification. Moreover, since the properties are high-level,  
+TOPL helps in  reducing the semantic gap between 
+the intuitive understanding that programmers have of various temporal constraints on their code 
+and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
+
+Having defined how to specify temporal properties in a convenient  and formal way, 
+we introduce a technique for automatically checking them at run-time on Java programs.
 Our method involves instrumenting the Java byte code in a way it reflects the TOPL property of interest.
 Automatic runt-time checking of TOPL properties is beneficial for the programmer. 
 In fact, it relieves him/her from the burden of 
@@ -169,7 +174,14 @@ The Java API, for example, has hand-crafted code for checking certain temporal p
 However, such checks are often hard to write, weaved with the code solving the actual problem, and | in the case of the Java API |  do not provide with a trace of the relevant events leading to an error.
 In contrast, dynamically checking TOPL properties  with the technique we present in this paper is transparent to the programmer and, therefore,  it avoids all these issues.
 
-%\dinocomment{below to be done more precisely when the paper is more concrete}
+In summary, the contributions of this paper are:
+\begin{itemize}
+\item The definition of TOPL, a new temporal specification language tailored to object-oriented software able to express properties involving several objects and their relations/interactions;
+\item we define TOPL's formal semantics;
+\item we introduce a technique to automatically check at run-time violations of TOPL properties in Java programs;
+\item we have implemented our technique and we report experiments on large open source projects.
+\end{itemize}
+
 The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives  \TPL's syntax  and semantics.
 Section~\ref{sec:dynamic} explores the use of \TPL \ for run-time checking of safety properties and presents our experimental results. Section~\ref{sec:related} discusses related work.
@@ -773,6 +785,7 @@ These are the traces that drive the automaton from the \texttt{start} vertex (wi
 \caption{One automaton step}
 \label{fig:adStep}
 \end{figure}
+\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
 % >>>
 %\subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
@@ -861,7 +874,7 @@ These are the traces that drive the automaton from the \texttt{start} vertex (wi
 
 
 \section{Run-time checking}
-In this section we describe how we can check at run-time TOPL properties on Java programs.
+In this section we describe an algorithm to at run-time TOPL properties on Java programs.
 
 Figure~\ref{architecture} summarises our method. There are two main components: the {\em TOPL compiler} and the {\em Property Checker}.  
 The TOPL compiler takes in input the compiled class files and the list of TOPL properties to be checked against the classes. The compiler has two submodules: the {\em instrumentator} and the {\em automaton generator}.
