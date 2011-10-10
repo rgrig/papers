@@ -292,7 +292,7 @@ and call
   let m_locals =
     List.fold_left2 Stack.init_variable Stack.empty formals args in
   let locals = state.locals in
-  let arity = List.length m.SA.method_formals in
+  let arity = List.length m.SA.method_formals + 1 in
   let state = event state (PA.mk_event PA.Call mn arity args) in
   let state, value = body chk { state with locals = m_locals } m.SA.method_body in
   let state = event state
