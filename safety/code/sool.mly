@@ -1,7 +1,7 @@
 %{
   let type_of_string = function
-    | "SA.Bool" -> SA.Bool
-    | "SA.Unit" -> SA.Unit
+    | "Bool" -> SA.Bool
+    | "Unit" -> SA.Unit
     | x -> SA.Class x
 %}
 
