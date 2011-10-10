@@ -14,7 +14,7 @@ examples: byte
 
 checker:
 	@mkdir -p classes
-	@javac topl/*.java -Xlint:all -d classes
+	@javac topl/*.java examples/*.java -Xlint:all -d classes
 
 checker_tests: checker
 	@CLASSPATH=classes java -ea topl.Checker

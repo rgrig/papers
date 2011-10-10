@@ -22,6 +22,6 @@ public class IterExample {
 	c.add(i);
 	Iterator<Integer> it = c.iterator();
 	u.remove(c, i); // changes c, so it becoms invalid
-	i = it.next; // should result in error from automaton
+	i = it.next(); // should result in error from automaton
     }
 }
