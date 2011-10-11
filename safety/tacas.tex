@@ -623,20 +623,11 @@ We model stores as finite partial maps with finite domain.
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
 %
-Given the state a peculiar aspect of our automata is deciding whether a transition is enabled.
-Each label carries (potentially) a list of guards and 
-we call the length of this list, the \emph{depth} of the transition.
-%
-In order for a transition to be enabled, all the guards along its
-list have to evaluate to true. Since each guard along the transition consumes
-an event |  therefore | if a transition has depth~$n$, then we have to examine the next~$n$ events to see if the transition is enabled.
-
 A further consequence of the concept of transition depth is that the events to be received by  target states 
 of different enabled transitions with different depth are
 not the same.  For example for a trace of events $e_1 e_2 e_3\cdots$, if two transitions
 turn out to be enabled, one with depth 2 and the other with depth 5,
 then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
-
 
 For this reason, it is necessary to keep track
 of which events are next to be received by each state during a run of
@@ -651,15 +642,119 @@ To formalize this bookkeeping, we introduce the notion of
 The first component records the state of the automaton (vertex
 and store) and the second component records the remaining trace of
 events for that state.
+We can define a predicate that determines the possible execution state transitions
+\[
+\mathit{Step} \in \set{\World}\to\set{\World} \to \B
+\]
+This predicate is defined in \autoref{fig:adStep} and 
+from it we can define a non-deterministic step function, where all
+enabled transitions are performed:
+\begin{align}
+%\mathit{NdetStep}&\in(\set{\World}\to\B)\to(\set{\World}\to\B)\\
+\mathit{NdetStep}&\in 2^{\set{\World}} \to 2^{\set{\World}}\\
+%\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
+\mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
+\end{align}
+An iterated version of \textit{NdetStep} is useful for defining reachable states.
+We define it as the least fixed point for the following equation.
+\begin{align}
+\mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
+\end{align}
+%\rlp{Should this really include 0-sized steps?}
+%\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
+Finally, we can define the set of traces described by an automaton:
+\[
+\{ e \mid
+\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},[]),e)\}
+\}
+\]
+These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
+\begin{figure}
+\hbox to\hsize{\vbox{
+\begin{alg}
+\^  $\proc{Step}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
+\=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
+\=  $e:=\text{$e_1$ without the suffix $e_2$}$
+\=  ~for each~ transition $((y_1,y_2),l)$
+\+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
+\=    $\sigma:=\sigma_1$
+\=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
+\+      $(g,a):=l[k]$
+\=      ~if~ $\lnot g(e_k,\;\sigma)$ ~then continue~ to line 3
+\=      $\sigma:=a(e_k,\;\sigma)$
+\-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
+\-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
+\end{alg}
+\smallskip
+}\hfil}
+\caption{One automaton step}
+\label{fig:adStep}
+\end{figure}
+\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
+
+
+\paragraph{Deciding enabling of transitions.}
+Given the state a peculiar aspect of our automata is deciding whether a transition is enabled.
+Each label carries (potentially) a list of guards and 
+we call the length of this list, the \emph{depth} of the transition.
+%
+In order for a transition to be enabled, all the guards along its
+list have to evaluate to true. Since each guard along the transition consumes
+an event |  therefore | if a transition has depth~$n$, then we have to examine the next~$n$ events to see if the transition is enabled.
+
 
 We now describe when transitions are enabled. For this we have to look
-at labels. A label is a list of pairs of guards and actions. A
-guard compares the values in an event with those in a store and
-concludes either pass or no pass:
+at labels. A label is a list of pairs of guards and actions.
+Let us look at guard first. A {\em general guard} is a partial function of type:
 \[
-\set{Guard} =\set{Event}\times\set{Store} \to \B
+\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
 \]
-if the event passes, the corresponding action is performed on that event.
+A general guard can be instantiated with a pattern  name, $\pattern v$,  its position $i$ in the label, and a predicate $p$ that we need to test this pattern for. By providing these arguments we obtained an {\em instantiated guard}:
+\[
+g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
+\]
+that given an event and a store evaluate whether the event satisfy the guard in the store. It is defined as:
+\newcommand{\sem}[1]{[ \! | #1 | \! ]}
+\[
+g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
+\] that is the guard is true if and only if the value of $\pattern{v}$ in the automaton store 
+and the value of $i$-th parameter of the event $e$ (which has been evaluated in the program store) satisfy $p$.
+\begin{example}
+Consider the label 
+\[
+ \sim \pattern {v}^0 := \pattern {s}^1 .gets(\pattern {k}^2)
+ \] to be matched with event 
+\[
+ t^0:=z^1.gets(h^2)
+\] the upper-script stands for the position of a pattern or an expression. In this case we want to compare: 
+$\pattern{v}$ against  $t$, $\pattern s $ against $z$, and $\pattern k$ against $h$. Notice that the predicates we want to compare for are equality for the element in position 1 and 2, but inequality for position 0 (because of $\sim$).
+Hence, the instantiated guards are: $g_{\pattern{v},0, \neq}$, $g_{\pattern{s},1,=}$, and $g_{\pattern{k},2,=}$. 
+Before matching, the pattern is compiled down to the sequences 
+\[
+\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
+\] generating the instantiated guards: 
+$g_{\pattern{v},0, \neq}$, $g_{\pattern{s},0,=}$, and $g_{\pattern{k},1,=}$ to be matched with events $e_1;e_2$ 
+where
+\[ 
+ e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])  
+\]  generated out of the statement. This is done by taking the conjunction of guards:
+\[ 
+ (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1) 
+\] and 
+\[ 
+ (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
+\]
+\end{example}
+
+%A guard compares the values in an event with those in a store and
+%concludes either pass or no pass:
+%\[
+%\set{Guard} =\set{Event}\times\set{Store} \to \B
+%\]
+
+
+
+If the event passes a guard, the corresponding action is performed on that event.
 Actions modify the store, using values from an event:
 \[
 \set{Action} = \set{Event}\times\set{Store}\to\set{Store}
@@ -736,55 +831,6 @@ The automaton will take a transition as soon as a suitable event matching an out
 \label{fig:unmatched-example}
 \end{figure}
 
-We can define a predicate that determines the possible execution state transitions
-\[
-\mathit{Step} \in \set{\World}\to\set{\World} \to \B
-\]
-This predicate is defined in \autoref{fig:adStep} and 
-from it we can define a non-deterministic step function, where all
-enabled transitions are performed:
-\begin{align}
-%\mathit{NdetStep}&\in(\set{\World}\to\B)\to(\set{\World}\to\B)\\
-\mathit{NdetStep}&\in 2^{\set{\World}} \to 2^{\set{\World}}\\
-%\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
-\mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
-\end{align}
-An iterated version of \textit{NdetStep} is useful for defining reachable states.
-We define it as the least fixed point for the following equation.
-\begin{align}
-\mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
-\end{align}
-%\rlp{Should this really include 0-sized steps?}
-%\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
-Finally, we can define the set of traces described by an automaton:
-\[
-\{ e \mid
-\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},[]),e)\}
-\}
-\]
-These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-\begin{figure}
-\hbox to\hsize{\vbox{
-\begin{alg}
-\^  $\proc{Step}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
-\=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
-\=  $e:=\text{$e_1$ without the suffix $e_2$}$
-\=  ~for each~ transition $((y_1,y_2),l)$
-\+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
-\=    $\sigma:=\sigma_1$
-\=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
-\+      $(g,a):=l[k]$
-\=      ~if~ $\lnot g(e_k,\;\sigma)$ ~then continue~ to line 3
-\=      $\sigma:=a(e_k,\;\sigma)$
-\-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
-\-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
-\end{alg}
-\smallskip
-}\hfil}
-\caption{One automaton step}
-\label{fig:adStep}
-\end{figure}
-\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
 % >>>
 %\subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
 
