@@ -167,8 +167,8 @@ public class Checker {
 
         public T get(T x) {
             assert x != null;
-	    System.out.println("Retreiving " + x);
             if (data == null) {
+		System.out.println("Retreiving from empty Treap.");
                 return null;
             } else {
                 int c = x.compareTo(data);
@@ -177,6 +177,7 @@ public class Checker {
                 } else if (c > 0) {
                     return right.get(x);
                 } else {
+		    System.out.println("Retreiving " + data);
                     return data;
                 }
             }

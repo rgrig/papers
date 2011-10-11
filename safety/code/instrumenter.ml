@@ -366,7 +366,8 @@ let bc_array_set for_static index =
   [
     B.Instruction.DUP;
     bc_push index;
-    bc_aload (index + (if for_static then 0 else 1));
+(*    bc_aload (index + (if for_static then 0 else 1)); *)
+    bc_aload index;
     B.Instruction.AASTORE
   ]
 
