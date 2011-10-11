@@ -420,11 +420,14 @@ let get_tag x =
         Some !cnt
 
 let bc_send_event id param_types is_static =
+  (* this is ugly, it should just receive the arity *)
+  let params = List.map (fun _ -> 0) param_types in
+  let params = if is_static then params else 0::params in
   let fold (instructions, i) _ =
     ((bc_array_set is_static i) :: instructions, succ i) in
-  let (inst_lists, _) = List.fold_left fold ([], 0) param_types in
+  let (inst_lists, _) = List.fold_left fold ([], 0) params in
   let instructions = List.flatten (List.rev inst_lists) in
-    (bc_new_object_array (List.length param_types)) @
+    (bc_new_object_array (List.length params)) @
     instructions @
     (bc_new_event id) @
     bc_check
@@ -523,6 +526,7 @@ let instrument_method get_tag h c = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
 		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in
+(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;

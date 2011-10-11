@@ -120,6 +120,7 @@ public class Checker {
         }
 
         Treap<T> insert(T data) {
+	    System.out.println("Inserting " + data);
             return insert(random.nextInt(Integer.MAX_VALUE - 1) + 1, data);
         }
 
@@ -128,6 +129,7 @@ public class Checker {
         }
 
         Treap<T> remove(T oldData) {
+	    System.out.println("Removing " + oldData);
             Treap<T> result = this;
             if (data != null) {
                 int c = oldData.compareTo(data);
@@ -165,6 +167,7 @@ public class Checker {
 
         public T get(T x) {
             assert x != null;
+	    System.out.println("Retreiving " + x);
             if (data == null) {
                 return null;
             } else {
@@ -178,6 +181,20 @@ public class Checker {
                 }
             }
         }
+
+	public int size() {
+	    int s = 0;
+	    if (right == null && left == null ) return data == null ? 0 : 1;
+	    if (right != null) s += right.size();
+	    if (left != null) s += left.size();
+	    return s;
+	}
+    }
+
+    private static boolean valueEquals(Object o1, Object o2) {
+	if (o1 instanceof Integer)
+	    return o1.equals(o2);
+	return o1 == o2;
     }
 
     // TODO(rgrig): Might want to produce a set with a faster {contains}
@@ -214,29 +231,34 @@ public class Checker {
             final Object value;
 
             public Binding(int variable, Object value) {
+		assert variable >= 0 : "variables are used as indices";
                 this.variable = variable;
                 this.value = value;
             }
+	    
+	    public Binding(int variable) {
+		this(variable, null);
+	    }
 
             @Override
             public int compareTo(Binding other) {
-                if (variable < other.variable) {
-                    return -1;
-                } else if (variable > other.variable) {
-                    return +1;
-                } else {
-                    return 0;
-                }
+		return variable - other.variable;
             }
+
+	    @Override
+	    public String toString() {
+		return variable + "->" + value;
+	    }
         }
 
         // TODO: Hashing
         final int vertex;
-        final Treap<Binding> stack;
-        final ArrayDeque<Event> events;
+        Treap<Binding> stack;
+        ArrayDeque<Event> events;
         // The state {this} arose from {previousState} when {arrivalEvent} was seen.
-        final State previousState;
-        final Event arrivalEvent;
+	// what does that mean for multi-guard transitions?
+        State previousState;
+        Event arrivalEvent;
 
         State(int vertex) {
             this.vertex = vertex;
@@ -246,19 +268,26 @@ public class Checker {
             this.arrivalEvent = null;
         }
 
-        State applyAction(Action action) {
-            // TODO
-            return this;
+        State applyAction(Action action, int target) {
+	    State s = new State(target);
+	    s.stack = stack;
+	    s.events = events; // check that is clones
+	    Event e = s.events.removeFirst();
+	    s.previousState = this; // this should not be set here for multi-guard transitions
+	    Iterator<Map.Entry<Integer, Integer>> assignments = action.assignments.entrySet().iterator();
+	    while (assignments.hasNext()) {
+		Map.Entry<Integer, Integer> a = assignments.next();
+		int storeIndex = a.getKey();
+		int eventIndex = a.getValue();
+		Binding b = new Binding(storeIndex, e.values[eventIndex]);
+		s.stack.insert(b);
+	    }
+            return s;
         }
     }
 
-    interface Store {
-        Object get(int variable);
-        // TODO
-    }
-
     interface Guard {
-        boolean evaluate(Event event, Store store);
+        boolean evaluate(Event event, Treap<State.Binding> store);
     }
 
     static class AndGuard implements Guard {
@@ -269,7 +298,7 @@ public class Checker {
         }
 
         @Override
-        public boolean evaluate(Event event, Store store) {
+        public boolean evaluate(Event event, Treap<State.Binding> store) {
             for (Guard g : children) {
                 if (!g.evaluate(event, store)) {
                     return false;
@@ -302,7 +331,7 @@ public class Checker {
         }
 
         @Override
-        public boolean evaluate(Event event, Store store) {
+        public boolean evaluate(Event event, Treap<State.Binding> store) {
             return !child.evaluate(event, store);
         }
 
@@ -322,8 +351,12 @@ public class Checker {
         }
 
         @Override
-        public boolean evaluate(Event event, Store store) {
-            return event.values[eventIndex] == store.get(storeIndex);
+        public boolean evaluate(Event event, Treap<State.Binding> store) {
+	    assert event != null;
+	    assert store != null;
+	    State.Binding b = new State.Binding(storeIndex);
+	    assert store.get(b) != null;
+            return valueEquals(event.values[eventIndex], store.get(b).value);
         }
 
 	@Override
@@ -342,10 +375,10 @@ public class Checker {
         }
 
         @Override
-        public boolean evaluate(Event event, Store store) {
+        public boolean evaluate(Event event, Treap<State.Binding> store) {
             return (value == null)?
                 event.values[eventIndex] == null :
-                value.equals(event.values[eventIndex]);
+                valueEquals(value, event.values[eventIndex]);
         }
 
 	@Override
@@ -356,7 +389,7 @@ public class Checker {
 
     static class TrueGuard implements Guard {
         @Override
-        public boolean evaluate(Event event, Store store) {
+        public boolean evaluate(Event event, Treap<State.Binding> store) {
             return true;
         }
 
@@ -398,9 +431,10 @@ public class Checker {
             this.action = action;
         }
 
-        boolean evaluateGuard(Event event) {
+        boolean evaluateGuard(Event event, State state) {
             // TODO
-            return false;
+            return guard.evaluate(event, state.stack);
+	    // return true;
         }
         // TODO: applyAction consumes one event
     }
@@ -519,12 +553,16 @@ public class Checker {
 
     void reportError(String msg) {
         // TODO
-	System.out.println(msg);
+	System.out.println("\n********************\n* " + msg + "\n********************");
     }
 
     public void check(Event event) {
-	System.out.print("Received event id " + event.id + ". States: [");
-	for (State state : states) System.out.print(state.vertex + ": " + state.events.size() + ", ");
+	// TODO turn off interrupts
+	System.out.print("Received event id " + event.id + "\nStates: [");
+	for (State state : states)
+	    System.out.println("  vertex: " + state.vertex +
+			       "\n  events:" + state.events.size() +
+			       "\n  bindings:" + state.stack.size());
 	System.out.println("]");
         HashSet<State> departedStates = new HashSet<State>();
         HashSet<State> arrivedStates = new HashSet<State>();
@@ -548,13 +586,15 @@ public class Checker {
                     Event stepEvent = j.next();
 		    //System.out.print("  " + stepEvent.id);
                     // if (!step.eventIds.contains(stepEvent.id)) break;
-                    if (!step.evaluateGuard(stepEvent)) break;
+                    if (!step.evaluateGuard(stepEvent, stepState)) break;
 		    System.out.print(", ");
-                    stepState = stepState.applyAction(step.action);
+                    stepState = stepState.applyAction(step.action, transition.target);
                 }
 		//System.out.println(">");
                 // record transition
                 if (i == transition.steps.length) {
+		    // TODO on all arrivedStates
+		    // arr_state.previousState = state;
 		    anyEnabled = true;
                     departedStates.add(state);
                     arrivedStates.add(stepState);
