@@ -134,10 +134,7 @@ let pp_array pe ppf a =
   if l > 0 then fprintf ppf "@\n%a" pe (0, a.(0));
   for i = 1 to l - 1 do fprintf ppf ",@\n%a" pe (i, a.(i)) done
 
-let rec pp_list pe ppf = function
-  | [] -> ()
-  | [x] -> fprintf ppf "%a" pe x
-  | x :: xs -> fprintf ppf "%a, %a" pe x (pp_list pe) xs
+let pp_h_list pe f xs = pp_list ", " pe f xs
 
 let rec pp_v_list pe ppf = function
   | [] -> ()
@@ -148,7 +145,7 @@ let pp_int f x = fprintf f "%d" x
 let pp_string f x = fprintf f "%s" x
 
 let pp_int_list f xs =
-  fprintf f "@[<2>new int[]{%a}@]" (pp_list pp_int) xs
+  fprintf f "@[<2>new int[]{%a}@]" (pp_h_list pp_int) xs
 
 let pp_pattern tags f p = pp_int_list f (Hashtbl.find tags p)
 
@@ -160,13 +157,13 @@ let pp_assignment f (x, i) =
   fprintf f "new Action.Assignment(%d, %d)" x i
 
 let pp_condition f a =
-  fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_list pp_value_guard) a
+  fprintf f "@[<2>new AndGuard(new Guard[]{%a})@]" (pp_h_list pp_value_guard) a
 
 let pp_guard tags f {PA.tag_guard=p; PA.value_guards=cs} =
   fprintf f "@[<2>%a@],@\n@[<2>%a@]" (pp_pattern tags) p pp_condition cs
 
 let pp_action f a =
-  fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_list pp_assignment) a
+  fprintf f "@[<2>new Action(new Action.Assignment[]{%a})@]" (pp_h_list pp_assignment) a
 
 let pp_step tags f {PA.guard=g; PA.action=a} =
   fprintf f "@[<2>new TransitionStep(@\n%a,@\n%a)@]" (pp_guard tags) g pp_action a
@@ -190,7 +187,7 @@ let pp_automaton ifv otfp f x =
   fprintf f     "/* start nodes, one for each property */@\n";
   fprintf f     "%a,@\n" pp_int_list (starts x);
   fprintf f     "/* error messages, one non-null for each property */@\n";
-  fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_list pp_string) (errors x);
+  fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_h_list pp_string) (errors x);
   fprintf f     "/* transitions as an adjacency list */@\n";
   fprintf f     "@[<2>new Transition[][]{%a@]@\n},@\n" (pp_array (pp_vertex x.pattern_tags pov ifv)) x.vertices;
   fprintf f     "/* property the vertex comes from */@\n";
@@ -362,11 +359,10 @@ let bc_new_object_array size =
     B.Instruction.ANEWARRAY (`Class_or_interface java_lang_Object)
   ]
 
-let bc_array_set for_static index =
+let bc_array_set index =
   [
     B.Instruction.DUP;
     bc_push index;
-(*    bc_aload (index + (if for_static then 0 else 1)); *)
     bc_aload index;
     B.Instruction.AASTORE
   ]
@@ -425,13 +421,53 @@ let bc_send_event id param_types is_static =
   let params = List.map (fun _ -> 0) param_types in
   let params = if is_static then params else 0::params in
   let fold (instructions, i) _ =
-    ((bc_array_set is_static i) :: instructions, succ i) in
+    ((bc_array_set i) :: instructions, succ i) in
   let (inst_lists, _) = List.fold_left fold ([], 0) params in
   let instructions = List.flatten (List.rev inst_lists) in
     (bc_new_object_array (List.length params)) @
     instructions @
     (bc_new_event id) @
     bc_check
+
+let bc_box = function
+  | `Class _ | `Array _ -> []
+  | t ->
+      let c = utf8_for_class ("java.lang." ^ (match t with
+        | `Boolean -> "Boolean"
+        | `Byte -> "Byte"
+        | `Char -> "Character"
+        | `Double -> "Double"
+        | `Float -> "Float"
+        | `Int -> "Integer"
+        | `Long -> "Long"
+        | `Short -> "Short"
+        | _ -> failwith "foo"))
+        in
+      [B.Instruction.INVOKESTATIC
+          (c,
+	  utf8_for_method "valueOf",
+          ([t], `Class c))]
+
+let bc_send_return_event id return_type =
+  let bc_save_return_value,
+      return_arity,
+      bc_store_return_value
+   = match return_type with
+    | `Void -> [], 0, []
+    | t -> [B.Instruction.DUP],
+           1,
+           [B.Instruction.DUP_X1;
+            B.Instruction.SWAP;
+            bc_push 0;
+            B.Instruction.SWAP] @
+            (bc_box (B.Descriptor.filter_void
+                B.Descriptor.Invalid_method_parameter_type t)) @
+            [B.Instruction.AASTORE] in
+  bc_save_return_value @
+  (bc_new_object_array return_arity) @
+  bc_store_return_value @
+  (bc_new_event id) @
+  bc_check
 
 (* Taken from disassembler.ml *)
 let (++) = B.UTF8Impl.(++)
@@ -459,19 +495,19 @@ let rec add_return_code return_code = function
     -> return_code @ (r :: (add_return_code return_code instructions))
   | (instr :: instructions) -> instr :: (add_return_code return_code instructions)
 
-let instrument_code call_id return_id param_types is_static code =
+let instrument_code call_id return_id param_types return_types is_static code =
   let bc_send_call_event = match call_id with
     | None -> []
     | Some id -> bc_send_event id param_types is_static in
-  let bc_send_return_event = match return_id with
+  let bc_send_ret_event = match return_id with
     | None -> []
-    | Some id -> bc_send_event id param_types is_static in
+    | Some id -> bc_send_return_event id return_types in
 (*
   (bc_print (method_name ^ " : ")) @
   (bc_print_utf8 (utf8_of_method_desc method_name param_types)) @
 *)
   bc_send_call_event @
-  (add_return_code bc_send_return_event code)
+  (add_return_code bc_send_ret_event code)
 
 let has_static_flag flags =
   let is_static_flag = function
@@ -511,7 +547,7 @@ let compute_stacks c m instructions =
 let instrument_method get_tag h c = function
   | B.Method.Regular r as m -> (
       (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
-      let param_types, _ = r.B.Method.descriptor in (* return is not used *)
+      let param_types, return_types = r.B.Method.descriptor in
       let is_static = has_static_flag r.B.Method.flags in
       let nr_params = List.length param_types + if is_static then 0 else 1 in
       let overrides =
@@ -522,12 +558,12 @@ let instrument_method get_tag h c = function
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r
 	  | _ -> (
-	      let inst_code = instrument_code call_id return_id param_types is_static in
+	      let inst_code = instrument_code call_id return_id param_types return_types is_static in
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
-		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in
-(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
+(*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
+		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;
@@ -618,6 +654,7 @@ let () =
     let ps = read_properties !fs in
     let p, ifv, otfp = transform_properties ps in
     instrument_bytecode (get_tag p) !cp h;
+Hashtbl.iter (fun _ xs -> printf "@[%a@." pp_int_list xs) p.pattern_tags;
     generate_checkers ifv otfp p
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m

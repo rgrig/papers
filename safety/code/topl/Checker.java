@@ -16,6 +16,100 @@ public class Checker {
         completely when assertions are not enabled.
      */
 
+    static class Queue<T> {
+        static private class N<T> {
+            T data;
+            N<T> next;
+            private N(T data, N<T> next) {
+                this.data = data;
+                this.next = next;
+            }
+            static <T> N<T> mk(T data, N<T> next) {
+                return new N<T>(data, next);
+            }
+        }
+        static private <T> N<T> reverseN(N<T> n) {
+            N<T> r;
+            for (r = null; n != null; n = n.next) {
+                r = N.mk(n.data, r);
+            }
+            return r;
+        }
+        static private <T> int sizeN(N<T> n) {
+            int r;
+            for (r = 0; n != null; n = n.next) ++r;
+            return r;
+        }
+        private N<T> front;
+        private N<T> back;
+        private class Itr implements Iterator<T> {
+            N<T> next;
+
+            Itr() {
+                next = front;
+                if (next == null) next = reverseN(back);
+            }
+
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            @Override
+            public T next() {
+                T r = next.data;
+                next = next.next;
+                if (next == null) next = reverseN(back);
+                return r;
+            }
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        private Queue(N<T> front, N<T> back) {
+            this.front = front;
+            this.back = back;
+        }
+        static private <T> Queue<T> mk(N<T> front, N<T> back) {
+            return new Queue<T>(front, back);
+        }
+        static <T> Queue<T> empty() {
+            return new Queue<T>(null, null);
+        }
+        public Queue<T> push(T x) {
+            return Queue.mk(front, N.mk(x, back));
+        }
+        public Queue<T> pop() {
+            if (front == null) {
+                while (back != null) {
+                    front = N.mk(back.data, front);
+                    back = back.next;
+                }
+            }
+            if (front == null) {
+                throw new RuntimeException("queue empty");
+            }
+            return Queue.mk(front.next, back);
+        }
+        public T top() {
+            if (front != null) {
+                return front.data;
+            } else if (back != null) {
+                return back.data;
+            } else {
+                throw new RuntimeException("queue empty");
+            }
+        }
+        public int size() {
+            return sizeN(front) + sizeN(back);
+        }
+        public Iterator<T> iterator() {
+            return new Itr();
+        }
+    }
+
     static class Treap<T extends Comparable<T>> {
         static final private Random random = new Random(123);
 
@@ -120,7 +214,7 @@ public class Checker {
         }
 
         Treap<T> insert(T data) {
-	    System.out.println("Inserting " + data);
+System.out.println("Inserting " + data);
             return insert(random.nextInt(Integer.MAX_VALUE - 1) + 1, data);
         }
 
@@ -184,10 +278,9 @@ public class Checker {
         }
 
 	public int size() {
-	    int s = 0;
-	    if (right == null && left == null ) return data == null ? 0 : 1;
-	    if (right != null) s += right.size();
+	    int s = data == null? 0 : 1;
 	    if (left != null) s += left.size();
+	    if (right != null) s += right.size();
 	    return s;
 	}
     }
@@ -219,9 +312,6 @@ public class Checker {
 
         boolean check() {
             assert values != null;
-            for (Object o : values) {
-                assert o != null;
-            }
             return true;
         }
     }
@@ -236,7 +326,7 @@ public class Checker {
                 this.variable = variable;
                 this.value = value;
             }
-	    
+
 	    public Binding(int variable) {
 		this(variable, null);
 	    }
@@ -255,7 +345,7 @@ public class Checker {
         // TODO: Hashing
         final int vertex;
         Treap<Binding> stack;
-        ArrayDeque<Event> events;
+        Queue<Event> events;
         // The state {this} arose from {previousState} when {arrivalEvent} was seen.
 	// what does that mean for multi-guard transitions?
         State previousState;
@@ -264,7 +354,7 @@ public class Checker {
         State(int vertex) {
             this.vertex = vertex;
             this.stack = new Treap<Binding>();
-            this.events = new ArrayDeque<Event>();
+            this.events = Queue.empty();
             this.previousState = null;
             this.arrivalEvent = null;
         }
@@ -272,8 +362,8 @@ public class Checker {
         State applyAction(Action action, int target) {
 	    State s = new State(target);
 	    s.stack = stack;
-	    s.events = events; // check that is clones
-	    Event e = s.events.removeFirst();
+        Event e = events.top();
+        s.events = events.pop();
 	    s.previousState = this; // this should not be set here for multi-guard transitions
 	    Iterator<Map.Entry<Integer, Integer>> assignments = action.assignments.entrySet().iterator();
 	    while (assignments.hasNext()) {
@@ -281,7 +371,7 @@ public class Checker {
 		int storeIndex = a.getKey();
 		int eventIndex = a.getValue();
 		Binding b = new Binding(storeIndex, e.values[eventIndex]);
-		s.stack.insert(b);
+		s.stack = s.stack.insert(b);
 	    }
             return s;
         }
@@ -353,10 +443,7 @@ public class Checker {
 
         @Override
         public boolean evaluate(Event event, Treap<State.Binding> store) {
-	    assert event != null;
-	    assert store != null;
 	    State.Binding b = new State.Binding(storeIndex);
-	    assert store.get(b) != null;
             return valueEquals(event.values[eventIndex], store.get(b).value);
         }
 
@@ -433,9 +520,8 @@ public class Checker {
         }
 
         boolean evaluateGuard(Event event, State state) {
-            // TODO
-            return guard.evaluate(event, state.stack);
-	    // return true;
+            return eventIds.contains(event.id)
+                && guard.evaluate(event, state.stack);
         }
         // TODO: applyAction consumes one event
     }
@@ -571,7 +657,7 @@ public class Checker {
             if (!automaton.isInteresting(event.id, state.vertex)) {
 		continue;
             }
-            state.events.addLast(event);
+            state.events = state.events.push(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
                 continue;
             }
@@ -605,8 +691,9 @@ public class Checker {
                         reportError(msg);
                 }
             }
-	    if (!anyEnabled) // drop an event from the state's queue
-		state.events.removeFirst();
+	    if (!anyEnabled) { // drop an event from the state's queue
+                state.events = state.events.pop();
+            }
         }
 	// perform transitions
 	states.removeAll(departedStates);
