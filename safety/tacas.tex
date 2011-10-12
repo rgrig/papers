@@ -583,8 +583,9 @@ We assume a countable set \set{Value} of values and a countable set $\set{Variab
 \[
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
-Moreover we assume a countable set \set{Event} of events with known arity. Each event~$e$ contains an array of values.
-Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
+Moreover we assume a countable set \set{Event} of events with known arity. Each event~$e$ is of the form $(t_e,[0: v_0,\dots, 1:v_n])$.
+The component $t_e$ is a tag, e.g., call or return, while the second component is an array of values.
+Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
 %
 \begin{definition}[TOPL execution automaton]
 Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple 
@@ -666,6 +667,8 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      \end{array}
      \right.
 \end{eqnarray*}
+In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event
+and therefore updating the store $\sigma$.
 With $A$ we can define the predicates $enabled$
 testing whether a transition is enabled in a store when observing a trace,  and a predicate
 $Enabled$ testing if there exists an enabled transition starting from an execution state:
@@ -674,12 +677,20 @@ enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
 \\
 Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ enabled(\sigma,\tau,l) \mid x \to x' : l \}
 \end{eqnarray*}
+Notice that, according to the definition of $enabled(\sigma,\tau,l)$, and in turn of the function $A$, 
+for a transition to be enabled, all the guards along its
+list have to evaluate to true. Evaluating a guard along the transition consumes
+an event |  therefore | to see if a transition is enabled 
+we have to examine $|l|$ events. 
+
 %
 The transition relation $s \to s'$ is defined by the following rules.
 \[
-\begin{array}{l}
+\begin{array}{lcl}
+\text{(Step)} & \qquad &
 \infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
+\text{(Silent Step)} & \qquad & 
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
@@ -738,101 +749,18 @@ ${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{s
 %\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
 
 
-\paragraph{Deciding enabling of transitions.}
-Given the state a peculiar aspect of our automata is deciding whether a transition is enabled.
-Each label carries (potentially) a list of guards and 
-we call the length of this list, the \emph{depth} of the transition.
-%
-In order for a transition to be enabled, all the guards along its
-list have to evaluate to true. Since each guard along the transition consumes
-an event |  therefore | if a transition has depth~$n$, then we have to examine the next~$n$ events to see if the transition is enabled.
-
-
-We now describe when transitions are enabled. For this we have to look
-at labels. A label is a list of pairs of guards and actions.
-Let us look at guard first. A {\em general guard} is a partial function of type:
-\[
-\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
-\]
-A general guard can be instantiated with a pattern  name, $\pattern v$,  its position $i$ in the label, and a predicate $p$ that we need to test this pattern for. By providing these arguments we obtained an {\em instantiated guard}:
-\[
-g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
-\]
-that given an event and a store evaluate whether the event satisfy the guard in the store. It is defined as:
-\newcommand{\sem}[1]{[ \! | #1 | \! ]}
-\[
-g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
-\] that is the guard is true if and only if the value of $\pattern{v}$ in the automaton store 
-and the value of $i$-th parameter of the event $e$ (which has been evaluated in the program store) satisfy $p$.
-\begin{example}
-Consider the label 
-\[
- \sim \pattern {v}^0 := \pattern {s}^1 .gets(\pattern {k}^2)
- \] to be matched with event 
-\[
- t^0:=z^1.gets(h^2)
-\] the upper-script stands for the position of a pattern or an expression. In this case we want to compare: 
-$\pattern{v}$ against  $t$, $\pattern s $ against $z$, and $\pattern k$ against $h$. Notice that the predicates we want to compare for are equality for the element in position 1 and 2, but inequality for position 0 (because of $\sim$).
-Hence, the instantiated guards are: $g_{\pattern{v},0, \neq}$, $g_{\pattern{s},1,=}$, and $g_{\pattern{k},2,=}$. 
-Before matching, the pattern is compiled down to the sequences 
-\[
-\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
-\] generating the instantiated guards: 
-$g_{\pattern{v},0, \neq}$, $g_{\pattern{s},0,=}$, and $g_{\pattern{k},1,=}$ to be matched with events $e_1;e_2$ 
-where
-\[ 
- e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])  
-\]  generated out of the statement. This is done by taking the conjunction of guards:
-\[ 
- (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1) 
-\] and 
-\[ 
- (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
-\]
-\end{example}
-
-%A guard compares the values in an event with those in a store and
-%concludes either pass or no pass:
-%\[
-%\set{Guard} =\set{Event}\times\set{Store} \to \B
-%\]
-
-
-
-If the event passes a guard, the corresponding action is performed on that event.
-Actions modify the store, using values from an event:
-\[
-\set{Action} = \set{Event}\times\set{Store}\to\set{Store}
-\]
-In order for a transition of depth $n$ to be enabled for a trace of
-events, the first $n$~events of the trace must pass the $n$~guards
-on the label with the stores modified by the guards:
-\[
-\begin{array}{c l}
-& \enabled((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
- = &
-g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1}) 
-\end{array}
-\]
-where
-\begin{align}
-  s_0 &=  s \\
-  s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
-\end{align}
-The store for the target vertex of enabled and performed transition will be $s_n$.
-
 \paragraph{Silent steps.}
-Another peculiar aspect of our
-automatons is that if no transitions are enabled for a given
+A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given
 state and trace of events, the automaton does not get stuck but is
-allowed to consume one event without changing its state (called a silent step). Note that
+allowed to consume one event without changing its state (see the  Silent Step rule). Note that
 a silent step is not equivalent to an implied self-loop on all states, as
 dropping events is not allowed if there are any enabled
-transitions. In that case one of the enabled transitions is performed and
-the automaton execution state becomes $((v, s_n), \mathit{events}_n)$, where $v$ is the vertex at the
-end of the arc of the transition, $s_n$ is defined as above and
-$\mathit{events}_n$ is the current executions state's event trace with the first
-$n$ events dropped.
+transitions. In that case,  the enabled transitions are performed 
+with the rule (Step) and
+the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the vertex at the
+end of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and
+$\tau_2$ is the current executions state's event trace with the first
+$|l|$ events dropped.
 \begin{example}
 Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume we are given the following
 trace in input
@@ -875,6 +803,80 @@ The automaton will take a transition as soon as a suitable event matching an out
 %\caption{Example of unmatched events.}
 %\label{fig:unmatched-example}
 \end{figure}
+
+
+
+\subsubsection{On labels and guards.}
+ A label is a list of pairs $(g,a)$ of guards and actions. A  {\em general guard} is a partial function of type:
+\[
+\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
+\]
+A general guard can be instantiated with a pattern  name, $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern. By providing these arguments we obtained an {\em instantiated guard}:
+\[
+g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
+\]
+that given an event and a store evaluate whether the event satisfy the guard in the store. It is defined as:
+\newcommand{\sem}[1]{[ \! | #1 | \! ]}
+\[
+g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
+\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store 
+and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
+\begin{example}
+Consider the label 
+\[
+ \sim \pattern {v} := \pattern {s}.gets(\pattern {k})
+ \] to be matched with the statement 
+\[
+ t:=z.gets(h)
+\] Internally,  the label is compiled down to the sequences 
+\[
+\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
+\] The upper-script stands for the position of a pattern or an expression. The statement generates the trace of events $e_1 \cdot e_2$ where 
+\[ 
+ e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])
+\] 
+The instantiated guard for the label are:
+ $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.  
+Notice that the predicates we want to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$, 
+but inequality for \pattern{v} (because of $\sim$).
+The instantiated guards, can now be evaluated with the events by taking their conjunction:
+\[ 
+ (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1) 
+\] and 
+\[ 
+ (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
+\]
+\end{example}
+
+%A guard compares the values in an event with those in a store and
+%concludes either pass or no pass:
+%\[
+%\set{Guard} =\set{Event}\times\set{Store} \to \B
+%\]
+
+
+
+%If the event passes a guard, the corresponding action is performed on that event.
+%Actions modify the store, using values from an event:
+%\[
+%\set{Action} = \set{Event}\times\set{Store}\to\set{Store}
+%\]
+%In order for a transition of depth $n$ to be enabled for a trace of
+%events, the first $n$~events of the trace must pass the $n$~guards
+%on the label with the stores modified by the guards:
+%\[
+%\begin{array}{c l}
+%& \enabled((g_1, a_1), \ldots, (g_n, a_n); e_1, \ldots, e_n; s) \\
+% = &
+%g_1(e_1, s_0)\ \land\ \ldots\ \land\ g_n(e_n, s_{n-1}) 
+%\end{array}
+%\]
+%where
+%\begin{align}
+%  s_0 &=  s \\
+%  s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
+%\end{align}
+%The store for the target vertex of enabled and performed transition will be $s_n$.
 
 % >>>
 %\subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
