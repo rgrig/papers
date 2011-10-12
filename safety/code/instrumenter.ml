@@ -290,13 +290,15 @@ let contains_no undesired s =
 let classfiles_of_path =
   fs_filter (fun p -> contains_no "/topl/" p && endswith ".class" p)
 
+(* Opens the file, last return argument is a channel to be closed *)
 let classes_of_classfile fn =
-  try fn
-    >> open_in
+  try 
+    let ch = open_in fn in
+       ch
     >> B.InputStream.make_of_channel
     >> B.ClassFile.read
     >> B.ClassDefinition.decode
-    >> (fun x -> [(x, fn)])
+    >> (fun x -> [(x, fn, ch)])
   with
   | B.InputStream.Exception e ->
       eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e); []
@@ -563,6 +565,10 @@ let compute_stacks c m instructions =
          init_state
      with e -> failwith "problem computing stack frame sizes")
 
+let raise_stack x =
+  let x = (x : B.Utils.u2 :> int) in
+    B.Utils.u2 (x + 3)
+
 let instrument_method get_tag h c = function
   | B.Method.Regular r as m -> (
       (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
@@ -582,7 +588,10 @@ let instrument_method get_tag h c = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
 (*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
-		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in
+(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
+		    let new_max_stack, new_max_locals =
+		      raise_stack code.B.Attribute.max_stack,
+		      code.B.Attribute.max_locals in
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;
@@ -607,20 +616,30 @@ let open_class_channel c =
 
 let output_class c =
   let ch = open_class_channel c in
+  if log log_cp then fprintf logf "@[...  ecoding@.";
+    try
   let bytes = B.ClassDefinition.encode c in
+  if log log_cp then fprintf logf "@[...  writing file@.";
   B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
   close_out ch
+    with (B.Instruction.Exception err) ->
+      close_out ch;
+      printf "@[%s@\n@]" (B.Instruction.string_of_error err)
 
-let instrument_class get_tags h (c, fn) =
+let instrument_class get_tags h (c, fn, ch) =
   if log log_cp then fprintf logf "@[instrument %s@." fn;
   let instrumented_methods = List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
+  close_in ch;
+  if log log_cp then fprintf logf "@[...output %s@." fn;
   output_class {c with B.ClassDefinition.methods = instrumented_methods}
 
 let iter_classes cp f = (* TODO *)
-  cp
-  >> classfiles_of_path
-  >>= classes_of_classfile
-  >> List.iter f
+  let process_classfile cf = List.iter f (classes_of_classfile cf) in
+  List.iter process_classfile (classfiles_of_path cp)
+
+let iter_and_close_classes cp f =
+  let process (x, fn, ch) = f (x, fn); close_in ch in
+  iter_classes cp process
 
 let compute_inheritance classpath =
   let h = Hashtbl.create 101 in
@@ -629,7 +648,9 @@ let compute_inheritance classpath =
     let parent_nodes = List.map (Hashtbl.find h) parent_names in
     Hashtbl.add h name {class_name = name; class_methods = method_names; class_parents = parent_nodes} in
 *)
-  let record_class (c, _) =
+  let record_class (c, fn) =
+(*    if log log_cp then fprintf logf "@[record %s@." fn; *)
+    if log log_cp then fprintf logf "@[r@]@?";
     let name = c.B.ClassDefinition.name in
     let fold mns = function
       | B.Method.Regular r ->
@@ -645,7 +666,7 @@ let compute_inheritance classpath =
 (*    insert_node name method_names parents *)
     Hashtbl.add h name (method_names, parents)
   in
-  iter_classes classpath record_class;
+    iter_and_close_classes classpath record_class;
   h
 
 let instrument_bytecode get_tag cp h =

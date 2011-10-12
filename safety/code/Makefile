@@ -1,6 +1,6 @@
 # Configuration
 OCFLAGS=-dtypes,-w,a#Ae
-MAINS=interp gen instrumenter
+MAINS=interp gen instrumenter id_instr
 
 # Things that should seldom change
 BYTES=$(addsuffix .byte,$(MAINS))
