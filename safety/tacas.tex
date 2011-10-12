@@ -229,30 +229,26 @@ using prefix java.util.Collection
 using prefix java.util.Iterator
 \end{Verbatim}
 \par\medskip
-\begin{tikzpicture}
-  \def\x{2.5}
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
-  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
-  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
-  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-  \draw[transition] (0,0.5)--(start);
-  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-\end{tikzpicture}
-%\caption{A first example: Diagram of safety property}
-%\label{fig:first.diagram}
-%\end{figure}
-%\begin{figure}
+%\begin{tikzpicture}
+%  \def\x{2.5}
+%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+%  \tikzset{transition/.style={->,>=latex}}
+%  \tikzset{every label/.style={gray}}
+%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+%  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+%  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
+%  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
+%  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
+%  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+%  \draw[transition] (0,0.5)--(start);
+%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+%\end{tikzpicture}
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
   using prefix java.util.Collection
@@ -575,13 +571,13 @@ Similarly, an automaton's semantics is also defined as a set of event traces.
 We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-\paragraph{TOPL execution automata.}
+\subsubsection{TOPL execution automata.}
 \newcommand{\World}{ExecState}
 
 Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program,
 gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$ which represent the 
 semantics of the property interpreted over the program.
-$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error}, the initial and accepting vertex respectively. 
+$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively. 
 
 We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables. Let stores be finite partial maps with finite domain.
 \[
@@ -591,7 +587,7 @@ Moreover we assume a countable set \set{Event} of events with known arity. Each 
 Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
 %
 \begin{definition}[TOPL execution automaton]
-Give a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} is a tuple 
+Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple 
 $(\set{State}, \to , \set{Init}, \set{Error})$ where
 \begin{itemize}
 \item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
@@ -604,9 +600,9 @@ A state of the automaton is
 given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be
 observed. The reader may wonder why execution states need to contain traces. The reason is that
 each label in $\set{Arc}$ carries (potentially) a list of guards and 
-we call the length of this list, the \emph{depth} of the transition.
-Since different outgoing arcs for a vertex can have different depths, 
-therefore different target states of execution transitions may receive different events.
+we call the length of this list, the \emph{depth} of the arc.
+Since different outgoing arcs for a vertex can have different depths, we have that 
+different target states of execution transitions may receive different events.
 For example for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have
 depth 2 and 5 rispectively,
 then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
@@ -647,7 +643,7 @@ then the end state of the first transition will see $e_3$, while the end state o
 %The first component records the state of the automaton (vertex
 %and store) and the second component records the remaining trace of
 %events for that state.
-In order to define the transition relation we need to define two auxiliary concepts. 
+In order to define the transition relation $\to$ we need to define two auxiliary concepts. 
 The effect of the actions in an arc label on a store when observing a trace is given by the function
 \[
    A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
@@ -671,8 +667,8 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      \right.
 \end{eqnarray*}
 With $A$ we can define the predicates $enabled$
-testing whether a transition is enabled in a store when observing a trace and a predicate
-$Enabled$ testing if there exists an enabled transition starting from a vertex, given a store and a trace of events:
+testing whether a transition is enabled in a store when observing a trace,  and a predicate
+$Enabled$ testing if there exists an enabled transition starting from an execution state:
 \begin{eqnarray*}
 enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
 \\
@@ -682,61 +678,64 @@ Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ enabled(\sigma,\tau,l) \m
 The transition relation $s \to s'$ is defined by the following rules.
 \[
 \begin{array}{l}
-\infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \circ \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
-\dinocomment{********** UP TO HERE *********}
-We can define a predicate that determines the possible execution state transitions
+%
+%We can define a predicate that determines the possible execution state transitions
+%\[
+%\mathit{Step} \in \set{\World}\to\set{\World} \to \B
+%\]
+%This predicate is defined in \autoref{fig:adStep} and 
+%from it we can define a non-deterministic step function, where all
+%enabled transitions are performed:
+%\begin{align}
+%%\mathit{NdetStep}&\in(\set{\World}\to\B)\to(\set{\World}\to\B)\\
+%\mathit{NdetStep}&\in 2^{\set{\World}} \to 2^{\set{\World}}\\
+%%\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
+%\mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
+%\end{align}
+%An iterated version of \textit{NdetStep} is useful for defining reachable states.
+%We define it as the least fixed point for the following equation.
+%\begin{align}
+%\mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
+%\end{align}
+%%\rlp{Should this really include 0-sized steps?}
+%%\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
+%Finally, we can define the set of traces described by an automaton:
+%\[
+%\{ e \mid
+%\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},[]),e)\}
+%\}
+Finally, we can define the language of a TOPL execution automaton $\Xi$, i.e., the set of traces it accepts:
 \[
-\mathit{Step} \in \set{\World}\to\set{\World} \to \B
+{\cal L}(\Xi) = \{ \tau \mid \exists \sigma' \tau', (\mathtt{start},[],\tau) \to^* (\mathtt{error},\sigma',\tau')\}
 \]
-This predicate is defined in \autoref{fig:adStep} and 
-from it we can define a non-deterministic step function, where all
-enabled transitions are performed:
-\begin{align}
-%\mathit{NdetStep}&\in(\set{\World}\to\B)\to(\set{\World}\to\B)\\
-\mathit{NdetStep}&\in 2^{\set{\World}} \to 2^{\set{\World}}\\
-%\mathit{NdetStep}\;S&=(\bigcup \mathit{Step})\;S \label{eq:ndetstep}
-\mathit{NdetStep}\;S&=\{ s \mid \text{$\mathit{Step}(s', s)$ for some $s'\in S$} \} \label{eq:ndetstep}
-\end{align}
-An iterated version of \textit{NdetStep} is useful for defining reachable states.
-We define it as the least fixed point for the following equation.
-\begin{align}
-\mathit{NdetStep}^\star\;S &= S \cup \mathit{NdetStep}^\star\;(\mathit{NdetStep}\;S)
-\end{align}
-%\rlp{Should this really include 0-sized steps?}
-%\rg{I prefer to keep epsilon transition, unless there is a good reason to special-case them.}
-Finally, we can define the set of traces described by an automaton:
-\[
-\{ e \mid
-\exists\sigma'e',\;((\mathtt{error},\sigma'),e')\in\mathit{NdetStep}^\star\;\{((\mathtt{start},[]),e)\}
-\}
-\]
-These are the traces that drive the automaton from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-\begin{figure}
-\hbox to\hsize{\vbox{
-\begin{alg}
-\^  $\proc{Step}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
-\=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
-\=  $e:=\text{$e_1$ without the suffix $e_2$}$
-\=  ~for each~ transition $((y_1,y_2),l)$
-\+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
-\=    $\sigma:=\sigma_1$
-\=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
-\+      $(g,a):=l[k]$
-\=      ~if~ $\lnot g(e_k,\;\sigma)$ ~then continue~ to line 3
-\=      $\sigma:=a(e_k,\;\sigma)$
-\-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
-\-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
-\end{alg}
-\smallskip
-}\hfil}
-\caption{One automaton step}
-\label{fig:adStep}
-\end{figure}
-\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
+${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
+%\begin{figure}
+%\hbox to\hsize{\vbox{
+%\begin{alg}
+%\^  $\proc{Step}\;((x_1,\sigma_1),e_1)\;((x_2,\sigma_2),e_2)$
+%\=  ~if~ $e_2$ is not a suffix of $e_1$ ~then return~ $0$
+%\=  $e:=\text{$e_1$ without the suffix $e_2$}$
+%\=  ~for each~ transition $((y_1,y_2),l)$
+%\+    ~if~ $(y_1,y_2)\ne(x_1,x_2) \lor \mathit{len}\;l\ne\mathit{len}\;e$ ~then continue~
+%\=    $\sigma:=\sigma_1$
+%\=    ~for each~ $k\in 1\ldots\mathit{len}\;l$
+%\+      $(g,a):=l[k]$
+%\=      ~if~ $\lnot g(e_k,\;\sigma)$ ~then continue~ to line 3
+%\=      $\sigma:=a(e_k,\;\sigma)$
+%\-    ~if~ $\sigma=\sigma_2$ ~then return~ $1$
+%\-  ~return~ $\mathit{len}\;e=1\land\sigma_1=\sigma_2$
+%\end{alg}
+%\smallskip
+%}\hfil}
+%\caption{One automaton step}
+%\label{fig:adStep}
+%\end{figure}
+%\dinocomment{I think calling the traces $e_1$ and $_2$ is confusing with the events $e_k$.}
 
 
 \paragraph{Deciding enabling of transitions.}
@@ -856,25 +855,25 @@ The automaton will take a transition as soon as a suitable event matching an out
 %
 %
 \begin{figure}
-\begin{tikzpicture}
-  \def\x{2.5}
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+%\begin{tikzpicture}
+%  \def\x{2.5}
+%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+%  \tikzset{transition/.style={->,>=latex}}
+%  \tikzset{every label/.style={gray}}
+%  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+%  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+%  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
 
-  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-  
-  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-  \draw[transition] (zero)--node[right]{$e_1$} (two);
-  
-  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-\end{tikzpicture}
-\caption{Example of unmatched events.}
-\label{fig:unmatched-example}
+%  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+%  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+%  
+%  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+%  \draw[transition] (zero)--node[right]{$e_1$} (two);
+%  
+%  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+%\end{tikzpicture}
+%\caption{Example of unmatched events.}
+%\label{fig:unmatched-example}
 \end{figure}
 
 % >>>
