@@ -229,26 +229,26 @@ using prefix java.util.Collection
 using prefix java.util.Iterator
 \end{Verbatim}
 \par\medskip
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-%  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
-%  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
-%  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
-%  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-%  \draw[transition] (0,0.5)--(start);
-%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-%\end{tikzpicture}
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
+  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
+  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
+  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+  \draw[transition] (0,0.5)--(start);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+\end{tikzpicture}
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
   using prefix java.util.Collection
@@ -783,25 +783,25 @@ The automaton will take a transition as soon as a suitable event matching an out
 %
 %
 \begin{figure}
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-%  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
 
-%  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-%  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-%  
-%  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-%  \draw[transition] (zero)--node[right]{$e_1$} (two);
-%  
-%  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-%\end{tikzpicture}
-%\caption{Example of unmatched events.}
-%\label{fig:unmatched-example}
+  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+  
+  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+  \draw[transition] (zero)--node[right]{$e_1$} (two);
+  
+  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+\end{tikzpicture}
+\caption{Example of unmatched events.}
+\label{fig:unmatched-example}
 \end{figure}
 
 
@@ -877,91 +877,6 @@ The instantiated guards, can now be evaluated with the events by taking their co
 %  s_i &= a_i(e_i, s_{i-1}) &&\text{for $i\in1.\,.\,n$}
 %\end{align}
 %The store for the target vertex of enabled and performed transition will be $s_n$.
-
-% >>>
-%\subsection{Semantics of SOOL} \label{sec:semantics.sool} % <<<
-
-%The \emph{program state} holds method parameters and dynamically allocated objects.
-%Method parameters are held in a store;
-%dynamically allocated objects are held in the heap.
-%The \emph{heap} is a finite partial map from (object reference, field name) pairs to values.
-%\begin{align}
-%\set{SoolState}&=\set{Store}\times\set{Heap}\\
-%\set{Store}&=\set{Variable}\pmap\set{Value} \\
-%\set{Heap}&=(\set{Value}\times\set{Variable})\pmap\set{Value}
-%\end{align}
-%The input is a stream of values;
-%the output is an array of events.
-%The \emph{program world} keeps track of the program state, the input yet to be consumed, and of the output already produced.
-%\begin{align}
-%\set{Input}&=\N\to\set{Value} \label{eq:input}\\
-%\set{Trace}&=\set{Event}\,\mathsf{array} \\
-%\set{SoolWorld}&=\set{SoolState}\times\set{Input}\times\set{Trace} \\
-%((\sigma, h), i, o)&\in\set{SoolWorld} \label{eq:epstate.element}
-%\end{align}
-%Equation~\eqref{eq:epstate.element} shows the general form of an element of~\set{SoolWorld}: $\sigma$~is the store that holds parameters, $h$~is the heap that holds dynamically allocated objects, $i$~is the input stream yet to be processed, and $o$~is the array of events already emitted.
-%The implementation~\cite{web:topl.prototype} also has local variables, which are treated similarly to method parameters.
-
-%Executing a SOOL program amounts to executing the \Verb@main@ body, which is a compound statement.
-%\begin{align}
-%\mathit{exec}&\in(\set{SoolWorld}\times\set{Statement})\to(\set{SoolWorld}\times\set{Value})
-%\end{align}
-%Method calls are interesting.
-%The general form of a method call is \[ e.x := f.m(g_1,\ldots,g_n)\] where $e$,~$f$, $g_1$, \dots, $g_n$ are expressions, $x$~identifies a data field, and $m$~identifies a method.
-%Expressions evaluate to values and do not have side-effects.
-%\begin{align}
-%\set{Expression}&=\set{SoolState}\to\set{Value} \\
-%e,f,g_1,\ldots,g_n&\in\set{Expression}
-%\end{align}
-
-%\begin{notation}
-%The map $\sigma[k:v]$ is the same as the map~$\sigma$, except it maps $k$~to~$v$.
-%\end{notation}
-
-%\autoref{fig:exec.call} shows the definition of \textit{exec} for method calls.
-%In spite of the imperative-looking notation, there is no mutation:
-%Different versions of $\sigma$,~$h$, $i$, and~$o$ get different indices.
-%Line~1 introduces a shorthand notation for the program state~$s$.
-%Line~2 looks up in the program text a method named~$m$.
-%We assume that method names are unique.
-%The formal parameters of~$m$ are $x_1$,~\dots,~$x_n$.
-%We assume a type-checker enforces that all calls are made with the correct number of arguments.
-%The body of~$m$ is~$b$.
-%Line~3 constructs a store that maps formal arguments to the actual values;
-%$\sigma_1$~is commonly called the \emph{call stack frame} of~$m$.
-%Line~4 emits the first event:
-%It has tag $\mathtt{call}m$ and carries the actual argument values.
-%Line~5 executes the body, by calling \textit{exec} recursively.
-%Line~6 emits the second event:
-%It has tag $\mathtt{return}m$ and carries the return value.
-%Line~7 stores the return value in the heap.
-%Finally, line~8 returns the updated program execution state and the unit value~$()$.
-
-%\begin{figure}
-%\hbox to\hsize{\vbox{
-%\begin{alg}
-%\^  $\proc{exec}\Bigl(\bigl((\sigma_0,h_0),i_0,o_0\bigr),\bigl(e.x:=f.m(g_1,\ldots,g_n)\bigr)\Bigr)$
-%\=  $s:=(\sigma,h)$
-%\=  $((x_1,\ldots,x_n), b) :=\mathit{methodOfName}\;m$
-%\=  $\sigma_1:=[\textbf{this}:(f\;s), x_1:(g_1\;s), \ldots, x_n:(g_n\;s)]$
-%\=  $o_1:=\text{$o_0$ with $(\mathtt{call}m,[f\;s,g_1\;s,\ldots,g_n\;s])$ appended}$
-%\=  $(((\sigma_2,h_2),i_2,o_2),v):=\mathit{exec}\bigl(((\sigma_1,h_0),i_0,o_1),b\bigr)$
-%\=  $o_3:=\text{$o_2$ with $(\mathtt{return}m,[v])$ appended}$
-%\=  $h_3:=h_2[(e\;s, x) : v]$
-%\=  ~return~ $(((\sigma_2,h_3),i_2,o_3), ())$
-%\end{alg}
-%\smallskip
-%}\hfil}
-%\caption{Executing one SOOL method call}
-%\label{fig:exec.call}
-%\end{figure}
-
-%Other statements are interpreted as usual and are not interesting.
-
-%Given a program with the main body~$b$, the output trace~$o$ corresponding to some input~$i$ is obtained by starting the execution with an empty store~$[]$, an empty heap~$[]$, and an empty output~$[]$.
-%\begin{align}
-%((\_,\_,o),\_):=\mathit{exec}\bigl((([],[]),i,[]),b\bigr)
-%\end{align}
 
 
 
