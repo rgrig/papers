@@ -11,6 +11,7 @@
 \usepackage{tikz}
 \usepackage{xcolor}
 \usepackage{xspace}
+\usepackage{proof}
 
 \usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
 
@@ -574,74 +575,119 @@ Similarly, an automaton's semantics is also defined as a set of event traces.
 We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-%\begin{notation}
-%Sets are typeset in \set{SansSerif} with two exceptions---$\B$~is the set $\{0,1\}$, and $\N$~is the set $\{0,1,2,\ldots\,\}$.
-%We write $\set A\times\set B$ for the set of all pairs $(a,b)$ with $a\in\set A$ and $b\in\set B$.
-%We write $\set A\to\set B$ for the set of functions from~\set A to \set B.
-%In particular, the powerset of~\set A is denoted by $\set A\to\B$.
-%Note that $(\set A\to\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
-%For all $f\in\set A\to\set B$, we write $f\;a$ or $f(a)$ to denote the unique~$b$ such that $(a,b)\in f$.
-%We write $\set A\pmap\set B$ for the set of finite partial maps from~\set A to~\set B.
-%Again, $(\set A\pmap\set B)\subset\bigl((\set A\times\set B)\to\B\bigr)$.
-%However, there are functions that are not finite partial maps, and there are finite partial maps that are not functions.
-%For all $f\in\set A\pmap\set B$, the domain $\{a\mid\text{$(a,b)\in f$ for some $b$}\}$ is finite.
-%We write $f\;a$ or $f(a)$ only when $a$ is in the domain of~$f$.
-%We write $\set A\,\mathsf{array}$ for $\bigcup_{n\in\N}
-%\bigl(\{0,1,\ldots,n-1\}\to\set A\bigr)$.
-%For $i\in\N$ and $a\in\set A\,\mathsf{array}$, we will usually write $a_i$
-%instead of $a\;i$.
-%\end{notation}
+\paragraph{TOPL execution automata.}
+\newcommand{\World}{ExecState}
 
-%\subsection{Semantics of iTOPL}\label{sec:semantics.itopl} % <<<
-\begin{definition}
-A TOPL property is a tuple $(\set{Vertex}, \set{Arc}, \set{Label}, \texttt{start}, \texttt{error})$ where
-\begin{itemize}
-\item $\set{Vertex}$ is a set of vertices;
-\item $\set{Arc} \subseteq \set{Vertex} \times \set{Label} \times \set{Vertex}$ is a set of labelled arcs;
-\item $\texttt{start} \in \set{Vertex}$ is the initial vertex;
-\item $\texttt{error} \in \set{Vertex}$ is the accepting vertex.
-\end{itemize} 
-\end{definition}
-Each TOPL's property gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
-%$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs %mentioned in transitions. 
-The automaton has two special vertices, {\tt start} and {\tt error}, the initial and accepting vertex respectively.
+Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program,
+gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$ which represent the 
+semantics of the property interpreted over the program.
+$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error}, the initial and accepting vertex respectively. 
 
-The automaton takes as input a trace of events.
-Each event~$e$ contains an array of values.
-Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
-We assume a countable set \set{Value} of values, a countable set \set{Event} of events with known arity,
-and a countable set $\set{Variable}$ of automaton variables.
-A {\em  automaton state} is not just a vertex but also a store: 
-\[
-\set{State} = \set{Vertex}\times\set{Store}
-\]
-That is, the state of the automaton is
-given by specifying the vertex in the graph as well as the value of defined automaton variables.
-%
-We model stores as finite partial maps with finite domain.
+We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables. Let stores be finite partial maps with finite domain.
 \[
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
+Moreover we assume a countable set \set{Event} of events with known arity. Each event~$e$ contains an array of values.
+Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
 %
-A further consequence of the concept of transition depth is that the events to be received by  target states 
-of different enabled transitions with different depth are
-not the same.  For example for a trace of events $e_1 e_2 e_3\cdots$, if two transitions
-turn out to be enabled, one with depth 2 and the other with depth 5,
+\begin{definition}[TOPL execution automaton]
+Give a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} is a tuple 
+$(\set{State}, \to , \set{Init}, \set{Error})$ where
+\begin{itemize}
+\item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
+\item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
+\item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
+\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma), \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
+\end{itemize} 
+\end{definition}
+A state of the automaton is
+given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be
+observed. The reader may wonder why execution states need to contain traces. The reason is that
+each label in $\set{Arc}$ carries (potentially) a list of guards and 
+we call the length of this list, the \emph{depth} of the transition.
+Since different outgoing arcs for a vertex can have different depths, 
+therefore different target states of execution transitions may receive different events.
+For example for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have
+depth 2 and 5 rispectively,
 then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
 
-For this reason, it is necessary to keep track
-of which events are next to be received by each state during a run of
-the automaton.
+%
+%The automaton takes as input a trace of events.
+%Each event~$e$ contains an array of values.
+%Within guards and actions we write $e[i]$ for the $i$th value associated to event~$e$ (0-based).
+%We assume a countable set \set{Value} of values, a countable set \set{Event} of events with known arity,
+%and a countable set $\set{Variable}$ of automaton variables.
+%A {\em  automaton state} is not just a vertex but also a store: 
+%\[
+%\set{State} = \set{Vertex}\times\set{Store}
+%\]
+%That is, the state of the automaton is
+%given by specifying the vertex in the graph as well as the value of defined automaton variables.
+%
+%We model stores as finite partial maps with finite domain.
+%\[
+%\set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
+%\]
+%
+%A further consequence of the concept of transition depth is that the events to be received by  target states 
+%of different enabled transitions with different depth are
+%not the same.  For example for a trace of events $e_1 e_2 e_3\cdots$, if two transitions
+%turn out to be enabled, one with depth 2 and the other with depth 5,
+%then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
+%
+%For this reason, it is necessary to keep track
+%of which events are next to be received by each state during a run of
+%the automaton.
 
-To formalize this bookkeeping, we introduce the notion of
-\emph{execution state}. 
-\newcommand{\World}{ExecState}
+%To formalize this bookkeeping, we introduce the notion of
+%\emph{execution state}. 
+%\[
+%\set{\World} = \set{State}\times\set{Trace}
+%\]
+%The first component records the state of the automaton (vertex
+%and store) and the second component records the remaining trace of
+%events for that state.
+In order to define the transition relation we need to define two auxiliary concepts. 
+The effect of the actions in an arc label on a store when observing a trace is given by the function
 \[
-\set{\World} = \set{State}\times\set{Trace}
+   A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
+\] and defined as
+%
+\begin{eqnarray*}
+A(\sigma,\epsilon,[]) & = & \bot
+\\[2ex]
+A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
+     a(e,\sigma) & \mbox{if $g(e,\sigma)$}
+     \\
+     \bot & \mbox{otherwise}
+     \end{array}
+     \right.
+\\[2ex]
+A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
+     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$ and $A(\sigma,e,(g,a))=\sigma'$}
+     \\
+     \bot & \mbox{otherwise}
+     \end{array}
+     \right.
+\end{eqnarray*}
+With $A$ we can define the predicates $enabled$
+testing whether a transition is enabled in a store when observing a trace and a predicate
+$Enabled$ testing if there exists an enabled transition starting from a vertex, given a store and a trace of events:
+\begin{eqnarray*}
+enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
+\\
+Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ enabled(\sigma,\tau,l) \mid x \to x' : l \}
+\end{eqnarray*}
+%
+The transition relation $s \to s'$ is defined by the following rules.
+\[
+\begin{array}{l}
+\infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \circ \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\\[2ex]
+\infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
+\end{array}
 \]
-The first component records the state of the automaton (vertex
-and store) and the second component records the remaining trace of
-events for that state.
+\dinocomment{********** UP TO HERE *********}
 We can define a predicate that determines the possible execution state transitions
 \[
 \mathit{Step} \in \set{\World}\to\set{\World} \to \B
