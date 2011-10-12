@@ -356,8 +356,6 @@ let bc_push i =
   if i = 5 then B.Instruction.ICONST_5 else
     B.Instruction.LDC (`Int (Int32.of_int i))
 
-let bc_aload i = B.Instruction.ALOAD (B.Utils.u1 i)
-
 let bc_new_object_array size =
   [
     bc_push size;
@@ -383,11 +381,24 @@ let bc_box = function
 	  utf8_for_method "valueOf",
           ([t], `Class c))]
 
+let bc_load i =
+  let i = B.Utils.u1 i in
+  function
+  | `Class _ | `Array _ -> B.Instruction.ALOAD i
+  | `Boolean -> B.Instruction.ILOAD i
+  | `Byte -> B.Instruction.ILOAD i
+  | `Char -> B.Instruction.ILOAD i
+  | `Double -> B.Instruction.DLOAD i
+  | `Float -> B.Instruction.FLOAD i
+  | `Int -> B.Instruction.ILOAD i
+  | `Long -> B.Instruction.LLOAD i
+  | `Short -> B.Instruction.ILOAD i
+    
 let bc_array_set index t =
   [
     B.Instruction.DUP;
     bc_push index;
-    bc_aload index
+    bc_load index t
   ] @
     bc_box t @
   [
@@ -570,8 +581,8 @@ let instrument_method get_tag h c = function
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
-		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in
-(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
+(*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
+		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;
