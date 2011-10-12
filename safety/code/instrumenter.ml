@@ -682,6 +682,7 @@ Hashtbl.iter (fun _ xs -> printf "@[%a@." pp_int_list xs) p.pattern_tags;
 (* TODO:
   - Don't forget that methods in package "topl" should not be instrumented.
   - a way to select properties (by name) from the command line
+  - a way to select where to put various outputs from the command line
  *)
 (*
 vim:tw=0:

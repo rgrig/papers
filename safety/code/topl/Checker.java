@@ -1,3 +1,4 @@
+// header {{{
 package topl;
 
 import java.util.ArrayDeque;
@@ -7,25 +8,28 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
-
+// }}}
 public class Checker {
-    /*
+    /*  Implementation Notes {{{
         Some classes have a method {check()} that asserts if some object
         invariant is broken. These functions always return {true} so that
         you can say {assert x.check()} in case you want to skip them
         completely when assertions are not enabled.
-     */
 
+     }}} */
+    // Queue<T> {{{
     static class Queue<T> {
         static private class N<T> {
             T data;
             N<T> next;
-            private N(T data, N<T> next) {
+            int size;
+            private N(T data, N<T> next, int size) {
                 this.data = data;
                 this.next = next;
+                this.size = size;
             }
             static <T> N<T> mk(T data, N<T> next) {
-                return new N<T>(data, next);
+                return new N<T>(data, next, 1 + sizeN(next));
             }
         }
         static private <T> N<T> reverseN(N<T> n) {
@@ -36,12 +40,11 @@ public class Checker {
             return r;
         }
         static private <T> int sizeN(N<T> n) {
-            int r;
-            for (r = 0; n != null; n = n.next) ++r;
-            return r;
+            return n == null? 0 : n.size;
         }
         private N<T> front;
         private N<T> back;
+        private int hash;
         private class Itr implements Iterator<T> {
             N<T> next;
 
@@ -68,18 +71,19 @@ public class Checker {
             }
         }
 
-        private Queue(N<T> front, N<T> back) {
+        private Queue(N<T> front, N<T> back, int hash) {
             this.front = front;
             this.back = back;
+            this.hash = hash;
         }
-        static private <T> Queue<T> mk(N<T> front, N<T> back) {
-            return new Queue<T>(front, back);
+        static private <T> Queue<T> mk(N<T> front, N<T> back, int hash) {
+            return new Queue<T>(front, back, hash);
         }
         static <T> Queue<T> empty() {
-            return new Queue<T>(null, null);
+            return new Queue<T>(null, null, 0);
         }
         public Queue<T> push(T x) {
-            return Queue.mk(front, N.mk(x, back));
+            return Queue.mk(front, N.mk(x, back), hash + x.hashCode());
         }
         public Queue<T> pop() {
             if (front == null) {
@@ -91,7 +95,7 @@ public class Checker {
             if (front == null) {
                 throw new RuntimeException("queue empty");
             }
-            return Queue.mk(front.next, back);
+            return Queue.mk(front.next, back, hash - front.data.hashCode());
         }
         public T top() {
             if (front != null) {
@@ -108,17 +112,72 @@ public class Checker {
         public Iterator<T> iterator() {
             return new Itr();
         }
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+        @Override
+        public boolean equals(Object other) {
+            Queue otherQueue = (Queue) other; // yes, exception wanted
+            return this == otherQueue ||
+                (hash == otherQueue.hash &&
+                equalIterators(iterator(), otherQueue.iterator()));
+        }
     }
+    // }}}
+    // Treap<T extends Comparable<T>> {{{
+    static class Treap<T extends Comparable<T>> implements Iterable<T> {
+        static class Itr<T extends Comparable<T>> implements Iterator<T> {
+            ArrayDeque<Treap<T>> stack = new ArrayDeque<Treap<T>>();
 
-    static class Treap<T extends Comparable<T>> {
+            Itr(Treap<T> root) {
+                goLeft(root);
+            }
+
+            private void goLeft(Treap<T> node) {
+                assert node != null;
+                while (node.data != null) {
+                    stack.addFirst(node);
+                    node = node.left;
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !stack.isEmpty();
+            }
+
+            @Override
+            public T next() {
+                Treap<T> node = stack.peekFirst();
+                T result = node.data;
+                if (node.right.data != null) {
+                    goLeft(node.right);
+                } else {
+                    stack.removeFirst();
+                    while (!stack.isEmpty() && stack.peekFirst().right == node) {
+                        node = stack.removeFirst();
+                    }
+                }
+                return result;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        }
+
         static final private Random random = new Random(123);
 
         final int priority;
         final T data;
         final Treap<T> left;
         final Treap<T> right;
+        final int hash;
 
-        Treap() {
+        private Treap() {
+            hash = 0;
             priority = 0;
             data = null;
             left = right = null;
@@ -130,7 +189,12 @@ public class Checker {
             this.data = data;
             this.left = left;
             this.right = right;
-            // Invariant {check()} may be broken!
+            this.hash = left.hash + right.hash + data.hashCode();
+            // Invariant {check()} may be broken at this point!
+        }
+
+        static <T extends Comparable<T>> Treap<T> empty() {
+            return new Treap<T>();
         }
 
         boolean check() {
@@ -214,7 +278,6 @@ public class Checker {
         }
 
         Treap<T> insert(T data) {
-System.out.println("Inserting " + data);
             return insert(random.nextInt(Integer.MAX_VALUE - 1) + 1, data);
         }
 
@@ -262,7 +325,6 @@ System.out.println("Inserting " + data);
         public T get(T x) {
             assert x != null;
             if (data == null) {
-		System.out.println("Retreiving from empty Treap.");
                 return null;
             } else {
                 int c = x.compareTo(data);
@@ -271,20 +333,39 @@ System.out.println("Inserting " + data);
                 } else if (c > 0) {
                     return right.get(x);
                 } else {
-		    System.out.println("Retreiving " + data);
                     return data;
                 }
             }
         }
 
+        // Used mostly for debugging.
 	public int size() {
 	    int s = data == null? 0 : 1;
 	    if (left != null) s += left.size();
 	    if (right != null) s += right.size();
 	    return s;
 	}
-    }
 
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            Treap otherTreap = (Treap) other; // yes, cast exception wanted
+            return this == other ||
+                (hash == otherTreap.hash &&
+                equalIterators(iterator(), otherTreap.iterator()));
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return new Itr<T>(this);
+        }
+    }
+    // }}}
+    // helper functions {{{
     private static boolean valueEquals(Object o1, Object o2) {
 	if (o1 instanceof Integer)
 	    return o1.equals(o2);
@@ -300,6 +381,16 @@ System.out.println("Inserting " + data);
         return r;
     }
 
+    static <T> boolean equalIterators(Iterator<T> i, Iterator j) {
+        while (i.hasNext() && j.hasNext()) {
+            if (!i.next().equals(j.next())) { // yes, NullExc wanted
+                return false;
+            }
+        }
+        return i.hasNext() == j.hasNext();
+    }
+    // }}}
+    // property AST {{{
     public static class Event {
         final int id;
         final Object[] values;
@@ -316,69 +407,100 @@ System.out.println("Inserting " + data);
         }
     }
 
+    static class Binding implements Comparable<Binding> {
+        final int variable;
+        final Object value;
+
+        public Binding(int variable, Object value) {
+            assert variable >= 0 : "variables are used as indices";
+            this.variable = variable;
+            this.value = value;
+        }
+
+        public Binding(int variable) {
+            this(variable, null);
+        }
+
+        @Override
+        public int compareTo(Binding other) {
+            // Overflow safe, because variable is nonnegative.
+            return variable - other.variable;
+        }
+
+        @Override
+        public String toString() {
+            return variable + "->" + value;
+        }
+    }
+
     static class State {
-        static class Binding implements Comparable<Binding> {
-            final int variable;
-            final Object value;
-
-            public Binding(int variable, Object value) {
-		assert variable >= 0 : "variables are used as indices";
-                this.variable = variable;
-                this.value = value;
+        static class Parent {
+            final State state;
+            final Queue<Event> events;
+            Parent(State state, Queue<Event> events) {
+                assert state != null;
+                assert events != null;
+                this.state = state;
+                this.events = events;
             }
-
-	    public Binding(int variable) {
-		this(variable, null);
-	    }
-
-            @Override
-            public int compareTo(Binding other) {
-		return variable - other.variable;
-            }
-
-	    @Override
-	    public String toString() {
-		return variable + "->" + value;
-	    }
         }
 
-        // TODO: Hashing
+        // These contribute to the identity of a State.
         final int vertex;
-        Treap<Binding> stack;
-        Queue<Event> events;
-        // The state {this} arose from {previousState} when {arrivalEvent} was seen.
-	// what does that mean for multi-guard transitions?
-        State previousState;
-        Event arrivalEvent;
+        final Treap<Binding> store;
+        final Queue<Event> events;
 
-        State(int vertex) {
+        // These keep a history for reporting traces. From the point of view
+        // of semantics of the automaton, two states that differ in their
+        // histories are essentially equivalent.
+        // TODO
+        final int generation; // length of list {@code parent}
+        final Parent parent;
+
+        State(int vertex, Treap<Binding> store, Queue<Event> events,
+                Parent parent) {
             this.vertex = vertex;
-            this.stack = new Treap<Binding>();
-            this.events = Queue.empty();
-            this.previousState = null;
-            this.arrivalEvent = null;
+            this.store = store;
+            this.events = events;
+            this.parent = parent;
+            this.generation = parent == null? 0 : parent.state.generation + 1;
         }
 
-        State applyAction(Action action, int target) {
-	    State s = new State(target);
-	    s.stack = stack;
-        Event e = events.top();
-        s.events = events.pop();
-	    s.previousState = this; // this should not be set here for multi-guard transitions
-	    Iterator<Map.Entry<Integer, Integer>> assignments = action.assignments.entrySet().iterator();
-	    while (assignments.hasNext()) {
-		Map.Entry<Integer, Integer> a = assignments.next();
-		int storeIndex = a.getKey();
-		int eventIndex = a.getValue();
-		Binding b = new Binding(storeIndex, e.values[eventIndex]);
-		s.stack = s.stack.insert(b);
-	    }
-            return s;
+        @Override
+        public int hashCode() {
+            return vertex + store.hashCode() + events.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            State otherState = (State) other; // yes, I want exc otherwise
+            return vertex == otherState.vertex &&
+                store.equals(otherState.store) &&
+                events.equals(otherState.events);
+        }
+
+        static State start(int vertex) {
+            return new State(vertex, Treap.<Binding>empty(),
+                    Queue.<Event>empty(), null);
+        }
+
+        static State make(int vertex, Treap<Binding> store, Queue<Event> events,
+                Queue<Event> consumed, State parent) {
+            return new State(vertex, store, events,
+                    new Parent(parent, consumed));
+        }
+
+        State pushEvent(Event event) {
+            return new State(vertex, store, events.push(event), parent);
+        }
+
+        State popEvent() {
+            return new State(vertex, store, events.pop(), parent);
         }
     }
 
     interface Guard {
-        boolean evaluate(Event event, Treap<State.Binding> store);
+        boolean evaluate(Event event, Treap<Binding> store);
     }
 
     static class AndGuard implements Guard {
@@ -389,7 +511,7 @@ System.out.println("Inserting " + data);
         }
 
         @Override
-        public boolean evaluate(Event event, Treap<State.Binding> store) {
+        public boolean evaluate(Event event, Treap<Binding> store) {
             for (Guard g : children) {
                 if (!g.evaluate(event, store)) {
                     return false;
@@ -422,7 +544,7 @@ System.out.println("Inserting " + data);
         }
 
         @Override
-        public boolean evaluate(Event event, Treap<State.Binding> store) {
+        public boolean evaluate(Event event, Treap<Binding> store) {
             return !child.evaluate(event, store);
         }
 
@@ -442,8 +564,8 @@ System.out.println("Inserting " + data);
         }
 
         @Override
-        public boolean evaluate(Event event, Treap<State.Binding> store) {
-	    State.Binding b = new State.Binding(storeIndex);
+        public boolean evaluate(Event event, Treap<Binding> store) {
+	    Binding b = new Binding(storeIndex);
             return valueEquals(event.values[eventIndex], store.get(b).value);
         }
 
@@ -463,7 +585,7 @@ System.out.println("Inserting " + data);
         }
 
         @Override
-        public boolean evaluate(Event event, Treap<State.Binding> store) {
+        public boolean evaluate(Event event, Treap<Binding> store) {
             return (value == null)?
                 event.values[eventIndex] == null :
                 valueEquals(value, event.values[eventIndex]);
@@ -477,7 +599,7 @@ System.out.println("Inserting " + data);
 
     static class TrueGuard implements Guard {
         @Override
-        public boolean evaluate(Event event, Treap<State.Binding> store) {
+        public boolean evaluate(Event event, Treap<Binding> store) {
             return true;
         }
 
@@ -499,12 +621,21 @@ System.out.println("Inserting " + data);
         }
 
         HashMap<Integer, Integer> assignments;
+
         Action(Assignment[] init) {
             assignments = new HashMap<Integer, Integer>();
             for (Assignment a : init) {
-//                assert as
+                assert !assignments.containsKey(a.storeIndex);
                 assignments.put(a.storeIndex, a.eventIndex);
             }
+        }
+
+        Treap<Binding> apply(Event event, Treap<Binding> store) {
+            for (Map.Entry<Integer, Integer> e : assignments.entrySet()) {
+                Object value = event.values[e.getValue()];
+                store = store.insert(new Binding(e.getKey(), value));
+            }
+            return store;
         }
     }
 
@@ -519,11 +650,10 @@ System.out.println("Inserting " + data);
             this.action = action;
         }
 
-        boolean evaluateGuard(Event event, State state) {
+        boolean evaluateGuard(Event event, Treap<Binding> store) {
             return eventIds.contains(event.id)
-                && guard.evaluate(event, state.stack);
+                && guard.evaluate(event, store);
         }
-        // TODO: applyAction consumes one event
     }
 
     static class Transition {
@@ -561,7 +691,7 @@ System.out.println("Inserting " + data);
 		return 31*vertex + 101*eventId;
 	    }
         }
-        private HashSet<VertexEvent> interesting = new HashSet<VertexEvent>();
+        private HashSet<VertexEvent> observable = new HashSet<VertexEvent>();
 
         final int[] startVertices;
         final String[] errorMessages;
@@ -579,7 +709,7 @@ System.out.println("Inserting " + data);
             this.transitions = transitions;
             for (int s = 0; s < transitions.length; ++s) {
                 for (int e : filters[filterOfState[s]]) {
-                    interesting.add(new VertexEvent(s, e));
+                    observable.add(new VertexEvent(s, e));
                 }
             }
             assert check();
@@ -610,8 +740,8 @@ System.out.println("Inserting " + data);
             return true;
         }
 
-        boolean isInteresting(int eventId, int vertex) {
-            return interesting.contains(new VertexEvent(vertex, eventId));
+        boolean isObservable(int eventId, int vertex) {
+            return observable.contains(new VertexEvent(vertex, eventId));
         }
 
         int maximumTransitionDepth() {
@@ -627,7 +757,9 @@ System.out.println("Inserting " + data);
             return maximumTransitionDepth;
         }
     }
-
+    // }}}
+    // checker {{{
+    private boolean inChecker = false;
     final private Automaton automaton;
     private HashSet<State> states;
 
@@ -635,71 +767,75 @@ System.out.println("Inserting " + data);
         this.automaton = automaton;
         this.states = new HashSet<State>();
         for (int v : automaton.startVertices)
-            states.add(new State(v));
+            states.add(State.start(v));
     }
 
     void reportError(String msg) {
         // TODO
+        //  - print trace
+        //  - throw exception?
 	System.out.println("\n********************\n* " + msg + "\n********************");
     }
 
     public void check(Event event) {
-	// TODO turn off interrupts
+        if (inChecker) {
+            return;
+        }
+        inChecker = true;
 	System.out.print("Received event id " + event.id + "\nStates: [");
 	for (State state : states)
 	    System.out.println("  vertex: " + state.vertex +
 			       "\n  events:" + state.events.size() +
-			       "\n  bindings:" + state.stack.size());
+			       "\n  bindings:" + state.store.size());
 	System.out.println("]");
-        HashSet<State> departedStates = new HashSet<State>();
-        HashSet<State> arrivedStates = new HashSet<State>();
+        HashSet<State> newActiveStates = new HashSet<State>();
         for (State state : states) {
-            if (!automaton.isInteresting(event.id, state.vertex)) {
+            state = state.pushEvent(event);
+            if (!automaton.isObservable(event.id, state.vertex)) {
 		continue;
             }
-            state.events = state.events.push(event);
             if (state.events.size() < automaton.maximumTransitionDepth()) {
                 continue;
             }
 	    boolean anyEnabled = false;
             for (Transition transition : automaton.transitions[state.vertex]) {
                 // evaluate transition
-                State stepState = state;
-                int i = 0;
-                Iterator<Event> j = state.events.iterator();
-		//System.out.print("  stream: <");
-                for (; i < transition.steps.length; ++i) {
+                Treap<Binding> store = state.store;
+                Queue<Event> events = state.events;
+                Queue<Event> consumed = Queue.empty();
+                int i;
+                for (i = 0; i < transition.steps.length; ++i) {
                     TransitionStep step = transition.steps[i];
-                    Event stepEvent = j.next();
-		    //System.out.print("  " + stepEvent.id);
-                    // if (!step.eventIds.contains(stepEvent.id)) break;
-                    if (!step.evaluateGuard(stepEvent, stepState)) break;
-		    System.out.print(", ");
-                    stepState = stepState.applyAction(step.action, transition.target);
+                    Event stepEvent = events.top();
+                    events = events.pop();
+                    consumed = consumed.push(stepEvent);
+                    if (step.evaluateGuard(stepEvent, store)) {
+                        store = step.action.apply(stepEvent, store);
+                    }
                 }
-		//System.out.println(">");
+
                 // record transition
                 if (i == transition.steps.length) {
-		    // TODO on all arrivedStates
-		    // arr_state.previousState = state;
 		    anyEnabled = true;
-                    departedStates.add(state);
-                    arrivedStates.add(stepState);
+                    newActiveStates.add(State.make(transition.target, store,
+                            events, consumed, state));
+
                     // check for error state
                     String msg = automaton.errorMessages[transition.target];
-                    if (msg != null)
+                    if (msg != null) {
                         reportError(msg);
+                    }
                 }
             }
-	    if (!anyEnabled) { // drop an event from the state's queue
-                state.events = state.events.pop();
+	    if (!anyEnabled) {
+                newActiveStates.add(state.popEvent());
             }
         }
-	// perform transitions
-	states.removeAll(departedStates);
-	states.addAll(arrivedStates);
+        states = newActiveStates;
+        inChecker = false;
     }
-
+    // }}}
+    // debug {{{
     public String toDOT() {
 	StringBuffer s = new StringBuffer();
 	s.append("digraph Property {\n");
@@ -757,14 +893,16 @@ System.out.println("Inserting " + data);
         //t.c.check(new Event(1, new Object[]{}));
         //t.c.check(new Event(0, new Object[]{}));
     }
+    // }}}
 }
-/* TODO
-    - implement persistent data structures
+/* TODO {{{
+    - add hashing to Treap and Queue.
     - fill in the missing methods
     - write some tests
     - make sure that Checker does *not* call itself recursively when it uses
       the Java API. (Use a flag. And minimize external dependencies (including
       Java API.)
     - report traces when something goes wrong
- */
-// vim:sw=4:ts=4:
+    - add 'final' where possible
+}}} */
+// vim:sts=4:sw=4:ts=8:et:

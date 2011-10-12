@@ -25,7 +25,8 @@ $(JAVACLASS): %.class: %.java req
 	@javac $< || echo "WARNING: $< does not compile."
 
 clean:
-	@rm -f *.aux *.bbl *.bak *.blg *.log *.out *.pdf *.class
+	@rm -f $(PDF)
+	@rm -f *.aux *.bbl *.bak *.blg *.log *.out *.class
 	@rm -f $(JAVATEX)
 	@rm -f req
 
