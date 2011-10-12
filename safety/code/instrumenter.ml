@@ -282,8 +282,13 @@ let endswith suffix s =
   let n = String.length s in
   if m > n then false else String.sub s (n - m) m = suffix
 
+let contains_no undesired s =
+  let r = Str.regexp_string undesired in
+    try let _ = Str.search_forward r s 0 in false
+    with Not_found -> true
+
 let classfiles_of_path =
-  fs_filter (endswith ".class")
+  fs_filter (fun p -> contains_no "/topl/" p && endswith ".class" p)
 
 let classes_of_classfile fn =
   try fn
@@ -359,11 +364,33 @@ let bc_new_object_array size =
     B.Instruction.ANEWARRAY (`Class_or_interface java_lang_Object)
   ]
 
-let bc_array_set index =
+let bc_box = function
+  | `Class _ | `Array _ -> []
+  | t ->
+      let c = utf8_for_class ("java.lang." ^ (match t with
+        | `Boolean -> "Boolean"
+        | `Byte -> "Byte"
+        | `Char -> "Character"
+        | `Double -> "Double"
+        | `Float -> "Float"
+        | `Int -> "Integer"
+        | `Long -> "Long"
+        | `Short -> "Short"
+        | _ -> failwith "foo"))
+        in
+      [B.Instruction.INVOKESTATIC
+          (c,
+	  utf8_for_method "valueOf",
+          ([t], `Class c))]
+
+let bc_array_set index t =
   [
     B.Instruction.DUP;
     bc_push index;
-    bc_aload index;
+    bc_aload index
+  ] @
+    bc_box t @
+  [
     B.Instruction.AASTORE
   ]
 
@@ -418,35 +445,16 @@ let get_tag x =
 
 let bc_send_event id param_types is_static =
   (* this is ugly, it should just receive the arity *)
-  let params = List.map (fun _ -> 0) param_types in
-  let params = if is_static then params else 0::params in
-  let fold (instructions, i) _ =
-    ((bc_array_set i) :: instructions, succ i) in
+  let dummy = checker in
+  let params = if is_static then param_types else (`Class dummy)::param_types in
+  let fold (instructions, i) t =
+    bc_array_set i t :: instructions, succ i in
   let (inst_lists, _) = List.fold_left fold ([], 0) params in
   let instructions = List.flatten (List.rev inst_lists) in
     (bc_new_object_array (List.length params)) @
     instructions @
     (bc_new_event id) @
     bc_check
-
-let bc_box = function
-  | `Class _ | `Array _ -> []
-  | t ->
-      let c = utf8_for_class ("java.lang." ^ (match t with
-        | `Boolean -> "Boolean"
-        | `Byte -> "Byte"
-        | `Char -> "Character"
-        | `Double -> "Double"
-        | `Float -> "Float"
-        | `Int -> "Integer"
-        | `Long -> "Long"
-        | `Short -> "Short"
-        | _ -> failwith "foo"))
-        in
-      [B.Instruction.INVOKESTATIC
-          (c,
-	  utf8_for_method "valueOf",
-          ([t], `Class c))]
 
 let bc_send_return_event id return_type =
   let bc_save_return_value,
@@ -562,8 +570,8 @@ let instrument_method get_tag h c = function
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
-(*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
-		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in
+		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in
+(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
 		    let instrumented_code =
 		      {code with
 			 B.Attribute.code = new_instructions;

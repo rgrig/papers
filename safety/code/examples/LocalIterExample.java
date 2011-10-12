@@ -3,23 +3,37 @@ package examples;
 // Local version of IterExample.java
 // in that it does not require instrumentation of library code
 
-// dummy iterator
-class Iter<E> {
-    public E next() {
-	return null;
-    }
-    public boolean hasNext() {
-	return false;
-    }
-    public void remove() {}
+interface Iter<E> {
+    public boolean hasNext();
+    public E next();
+    public void remove();
 }
 
 // dummy collection
 class Collector<E> {
-    public Iter<E> iterator() {
-	return new Iter<E>();
+    
+    E elem = null;
+
+    // dummy iterator
+    class It implements Iter<E> {
+	public E next() {
+	    return elem;
+	}
+	public boolean hasNext() {
+	    return elem != null;
+	}
+	public void remove() {
+	    elem = null;
+	}
     }
-    public void add(E e) {}
+
+    public Iter<E> iterator() {
+	return new It();
+    }
+
+    public void add(E e) {
+	elem = e;
+    }
 }
 
 class LocalUser<E> {
