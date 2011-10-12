@@ -4,6 +4,7 @@ open Util
 module B = BaristaLibrary
 
 let input_class fn =
+  printf "@[Decoding %s@." fn;
   let ch = open_in fn in
     ch
     >> B.InputStream.make_of_channel
