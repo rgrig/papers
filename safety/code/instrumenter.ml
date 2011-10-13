@@ -147,6 +147,11 @@ let pp_string f x = fprintf f "%s" x
 let pp_int_list f xs =
   fprintf f "@[<2>new int[]{%a}@]" (pp_h_list pp_int) xs
 
+let pp_int_list_display n f xs =
+  let l = List.length xs in
+  if l > n then fprintf f "@[<2>new int[]{%d elements (more than %d)}@]" l n
+  else pp_int_list f xs
+
 let pp_pattern tags f p = pp_int_list f (Hashtbl.find tags p)
 
 let pp_value_guard f = function
@@ -581,7 +586,7 @@ let instrument_method get_tag h c = function
       let call_id = get_tag PA.Call overrides in
       let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
-	  | None, None -> B.Method.Regular r
+	  | None, None -> B.Method.Regular r, false
 	  | _ -> (
 	      let inst_code = instrument_code call_id return_id param_types return_types is_static in
 	      let inst_attrs = function
@@ -601,10 +606,11 @@ let instrument_method get_tag h c = function
 		      `Code instrumented_code
 		| a -> a in
 	      let instrumented_attributes = List.map inst_attrs r.B.Method.attributes in
-		B.Method.Regular {r with B.Method.attributes = instrumented_attributes}
+	      B.Method.Regular {r with B.Method.attributes = instrumented_attributes},
+	      true
 	    )
     )
-  | m -> m
+  | m -> m, false
 
 let open_class_channel c =
   let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
@@ -622,7 +628,7 @@ let output_class c =
 (*  if log log_cp then fprintf logf "@[...  writing file@."; *)
   B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
   close_out ch
-    with 
+    with (* maybe delete the file? *)
       | B.Instruction.Exception err ->
 	  close_out ch;
 	  if log log_cp then fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" (B.Instruction.string_of_error err)
@@ -632,11 +638,16 @@ let output_class c =
 
 let instrument_class get_tags h (c, fn, ch) =
   if log log_cp then fprintf logf "@[instrument %s@." fn;
-  let instrumented_methods = List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods in
+  (* receive a flag indicating if the mothod is instrumented *)
+  let instrumented_methods, was_instrumented =
+    List.split (List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods) in
   close_in ch;
-  if log log_cp then fprintf logf "@[...output %s@." fn;
-  output_class {c with B.ClassDefinition.methods = instrumented_methods}
-
+  (* compute the or of all the flags, if false do not write file *)
+    if List.exists (fun b -> b) was_instrumented then
+      (if log log_cp then fprintf logf "@[...output %s@." fn;
+       output_class {c with B.ClassDefinition.methods = instrumented_methods})
+    else if log log_cp then fprintf logf "@[...no methods modified in %s@." fn
+	    
 let iter_classes cp f = (* TODO *)
   let process_classfile cf = List.iter f (classes_of_classfile cf) in
   List.iter process_classfile (classfiles_of_path cp)
@@ -661,7 +672,7 @@ let compute_inheritance classpath =
 	  let is_static = has_static_flag r.B.Method.flags in
 	  let (ps, _) = r.B.Method.descriptor in (* return is not used *)
 	  let nr_params = List.length ps + if is_static then 0 else 1 in
-          mk_method r.B.Method.name (nr_params) :: mns
+          mk_method r.B.Method.name nr_params :: mns
       | _ -> mns in
     let method_names = List.fold_left fold [] c.B.ClassDefinition.methods in
     let parents = match c.B.ClassDefinition.extends with
@@ -698,7 +709,7 @@ let () =
     let ps = read_properties !fs in
     let p, ifv, otfp = transform_properties ps in
     instrument_bytecode (get_tag p) !cp h;
-Hashtbl.iter (fun _ xs -> printf "@[%a@." pp_int_list xs) p.pattern_tags;
+Hashtbl.iter (fun _ xs -> printf "@[%a@." (pp_int_list_display 50) xs) p.pattern_tags;
     generate_checkers ifv otfp p
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m

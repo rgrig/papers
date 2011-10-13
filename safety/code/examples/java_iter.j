@@ -1,7 +1,7 @@
 property OtherModified
   message "trying to advance an iterator on a collection modified by another iterator"
-  prefix <examples.*>
-  observing <examples.*>
+  prefix <java.util.*>
+  observing <java.util.Collection.*>
   start -> gotOne:    I := C.iterator()
   gotOne -> gotTwo:   J := c.iterator()
   gotTwo -> jInvalid: i.remove()
