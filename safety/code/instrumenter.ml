@@ -616,15 +616,19 @@ let open_class_channel c =
 
 let output_class c =
   let ch = open_class_channel c in
-  if log log_cp then fprintf logf "@[...  ecoding@.";
+(*  if log log_cp then fprintf logf "@[...  ecoding@."; *)
     try
   let bytes = B.ClassDefinition.encode c in
-  if log log_cp then fprintf logf "@[...  writing file@.";
+(*  if log log_cp then fprintf logf "@[...  writing file@."; *)
   B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
   close_out ch
-    with (B.Instruction.Exception err) ->
-      close_out ch;
-      printf "@[%s@\n@]" (B.Instruction.string_of_error err)
+    with 
+      | B.Instruction.Exception err ->
+	  close_out ch;
+	  if log log_cp then fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" (B.Instruction.string_of_error err)
+      | B.ClassDefinition.Exception err ->
+	  close_out ch;
+	  if log log_cp then fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" (B.ClassDefinition.string_of_error err)
 
 let instrument_class get_tags h (c, fn, ch) =
   if log log_cp then fprintf logf "@[instrument %s@." fn;
