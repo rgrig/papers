@@ -206,3 +206,6 @@ any_value:
 
 %%
 
+(* TODO
+  - generate loop on vertex start
+*)

@@ -570,9 +570,9 @@ let compute_stacks c m instructions =
          init_state
      with e -> failwith "problem computing stack frame sizes")
 
-let raise_stack x =
+let raise_stack n x =
   let x = (x : B.Utils.u2 :> int) in
-    B.Utils.u2 (x + 3)
+    B.Utils.u2 (x + n)
 
 let instrument_method get_tag h c = function
   | B.Method.Regular r as m -> (
@@ -595,7 +595,7 @@ let instrument_method get_tag h c = function
 (*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
 (*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
 		    let new_max_stack, new_max_locals =
-		      raise_stack code.B.Attribute.max_stack,
+		      raise_stack 4 code.B.Attribute.max_stack,
 		      code.B.Attribute.max_locals in
 		    let instrumented_code =
 		      {code with

@@ -18,7 +18,7 @@ public class Checker {
 
      }}} */
     // Queue<T> {{{
-    static class Queue<T> {
+    static class Queue<T> implements Iterable<T> {
         static private class N<T> {
             T data;
             N<T> next;
@@ -45,12 +45,22 @@ public class Checker {
         private N<T> front;
         private N<T> back;
         private int hash;
+
+        // not fail-fast
         private class Itr implements Iterator<T> {
             N<T> next;
+            boolean frontDone = false;
 
             Itr() {
                 next = front;
-                if (next == null) next = reverseN(back);
+                maybeSwap();
+            }
+
+            private void maybeSwap() {
+                if (next == null && !frontDone) {
+                    next = reverseN(back);
+                    frontDone = true;
+                }
             }
 
             @Override
@@ -62,7 +72,7 @@ public class Checker {
             public T next() {
                 T r = next.data;
                 next = next.next;
-                if (next == null) next = reverseN(back);
+                maybeSwap();
                 return r;
             }
             @Override
@@ -82,33 +92,34 @@ public class Checker {
         static <T> Queue<T> empty() {
             return new Queue<T>(null, null, 0);
         }
+        private void maybeSwap() {
+            if (front == null) {
+                front = reverseN(back);
+                back = null;
+            }
+        }
         public Queue<T> push(T x) {
+            assert x != null;
             return Queue.mk(front, N.mk(x, back), hash + x.hashCode());
         }
         public Queue<T> pop() {
-            if (front == null) {
-                while (back != null) {
-                    front = N.mk(back.data, front);
-                    back = back.next;
-                }
-            }
+            maybeSwap();
             if (front == null) {
                 throw new RuntimeException("queue empty");
             }
             return Queue.mk(front.next, back, hash - front.data.hashCode());
         }
         public T top() {
-            if (front != null) {
-                return front.data;
-            } else if (back != null) {
-                return back.data;
-            } else {
+            maybeSwap();
+            if (front == null) {
                 throw new RuntimeException("queue empty");
             }
+            return front.data;
         }
         public int size() {
             return sizeN(front) + sizeN(back);
         }
+        @Override
         public Iterator<T> iterator() {
             return new Itr();
         }
@@ -362,6 +373,17 @@ public class Checker {
         @Override
         public Iterator<T> iterator() {
             return new Itr<T>(this);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            for (T t : this) {
+                sb.append(" " + t);
+            }
+            sb.append(" ]");
+            return sb.toString();
         }
     }
     // }}}
@@ -795,10 +817,15 @@ public class Checker {
 		continue;
             }
             if (state.events.size() < automaton.maximumTransitionDepth()) {
+                newActiveStates.add(state);
                 continue;
             }
 	    boolean anyEnabled = false;
             for (Transition transition : automaton.transitions[state.vertex]) {
+//DBG System.out.print("try " + state.vertex + " -> " + transition.target
+//DBG         + " with events");
+//DBG for (Event e : state.events) System.out.print(" " + e.id);
+//DBG System.out.println();
                 // evaluate transition
                 Treap<Binding> store = state.store;
                 Queue<Event> events = state.events;
@@ -809,13 +836,16 @@ public class Checker {
                     Event stepEvent = events.top();
                     events = events.pop();
                     consumed = consumed.push(stepEvent);
-                    if (step.evaluateGuard(stepEvent, store)) {
-                        store = step.action.apply(stepEvent, store);
+                    if (!step.evaluateGuard(stepEvent, store)) {
+                        break;
                     }
+//DBG System.out.println("step");
+                    store = step.action.apply(stepEvent, store);
                 }
 
                 // record transition
                 if (i == transition.steps.length) {
+//DBG System.out.println("tran");
 		    anyEnabled = true;
                     newActiveStates.add(State.make(transition.target, store,
                             events, consumed, state));
@@ -828,6 +858,7 @@ public class Checker {
                 }
             }
 	    if (!anyEnabled) {
+//DBG System.out.println("stay");
                 newActiveStates.add(state.popEvent());
             }
         }
