@@ -1,5 +1,5 @@
 property IteratorComodification
-  observing <java.util.{Iterator,Collection}.*>
+  observing <java.util.{Iterator.{remove,next},Collection.iterator}>
   prefix <java.util.{Iterator,Collection}>
   start -> gotOne:    I := C.iterator()
   gotOne -> gotTwo:   J := c.iterator()

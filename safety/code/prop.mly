@@ -79,8 +79,7 @@
 
   let mk_label g t vs =
     let g =
-      { g with
-        PA.tag_guard = { g.PA.tag_guard with PA.event_type = Some t }
+      { PA.tag_guard = { g.PA.tag_guard with PA.event_type = Some t }
       ; PA.value_guards = mk_value_guards vs } in
     PA.check_event_guard g;
     { PA.guard = g

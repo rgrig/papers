@@ -4,10 +4,14 @@ MAINS=interp gen instrumenter id_instr
 
 # Things that should seldom change
 BYTES=$(addsuffix .byte,$(MAINS))
+NATIVES=$(addsuffix .native,$(MAINS))
 OCAMLBUILD=ocamlbuild -use-ocamlfind -cflags $(OCFLAGS)
 
 byte:
 	@$(OCAMLBUILD) $(BYTES)
+
+native:
+	@$(OCAMLBUILD) $(NATIVES)
 
 examples: byte
 	@./test.sh

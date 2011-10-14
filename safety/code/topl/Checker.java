@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.Set;
 // }}}
 public class Checker {
@@ -17,6 +16,27 @@ public class Checker {
         completely when assertions are not enabled.
 
      }}} */
+    // Random (well, for some very weak eyes) {{{
+    static class Random {
+        int seed;
+
+        Random(int seed) {
+            assert seed != 0;
+            this.seed = seed;
+        }
+
+        // post: ret > 0
+        int nextInt() {
+            seed *= 0x9e3779b9;
+            return seed < 0? -seed : seed;
+        }
+
+        boolean nextBoolean() {
+            seed *= 0x9e3779b9;
+            return (seed & 1) != 0;
+        }
+    }
+    // }}}
     // Queue<T> {{{
     static class Queue<T> implements Iterable<T> {
         static private class N<T> {
@@ -289,7 +309,7 @@ public class Checker {
         }
 
         Treap<T> insert(T data) {
-            return insert(random.nextInt(Integer.MAX_VALUE - 1) + 1, data);
+            return insert(random.nextInt(), data);
         }
 
         static boolean priorityLess(int p, int q) {
@@ -781,15 +801,16 @@ public class Checker {
     }
     // }}}
     // checker {{{
-    private boolean inChecker = false;
+    public boolean checkerEnabled = false; // brittle
     final private Automaton automaton;
     private HashSet<State> states;
 
     public Checker(Automaton automaton) {
         this.automaton = automaton;
         this.states = new HashSet<State>();
-        for (int v : automaton.startVertices)
+        for (int v : automaton.startVertices) {
             states.add(State.start(v));
+        }
     }
 
     void reportError(String msg) {
@@ -800,10 +821,10 @@ public class Checker {
     }
 
     public void check(Event event) {
-        if (inChecker) {
+        if (!checkerEnabled) {
             return;
         }
-        inChecker = true;
+        checkerEnabled = false;
 	System.out.print("Received event id " + event.id + "\nStates: [");
 	for (State state : states)
 	    System.out.println("  vertex: " + state.vertex +
@@ -863,7 +884,7 @@ public class Checker {
             }
         }
         states = newActiveStates;
-        inChecker = false;
+        checkerEnabled = true;
     }
     // }}}
     // debug {{{
@@ -927,12 +948,8 @@ public class Checker {
     // }}}
 }
 /* TODO {{{
-    - add hashing to Treap and Queue.
-    - fill in the missing methods
+    - do *NOT* use any Java libraries
     - write some tests
-    - make sure that Checker does *not* call itself recursively when it uses
-      the Java API. (Use a flag. And minimize external dependencies (including
-      Java API.)
     - report traces when something goes wrong
     - add 'final' where possible
 }}} */
