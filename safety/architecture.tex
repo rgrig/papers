@@ -31,14 +31,12 @@
         % the path. 
         let
            \p1=($(\tikztostart)+(\myangle:\myarm)$),
-           \p2=($(\tikztotarget)+(\myangle:\myarm)$),
-           % why the flip is p3 necessary?
-           \p3=($(\p2)+(90:9pt)$)
-        in
+           \p2=($(\tikztotarget)+(\myangle:\myarm)$)
+       in
            % Find the projection of the (p2) coordinate
             % on the line from the start to p1
-            -- ($(\tikztostart)!(\p2)!(\p1)$)
-            -- (\p3)\tikztonodes
+            -- ($(\tikztostart)!(\p2)!(\p1)$) coordinate (tmp)
+            -- ($(tmp)!(\tikztotarget.north)!(\p2)$)\tikztonodes
     }}
 }
 
@@ -102,6 +100,7 @@
 (instrumenter) to[myncbar, angle=-90, arm=40pt] (instrclasses);
 \draw[ultra thick, ->]
 (instrclasses) to[stairstep, angle=180, arm=5pt] (jvm);
+%(instrclasses) -| (jvm.north);
 \draw[ultra thick, ->]
  (classproperties) to[stairstep, angle=0, arm=5pt] (jvm);
 \draw[ultra thick, ->]
