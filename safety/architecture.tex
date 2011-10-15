@@ -1,0 +1,106 @@
+\def\myarm{1cm}
+\def\myangle{0}
+\tikzset{
+  arm/.default=1cm,
+  arm/.code={\def\myarm{#1}}, % store value in \myarm
+  angle/.default=0,
+  angle/.code={\def\myangle{#1}} % store value in \myangle
+}
+
+% Define the myncbar to path
+\tikzset{
+    myncbar/.style = {to path={
+        % We need to calculate a couple of coordinates to help us draw
+        % the path. 
+        let
+            % Same as (\tikztotarget)++(\myangle:\myarm)
+            \p1=($(\tikztotarget)+(\myangle:\myarm)$)
+        in
+            -- ++(\myangle:\myarm) coordinate (tmp)
+            % Find the projection of the (tmp) coordinate
+            % on the line from the target to p1
+            -- ($(\tikztotarget)!(tmp)!(\p1)$)
+            -- (\tikztotarget)\tikztonodes
+    }}
+}
+% Instead of the let operation we could probably have used the 
+% 'execute at begin to' option or the \pgfextra operation
+\tikzset{
+    stairstep/.style = {to path={
+        % We need to calculate a couple of coordinates to help us draw
+        % the path. 
+        let
+           \p1=($(\tikztostart)+(\myangle:\myarm)$),
+           \p2=($(\tikztotarget)+(\myangle:\myarm)$),
+           % why the flip is p3 necessary?
+           \p3=($(\p2)+(90:9pt)$)
+        in
+           % Find the projection of the (p2) coordinate
+            % on the line from the start to p1
+            -- ($(\tikztostart)!(\p2)!(\p1)$)
+            -- (\p3)\tikztonodes
+    }}
+}
+
+\begin{tikzpicture}[node distance=20pt, auto]
+\tikzstyle{system}=[rectangle,
+                                draw=blue!80,
+                                fill=blue!40,
+                                inner sep=0.2cm,
+                                rounded corners=10pt,
+                                style=dashed,thick]
+\tikzstyle{program}=[rectangle,
+                                  draw=black,
+                                  fill=white,
+                                  inner sep=0.2cm,
+                                  rounded corners=5pt,
+                                  style=thick,
+                                  drop shadow]
+\tikzstyle{data}=[rectangle,
+                            draw=gray!30,
+                            fill=gray!10,
+                            inner sep=0.2cm,
+                            rounded corners=5pt]
+\node[data] (classes) {Java class files};
+\node[data, right=of classes] (properties) {TOPL property files};
+
+\node[below=of classes] (classesd) {};
+\node[below=of properties] (propertiesd) {};
+
+\node[program, below=of classesd] (instrumenter) {Instrumenter};
+\node[program, below=of propertiesd] (genautomaton) {Automaton Generator};
+
+\node[data, below=of genautomaton] (javaproperties) {Property.java};
+\node[right=of javaproperties] (javadummy) {};
+\node[data, right=of javadummy] (checker) {Checker.java};
+\node[program, below=of javadummy] (javac) {Java Compiler};
+
+\node[data, below=of javac] (classproperties) {Checker.class};
+\node[left=of classproperties] (classdummy) {};
+\node[data, left=of classdummy] (instrclasses) {Instrumented Java class files};
+\node[program, below=of classdummy] (jvm) {JVM};
+
+\node[right=of classesd] (topllabel) {\emph{TOPL Compiler}};
+\begin{pgfonlayer}{background}
+  \node[system, fit = (topllabel) (instrumenter) (genautomaton)] (TOPLC) {};
+  \node[system, fit = (checker)] (CHECKER) {};
+\end{pgfonlayer}
+
+\path[ultra thick, ->]
+(classes) edge (instrumenter)
+
+(properties) edge (genautomaton)
+(genautomaton)  edge (javaproperties)
+(javac) edge (classproperties);
+
+\draw[ultra thick, ->]
+(instrumenter) to[myncbar, angle=-90, arm=40pt] (instrclasses);
+\draw[ultra thick, ->]
+(instrclasses) to[stairstep, angle=180, arm=5pt] (jvm);
+\draw[ultra thick, ->]
+ (classproperties) to[stairstep, angle=0, arm=5pt] (jvm);
+\draw[ultra thick, ->]
+(javaproperties) to[stairstep, angle=180, arm=5pt] (javac);
+\draw[ultra thick, ->]
+(checker) to[stairstep, angle=0, arm=5pt] (javac);
+(\end{tikzpicture}

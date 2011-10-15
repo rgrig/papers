@@ -13,6 +13,9 @@
 \usepackage{xspace}
 \usepackage{proof}
 
+\usepackage{tikz}
+\usetikzlibrary{arrows,positioning,fit,backgrounds,shadows,calc}
+
 \usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
 
 \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
@@ -895,12 +898,12 @@ In the following we give a detailed description of the TOPL compile and the Prop
 %
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[scale=.35]{TOPL.pdf}
+%\includegraphics[scale=.35]{TOPL.pdf}
+\input{architecture}
 \caption{Architecture of TOPL properties' run-time checking.}
 \label{architecture}
 \end{center}
 \end{figure}
-
 
 \subsection{Run-time completeness}
 \dinocomment{Rewrite in term of "security".}
