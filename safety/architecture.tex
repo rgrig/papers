@@ -51,24 +51,25 @@
                                 style=dashed,thick]
 \tikzstyle{program}=[rectangle,
                                   draw=black,
-                                  fill=white,
+                                  fill=orange!40,
                                   inner sep=0.2cm,
                                   rounded corners=5pt,
                                   style=thick,
                                   drop shadow]
 \tikzstyle{data}=[rectangle,
-                            draw=gray!30,
-                            fill=gray!10,
+                            draw=gray!70,
+                            fill=gray!30,
                             inner sep=0.2cm,
-                            rounded corners=5pt]
+                            rounded corners=5pt,
+                            style=thick]
 \node[data] (classes) {Java class files};
 \node[data, right=of classes] (properties) {TOPL property files};
 
 \node[below=of classes] (classesd) {};
 \node[below=of properties] (propertiesd) {};
 
-\node[program, below=of classesd] (instrumenter) {Instrumenter};
-\node[program, below=of propertiesd] (genautomaton) {Automaton Generator};
+\node[program, below=40pt of classes] (instrumenter) {Instrumenter};
+\node[program, below=40pt of properties] (genautomaton) {Automaton Generator};
 
 \node[data, below=of genautomaton] (javaproperties) {Property.java};
 \node[right=of javaproperties] (javadummy) {};
@@ -80,14 +81,18 @@
 \node[data, left=of classdummy] (instrclasses) {Instrumented Java class files};
 \node[program, below=of classdummy] (jvm) {JVM};
 
-\node[right=of classesd] (topllabel) {\emph{TOPL Compiler}};
+\node[above right=10pt and 20pt of instrumenter.north] (topllabel) {\emph{TOPL Compiler}};
+\node[above=5pt of checker] (checkerlabel) {\emph{Property Checker}};
 \begin{pgfonlayer}{background}
   \node[system, fit = (topllabel) (instrumenter) (genautomaton)] (TOPLC) {};
-  \node[system, fit = (checker)] (CHECKER) {};
+  \node[system, fit = (checker) (checkerlabel)] (CHECKER) {};
 \end{pgfonlayer}
 
 \path[ultra thick, ->]
 (classes) edge (instrumenter)
+
+(genautomaton) edge (instrumenter)
+(instrumenter) edge (genautomaton)
 
 (properties) edge (genautomaton)
 (genautomaton)  edge (javaproperties)
