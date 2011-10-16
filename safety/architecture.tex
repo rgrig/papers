@@ -33,10 +33,10 @@
            \p1=($(\tikztostart)+(\myangle:\myarm)$),
            \p2=($(\tikztotarget)+(\myangle:\myarm)$)
        in
-           % Find the projection of the (p2) coordinate
-            % on the line from the start to p1
-            -- ($(\tikztostart)!(\p2)!(\p1)$) coordinate (tmp)
-            -- ($(tmp)!(\tikztotarget.north)!(\p2)$)\tikztonodes
+           -- ($(\tikztostart)!(\p2)!(\p1)$) coordinate (tmp)
+           % project north onto the line to avoid drawing into the
+           % target node
+           -- ($(tmp)!(\tikztotarget.north)!(\p2)$)\tikztonodes
     }}
 }
 
@@ -79,7 +79,7 @@
 \node[data, left=of classdummy] (instrclasses) {Instrumented Java class files};
 \node[program, below=of classdummy] (jvm) {JVM};
 
-\node[above right=10pt and 20pt of instrumenter.north] (topllabel) {\emph{TOPL Compiler}};
+\node[above=5pt] at($(instrumenter.north)!.5!(genautomaton.north)$) (topllabel) {\emph{TOPL Compiler}};
 \node[above=5pt of checker] (checkerlabel) {\emph{Property Checker}};
 \begin{pgfonlayer}{background}
   \node[system, fit = (topllabel) (instrumenter) (genautomaton)] (TOPLC) {};
