@@ -227,22 +227,48 @@ Labels capture, roughly, the shape of statements that enable the corresponding t
 \end{figure}
 %
 \begin{figure}
-\begin{Verbatim}
-using prefix java.util.Collection
-using prefix java.util.Iterator
-\end{Verbatim}
-\par\medskip
+%\begin{Verbatim}
+%using prefix java.util.Collection
+%using prefix java.util.Iterator
+%\end{Verbatim}
+%\par\medskip
+% \begin{tikzpicture}
+%   \def\x{2.5}
+%   \def\y{1.5}
+%   \tikzset{vertex/.style={draw,rectangle,inner sep=3pt,rounded corners=3pt}}
+%   \tikzset{transition/.style={->,>=latex}}
+%   \tikzset{every label/.style={gray}}
+%   \node[vertex] (start) at (0,0) {\texttt{start}};
+%   \node[vertex] (one) at (0,-1*\y) {\texttt{one}};
+%   \node[vertex] (two) at (0,-2*\y) {\texttt{two}};
+%   \node[vertex] (xBad) at (1*\x,-2.5*\y) {\texttt{xBad}};
+%   \node[vertex] (yBad) at (-1*\x,-2.5*\y) {\texttt{yBad}};
+%   \node[vertex,draw=darkred,style=thick,fill=red!30] (error) at (0,-3*\y) {\textcolor{darkred}{\texttt{error}}};
+%   \draw[transition] (0,0.5)--(start);
+%   \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+%   \draw[transition] (one) .. controls +(12:1cm) and +(-12:1cm) .. node[right]{$*$} (one);
+%   \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+%   \draw[transition] (two) .. controls +(0:1cm) and +(-65:-.5cm) ..
+%   node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+%   \draw[transition] (two) .. controls +(0:-1cm) and +(65:.5cm) ..
+%   node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+%   \draw[transition] (xBad) .. controls +(65:-.5cm) and +(0:1cm) ..
+%   node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+%   \draw[transition] (yBad) .. controls +(-65:.5cm) and +(0:-1cm) ..
+%   node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+% \end{tikzpicture}
 \begin{tikzpicture}
   \def\x{2.5}
+  \def\y{1.5}
   \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
   \tikzset{transition/.style={->,>=latex}}
   \tikzset{every label/.style={gray}}
   \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-  \node[vertex] (one) at (0,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (0,-2) [label=below:\texttt{two}] {};
-  \node[vertex] (xBad) at (1*\x,-2.5) [label=right:\texttt{xBad}] {};
-  \node[vertex] (yBad) at (-1*\x,-2.5) [label=left:\texttt{yBad}] {};
-  \node[vertex,fill=darkred] (error) at (0,-3) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+  \node[vertex] (one) at (0,-1*\y) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2*\y) [label=below:\texttt{two}] {};
+  \node[vertex] (xBad) at (1*\x,-2.5*\y) [label=right:\texttt{xBad}] {};
+  \node[vertex] (yBad) at (-1*\x,-2.5*\y) [label=left:\texttt{yBad}] {};
+  \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
   \draw[transition] (0,0.5)--(start);
   \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
   \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
@@ -263,7 +289,9 @@ property InvalidateOtherIterators
   two -> xBad:   \pattern{y}.remove()
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
-\end{Verbatim}
+
+
+\end{Verbatim}    
 \caption{The property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
 }
 \label{fig:first.topl}
