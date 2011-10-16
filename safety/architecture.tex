@@ -1,45 +1,3 @@
-\def\myarm{1cm}
-\def\myangle{0}
-\tikzset{
-  arm/.default=1cm,
-  arm/.code={\def\myarm{#1}}, % store value in \myarm
-  angle/.default=0,
-  angle/.code={\def\myangle{#1}} % store value in \myangle
-}
-
-% Define the myncbar to path
-\tikzset{
-    myncbar/.style = {to path={
-        % We need to calculate a couple of coordinates to help us draw
-        % the path. 
-        let
-            % Same as (\tikztotarget)++(\myangle:\myarm)
-            \p1=($(\tikztotarget)+(\myangle:\myarm)$)
-        in
-            -- ++(\myangle:\myarm) coordinate (tmp)
-            % Find the projection of the (tmp) coordinate
-            % on the line from the target to p1
-            -- ($(\tikztotarget)!(tmp)!(\p1)$)
-            -- (\tikztotarget)\tikztonodes
-    }}
-}
-% Instead of the let operation we could probably have used the 
-% 'execute at begin to' option or the \pgfextra operation
-\tikzset{
-    stairstep/.style = {to path={
-        % We need to calculate a couple of coordinates to help us draw
-        % the path. 
-        let
-           \p1=($(\tikztostart)+(\myangle:\myarm)$),
-           \p2=($(\tikztotarget)+(\myangle:\myarm)$)
-       in
-           -- ($(\tikztostart)!(\p2)!(\p1)$) coordinate (tmp)
-           % project north onto the line to avoid drawing into the
-           % target node
-           -- ($(tmp)!(\tikztotarget.north)!(\p2)$)\tikztonodes
-    }}
-}
-
 \begin{tikzpicture}[node distance=20pt, auto]
 \tikzstyle{system}=[rectangle,
                                 draw=blue!80,
@@ -79,7 +37,7 @@
 \node[data, left=of classdummy] (instrclasses) {Instrumented Java class files};
 \node[program, below=of classdummy] (jvm) {JVM};
 
-\node[above=5pt] at($(instrumenter.north)!.5!(genautomaton.north)$) (topllabel) {\emph{TOPL Compiler}};
+\node[above=5pt] at ($(instrumenter.north)!.5!(genautomaton.north)$) (topllabel) {\emph{TOPL Compiler}};
 \node[above=5pt of checker] (checkerlabel) {\emph{Property Checker}};
 \begin{pgfonlayer}{background}
   \node[system, fit = (topllabel) (instrumenter) (genautomaton)] (TOPLC) {};
@@ -97,14 +55,13 @@
 (javac) edge (classproperties);
 
 \draw[ultra thick, ->]
-(instrumenter) to[myncbar, angle=-90, arm=40pt] (instrclasses);
+(instrumenter) -- ($(instrumenter.south)-(0,40pt)$) -| (instrclasses);
 \draw[ultra thick, ->]
-(instrclasses) to[stairstep, angle=180, arm=5pt] (jvm);
-%(instrclasses) -| (jvm.north);
+(instrclasses) -| ($(jvm.north)-(5pt,0)$);
 \draw[ultra thick, ->]
- (classproperties) to[stairstep, angle=0, arm=5pt] (jvm);
+(classproperties) -| ($(jvm.north)+(5pt,0)$);
 \draw[ultra thick, ->]
-(javaproperties) to[stairstep, angle=180, arm=5pt] (javac);
+(javaproperties)  -| ($(javac.north)-(5pt,0)$);
 \draw[ultra thick, ->]
-(checker) to[stairstep, angle=0, arm=5pt] (javac);
+(checker)  -| ($(javac.north)+(5pt,0)$);
 (\end{tikzpicture}
