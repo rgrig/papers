@@ -43,7 +43,8 @@
       with Not_found -> Buffer.add_char r g.[i]
     end done;
     if !c <> 0 then e (); (* syntax error *)
-    Buffer.contents r
+    let r = Buffer.contents r in
+    printf "@[HERE: '%s' -> '%s'@." g r; r
 
   let mk_args_pattern a ps =
     { PA.tag_guard =
@@ -122,7 +123,7 @@
     { PA.name = n
     ; PA.message = extract_message e n m
     ; PA.observable = Str.regexp
-        (fprintf str_formatter "%a" pp_or_re o; flush_str_formatter ())
+        (fprintf str_formatter "%a$" pp_or_re o; flush_str_formatter ())
     ; PA.transitions = List.map pt (List.concat t) }
 
 %}

@@ -1,11 +1,12 @@
 (* modules *) (* {{{ *)
 open Debug
 open Format
-open Util
+open Util  (* TODO: I would rather remove this one. *)
 
 module B = BaristaLibrary
 module PA = PropAst
 module SA = SoolAst
+module U = Util
 
 (* }}} *)
 (* globals *) (* {{{ *)
@@ -283,7 +284,7 @@ let classfiles_of_path =
 
 (* Opens the file, last return argument is a channel to be closed *)
 let classes_of_classfile fn =
-  try 
+  try
     let ch = open_in fn in
        ch
     >> B.InputStream.make_of_channel
@@ -387,7 +388,7 @@ let bc_load i =
   | `Int -> B.Instruction.ILOAD i
   | `Long -> B.Instruction.LLOAD i
   | `Short -> B.Instruction.ILOAD i
-    
+
 let bc_array_set index t =
   [
     B.Instruction.DUP;
@@ -548,26 +549,17 @@ let get_overrides h c ({method_name=n; method_arity=a} as m) =
   let qualify c =  (cts c) ^ "." ^ n in
   (List.map qualify ancestors, a)
 
-(* stolen from assembler *)
-(* will have to understand this code better at some point *)
-let compute_stacks c m instructions =
-  let exception_table = [] in (* TODO: check if this should be threaded through *)
-  let graph = B.ControlFlow.graph_of_instructions instructions exception_table in
-  let init_state = B.StackState.make_of_method c m in
-(*  let class_loader = B.ClassLoader.make (B.ClassPath.make_of_list ["."]) in *)
-    (try
-       B.Code.compute_stack_infos
-(*         (B.StackState.unify_to_closest_common_parent class_loader [c, None])    this one gives error *)
-	 B.StackState.unify_to_java_lang_Object
-         graph
-         init_state
-     with e -> failwith "problem computing stack frame sizes")
-
 let raise_stack n x =
   B.Utils.u2 ((x : B.Utils.u2 :> int) + n)
 
+let remove_LineNumberTable =
+  let p : B.Attribute.code_attribute -> bool = function
+    | `LineNumberTable _ -> printf "@[removed debug info@."; false
+    | _ -> true in
+  List.filter p
+
 let instrument_method get_tag h c = function
-  | B.Method.Regular r as m -> (
+  | B.Method.Regular r as m -> begin
       (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
       let param_types, return_types = r.B.Method.descriptor in
       let is_static = has_static_flag r.B.Method.flags in
@@ -579,54 +571,60 @@ let instrument_method get_tag h c = function
       let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
 	  | None, None -> B.Method.Regular r, false
-	  | _ -> (
+	  | _ -> begin
 	      let inst_code = instrument_code call_id return_id param_types return_types is_static in
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.B.Attribute.code in
-(*		    let new_max_stack, new_max_locals, _ = compute_stacks c m new_instructions in *)
-(*		    let new_max_stack, new_max_locals = B.Utils.u2 10, B.Utils.u2 10 in *)
-		    let new_max_stack, new_max_locals =
-		      raise_stack 4 code.B.Attribute.max_stack,
-		      code.B.Attribute.max_locals in
+                    let new_attributes =
+                      remove_LineNumberTable code.B.Attribute.attributes in
+		    let new_max_stack =
+                      raise_stack 4 code.B.Attribute.max_stack in
 		    let instrumented_code =
-		      {code with
-			 B.Attribute.code = new_instructions;
-			 B.Attribute.max_stack = new_max_stack;
-			 B.Attribute.max_locals = new_max_locals
-		      } in
-		      `Code instrumented_code
+		      { code with
+                        B.Attribute.code = new_instructions
+                      ; B.Attribute.max_stack = new_max_stack
+                      ; B.Attribute.attributes = new_attributes } in
+		    `Code instrumented_code
 		| a -> a in
 	      let instrumented_attributes = List.map inst_attrs r.B.Method.attributes in
 	      B.Method.Regular {r with B.Method.attributes = instrumented_attributes},
 	      true
-	    )
-    )
+          end
+    end
   | m -> m, false
 
-let open_class_channel c =
+let filename_of_class c =
   let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
   let fn = B.Utils.UTF8.to_string fn in
   let fn = fn ^ ".class" in
-  let fn = Filename.concat !out_dir fn in
-  mkdir_p (Filename.dirname fn);
-  open_out fn
+  Filename.concat !out_dir fn
 
 let output_class c =
-  let ch = open_class_channel c in
-(*  if log log_cp then fprintf logf "@[...  ecoding@."; *)
-    try
-  let bytes = B.ClassDefinition.encode c in
+  let fn = filename_of_class c in
+  let ch = U.open_out_p fn in
+  let fail err =
+    close_out ch;
+    (try Sys.remove fn with Sys_error _ -> ());
+    if log log_cp then
+      fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" err in
+(*   try *)
+(*  if log log_cp then fprintf logf "@[...  encoding@."; *)
+    let bytes = B.ClassDefinition.encode c in
 (*  if log log_cp then fprintf logf "@[...  writing file@."; *)
-  B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
-  close_out ch
-    with (* maybe delete the file? *)
-      | B.Instruction.Exception err ->
-	  close_out ch;
-	  if log log_cp then fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" (B.Instruction.string_of_error err)
-      | B.ClassDefinition.Exception err ->
-	  close_out ch;
-	  if log log_cp then fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" (B.ClassDefinition.string_of_error err)
+    B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
+    close_out ch
+(*
+  with
+    | B.Instruction.Exception e ->
+        if log log_cp then
+          fprintf logf "@[B.Instruction.Exception in %s@." fn;
+        fail (B.Instruction.string_of_error e)
+    | B.ClassDefinition.Exception e ->
+        if log log_cp then
+          fprintf logf "@[B.ClassDefinition.Exception in %s@." fn;
+        fail (B.ClassDefinition.string_of_error e)
+*)
 
 let instrument_class get_tags h (c, fn, ch) =
   if log log_cp then fprintf logf "@[instrument %s@." fn;
@@ -639,7 +637,7 @@ let instrument_class get_tags h (c, fn, ch) =
       (if log log_cp then fprintf logf "@[...output %s@." fn;
        output_class {c with B.ClassDefinition.methods = instrumented_methods})
     else if log log_cp then fprintf logf "@[...no methods modified in %s@." fn
-	    
+
 (* TODO: iterate backwards! *)
 (* TODO: go into jar files, and stuff *)
 let iter_classes cp f =
@@ -658,8 +656,6 @@ let compute_inheritance classpath =
     Hashtbl.add h name {class_name = name; class_methods = method_names; class_parents = parent_nodes} in
 *)
   let record_class (c, fn) =
-(*    if log log_cp then fprintf logf "@[record %s@." fn; *)
-    if log log_cp then fprintf logf "@[r@]@?";
     let name = c.B.ClassDefinition.name in
     let fold mns = function
       | B.Method.Regular r ->
@@ -689,6 +685,7 @@ let read_properties fs =
   fs >> List.map Helper.parse >>= e
 
 let generate_checkers p =
+  (* TODO: Crashes if topl/ does not exist. *)
   let out_channel = open_out "topl/Property.java" in
   let f = formatter_of_out_channel out_channel in
   pp_automaton f p
@@ -700,6 +697,7 @@ let () =
     Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
       "usage: ./instrumenter [-cp <classpath>] <property_files>";
     let h = compute_inheritance !cp in
+(* raise (Helper.Parsing_failed "not really"); *)
     let ps = read_properties !fs in
     let p = transform_properties ps in
     instrument_bytecode (get_tag p) !cp h;
@@ -717,5 +715,5 @@ Hashtbl.iter (fun _ xs -> printf "@[%a@." (pp_int_list_display 50) xs) p.pattern
     big to fit in the 64KB bytecode limit per method
  *)
 (*
-vim:tw=0:
+vim:sts=2:sw=2:ts=8:et:
 *)

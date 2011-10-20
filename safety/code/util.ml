@@ -147,3 +147,14 @@ let rec mkdir_p dir =
     mkdir_p (Filename.dirname dir);
     Unix.mkdir dir 0o755
   end
+
+let open_out_p fn =
+  mkdir_p (Filename.dirname fn);
+  open_out fn
+
+(* TODO:
+  - move operators in another module that can be opened.
+ *)
+(*
+vim:sts=2:sw=2:ts=8:et:
+*)
