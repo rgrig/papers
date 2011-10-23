@@ -6,7 +6,7 @@ import static topl.Checker.*;
 public class PropertyToDOT {
     public static void main(String[] args) {
 	System.out.println("Converting Property.java to DOT...");
-	String s = topl.Property.checker.toDOT();
+	String s = topl.Property.checker.toDOT(10);
 	try {
 	    FileWriter f = new FileWriter("Property.dot");
 	    f.write(s);

@@ -885,7 +885,7 @@ public class Checker {
     }
     // }}}
     // debug {{{
-    public String toDOT() {
+    public String toDOT(int cap) {
 	StringBuffer s = new StringBuffer();
 	s.append("digraph Property {\n");
 	// add states as circles
@@ -916,7 +916,7 @@ public class Checker {
 		s.append(transition.target);
 		s.append(" [label=\"");
 		for (TransitionStep step : transition.steps) {
-		    s.append(step.eventIds.toString());
+		    s.append(cap <= 0 || step.eventIds.size() <= cap ? step.eventIds.toString() : "[more than " + cap + "]");
 		    s.append(step.guard.toString());
 		    s.append("<");
 		    for(Map.Entry a : step.action.assignments.entrySet()) {
@@ -933,6 +933,10 @@ public class Checker {
 	    }
 	s.append("}\n");
 	return s.toString();
+    }
+
+    public String toDOT() {
+	return toDOT(0);
     }
 
     public static void main(String[] args) {
