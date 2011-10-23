@@ -4,7 +4,7 @@ property IteratorComodification
   start -> gotOne:    I := C.iterator()
   gotOne -> gotTwo:   J := c.iterator()
   gotOne -> gotOne:   *
-  gotTwo -> jInvalid: i.remove()
-  gotTwo -> iInvalid: j.remove()
-  jInvalid -> error:  j.next()
-  iInvalid -> error:  i.next()
+  gotTwo -> jInvalid: call i.remove()
+  gotTwo -> iInvalid: call j.remove()
+  jInvalid -> error:  call j.next()
+  iInvalid -> error:  call i.next()

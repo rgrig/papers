@@ -6,6 +6,46 @@ module BA = B.Attribute
 module BM = B.Method
 module BCd = B.ClassDefinition
 
+(* {{{ iterate class path *)
+let endswith suffix s =
+  let m = String.length suffix in
+  let n = String.length s in
+  if m > n then false else String.sub s (n - m) m = suffix
+
+let contains_no undesired s =
+  let r = Str.regexp_string undesired in
+    try let _ = Str.search_forward r s 0 in false
+    with Not_found -> true
+
+let classfiles_of_path =
+  fs_filter (fun p -> contains_no "/topl/" p && endswith ".class" p)
+
+(* Opens the file, last return argument is a channel to be closed *)
+let classes_of_classfile fn =
+  try
+    let ch = open_in fn in
+       ch
+    >> B.InputStream.make_of_channel
+    >> B.ClassFile.read
+    >> B.ClassDefinition.decode
+    >> (fun x -> [(x, fn, ch)])
+  with
+  | B.InputStream.Exception e ->
+      eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e); []
+  | _ ->
+      eprintf "@[%s: error@." fn; []
+
+let iter_classes cp f =
+  let process_classfile cf = List.iter f (classes_of_classfile cf) in
+  List.iter process_classfile (classfiles_of_path cp)
+
+let iter_and_close_classes cp f =
+  let process (x, fn, ch) = f (x, fn); close_in ch in
+  iter_classes cp process
+(* }}} *)
+
+let overwrite = ref false
+
 let input_class fn =
   printf "@[Decoding %s@." fn;
   let ch = open_in fn in
@@ -18,7 +58,7 @@ let input_class fn =
 let open_class_channel c =
   let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
   let fn = B.Utils.UTF8.to_string fn in
-  let fn = fn ^ ".class.touched" in
+  let fn = if !overwrite then fn ^ ".class" else fn ^ ".class.touched" in
 (*  let fn = Filename.concat !out_dir fn in *)
   mkdir_p (Filename.dirname fn);
   open_out fn
@@ -53,8 +93,10 @@ let output_class c =
 	close_out ch;
       printf "@[%s@\n@]" (B.Instruction.string_of_error err)
 
+let process_class (c, _) = output_class (removeLNT c)
+
 let () =
-  let fn = ref "" in
-  Arg.parse [] (fun x -> fn := x) "usage: /id_instr <class file>";
-  let c = input_class !fn in
-  output_class (removeLNT c)
+  let cp = ref "." in
+  Arg.parse ["-overwrite", Arg.Set overwrite, "overwrite"] (fun x -> cp := x)
+    "usage: /id_instr [-overwrite] <class path>";
+  iter_and_close_classes !cp process_class

@@ -48,6 +48,7 @@ class LocalUser<E> {
 
 public class LocalIterExample {
     public static void main(String[] args) {
+	topl.Property.checker.checkerEnabled = true;
 	LocalUser<Integer> u = new LocalUser<Integer>();
 	Collector<Integer> c = new Collector<Integer>();
 	Integer i = new Integer(3);

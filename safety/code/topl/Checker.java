@@ -309,6 +309,7 @@ public class Checker {
         }
 
         Treap<T> insert(T data) {
+	    System.out.println("Inserting " + data);
             return insert(random.nextInt(), data);
         }
 
@@ -608,7 +609,9 @@ public class Checker {
         @Override
         public boolean evaluate(Event event, Treap<Binding> store) {
 	    Binding b = new Binding(storeIndex);
-            return valueEquals(event.values[eventIndex], store.get(b).value);
+	    boolean eq = valueEquals(event.values[eventIndex], store.get(b).value);
+	    System.out.println(eq ? "matches store" : "does NOT match store");
+            return eq;
         }
 
 	@Override
@@ -739,9 +742,10 @@ public class Checker {
         final String[] errorMessages;
 
         final Transition[][] transitions;
-            // {transitions[vertex]}  are the outgoing transitions of {vertex}
+            // {transitions[vertex]} are the outgoing transitions of {vertex}
 
-        private int maximumTransitionDepth = -1;
+	public int[] maximumTransitionDepths;
+            // {maximumTransitionDepths[vertex]} is the maximum depths of outgoing transitions of {vertex}
 
         Automaton(int[] startVertices, String[] errorMessages,
                 Transition[][] transitions, int[] filterOfState,
@@ -749,10 +753,16 @@ public class Checker {
             this.startVertices = startVertices;
             this.errorMessages = errorMessages;
             this.transitions = transitions;
+	    maximumTransitionDepths = new int[transitions.length];
             for (int s = 0; s < transitions.length; ++s) {
                 for (int e : filters[filterOfState[s]]) {
                     observable.add(new VertexEvent(s, e));
                 }
+		maximumTransitionDepths[s] = 0;
+		for (Transition t : transitions[s]) {
+		    maximumTransitionDepths[s] = Math.max(
+                                maximumTransitionDepths[s], t.steps.length);
+		}
             }
             assert check();
         }
@@ -785,19 +795,6 @@ public class Checker {
         boolean isObservable(int eventId, int vertex) {
             return observable.contains(new VertexEvent(vertex, eventId));
         }
-
-        int maximumTransitionDepth() {
-            if (maximumTransitionDepth == -1) {
-                maximumTransitionDepth = 0;
-                for (Transition[] ts : transitions) {
-                    for (Transition t : ts) {
-                        maximumTransitionDepth = Math.max(
-                                maximumTransitionDepth, t.steps.length);
-                    }
-                }
-            }
-            return maximumTransitionDepth;
-        }
     }
     // }}}
     // checker {{{
@@ -827,9 +824,9 @@ public class Checker {
         checkerEnabled = false;
 	System.out.print("Received event id " + event.id + "\nStates: [");
 	for (State state : states)
-	    System.out.println("  vertex: " + state.vertex +
-			       "\n  events:" + state.events.size() +
-			       "\n  bindings:" + state.store.size());
+	    System.out.println("\n  vertex: " + state.vertex +
+			       "\n    events:" + state.events.size() +
+			       "\n    bindings:" + state.store.size());
 	System.out.println("]");
         HashSet<State> newActiveStates = new HashSet<State>();
         for (State state : states) {
@@ -837,7 +834,7 @@ public class Checker {
             if (!automaton.isObservable(event.id, state.vertex)) {
 		continue;
             }
-            if (state.events.size() < automaton.maximumTransitionDepth()) {
+            if (state.events.size() < automaton.maximumTransitionDepths[state.vertex]) {
                 newActiveStates.add(state);
                 continue;
             }
