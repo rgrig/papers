@@ -34,15 +34,16 @@
 
 
 \title{Dynamic Checking of Temporal Safety properties for Java}
-\authorinfo{Dino Distefano}
-           {Queen Mary University of London}
-           {ddino@eecs.qmul.ac.uk}
-\authorinfo{Radu Grigore}
-           {Queen Mary University of London}
-           {rgrig@eecs.qmul.ac.uk}
-\authorinfo{Rasmus Lerchedahl Petersen}
-           {Queen Mary University of London}
-           {rusmus@eecs.qmul.ac.uk}
+\authorinfo{Authors info whitheld for double-blind submission}
+%\authorinfo{Dino Distefano}
+%           {Queen Mary University of London}
+%           {ddino@eecs.qmul.ac.uk}
+%\authorinfo{Radu Grigore}
+%           {Queen Mary University of London}
+%           {rgrig@eecs.qmul.ac.uk}
+%\authorinfo{Rasmus Lerchedahl Petersen}
+%           {Queen Mary University of London}
+%           {rusmus@eecs.qmul.ac.uk}
 
 
 % rg: I tend to give grammars in BFS order
@@ -598,14 +599,16 @@ A(\sigma,\epsilon,[]) & = & \bot
 \\[2ex]
 A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-     \\
+     \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
 \\[2ex]
 A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$ and $A(\sigma,e,(g,a))=\sigma'$}
+     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$} 
      \\
+& \mbox{and  $A(\sigma,e,(g,a))=\sigma'$}
+     \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
@@ -629,11 +632,11 @@ we have to examine $|l|$ events.
 %
 The transition relation $s \to s'$ is defined by the following rules.
 \[
-\begin{array}{lcl}
-\text{(Step)} & \qquad &
-\infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\begin{array}{ll}
+\text{(Step)}  &
+\infer[x_1 \to x_2{:} l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
-\text{(Silent Step)} & \qquad & 
+\text{(Silent)}  & 
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
