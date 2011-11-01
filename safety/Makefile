@@ -9,6 +9,8 @@ JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
 
+pldi2012.pdf: pldi2012.tex safety.bib architecture.tex
+
 tacas.pdf: tacas.tex safety.bib architecture.tex
 
 safety.pdf: safety.tex safety.bib

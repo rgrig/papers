@@ -171,7 +171,7 @@ interspersing the code with ad-hoc checks  aimed at tracing the violation of a c
 The Java API, for example, has hand-crafted code for checking certain temporal properties (\autoref{sec:examples.steps}).
 However, such checks are often hard to write, weaved with the code solving the actual problem, and | in the case of the Java API |  do not provide with a trace of the relevant events leading to an error.
 In contrast, dynamically checking TOPL properties  with the technique we present in this paper is transparent to the programmer and, therefore,  it avoids all these issues.
-
+\dinocomment{talk of tracematch directly here}
 In summary, the contributions of this paper are:
 \begin{itemize}
 \item The definition of TOPL, a new temporal specification language tailored to object-oriented software able to express properties involving several objects and their relations/interactions;
@@ -222,27 +222,28 @@ Labels capture, roughly, the shape of statements that enable the corresponding t
 \end{figure}
 %
 \begin{figure}
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \def\y{1.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-%  \node[vertex] (one) at (0,-1*\y) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (0,-2*\y) [label=below:\texttt{two}] {};
-%  \node[vertex] (xBad) at (1*\x,-2.5*\y) [label=right:\texttt{xBad}] {};
-%  \node[vertex] (yBad) at (-1*\x,-2.5*\y) [label=left:\texttt{yBad}] {};
-%  \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-%  \draw[transition] (0,0.5)--(start);
-%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-%\end{tikzpicture}
+\begin{tikzpicture}
+  \def\x{2.5}
+  \def\y{1.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+  \node[vertex] (one) at (0,-1*\y) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2*\y) [label=below:\texttt{two}] {};
+  \node[vertex] (xBad) at (1*\x,-2.5*\y) [label=right:\texttt{xBad}] {};
+  \node[vertex] (yBad) at (-1*\x,-2.5*\y) [label=left:\texttt{yBad}] {};
+  \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+  \draw[transition] (0,0.5)--(start);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+\end{tikzpicture}
+\\[2ex]
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
   using prefix java.util.Collection
@@ -254,10 +255,8 @@ property InvalidateOtherIterators
   two -> xBad:   \pattern{y}.remove()
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
-
-
 \end{Verbatim}    
-\caption{The property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
+\caption{The property {\tt InvalidateOtherIterators} in diagram (up) and textual form (down).
 }
 \label{fig:first.topl}
 \end{figure}
@@ -680,23 +679,23 @@ The automaton will take a transition as soon as a suitable event matching an out
 %
 %
 \begin{figure}
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-%  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
 
-%  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-%  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-%  
-%  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-%  \draw[transition] (zero)--node[right]{$e_1$} (two);
-%  
-%  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-%\end{tikzpicture}
+  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+  
+  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+  \draw[transition] (zero)--node[right]{$e_1$} (two);
+  
+  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+\end{tikzpicture}
 \caption{Example of unmatched events.}
 \label{fig:unmatched-example}
 \end{figure}
