@@ -126,6 +126,16 @@ let cartesian xss =
         f (List.concat ys) xss in
   f [[]] xss
 
+let rec rel_fs_preorder top m f =
+  let f_full = Filename.concat top f in
+  if Sys.file_exists f_full then begin
+    m top f;
+    if Sys.is_directory f_full then begin
+      let children = Array.map (Filename.concat f) (Sys.readdir f) in
+      Array.iter (rel_fs_preorder top m) children
+    end
+  end
+
 let rec fs_postorder m f =
   if Sys.file_exists f then begin
     if Sys.is_directory f then begin
@@ -139,13 +149,30 @@ let fs_filter p f =
   let r = ref [] in
   fs_postorder (fun x -> if p x then r := x::!r) f; !r
 
+let rm_r dir =
+  let delete f =
+    if Sys.is_directory f then Unix.rmdir f
+    else Sys.remove f in
+  fs_postorder delete dir
+
+let cp source_file target_file =
+  let source = open_in_bin source_file in
+  let target = open_out_bin target_file in
+  try
+    while true do
+      output_byte target (input_byte source)
+    done
+  with End_of_file -> (close_in source; close_out target)
+
 let rec mkdir_p dir =
+  assert (Filename.basename dir <> Filename.parent_dir_name);
   if Sys.file_exists dir then begin
     if not (Sys.is_directory dir) then
       raise (Unix.Unix_error (Unix.EEXIST, "mkdir_p", dir))
   end else begin
     mkdir_p (Filename.dirname dir);
-    Unix.mkdir dir 0o755
+    if Filename.basename dir <> Filename.current_dir_name then
+      Unix.mkdir dir 0o755
   end
 
 let open_out_p fn =

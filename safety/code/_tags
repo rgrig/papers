@@ -4,6 +4,7 @@
 "helper.ml": package(menhirLib)
 "instrumenter.ml": package(barista), package(str), package(unix)
 "id_instr.ml": package(barista)
+<classMapper.ml*>: package(barista)
 <*.mly>: explain
 <*.ml>: annot
 true: debug, use_menhir, use_barista, profile
