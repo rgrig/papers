@@ -1,4 +1,5 @@
 open Format
+open Debug
 
 module U = Util
 module B = BaristaLibrary
@@ -8,8 +9,8 @@ let (/) = Filename.concat
 let is_jar f = Filename.check_suffix f ".jar"
 let is_class f = Filename.check_suffix f ".class"
 
-let mk_tmp_dir =
-  let tmp_file = Filename.temp_file "instr_" "_jar" in
+let mk_tmp_dir p s =
+  let tmp_file = Filename.temp_file p s in
   Sys.remove tmp_file;
   U.mkdir_p tmp_file;
   tmp_file
@@ -48,8 +49,9 @@ let output_class fn c =
 
 let rec map in_dir out_dir f =
   let process_jar jf =
-    let tmp_in_dir = mk_tmp_dir in
-    let tmp_out_dir = mk_tmp_dir in
+  if log log_cp then fprintf logf "@[map jar: %s@." jf;
+    let tmp_in_dir = mk_tmp_dir "in_" jf in
+    let tmp_out_dir = mk_tmp_dir "out_" jf in
     let jar_in = Zip.open_in (in_dir / jf) in
     let extract e =
       let e_fn = tmp_in_dir / e.Zip.filename in
@@ -67,6 +69,7 @@ let rec map in_dir out_dir f =
     Zip.close_out jar_out;
     U.rm_r tmp_out_dir in
   let process_class fn =
+  if log log_cp then fprintf logf "@[map class: %s@." fn;
     match open_class (in_dir / fn) with
     | None -> U.cp (in_dir / fn) (out_dir / fn)
     | Some cd ->
@@ -81,7 +84,8 @@ let rec map in_dir out_dir f =
 
 let rec iter in_dir f =
   let iter_jar jf =
-    let tmp_in_dir = mk_tmp_dir in
+  if log log_cp then fprintf logf "@[iter jar: %s@." jf;
+    let tmp_in_dir = mk_tmp_dir "iter_" jf in
     let jar_in = Zip.open_in (in_dir / jf) in
     let extract e =
       let e_fn = tmp_in_dir / e.Zip.filename in
@@ -92,6 +96,7 @@ let rec iter in_dir f =
     iter tmp_in_dir f;
     U.rm_r tmp_in_dir in
   let iter_class fn =
+  if log log_cp then fprintf logf "@[iter class: %s@." fn;
     match open_class (in_dir / fn) with
     | None -> ()
     | Some cd -> f cd in

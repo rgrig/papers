@@ -561,7 +561,7 @@ let instrument_method get_tag h c = function
   | m -> removeLNT m
 
 let pp_class f c =
-    fprintf f "@[%s]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BCd.name))
+    fprintf f "@[%s@]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BCd.name))
 
 let instrument_class get_tags h c =
   if log log_cp then fprintf logf "@[instrument %a@]" pp_class c;
