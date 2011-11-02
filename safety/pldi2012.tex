@@ -156,7 +156,7 @@ Most other techniques aim at decomposing properties involving several objects in
 In contrast, TOPL intentionally avoids such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants. 
 Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
-This is also the point of view taken by tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}, however, TOPL is more expressive than tracematches as it allow, for example to encode properties involving overwrite of values or shapes of dynamic allocated data strucutres (e.g., cyclic vs acyclic linked list, etc).
+This is also the point of view taken by tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}, however, TOPL is more expressive than tracematches as it allow, for example to encode properties involving overwrite of values or shapes of dynamic allocated data strucutres (e.g., cyclic vs acyclic linked list, etc) which are often crucial for object-oriented systems.
 
 For TOPL we have defined a precise formal semantics which makes the language suitable for program analysis (both static and dynamic) and verification. Moreover, since the properties are high-level,  
 TOPL helps in  reducing the semantic gap between 
@@ -481,6 +481,45 @@ We have now seen four properties of iterators.
 Each of the previous TOPL properties corresponds to one English sentence.
 
 \dinocomment{Maybe we need to add also the other example of the paper. Or put the other properties which are not related to iterators}
+
+\subsection{Heap Shape and Values Sensitive Properties}
+One interesting kind of properties for object-oriented programs is the ability to reason about the shape of 
+the heap composed by the allocated objects. 
+The following TOPL's properties test the shape of a linked list and reports an error if it is cyclic or it has the pan-handle shape (i.e., there is a lasso at some point). 
+%
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+property ListNotCyclic
+   start -> a: \pattern{X} := *.getList()
+   a -> a:     \pattern{X} := x.next()
+   a -> b:     \pattern{Y} := x.next()
+   b -> b:     \pattern{Y} := y.next()
+   b -> error: x := y.next()
+   a -> error: x := x.next()
+\end{Verbatim}
+\delimitVerbatim
+The idea is that this property will bind the automaton variable $x$
+with any possible object in the list, and the $y$ with any possible successors (via the next field) 
+of the current binding of $x$. Therefore, if there is a lasso, in the list, this will be detected when a new 
+biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$. The transition \texttt{a ->error} detect
+the case where there is an object pointing to itself. 
+%
+
+The following property detects when a dictionary overwrite one of its bindings. 
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+ property BadDictionary
+    message "the dictionary overwrite its bindings"
+    prefix <Dictionary>
+    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
+    written -> written: d.put(k, \pattern{V})
+    written -> error:   !v := d.get(k)
+\end{Verbatim}
+\delimitVerbatim
+The overwrite is detected by the guard which checks if the value associated with a key $k$ is
+the same as the original binding recorded in the automaton variable $v$.
+
+
 
 \section{TOPL Syntax and Semantics}
 
