@@ -18,18 +18,26 @@ let ensure_dir f =
   if Filename.check_suffix f "/" then f else (f ^ "/")
 
 let open_class fn =
+  let read_class_channel ch =
   try
-    let ch = open_in fn in
     let cl_in = B.InputStream.make_of_channel ch in
     let cf = B.ClassFile.read cl_in in
     let cd = B.ClassDefinition.decode cf in
-    close_in ch; Some cd
+    Some cd
   with
   | B.InputStream.Exception e ->
       eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e);
       None
   | _ ->
       eprintf "@[%s: error@." fn;
+      None in
+  try
+    let ch = open_in fn in
+    let cd = read_class_channel ch in
+    close_in ch; cd
+  with
+  | _ ->
+      eprintf "@[error opening %s@." fn;
       None
 
 let output_class fn c =
