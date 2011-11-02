@@ -70,3 +70,25 @@ let rec map in_dir out_dir f =
     else if is_class fn then process_class fn
     else U.cp (in_dir / fn) (out_dir / fn) in
   U.rel_fs_preorder in_dir process Filename.current_dir_name
+
+let rec iter in_dir f =
+  let iter_jar jf =
+    let tmp_in_dir = mk_tmp_dir in
+    let jar_in = Zip.open_in (in_dir / jf) in
+    let extract e =
+      let e_fn = tmp_in_dir / e.Zip.filename in
+      U.mkdir_p (Filename.dirname e_fn);
+      if not e.Zip.is_directory then Zip.copy_entry_to_file jar_in e e_fn in
+    List.iter extract (Zip.entries jar_in);
+    Zip.close_in jar_in;
+    iter tmp_in_dir f;
+    U.rm_r tmp_in_dir in
+  let iter_class fn =
+    match open_class (in_dir / fn) with
+    | None -> ()
+    | Some cd -> f cd in
+  let process _ fn =
+    if Sys.is_directory fn then ()
+    else if is_jar fn then iter_jar fn
+    else if is_class fn then iter_class fn in
+  U.rel_fs_preorder in_dir process Filename.current_dir_name

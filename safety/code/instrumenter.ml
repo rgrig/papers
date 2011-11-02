@@ -4,6 +4,9 @@ open Format
 open Util  (* TODO: I would rather remove this one. *)
 
 module B = BaristaLibrary
+module BA = B.Attribute
+module BM = B.Method
+module BCd = B.ClassDefinition
 module PA = PropAst
 module SA = SoolAst
 module U = Util
@@ -260,52 +263,6 @@ let transform_properties ps =
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
 
-(* TODO(rgrig): Get the classpath treatement from friendly_cli in jStar. *)
-let classpath () =
-  try
-    "CLASSPATH"
-    >> Sys.getenv
-    >> Str.split (Str.regexp ":")
-  with Not_found ->
-    eprintf "@[Please set CLASSPATH.@."; []
-
-let endswith suffix s =
-  let m = String.length suffix in
-  let n = String.length s in
-  if m > n then false else String.sub s (n - m) m = suffix
-
-let contains_no undesired s =
-  let r = Str.regexp_string undesired in
-    try let _ = Str.search_forward r s 0 in false
-    with Not_found -> true
-
-let classfiles_of_path =
-  fs_filter (fun p -> contains_no "/topl/" p && endswith ".class" p)
-
-(* Opens the file, last return argument is a channel to be closed *)
-let classes_of_classfile fn =
-  try
-    let ch = open_in fn in
-       ch
-    >> B.InputStream.make_of_channel
-    >> B.ClassFile.read
-    >> B.ClassDefinition.decode
-    >> (fun x -> [(x, fn, ch)])
-  with
-  | B.InputStream.Exception e ->
-      eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e); []
-  | _ ->
-      eprintf "@[%s: error@." fn; []
-
-
-(*
-let name_of_method = function
-  | B.Method.Regular r ->
-      [r.B.Method.name >> B.Name.utf8_for_method >> B.Utils.UTF8.to_string]
-  | _ -> []
-*)
-
-
 let string_of_method_name mn =
   B.Utils.UTF8.to_string (B.Name.utf8_for_method mn)
 
@@ -552,130 +509,86 @@ let get_overrides h c ({method_name=n; method_arity=a} as m) =
 let raise_stack n x =
   B.Utils.u2 ((x : B.Utils.u2 :> int) + n)
 
-let remove_LineNumberTable =
-  let p : B.Attribute.code_attribute -> bool = function
-    | `LineNumberTable _ -> printf "@[removed debug info@."; false
-    | _ -> true in
-  List.filter p
+let not_LNT : BA.code_attribute -> bool = function
+  | `LineNumberTable _ -> false
+  | _ -> true
+
+let removeLNT =
+  let rm_c c = { c with BA.attributes = List.filter not_LNT c.BA.attributes } in
+  let rm_a : BA.for_method -> BA.for_method = function
+    | `Code c -> `Code (rm_c c)
+    | x -> x in
+  let rm_mr mr = { mr with BM.attributes = List.map rm_a mr.BM.attributes } in
+  let rm_mc mc = { mc with BM.cstr_attributes = List.map rm_a mc.BM.cstr_attributes } in
+  let rm_mi mi = { mi with BM.init_attributes = List.map rm_a mi.BM.init_attributes } in
+  function
+    | BM.Regular mr -> BM.Regular (rm_mr mr)
+    | BM.Constructor mc -> BM.Constructor (rm_mc mc)
+    | BM.Initializer mi -> BM.Initializer (rm_mi mi)
 
 let instrument_method get_tag h c = function
-  | B.Method.Regular r as m -> begin
-      (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.B.Method.name)); *)
-      let param_types, return_types = r.B.Method.descriptor in
-      let is_static = has_static_flag r.B.Method.flags in
+  | BM.Regular r as m -> begin
+      (* printf "Found regular method %s\n" (B.Utils.UTF8.to_string (B.Name.utf8_for_method r.BM.name)); *)
+      let param_types, return_types = r.BM.descriptor in
+      let is_static = has_static_flag r.BM.flags in
       let nr_params = List.length param_types + if is_static then 0 else 1 in
       let overrides =
-        get_overrides h c (mk_method r.B.Method.name nr_params) in
+        get_overrides h c (mk_method r.BM.name nr_params) in
       (* printf "  number of overrides: %d\n" (List.length (fst overrides)); *)
       let call_id = get_tag PA.Call overrides in
       let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
-	  | None, None -> B.Method.Regular r, false
+	  | None, None -> removeLNT m
 	  | _ -> begin
 	      let inst_code = instrument_code call_id return_id param_types return_types is_static in
 	      let inst_attrs = function
 		| `Code code ->
-		    let new_instructions = inst_code code.B.Attribute.code in
-                    let new_attributes =
-                      remove_LineNumberTable code.B.Attribute.attributes in
+		    let new_instructions = inst_code code.BA.code in
+                    let new_attributes = List.filter not_LNT code.BA.attributes in
 		    let new_max_stack =
-                      raise_stack 4 code.B.Attribute.max_stack in
+                      raise_stack 4 code.BA.max_stack in
 		    let instrumented_code =
 		      { code with
-                        B.Attribute.code = new_instructions
-                      ; B.Attribute.max_stack = new_max_stack
-                      ; B.Attribute.attributes = new_attributes } in
+                        BA.code = new_instructions
+                      ; BA.max_stack = new_max_stack
+                      ; BA.attributes = new_attributes } in
 		    `Code instrumented_code
 		| a -> a in
-	      let instrumented_attributes = List.map inst_attrs r.B.Method.attributes in
-	      B.Method.Regular {r with B.Method.attributes = instrumented_attributes},
-	      true
+	      let instrumented_attributes = List.map inst_attrs r.BM.attributes in
+	      BM.Regular {r with BM.attributes = instrumented_attributes}
           end
     end
-  | m -> m, false
+  | m -> removeLNT m
 
-let filename_of_class c =
-  let fn = B.Name.internal_utf8_for_class c.B.ClassDefinition.name in
-  let fn = B.Utils.UTF8.to_string fn in
-  let fn = fn ^ ".class" in
-  Filename.concat !out_dir fn
+let pp_class f c =
+    fprintf f "@[%s]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BCd.name))
 
-let output_class c =
-  let fn = filename_of_class c in
-  let ch = U.open_out_p fn in
-  let fail err =
-    close_out ch;
-    (try Sys.remove fn with Sys_error _ -> ());
-    if log log_cp then
-      fprintf logf "@[WARNING: Could not instrument class: %s@\n@]" err in
-(*   try *)
-(*  if log log_cp then fprintf logf "@[...  encoding@."; *)
-    let bytes = B.ClassDefinition.encode c in
-(*  if log log_cp then fprintf logf "@[...  writing file@."; *)
-    B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
-    close_out ch
-(*
-  with
-    | B.Instruction.Exception e ->
-        if log log_cp then
-          fprintf logf "@[B.Instruction.Exception in %s@." fn;
-        fail (B.Instruction.string_of_error e)
-    | B.ClassDefinition.Exception e ->
-        if log log_cp then
-          fprintf logf "@[B.ClassDefinition.Exception in %s@." fn;
-        fail (B.ClassDefinition.string_of_error e)
-*)
+let instrument_class get_tags h c =
+  if log log_cp then fprintf logf "@[instrument %a@]" pp_class c;
+  let instrumented_methods =
+    List.map (instrument_method get_tags h c.BCd.name) c.BCd.methods in
+    if log log_cp then fprintf logf "@[...done@.";
+    {c with BCd.methods = instrumented_methods}
 
-let instrument_class get_tags h (c, fn, ch) =
-  if log log_cp then fprintf logf "@[instrument %s@." fn;
-  (* receive a flag indicating if the mothod is instrumented *)
-  let instrumented_methods, was_instrumented =
-    List.split (List.map (instrument_method get_tags h c.B.ClassDefinition.name) c.B.ClassDefinition.methods) in
-  close_in ch;
-  (* compute the or of all the flags, if false do not write file *)
-    if List.exists (fun b -> b) was_instrumented then
-      (if log log_cp then fprintf logf "@[...output %s@." fn;
-       output_class {c with B.ClassDefinition.methods = instrumented_methods})
-    else if log log_cp then fprintf logf "@[...no methods modified in %s@." fn
-
-(* TODO: iterate backwards! *)
-(* TODO: go into jar files, and stuff *)
-let iter_classes cp f =
-  let process_classfile cf = List.iter f (classes_of_classfile cf) in
-  List.iter process_classfile (classfiles_of_path cp)
-
-let iter_and_close_classes cp f =
-  let process (x, fn, ch) = f (x, fn); close_in ch in
-  iter_classes cp process
-
-let compute_inheritance classpath =
+let compute_inheritance in_dir =
   let h = Hashtbl.create 101 in
-(*
-  let insert_node name method_names parent_names =
-    let parent_nodes = List.map (Hashtbl.find h) parent_names in
-    Hashtbl.add h name {class_name = name; class_methods = method_names; class_parents = parent_nodes} in
-*)
-  let record_class (c, fn) =
-    let name = c.B.ClassDefinition.name in
+  let record_class c =
+    let name = c.BCd.name in
     let fold mns = function
-      | B.Method.Regular r ->
-	  let is_static = has_static_flag r.B.Method.flags in
-	  let (ps, _) = r.B.Method.descriptor in (* return is not used *)
+      | BM.Regular r ->
+	  let is_static = has_static_flag r.BM.flags in
+	  let (ps, _) = r.BM.descriptor in (* return is not used *)
 	  let nr_params = List.length ps + if is_static then 0 else 1 in
-          mk_method r.B.Method.name nr_params :: mns
+          mk_method r.BM.name nr_params :: mns
       | _ -> mns in
-    let method_names = List.fold_left fold [] c.B.ClassDefinition.methods in
-    let parents = match c.B.ClassDefinition.extends with
-      | None -> c.B.ClassDefinition.implements
-      | Some e -> e::c.B.ClassDefinition.implements in
-(*    insert_node name method_names parents *)
+    let method_names = List.fold_left fold [] c.BCd.methods in
+    let parents = match c.BCd.extends with
+      | None -> c.BCd.implements
+      | Some e -> e::c.BCd.implements in
     Hashtbl.replace h name (method_names, parents)
   in
-    iter_and_close_classes classpath record_class;
+    ClassMapper.iter in_dir record_class;
   h
-
-let instrument_bytecode get_tag cp h =
-  iter_classes cp (instrument_class get_tag h)
 
 (* }}} *)
 (* main *) (* {{{ *)
@@ -693,14 +606,17 @@ let generate_checkers p =
 let () =
   try
     let fs = ref [] in
-    let cp = ref (try Sys.getenv "CLASSPATH" with Not_found -> ".") in
-    Arg.parse ["-cp", Arg.Set_string cp, "classpath"] (fun x -> fs := x :: !fs)
-      "usage: ./instrumenter [-cp <classpath>] <property_files>";
-    let h = compute_inheritance !cp in
+    let in_dir = ref Filename.current_dir_name in
+    let out_dir = ref (Filename.concat Filename.temp_dir_name "out") in
+    Arg.parse ["-i", Arg.Set_string in_dir, "input directory";
+               "-o", Arg.Set_string out_dir, "output directory"]
+              (fun x -> fs := x :: !fs)
+               "usage: ./instrumenter [-i <input directory>][-o <output directory>] <property_files>";
+    let h = compute_inheritance !in_dir in
 (* raise (Helper.Parsing_failed "not really"); *)
     let ps = read_properties !fs in
     let p = transform_properties ps in
-    instrument_bytecode (get_tag p) !cp h;
+    ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h);
 Hashtbl.iter (fun _ xs -> printf "@[%a@." (pp_int_list_display 50) xs) p.pattern_tags;
     generate_checkers p
   with
