@@ -154,8 +154,9 @@ being able to naturally express  the relationships and interactions among severa
 %The ability to express relations of a variety of objects makes \TPL\ quite expressive.
 Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of {\em one} single object.
 In contrast, TOPL intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
-Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants. 
+Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
+This is also the point of view taken by tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}, however, TOPL is more expressive than tracematches as it allow, for example to encode properties involving overwrite of values or shapes of dynamic allocated data strucutres (e.g., cyclic vs acyclic linked list, etc).
 
 For TOPL we have defined a precise formal semantics which makes the language suitable for program analysis (both static and dynamic) and verification. Moreover, since the properties are high-level,  
 TOPL helps in  reducing the semantic gap between 
