@@ -34,15 +34,16 @@
 
 
 \title{Dynamic Checking of Temporal Safety properties for Java}
-\authorinfo{Dino Distefano}
-           {Queen Mary University of London}
-           {ddino@eecs.qmul.ac.uk}
-\authorinfo{Radu Grigore}
-           {Queen Mary University of London}
-           {rgrig@eecs.qmul.ac.uk}
-\authorinfo{Rasmus Lerchedahl Petersen}
-           {Queen Mary University of London}
-           {rusmus@eecs.qmul.ac.uk}
+\authorinfo{Authors info whitheld for double-blind submission}
+%\authorinfo{Dino Distefano}
+%           {Queen Mary University of London}
+%           {ddino@eecs.qmul.ac.uk}
+%\authorinfo{Radu Grigore}
+%           {Queen Mary University of London}
+%           {rgrig@eecs.qmul.ac.uk}
+%\authorinfo{Rasmus Lerchedahl Petersen}
+%           {Queen Mary University of London}
+%           {rusmus@eecs.qmul.ac.uk}
 
 
 % rg: I tend to give grammars in BFS order
@@ -153,8 +154,9 @@ being able to naturally express  the relationships and interactions among severa
 %The ability to express relations of a variety of objects makes \TPL\ quite expressive.
 Most other techniques aim at decomposing properties involving several objects into specifications that reflect the point of view of {\em one} single object.
 In contrast, TOPL intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
-Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants. 
+Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
+This is also the point of view taken by tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}, however, TOPL is more expressive than tracematches as it allow, for example to encode properties involving overwrite of values or shapes of dynamic allocated data strucutres (e.g., cyclic vs acyclic linked list, etc) which are often crucial for object-oriented systems.
 
 For TOPL we have defined a precise formal semantics which makes the language suitable for program analysis (both static and dynamic) and verification. Moreover, since the properties are high-level,  
 TOPL helps in  reducing the semantic gap between 
@@ -170,7 +172,7 @@ interspersing the code with ad-hoc checks  aimed at tracing the violation of a c
 The Java API, for example, has hand-crafted code for checking certain temporal properties (\autoref{sec:examples.steps}).
 However, such checks are often hard to write, weaved with the code solving the actual problem, and | in the case of the Java API |  do not provide with a trace of the relevant events leading to an error.
 In contrast, dynamically checking TOPL properties  with the technique we present in this paper is transparent to the programmer and, therefore,  it avoids all these issues.
-
+\dinocomment{talk of tracematch directly here}
 In summary, the contributions of this paper are:
 \begin{itemize}
 \item The definition of TOPL, a new temporal specification language tailored to object-oriented software able to express properties involving several objects and their relations/interactions;
@@ -221,27 +223,28 @@ Labels capture, roughly, the shape of statements that enable the corresponding t
 \end{figure}
 %
 \begin{figure}
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \def\y{1.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
-%  \node[vertex] (one) at (0,-1*\y) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (0,-2*\y) [label=below:\texttt{two}] {};
-%  \node[vertex] (xBad) at (1*\x,-2.5*\y) [label=right:\texttt{xBad}] {};
-%  \node[vertex] (yBad) at (-1*\x,-2.5*\y) [label=left:\texttt{yBad}] {};
-%  \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
-%  \draw[transition] (0,0.5)--(start);
-%  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
-%  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
-%  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
-%  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
-%  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
-%  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
-%  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
-%\end{tikzpicture}
+\begin{tikzpicture}
+  \def\x{2.5}
+  \def\y{1.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (start) at (0,0) [label=left:\texttt{start}] {};
+  \node[vertex] (one) at (0,-1*\y) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (0,-2*\y) [label=below:\texttt{two}] {};
+  \node[vertex] (xBad) at (1*\x,-2.5*\y) [label=right:\texttt{xBad}] {};
+  \node[vertex] (yBad) at (-1*\x,-2.5*\y) [label=left:\texttt{yBad}] {};
+  \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
+  \draw[transition] (0,0.5)--(start);
+  \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
+  \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
+  \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
+  \draw[transition] (two)--node[sloped,above]{$\pattern x.\mathtt{remove}()$} (yBad);
+  \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
+  \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
+\end{tikzpicture}
+\\[2ex]
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
   using prefix java.util.Collection
@@ -253,10 +256,8 @@ property InvalidateOtherIterators
   two -> xBad:   \pattern{y}.remove()
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
-
-
 \end{Verbatim}    
-\caption{The property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
+\caption{The property {\tt InvalidateOtherIterators} in diagram (up) and textual form (down).
 }
 \label{fig:first.topl}
 \end{figure}
@@ -481,6 +482,45 @@ Each of the previous TOPL properties corresponds to one English sentence.
 
 \dinocomment{Maybe we need to add also the other example of the paper. Or put the other properties which are not related to iterators}
 
+\subsection{Heap Shape and Values Sensitive Properties}
+One interesting kind of properties for object-oriented programs is the ability to reason about the shape of 
+the heap composed by the allocated objects. 
+The following TOPL's properties test the shape of a linked list and reports an error if it is cyclic or it has the pan-handle shape (i.e., there is a lasso at some point). 
+%
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+property ListNotCyclic
+   start -> a: \pattern{X} := *.getList()
+   a -> a:     \pattern{X} := x.next()
+   a -> b:     \pattern{Y} := x.next()
+   b -> b:     \pattern{Y} := y.next()
+   b -> error: x := y.next()
+   a -> error: x := x.next()
+\end{Verbatim}
+\delimitVerbatim
+The idea is that this property will bind the automaton variable $x$
+with any possible object in the list, and the $y$ with any possible successors (via the next field) 
+of the current binding of $x$. Therefore, if there is a lasso, in the list, this will be detected when a new 
+biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$. The transition \texttt{a ->error} detect
+the case where there is an object pointing to itself. 
+%
+
+The following property detects when a dictionary overwrite one of its bindings. 
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+ property BadDictionary
+    message "the dictionary overwrite its bindings"
+    prefix <Dictionary>
+    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
+    written -> written: d.put(k, \pattern{V})
+    written -> error:   !v := d.get(k)
+\end{Verbatim}
+\delimitVerbatim
+The overwrite is detected by the guard which checks if the value associated with a key $k$ is
+the same as the original binding recorded in the automaton variable $v$.
+
+
+
 \section{TOPL Syntax and Semantics}
 
 
@@ -598,14 +638,16 @@ A(\sigma,\epsilon,[]) & = & \bot
 \\[2ex]
 A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-     \\
+     \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
 \\[2ex]
 A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$ and $A(\sigma,e,(g,a))=\sigma'$}
+     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$} 
      \\
+& \mbox{and  $A(\sigma,e,(g,a))=\sigma'$}
+     \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
@@ -629,11 +671,11 @@ we have to examine $|l|$ events.
 %
 The transition relation $s \to s'$ is defined by the following rules.
 \[
-\begin{array}{lcl}
-\text{(Step)} & \qquad &
-\infer[x_1 \to x_2: l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\begin{array}{ll}
+\text{(Step)}  &
+\infer[x_1 \to x_2{:} l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
-\text{(Silent Step)} & \qquad & 
+\text{(Silent)}  & 
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
@@ -677,23 +719,23 @@ The automaton will take a transition as soon as a suitable event matching an out
 %
 %
 \begin{figure}
-%\begin{tikzpicture}
-%  \def\x{2.5}
-%  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-%  \tikzset{transition/.style={->,>=latex}}
-%  \tikzset{every label/.style={gray}}
-%  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-%  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-%  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
 
-%  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-%  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-%  
-%  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-%  \draw[transition] (zero)--node[right]{$e_1$} (two);
-%  
-%  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-%\end{tikzpicture}
+  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+  
+  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+  \draw[transition] (zero)--node[right]{$e_1$} (two);
+  
+  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+\end{tikzpicture}
 \caption{Example of unmatched events.}
 \label{fig:unmatched-example}
 \end{figure}
