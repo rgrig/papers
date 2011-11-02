@@ -50,13 +50,15 @@ let output_class fn c =
 let rec map in_dir out_dir f =
   let process_jar jf =
   if log log_cp then fprintf logf "@[map jar: %s@." jf;
-    let tmp_in_dir = mk_tmp_dir "in_" jf in
-    let tmp_out_dir = mk_tmp_dir "out_" jf in
+    let tmp_in_dir = mk_tmp_dir "in_" "_jar" in
+    let tmp_out_dir = mk_tmp_dir "out_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
     let extract e =
       let e_fn = tmp_in_dir / e.Zip.filename in
       U.mkdir_p (Filename.dirname e_fn);
-      if not e.Zip.is_directory then Zip.copy_entry_to_file jar_in e e_fn in
+      if not e.Zip.is_directory then
+      (printf "@[extracting %d bytes to %s@." e.Zip.uncompressed_size e_fn;
+      Zip.copy_entry_to_file jar_in e e_fn) in
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
     map tmp_in_dir tmp_out_dir f;
@@ -64,7 +66,9 @@ let rec map in_dir out_dir f =
     let jar_out = Zip.open_out (out_dir / jf) in
     let intract _ f =
       if Sys.is_directory f then Zip.add_entry "" jar_out (ensure_dir f)
-      else Zip.copy_file_to_entry (tmp_out_dir / f) jar_out f in
+      else
+      (printf "@[intracting %d bytes from %s@." (Unix.stat f).Unix.st_size (tmp_out_dir / f);
+       Zip.copy_file_to_entry (tmp_out_dir / f) jar_out f) in
     U.rel_fs_preorder tmp_out_dir intract Filename.current_dir_name;
     Zip.close_out jar_out;
     U.rm_r tmp_out_dir in
@@ -85,7 +89,7 @@ let rec map in_dir out_dir f =
 let rec iter in_dir f =
   let iter_jar jf =
   if log log_cp then fprintf logf "@[iter jar: %s@." jf;
-    let tmp_in_dir = mk_tmp_dir "iter_" jf in
+    let tmp_in_dir = mk_tmp_dir "iter_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
     let extract e =
       let e_fn = tmp_in_dir / e.Zip.filename in
@@ -101,7 +105,8 @@ let rec iter in_dir f =
     | None -> ()
     | Some cd -> f cd in
   let process _ fn =
-    if Sys.is_directory fn then ()
+    printf "@[iterating %s@." (in_dir / fn);
+    if Sys.is_directory fn then printf "@[directory@."
     else if is_jar fn then iter_jar fn
     else if is_class fn then iter_class fn in
   U.rel_fs_preorder in_dir process Filename.current_dir_name

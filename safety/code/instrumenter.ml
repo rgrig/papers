@@ -518,11 +518,11 @@ let removeLNT =
   let rm_a : BA.for_method -> BA.for_method = function
     | `Code c -> `Code (rm_c c)
     | x -> x in
-  let rm_mr mr = { mr with BM.attributes = List.map rm_a mr.BM.attributes } in
+  let rm_mr mr = { mr with BM.attributes      = List.map rm_a mr.BM.attributes } in
   let rm_mc mc = { mc with BM.cstr_attributes = List.map rm_a mc.BM.cstr_attributes } in
   let rm_mi mi = { mi with BM.init_attributes = List.map rm_a mi.BM.init_attributes } in
   function
-    | BM.Regular mr -> BM.Regular (rm_mr mr)
+    | BM.Regular mr     -> BM.Regular (rm_mr mr)
     | BM.Constructor mc -> BM.Constructor (rm_mc mc)
     | BM.Initializer mi -> BM.Initializer (rm_mi mi)
 
@@ -565,9 +565,8 @@ let pp_class f c =
 
 let instrument_class get_tags h c =
   if log log_cp then fprintf logf "@[instrument %a@]" pp_class c;
-  let instrumented_methods =
-    List.map (instrument_method get_tags h c.BCd.name) c.BCd.methods in
-    if log log_cp then fprintf logf "@[...done@.";
+  let instrumented_methods = List.map (instrument_method get_tags h c.BCd.name) c.BCd.methods in
+  if log log_cp then fprintf logf "@[...done@.";
     {c with BCd.methods = instrumented_methods}
 
 let compute_inheritance in_dir =
@@ -597,9 +596,8 @@ let read_properties fs =
   let e p = List.map (fun x -> x.PA.ast) p.SA.program_properties in
   fs >> List.map Helper.parse >>= e
 
-let generate_checkers p =
-  (* TODO: Crashes if topl/ does not exist. *)
-  let out_channel = open_out "topl/Property.java" in
+let generate_checkers out_dir p =
+  let out_channel = open_out (Filename.concat out_dir "Property.java") in
   let f = formatter_of_out_channel out_channel in
   pp_automaton f p
 
@@ -618,7 +616,7 @@ let () =
     let p = transform_properties ps in
     ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h);
 Hashtbl.iter (fun _ xs -> printf "@[%a@." (pp_int_list_display 50) xs) p.pattern_tags;
-    generate_checkers p
+    generate_checkers !out_dir p
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m
 

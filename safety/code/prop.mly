@@ -44,7 +44,8 @@
     end done;
     if !c <> 0 then e (); (* syntax error *)
     let r = Buffer.contents r in
-    printf "@[HERE: '%s' -> '%s'@." g r; r
+(*    printf "@[HERE: '%s' -> '%s'@." g r; *)
+     r
 
   let mk_args_pattern a ps =
     { PA.tag_guard =
