@@ -263,6 +263,32 @@ let transform_properties ps =
 (* }}} *)
 (* bytecode instrumentation *) (* {{{ *)
 
+(* InstrumentationMap *) (* {{{ *)
+
+module InstrumentationMap : sig
+  type t
+  val insert : t -> int -> B.Instruction.t list -> t
+  val apply : t -> B.Instruction.t list -> B.Instruction.t list
+  val size : t -> int -> int -> int
+end
+= struct
+  type t = (int * int * B.Instruction.t list) list
+  let code_size _ = failwith "todo"
+  let insert t pos code = (pos, code_size code, code) :: t
+  let size t a b =
+    let f acc (pos, sz, _) = acc + (if a <= pos && pos < b then sz else 0) in
+    List.fold_left f 0 t
+  let apply t code =
+    let cnt = ref (-1) in
+    let code = List.sort compare (List.concat (
+      (List.map (fun x -> incr cnt; (!cnt, 0, x)) code) ::
+      (List.map (fun (i, _, xs) ->
+        cnt := 0; List.map (fun x -> incr cnt; (i, !cnt, x)) xs) t))) in
+    List.map (fun (_, _, x) -> x) code
+end
+
+(* }}} *)
+
 let string_of_method_name mn =
   B.Utils.UTF8.to_string (B.Name.utf8_for_method mn)
 
