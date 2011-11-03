@@ -4,7 +4,9 @@ open Debug
 module U = Util
 module B = BaristaLibrary
 
-let (/) = Filename.concat
+let (/) d f =
+    if d = Filename.current_dir_name then f
+    else Filename.concat d f
 
 let is_jar f = Filename.check_suffix f ".jar"
 let is_class f = Filename.check_suffix f ".class"

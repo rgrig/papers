@@ -306,7 +306,7 @@ let bc_push i =
   if i = 3 then B.Instruction.ICONST_3 else
   if i = 4 then B.Instruction.ICONST_4 else
   if i = 5 then B.Instruction.ICONST_5 else
-    B.Instruction.LDC (`Int (Int32.of_int i))
+    B.Instruction.LDC_W (`Int (Int32.of_int i))
 
 let bc_new_object_array size =
   [
@@ -509,12 +509,13 @@ let get_overrides h c ({method_name=n; method_arity=a} as m) =
 let raise_stack n x =
   B.Utils.u2 ((x : B.Utils.u2 :> int) + n)
 
-let not_LNT : BA.code_attribute -> bool = function
-  | `LineNumberTable _ -> false
+let not_debug : BA.code_attribute -> bool = function
+  | `LineNumberTable _
+  | `LocalVariableTable _ -> false
   | _ -> true
 
-let removeLNT =
-  let rm_c c = { c with BA.attributes = List.filter not_LNT c.BA.attributes } in
+let remove_debug =
+  let rm_c c = { c with BA.attributes = List.filter not_debug c.BA.attributes } in
   let rm_a : BA.for_method -> BA.for_method = function
     | `Code c -> `Code (rm_c c)
     | x -> x in
@@ -538,13 +539,13 @@ let instrument_method get_tag h c = function
       let call_id = get_tag PA.Call overrides in
       let return_id = get_tag PA.Return overrides in
 	match call_id, return_id with
-	  | None, None -> removeLNT m
+	  | None, None -> remove_debug m
 	  | _ -> begin
 	      let inst_code = instrument_code call_id return_id param_types return_types is_static in
 	      let inst_attrs = function
 		| `Code code ->
 		    let new_instructions = inst_code code.BA.code in
-                    let new_attributes = List.filter not_LNT code.BA.attributes in
+                    let new_attributes = List.filter not_debug code.BA.attributes in
 		    let new_max_stack =
                       raise_stack 4 code.BA.max_stack in
 		    let instrumented_code =
@@ -558,7 +559,7 @@ let instrument_method get_tag h c = function
 	      BM.Regular {r with BM.attributes = instrumented_attributes}
           end
     end
-  | m -> removeLNT m
+  | m -> remove_debug m
 
 let pp_class f c =
     fprintf f "@[%s@]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BCd.name))
