@@ -49,7 +49,7 @@ let output_class fn c =
 
 let rec map in_dir out_dir f =
   let process_jar jf =
-  if log log_cp then fprintf logf "@[map jar: %s@." jf;
+  if log log_cp then fprintf logf "@[map jar: %s@." (in_dir / jf);
     let tmp_in_dir = mk_tmp_dir "in_" "_jar" in
     let tmp_out_dir = mk_tmp_dir "out_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
@@ -62,28 +62,33 @@ let rec map in_dir out_dir f =
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
     map tmp_in_dir tmp_out_dir f;
+    printf "@[REMOVING %s@]" tmp_in_dir;
     U.rm_r tmp_in_dir;
     let jar_out = Zip.open_out (out_dir / jf) in
-    let intract _ f =
-      if Sys.is_directory f then Zip.add_entry "" jar_out (ensure_dir f)
+    let intract _ fn =
+      if Sys.is_directory (tmp_out_dir / fn) then Zip.add_entry "" jar_out (ensure_dir fn)
       else
-      (printf "@[intracting %d bytes from %s@." (Unix.stat f).Unix.st_size (tmp_out_dir / f);
-       Zip.copy_file_to_entry (tmp_out_dir / f) jar_out f) in
+      (printf "@[intracting %d bytes from %s@." (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
+       Zip.copy_file_to_entry (tmp_out_dir / fn) jar_out fn) in
     U.rel_fs_preorder tmp_out_dir intract Filename.current_dir_name;
     Zip.close_out jar_out;
     U.rm_r tmp_out_dir in
   let process_class fn =
-  if log log_cp then fprintf logf "@[map class: %s@." fn;
+  if log log_cp then fprintf logf "@[map class: %s@." (in_dir / fn);
     match open_class (in_dir / fn) with
     | None -> U.cp (in_dir / fn) (out_dir / fn)
     | Some cd ->
         let inst_cd = f cd in
         output_class (out_dir / fn) inst_cd in
   let process _ fn =
-    if Sys.is_directory fn then U.mkdir_p (out_dir / fn)
-    else if is_jar fn then process_jar fn
-    else if is_class fn then process_class fn
-    else U.cp (in_dir / fn) (out_dir / fn) in
+  if log log_cp then fprintf logf "@[map: %s@." (in_dir / fn);
+    if Sys.is_directory (in_dir / fn) then U.mkdir_p (out_dir / fn)
+    else begin
+      if is_jar fn then process_jar fn
+      else if is_class fn then process_class fn
+      else U.cp (in_dir / fn) (out_dir / fn)
+    end in
+  if log log_cp then fprintf logf "@[map: %s -> %s@." in_dir out_dir;
   U.rel_fs_preorder in_dir process Filename.current_dir_name
 
 let rec iter in_dir f =

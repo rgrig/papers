@@ -131,7 +131,9 @@ let rec rel_fs_preorder top m f =
   if Sys.file_exists f_full then begin
     m top f;
     if Sys.is_directory f_full then begin
-      let children = Array.map (Filename.concat f) (Sys.readdir f) in
+      let children = Array.map (Filename.concat f) (Sys.readdir f_full) in
+      Format.printf "@[traversing %d children:@." (Array.length children);
+      Array.iter (Format.printf "@[  %s@.") children;
       Array.iter (rel_fs_preorder top m) children
     end
   end
