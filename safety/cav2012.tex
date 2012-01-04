@@ -526,23 +526,9 @@ the same as the original binding recorded in the automaton variable $v$.
 
 
 \section{TOPL Syntax and Semantics}
+The syntax of TOPL is as follows:
 
-
-
-\autoref{fig:syntax.topl} shows the syntax of TOPL\null.
-A property has a name, a set of \texttt{using} directives, and a set of transitions.
-Each transition has an arc (directed edge) and labels.
-Each arc has a source vertex and a target vertex.
-All vertices are identified by their name.
-Labels look like method calls.
-Each label has a method pattern that is used to identify the set of methods to which the label refers.
-In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
-(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
-\dinocomment{Does anybody else has the ability to distinguish between call/return?}
-%
-\begin{figure}
+%\begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
   Using& \b{using prefix} StringPattern \cr
@@ -560,9 +546,23 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
   ValuePattern& \b* \| Literal \| UppercaseId \| \b!\? LowercaseId \cr
   IntegerPattern& \b* \| IntegerLiteral \cr
 }
-\caption{Syntax of TOPL}
-\label{fig:syntax.topl}
-\end{figure}
+%\caption{Syntax of TOPL}
+%\label{fig:syntax.topl}
+%\end{figure}
+
+
+A property has a name, a set of \texttt{using} directives, and a set of transitions.
+Each transition has an arc (directed edge) and labels.
+Each arc has a source and a target vertex.
+All vertices are identified by their name.
+Labels look like method calls.
+Each label has a method pattern that is used to identify the set of methods to which the label refers.
+In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
+(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
+The more interesting case is when there are value patterns for each argument and perhaps even for the result.
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
+%\dinocomment{Does anybody else has the ability to distinguish between call/return?}
+%
 
 There are three types of patterns used in TOPL---for strings, for integers, and for values.
 String patterns are POSIX globs~\cite{man:glob.h} and match method names.
