@@ -32,17 +32,14 @@ let unique l =
   List.iter (fun x -> Hashtbl.replace h x x) l;
   Hashtbl.fold (fun _ -> cons) h []
 
-(** Function composition. *)
-let (@<) f g x = f (g x)
-
-(** Function composition (reversed). *)
-let (@>) f g = g @< f
-
-(** Function application (reversed). *)
-let (>>) x f = f x
-
-(** Map followed by concat. *)
-let (>>=) x f = x >> List.map f >> List.concat
+(** Operators go in a submodule so that we can open it, without having to
+polute the namespace with everything in Util. *)
+module Operators = struct
+  let (@<) f g x = f (g x)
+  let (@>) f g = g @< f
+  let (>>) x f = f x
+  let (>>=) x f = x >> List.map f >> List.concat
+end
 
 module Int = struct type t = int let compare = compare end
 module OrderedPair (A:Set.OrderedType) (B:Set.OrderedType) =

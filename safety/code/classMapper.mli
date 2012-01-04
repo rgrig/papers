@@ -1,9 +1,8 @@
-(** Maps a function over class files, taking care of (nested) jars *)
-(* Contrary to normal maps, the return type is unit, *)
-(* but it takes a source and target directory as input. *)
-val map : string -> string -> (BaristaLibrary.ClassDefinition.t ->
-  BaristaLibrary.ClassDefinition.t) -> unit
+(** [map src tgt f] creates directory [tgt] as a mirror of directory [src] in
+which all class-files are transformed by applying [f] to them. Non-class-files
+are copied unchanged. Subdirectories and jar-files are processed recursively. *)
+val map : string -> string -> (BaristaLibrary.HighClass.t ->
+  BaristaLibrary.HighClass.t) -> unit
 
-(** Iterates a function over class files, taking care of (nested) jars *)
-(* first argument is input directory *)
-val iter : string -> (BaristaLibrary.ClassDefinition.t -> unit) -> unit
+(** [iter dir f] applies [f] to all the class-files in [dir]. *)
+val iter : string -> (BaristaLibrary.HighClass.t -> unit) -> unit

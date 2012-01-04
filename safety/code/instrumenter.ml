@@ -1,12 +1,13 @@
 (* modules *) (* {{{ *)
 open Debug
 open Format
-open Util  (* TODO: I would rather remove this one. *)
+open Util.Operators
 
 module B = BaristaLibrary
-module BA = B.Attribute
-module BM = B.Method
-module BCd = B.ClassDefinition
+module BA = B.HighClass.HighAttribute
+module BC = B.HighClass
+module BI = B.HighClass.HighInstruction
+module BM = B.HighClass.HighMethod
 module PA = PropAst
 module SA = SoolAst
 module U = Util
@@ -85,7 +86,7 @@ let inverse_index f h =
   let r = Array.make (Hashtbl.length h) None in
   let one k v = assert (r.(v) = None); r.(v) <- Some (f k) in
   Hashtbl.iter one h;
-  Array.map from_some r
+  Array.map U.from_some r
 
 let get_properties x =
   x.vertices >> Array.map (function {vertex_property=p;_} -> p) >> Array.to_list
@@ -96,7 +97,7 @@ let get_vertices p =
 
 let get_variables p =
   let f = function PA.Variable (v, _) -> Some v | _ -> None in
-  map_option f (PA.get_value_guards p)
+  U.map_option f (PA.get_value_guards p)
 
 (* }}} *)
 (* pretty printing to Java *) (* {{{ *)
@@ -130,7 +131,7 @@ let pp_array pe ppf a =
   if l > 0 then fprintf ppf "@\n%a" pe (0, a.(0));
   for i = 1 to l - 1 do fprintf ppf ",@\n%a" pe (i, a.(i)) done
 
-let pp_h_list pe f xs = pp_list ", " pe f xs
+let pp_h_list pe f xs = U.pp_list ", " pe f xs
 
 let rec pp_v_list pe ppf = function
   | [] -> ()
@@ -180,7 +181,7 @@ let pp_vertex tags pov f (vi, {outgoing_transitions=ts;_}) =
 let pp_automaton f x =
   let pov = compute_pov x in
   let obs_p p = Hashtbl.find x.pattern_tags (Hashtbl.find x.observables p) in
-  let obs_tags = List.map obs_p (unique (get_properties x)) in
+  let obs_tags = List.map obs_p (U.unique (get_properties x)) in
   fprintf f "package topl;@\n@\n";
   fprintf f "import static topl.Checker.*;@\n@\n";
   fprintf f "@[<2>public class Property {@\n";
@@ -267,12 +268,12 @@ let transform_properties ps =
 
 module InstrumentationMap : sig
   type t
-  val insert : t -> int -> B.Instruction.t list -> t
-  val apply : t -> B.Instruction.t list -> B.Instruction.t list
+  val insert : t -> int -> BI.t list -> t
+  val apply : t -> BI.t list -> BI.t list
   val size : t -> int -> int -> int
 end
 = struct
-  type t = (int * int * B.Instruction.t list) list
+  type t = (int * int * BI.t list) list
   let code_size _ = failwith "todo"
   let insert t pos code = (pos, code_size code, code) :: t
   let size t a b =
@@ -316,28 +317,28 @@ let check = utf8_for_method "check"
 
 (* bytecode generating helpers *) (* {{{ *)
 let bc_print_utf8 us = [
-  B.Instruction.GETSTATIC (java_lang_System, out, `Class java_io_PrintStream);
-  B.Instruction.LDC (`String us);
-  B.Instruction.INVOKEVIRTUAL (`Class_or_interface java_io_PrintStream,
+  BI.GETSTATIC (java_lang_System, out, `Class java_io_PrintStream);
+  BI.LDC (`String us);
+  BI.INVOKEVIRTUAL (`Class_or_interface java_io_PrintStream,
 			     println,
 			     ([`Class java_lang_String], `Void));
 ]
 let bc_print s = bc_print_utf8 (utf8 s)
 let bc_print_par p = bc_print_utf8 (p.B.Signature.identifier)
 
-let bc_push i =
-  if i = 0 then B.Instruction.ICONST_0 else
-  if i = 1 then B.Instruction.ICONST_1 else
-  if i = 2 then B.Instruction.ICONST_2 else
-  if i = 3 then B.Instruction.ICONST_3 else
-  if i = 4 then B.Instruction.ICONST_4 else
-  if i = 5 then B.Instruction.ICONST_5 else
-    B.Instruction.LDC_W (`Int (Int32.of_int i))
+let bc_push = function
+  | 0 -> BI.ICONST_0
+  | 1 -> BI.ICONST_1
+  | 2 -> BI.ICONST_2
+  | 3 -> BI.ICONST_3
+  | 4 -> BI.ICONST_4
+  | 5 -> BI.ICONST_5
+  | i -> BI.LDC (`Int (Int32.of_int i))
 
 let bc_new_object_array size =
   [
     bc_push size;
-    B.Instruction.ANEWARRAY (`Class_or_interface java_lang_Object)
+    BI.ANEWARRAY (`Class_or_interface java_lang_Object)
   ]
 
 let bc_box = function
@@ -354,43 +355,41 @@ let bc_box = function
         | `Short -> "Short"
         | _ -> failwith "foo"))
         in
-      [B.Instruction.INVOKESTATIC
+      [BI.INVOKESTATIC
           (c,
 	  utf8_for_method "valueOf",
           ([t], `Class c))]
 
-let bc_load i =
-  let i = B.Utils.u1 i in
-  function
-  | `Class _ | `Array _ -> B.Instruction.ALOAD i
-  | `Boolean -> B.Instruction.ILOAD i
-  | `Byte -> B.Instruction.ILOAD i
-  | `Char -> B.Instruction.ILOAD i
-  | `Double -> B.Instruction.DLOAD i
-  | `Float -> B.Instruction.FLOAD i
-  | `Int -> B.Instruction.ILOAD i
-  | `Long -> B.Instruction.LLOAD i
-  | `Short -> B.Instruction.ILOAD i
+let bc_load i = function
+  | `Class _ | `Array _ -> BI.ALOAD i
+  | `Boolean -> BI.ILOAD i
+  | `Byte -> BI.ILOAD i
+  | `Char -> BI.ILOAD i
+  | `Double -> BI.DLOAD i
+  | `Float -> BI.FLOAD i
+  | `Int -> BI.ILOAD i
+  | `Long -> BI.LLOAD i
+  | `Short -> BI.ILOAD i
 
 let bc_array_set index t =
   [
-    B.Instruction.DUP;
+    BI.DUP;
     bc_push index;
     bc_load index t
   ] @
     bc_box t @
   [
-    B.Instruction.AASTORE
+    BI.AASTORE
   ]
 
 let bc_new_event id =
   [
-    B.Instruction.NEW event;
-    B.Instruction.DUP_X1;
-    B.Instruction.SWAP;
+    BI.NEW event;
+    BI.DUP_X1;
+    BI.SWAP;
     bc_push id;
-    B.Instruction.SWAP;
-    B.Instruction.INVOKESPECIAL (event,
+    BI.SWAP;
+    BI.INVOKESPECIAL (event,
 			       init,
 			       ([`Int; `Array (`Class java_lang_Object)], `Void)
 			      )
@@ -398,9 +397,9 @@ let bc_new_event id =
 
 let bc_check =
   [
-    B.Instruction.GETSTATIC (property, property_checker, `Class checker);
-    B.Instruction.SWAP;
-    B.Instruction.INVOKEVIRTUAL (`Class_or_interface checker,
+    BI.GETSTATIC (property, property_checker, `Class checker);
+    BI.SWAP;
+    BI.INVOKEVIRTUAL (`Class_or_interface checker,
 			       check,
 			       ([`Class event], `Void)
 			      )
@@ -412,8 +411,8 @@ let does_method_match
   ({ method_name=mn; method_arity=ma }, mt)
   { PA.event_type=t; PA.method_name=re; PA.method_arity=a }
 =
-  let ba = option true ((=) ma) a in
-  let bt = option true ((=) mt) t in
+  let ba = U.option true ((=) ma) a in
+  let bt = U.option true ((=) mt) t in
   let bn = Str.string_match re mn 0 in
   if ba && bt && bn && log log_cp then fprintf logf "@[match %s@." mn;
 (*    printf "@[(%s, %d) matches: mn: %b, ma: %b, mt: %b@." mn ma bn ba bt; *)
@@ -457,15 +456,15 @@ let bc_send_return_event id return_type =
       bc_store_return_value
    = match return_type with
     | `Void -> [], 0, []
-    | t -> [B.Instruction.DUP],
+    | t -> [BI.DUP],
            1,
-           [B.Instruction.DUP_X1;
-            B.Instruction.SWAP;
+           [BI.DUP_X1;
+            BI.SWAP;
             bc_push 0;
-            B.Instruction.SWAP] @
+            BI.SWAP] @
             (bc_box (B.Descriptor.filter_void
                 B.Descriptor.Invalid_method_parameter_type t)) @
-            [B.Instruction.AASTORE] in
+            [BI.AASTORE] in
   bc_save_return_value @
   (bc_new_object_array return_arity) @
   bc_store_return_value @
@@ -487,16 +486,20 @@ let utf8_of_method_desc name desc =
     ++ (B.UTF8Impl.concat_sep_map comma B.Descriptor.external_utf8_of_java_type (params :> B.Descriptor.java_type list))
     ++ closing_parenthesis
 
+let put_labels_on _ = failwith "todo"
+
 let rec add_return_code return_code = function
   | [] -> []
-  | ((B.Instruction.ARETURN as r) :: instructions)
-  | ((B.Instruction.DRETURN as r) :: instructions)
-  | ((B.Instruction.FRETURN as r) :: instructions)
-  | ((B.Instruction.IRETURN as r) :: instructions)
-  | ((B.Instruction.LRETURN as r) :: instructions)
-  | ((B.Instruction.RETURN as r) :: instructions)  (* do not instrument RET or WIDERET *)
-    -> return_code @ (r :: (add_return_code return_code instructions))
-  | (instr :: instructions) -> instr :: (add_return_code return_code instructions)
+  | ((_, BI.ARETURN) as r) :: xs
+  | ((_, BI.DRETURN) as r) :: xs
+  | ((_, BI.FRETURN) as r) :: xs
+  | ((_, BI.IRETURN) as r) :: xs
+  | ((_, BI.LRETURN) as r) :: xs
+  | ((_, BI.RETURN) as r) :: xs ->
+      put_labels_on return_code
+        @ (r :: (add_return_code return_code xs))
+  (* do not instrument RET or WIDERET *)
+  | x :: xs -> x :: (add_return_code return_code xs)
 
 let instrument_code call_id return_id param_types return_types is_static code =
   let bc_send_call_event = match call_id with
@@ -509,7 +512,7 @@ let instrument_code call_id return_id param_types return_types is_static code =
   (bc_print (method_name ^ " : ")) @
   (bc_print_utf8 (utf8_of_method_desc method_name param_types)) @
 *)
-  bc_send_call_event @
+  put_labels_on bc_send_call_event @
   (add_return_code bc_send_ret_event code)
 
 let has_static_flag flags =
@@ -572,12 +575,9 @@ let instrument_method get_tag h c = function
 		| `Code code ->
 		    let new_instructions = inst_code code.BA.code in
                     let new_attributes = List.filter not_debug code.BA.attributes in
-		    let new_max_stack =
-                      raise_stack 4 code.BA.max_stack in
 		    let instrumented_code =
 		      { code with
                         BA.code = new_instructions
-                      ; BA.max_stack = new_max_stack
                       ; BA.attributes = new_attributes } in
 		    `Code instrumented_code
 		| a -> a in
@@ -588,18 +588,18 @@ let instrument_method get_tag h c = function
   | m -> remove_debug m
 
 let pp_class f c =
-    fprintf f "@[%s@]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BCd.name))
+    fprintf f "@[%s@]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BC.name))
 
 let instrument_class get_tags h c =
   if log log_cp then fprintf logf "@[instrument %a@]" pp_class c;
-  let instrumented_methods = List.map (instrument_method get_tags h c.BCd.name) c.BCd.methods in
+  let instrumented_methods = List.map (instrument_method get_tags h c.BC.name) c.BC.methods in
   if log log_cp then fprintf logf "@[...done@.";
-    {c with BCd.methods = instrumented_methods}
+    {c with BC.methods = instrumented_methods}
 
 let compute_inheritance in_dir =
   let h = Hashtbl.create 101 in
   let record_class c =
-    let name = c.BCd.name in
+    let name = c.BC.name in
     let fold mns = function
       | BM.Regular r ->
 	  let is_static = has_static_flag r.BM.flags in
@@ -607,10 +607,10 @@ let compute_inheritance in_dir =
 	  let nr_params = List.length ps + if is_static then 0 else 1 in
           mk_method r.BM.name nr_params :: mns
       | _ -> mns in
-    let method_names = List.fold_left fold [] c.BCd.methods in
-    let parents = match c.BCd.extends with
-      | None -> c.BCd.implements
-      | Some e -> e::c.BCd.implements in
+    let method_names = List.fold_left fold [] c.BC.methods in
+    let parents = match c.BC.extends with
+      | None -> c.BC.implements
+      | Some e -> e::c.BC.implements in
     Hashtbl.replace h name (method_names, parents)
   in
     ClassMapper.iter in_dir record_class;

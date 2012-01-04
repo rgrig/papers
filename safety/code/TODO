@@ -1,5 +1,9 @@
 - cleanup code
   - edge -> arc
+- switch to new Barista high-level representation (to fix bugs with offsets)
+- generate text file with Java automaton to avoid hitting Java method size limit
+- cleanup code
+  - edge -> arc
 - desugar properties into statements
 - add tracing of execution
 - cleanup code

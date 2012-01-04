@@ -2,9 +2,9 @@ open Format
 open Util
 
 module B = BaristaLibrary
-module BA = B.Attribute
-module BM = B.Method
-module BCd = B.ClassDefinition
+module BA = B.HighClass.HighAttribute
+module BC = B.HighClass
+module BM = B.HighClass.HighMethod
 
 let removeLNT c =
   let not_LNT : BA.code_attribute -> bool = function
@@ -22,7 +22,7 @@ let removeLNT c =
     | BM.Constructor mc -> BM.Constructor (rm_mc mc)
     | BM.Initializer mi -> BM.Initializer (rm_mi mi) in
   { c with
-    BCd.methods = List.map rm_m c.BCd.methods }
+    BC.methods = List.map rm_m c.BC.methods }
 
 let () =
   let in_dir = ref Filename.current_dir_name in
