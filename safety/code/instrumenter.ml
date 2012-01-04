@@ -486,7 +486,8 @@ let utf8_of_method_desc name desc =
     ++ (B.UTF8Impl.concat_sep_map comma B.Descriptor.external_utf8_of_java_type (params :> B.Descriptor.java_type list))
     ++ closing_parenthesis
 
-let put_labels_on _ = failwith "todo"
+let put_labels_on =
+  List.map (fun x -> (BI.fresh_label (), x))
 
 let rec add_return_code return_code = function
   | [] -> []
