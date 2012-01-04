@@ -564,7 +564,7 @@ Transitions should typically be tagged with \texttt{call} or \texttt{return} to 
 %\dinocomment{Does anybody else has the ability to distinguish between call/return?}
 %
 
-There are three types of patterns used in TOPL---for strings, for integers, and for values.
+There are three types of patterns used in TOPL---for strings, integers, and values.
 String patterns are POSIX globs~\cite{man:glob.h} and match method names.
 (For simplicity, TOPL does not use full regular expressions as string patterns.)
 Integer patterns specify method arities.
@@ -576,21 +576,16 @@ The negated lowercase pattern \Verb@!v@ reads the value of the automaton variabl
 A Java literal acts as a pattern that matches only the value it denotes.
 A wildcard~* pattern matches any value.
 
-A TOPL property is \emph{well-formed} when it satisfies the following conditions.
-\begin{itemize}
-\item Labels must contain uppercase value patterns at most once.
-\item Any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from the \start vertex.
-  In other words, automaton variables must be written before being read.
-\end{itemize}
-It is easy to check that a property is well-formed~\cite{web:topl.prototype}.
+A TOPL property is \emph{well-formed} when it satisfies the following two conditions:
+labels must contain uppercase value patterns at most once, and
+any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from the \start vertex (i.e., automaton variables must be written before being read).
+%
 From now on we assume TOPL properties to be well-formed.
 
 
 
 \subsection{Semantics}\label{sec:semantics} % <<<
-
-We consider a program's semantics to be a set of event traces.
-Similarly, an automaton's semantics is also defined as a set of event traces.
+We model the semantics of programs and automata as sets of event traces.
 We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
@@ -598,7 +593,7 @@ In other words, properties encode bad executions, rather than good executions.
 \newcommand{\World}{ExecState}
 
 Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program,
-gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$ which represent the 
+gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$ representing the 
 semantics of the property interpreted over the program.
 $\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively. 
 
@@ -637,16 +632,20 @@ The effect of the actions in an arc label on a store when observing a trace is g
    A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
 \] and defined as
 %
-\begin{eqnarray*}
+\[
+\begin{array}{c}
+\begin{array}{lclclcl}
 A(\sigma,\epsilon,[]) & = & \bot
-\\[2ex]
+& \qquad &
 A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
      \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
-\\[2ex]
+\end{array}
+\\[4ex]
+\begin{array}{lcl}
 A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$} 
      \\
@@ -655,7 +654,8 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      \bot & \mbox{otherwise}
      \end{array}
      \right.
-\end{eqnarray*}
+\end{array}
+\end{array}\]
 In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event
 and therefore updating the store $\sigma$.
 With $A$ we can define the predicates $enabled$
@@ -683,7 +683,7 @@ The transition relation $s \to s'$ is defined by the following rules.
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
-Finally, we can define the language of a TOPL execution automaton $\Xi$, i.e., the set of traces it accepts:
+Finally, we can define the language of a TOPL execution automaton $\Xi$, as the set of traces it accepts:
 \[
 {\cal L}(\Xi) = \{ \tau \mid \exists \sigma' \tau', (\mathtt{start},[],\tau) \to^* (\mathtt{error},\sigma',\tau')\}
 \]
@@ -691,19 +691,18 @@ ${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{s
 
 \paragraph{Silent steps.}
 A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given
-state and trace of events, the automaton does not get stuck but is
-allowed to consume one event without changing its state (see the  Silent Step rule). Note that
-a silent step is not equivalent to an implied self-loop on all states, as
-dropping events is not allowed if there are any enabled
+state and trace of events, the automaton does not get stuck but it
+consumes one event without changing its state (see the  Silent Step rule). Note that
+a silent step is not equivalent to a self-loop on all states, as
+dropping events is not allowed if there are enabled
 transitions. In that case,  the enabled transitions are performed 
 with the rule (Step) and
-the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the vertex at the
-end of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and
-$\tau_2$ is the current executions state's event trace with the first
-$|l|$ events dropped.
+the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of
+the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and
+$\tau_2$ is the leftover of the event trace before the transition after dropping
+$|l|$ events.
 \begin{example}
-Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume we are given the following
-trace in input
+Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume that our input trace is 
 \[
 \cdots e_1 e_1 e_2 \cdots
 \] In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ is followed by another $e_1$.
@@ -713,13 +712,13 @@ the trace $e_1 e_1 e_2 $ from {\tt zero}.
 On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se. 
 Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$ the transition from {\tt three} to {\tt four} becomes is enabled, the events $e_1e_2$ are consumed and {\tt four} becomes active whereas {\tt three} inactive.
 \end{example}
-\begin{example}
-Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
-\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\] 
-is not matched by any transitions starting from states {\tt one} or {\tt two} in the automaton of Fig~\ref{}. 
-This event is silently consumed but the set of active states does not change. 
-The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
-\end{example}
+%\begin{example}
+%Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
+%\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\] 
+%is not matched by any transitions starting from states {\tt one} or {\tt two} in the automaton of Fig~\ref{}. 
+%This event is silently consumed but the set of active states does not change. 
+%The automaton will take a transition as soon as a suitable event matching an outgoing transition of an active state is encountered in the trace.
+%\end{example}
 %
 %
 \begin{figure}
@@ -763,12 +762,8 @@ g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
 and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
 \begin{example}
 Consider the label 
-\[
- \sim \pattern {v} := \pattern {s}.gets(\pattern {k})
- \] to be matched with the statement 
-\[
- t:=z.gets(h)
-\] Internally,  the label is compiled down to the sequences 
+ $\sim \pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement 
+ {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the sequences 
 \[
 \pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
 \] The upper-script stands for the position of a pattern or an expression. The statement generates the trace of events $e_1 \cdot e_2$ where 
