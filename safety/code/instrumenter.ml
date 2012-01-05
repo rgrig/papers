@@ -173,7 +173,7 @@ let pp_step tags f {PA.guard=g; PA.action=a} =
 let pp_transition tags f {steps=ss;target=t} =
   fprintf f "@[<2>new Transition(@\n@[<2>new TransitionStep[]{%a@]@\n}, %d)@]" (pp_v_list (pp_step tags)) ss t
 
-let pp_vertex tags pov f (vi, {outgoing_transitions=ts;_}) =
+let pp_vertex tags f (vi, {outgoing_transitions=ts;_}) =
   fprintf f "@[<2>new Transition[]{ /* from %d */%a@]@\n}"
     vi
     (pp_v_list (pp_transition tags)) ts
@@ -191,7 +191,7 @@ let pp_automaton f x =
   fprintf f     "/* error messages, one non-null for each property */@\n";
   fprintf f     "@[<2>new String[]{%a}@],@\n" (pp_h_list pp_string) (errors x);
   fprintf f     "/* transitions as an adjacency list */@\n";
-  fprintf f     "@[<2>new Transition[][]{%a@]@\n},@\n" (pp_array (pp_vertex x.pattern_tags pov)) x.vertices;
+  fprintf f     "@[<2>new Transition[][]{%a@]@\n},@\n" (pp_array (pp_vertex x.pattern_tags)) x.vertices;
   fprintf f     "/* property the vertex comes from */@\n";
   fprintf f     "%a,@\n" pp_int_list (Array.to_list pov);
   fprintf f     "/* events each property is observing */@\n";
@@ -199,6 +199,49 @@ let pp_automaton f x =
   fprintf f   "@]));@\n";
   fprintf f "@]@\n}@\n"
 
+(* }}} *)
+(* pretty printing of Java representation in a raw text file *) (* {{{ *)
+(* NOTE: The prefix pq comes after pp; it means nothing otherwise. *)
+let pq_list pe f x = fprintf f "%d @[%a@]" (List.length x) (U.pp_list " " pe) x
+let pq_array pe f x = pq_list pe f (Array.to_list x)
+
+(* TODO: I think I need to generate some Java code for constants. *)
+
+let pq_value_guard f = function
+  | PA.Variable (v, i) -> fprintf f "variable %d %d" i v
+  | PA.Constant (c, i) -> fprintf f "constant %d %s" i c
+
+let pq_pattern tags f p =
+  fprintf f "%a@\n" (pq_list pp_int) (Hashtbl.find tags p)
+
+let pq_condition = pq_list pq_value_guard
+
+let pq_assignment f (x, i) =
+  fprintf f "%d %d" x i
+
+let pq_guard tags f { PA.tag_guard = p; PA.value_guards = cs } =
+  fprintf f "%a@\n%a@\n" (pq_pattern tags) p pq_condition cs
+
+let pq_action = pq_list pq_assignment
+
+let pq_step tags f { PA.guard = g; PA.action = a } =
+  fprintf f "%a@\n%a@\n" (pq_guard tags) g pq_action a
+
+let pq_transition tags f { steps = ss; target = t } =
+  fprintf f "%a@\n%d" (pq_list (pq_step tags)) ss t
+
+let pq_vertex tags f v =
+  fprintf f "%a@\n" (pq_list (pq_transition tags)) v.outgoing_transitions
+
+let pq_automaton f x =
+  let pov = compute_pov x in
+  let obs_p p = Hashtbl.find x.pattern_tags (Hashtbl.find x.observables p) in
+  let obs_tags = List.map obs_p (U.unique (get_properties x)) in
+  fprintf f "%a@\n" (pq_list pp_int) (starts x);
+  fprintf f "%a@\n" (pq_list pp_string) (errors x);
+  fprintf f "%a@\n" (pq_array (pq_vertex x.pattern_tags)) x.vertices;
+  fprintf f "%a@\n" (pq_array pp_int) pov;
+  fprintf f "%a@\n" (pq_list (pq_list pp_int)) obs_tags
 (* }}} *)
 (* conversion to Java representation *) (* {{{ *)
 
@@ -627,7 +670,7 @@ let read_properties fs =
 let generate_checkers out_dir p =
   let out_channel = open_out (Filename.concat out_dir "Property.java") in
   let f = formatter_of_out_channel out_channel in
-  pp_automaton f p
+  fprintf f "@[%a@." pq_automaton p
 
 let () =
   try
@@ -642,7 +685,7 @@ let () =
 (* raise (Helper.Parsing_failed "not really"); *)
     let ps = read_properties !fs in
     let p = transform_properties ps in
-    ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h);
+(*     ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h); *)
 Hashtbl.iter (fun _ xs -> printf "@[%a@." (pp_int_list_display 50) xs) p.pattern_tags;
     generate_checkers !out_dir p
   with
