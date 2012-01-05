@@ -767,6 +767,11 @@ public class Checker {
             assert check();
         }
 
+        public static Automaton parse(String filename) {
+            // TODO(rgrig): Continue here
+            return null;
+        }
+
         boolean check() {
             assert transitions != null;
             assert errorMessages.length == transitions.length;

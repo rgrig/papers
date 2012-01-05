@@ -67,7 +67,7 @@ let pp_list pp_sep pp_element =
   let rec f = fun pp_f -> function
     | [] -> ()
     | [x] -> pp_element pp_f x
-    | x :: xs -> Format.fprintf pp_f "%a%s%a" pp_element x pp_sep f xs in
+    | x :: xs -> Format.fprintf pp_f "@[%a@]%s@,%a" pp_element x pp_sep f xs in
   f
 
 let pp_option pp_e ppf = function
@@ -179,7 +179,7 @@ let open_out_p fn =
   open_out fn
 
 (* TODO:
-  - move operators in another module that can be opened.
+  - nothing for now?
  *)
 (*
 vim:sts=2:sw=2:ts=8:et:
