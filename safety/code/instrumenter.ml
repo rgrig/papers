@@ -265,7 +265,7 @@ let pq_constants j constants =
   fprintf j "@\n@[<2>public static final Object[] constants =@ ";
   fprintf j   "new Object[]{%a@]};" (pp_v_list pp_string) constants;
   fprintf j "@\n@[<2>public static final Checker checker =@ ";
-  fprintf j   "Checker.Automaton.parse(\"Property.text\");@]";
+  fprintf j   "Checker.parseAutomaton(\"Property.text\",@ constants);@]";
   fprintf j "@]@\n}@]"
 
 let generate_checkers out_dir p =

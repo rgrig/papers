@@ -1,11 +1,14 @@
 // header {{{
 package topl;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 // }}}
 public class Checker {
@@ -767,11 +770,6 @@ public class Checker {
             assert check();
         }
 
-        public static Automaton parse(String filename) {
-            // TODO(rgrig): Continue here
-            return null;
-        }
-
         boolean check() {
             assert transitions != null;
             assert errorMessages.length == transitions.length;
@@ -887,6 +885,100 @@ public class Checker {
         }
         states = newActiveStates;
         checkerEnabled = true;
+    }
+    // }}}
+    // parsing {{{
+    public static class Parser {
+        final Scanner scan;
+        final Object[] constants;
+
+        Parser(Scanner scan, Object[] constants) {
+            this.scan = scan;
+            this.constants = constants;
+        }
+
+        // NOTE: May also throw RuntimeException-s if the format is wrong.
+        public static Automaton automaton(String filename, Object[] constants)
+        throws IOException {
+            Scanner scan = new Scanner(new File(filename));
+            return new Parser(scan, constants).automaton();
+        }
+
+        Automaton automaton() {
+            int[] startVertices = ints();
+            String[] errorMessages = strings();
+            Transition[][] transitions = new Transition[scan.nextInt()][];
+            for (int i = 0; i < transitions.length; ++i) {
+                transitions[i] = vertex();
+            }
+            return null;
+        }
+
+        Transition[] vertex() {
+            Transition[] transitions = new Transition[scan.nextInt()];
+            for (int i = 0; i < transitions.length; ++i) {
+                transitions[i] = transition();
+            }
+            return transitions;
+        }
+
+        Transition transition() {
+            TransitionStep[] steps = new TransitionStep[scan.nextInt()];
+            for (int i = 0; i < steps.length; ++i) {
+                steps[i] = step();
+            }
+            return new Transition(steps, scan.nextInt());
+        }
+
+        TransitionStep step() {
+            int[] eventIds = ints();
+            Guard guard = guard();
+            Action action = action();
+            return new TransitionStep(eventIds, guard, action);
+        }
+
+        Guard guard() {
+            Guard[] atoms = new Guard[scan.nextInt()];
+            for (int i = 0; i < atoms.length; ++i) {
+                if (scan.nextInt() == 0) {
+                    int eventIndex = scan.nextInt();
+                    int storeIndex = scan.nextInt();
+                    atoms[i] = new StoreEqualityGuard(eventIndex, storeIndex);
+                } else {
+                    int eventIndex = scan.nextInt();
+                    Object value = constants[scan.nextInt()];
+                    atoms[i] = new ConstantEqualityGuard(eventIndex, value);
+                }
+            }
+            return new AndGuard(atoms);
+        }
+
+        Action action() {
+            Action.Assignment[] assignments =
+                new Action.Assignment[scan.nextInt()];
+            for (int i = 0; i < assignments.length; ++i) {
+                int storeIndex = scan.nextInt();
+                int eventIndex = scan.nextInt();
+                assignments[i] = new Action.Assignment(storeIndex, eventIndex);
+            }
+            return new Action(assignments);
+        }
+
+        int[] ints() {
+            int[] result = new int[scan.nextInt()];
+            for (int i = 0; i < result.length; ++i) {
+                result[i] = scan.nextInt();
+            }
+            return result;
+        }
+
+        String[] strings() {
+            String[] result = new String[scan.nextInt()];
+            for (int i = 0; i < result.length; ++i) {
+                result[i] = (String) constants[scan.nextInt()];
+            }
+            return result;
+        }
     }
     // }}}
     // debug {{{
