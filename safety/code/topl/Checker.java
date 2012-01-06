@@ -897,11 +897,15 @@ public class Checker {
             this.constants = constants;
         }
 
-        // NOTE: May also throw RuntimeException-s if the format is wrong.
-        public static Automaton automaton(String filename, Object[] constants)
-        throws IOException {
-            Scanner scan = new Scanner(new File(filename));
-            return new Parser(scan, constants).automaton();
+        /** Returns {@code null} if something goes wrong. */
+        public static Checker checker(String filename, Object[] constants) {
+            try {
+                Scanner scan = new Scanner(new File(filename));
+                return new Checker(new Parser(scan, constants).automaton());
+            } catch (Exception e) { // method is used as a static initializer
+                e.printStackTrace();
+                return null;
+            }
         }
 
         Automaton automaton() {
@@ -911,7 +915,13 @@ public class Checker {
             for (int i = 0; i < transitions.length; ++i) {
                 transitions[i] = vertex();
             }
-            return null;
+            int filterOfState[] = ints();
+            int[][] filters = new int[scan.nextInt()][];
+            for (int i = 0; i < filters.length; ++i) {
+                filters[i] = ints();
+            }
+            return new Automaton(startVertices, errorMessages, transitions,
+                filterOfState, filters);
         }
 
         Transition[] vertex() {

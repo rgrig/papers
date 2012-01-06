@@ -265,7 +265,7 @@ let pq_constants j constants =
   fprintf j "@\n@[<2>public static final Object[] constants =@ ";
   fprintf j   "new Object[]{%a@]};" (pp_v_list pp_string) constants;
   fprintf j "@\n@[<2>public static final Checker checker =@ ";
-  fprintf j   "Checker.parseAutomaton(\"Property.text\",@ constants);@]";
+  fprintf j   "Checker.Parser.checker(\"Property.text\",@ constants);@]";
   fprintf j "@]@\n}@]"
 
 let generate_checkers out_dir p =
@@ -346,7 +346,7 @@ let transform_properties ps =
 (* bytecode instrumentation *) (* {{{ *)
 
 (* InstrumentationMap *) (* {{{ *)
-
+(* TODO(rgrig): Does the new Barista make this unnecessary? *)
 module InstrumentationMap : sig
   type t
   val insert : t -> int -> BI.t list -> t

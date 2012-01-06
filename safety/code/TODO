@@ -1,6 +1,5 @@
 - cleanup code
   - edge -> arc
-- generate text file with Java automaton to avoid hitting Java method size limit
 - instrumenter should activate Checker at the beginning of main
 - consider reintroducing handling of NOT value patterns
 - cleanup code
