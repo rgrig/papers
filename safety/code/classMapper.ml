@@ -36,13 +36,19 @@ let open_class ?(version = B.Version.default) fn =
       | B.Version.Exception e ->
 	eprintf "@[%s: %s@." fn (B.Version.string_of_error e);
 	None
+      | B.HighClass.Exception e ->
+	eprintf "@[%s: %s@." fn (B.HighClass.string_of_error e);
+	None
+      | B.ClassFile.Exception e ->
+	eprintf "@[%s: %s@." fn (B.ClassFile.string_of_error e);
+	None
       | _ -> eprintf "@[  error decoding %s@." fn; None in
   try
     let ch = open_in fn in
     let cd = read_class_channel ch in
     close_in ch; cd
   with
-    | _ -> eprintf "@[error opening %s@." fn; None
+    | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg; None
 
 let output_class ?(version = B.Version.default) fn c =
   let write_class_channel ch =
@@ -60,7 +66,7 @@ let output_class ?(version = B.Version.default) fn c =
     write_class_channel ch;
     close_out ch
   with
-    | _ -> eprintf "@[error opening %s@." fn
+    | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg
 
 let rec map ?(version = B.Version.default) in_dir out_dir f =
   let process_jar jf =
@@ -72,18 +78,18 @@ let rec map ?(version = B.Version.default) in_dir out_dir f =
       let e_fn = tmp_in_dir / e.Zip.filename in
       U.mkdir_p (F.dirname e_fn);
       if not e.Zip.is_directory then
-      (printf "@[extracting %d bytes to %s@." e.Zip.uncompressed_size e_fn;
+      (if log log_cm then fprintf logf "@[extracting %d bytes to %s@." e.Zip.uncompressed_size e_fn;
       Zip.copy_entry_to_file jar_in e e_fn) in
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
     map ~version tmp_in_dir tmp_out_dir f;
-    printf "@[REMOVING %s@]" tmp_in_dir;
+    if log log_cm then fprintf logf "@[REMOVING %s@]" tmp_in_dir;
     U.rm_r tmp_in_dir;
     let jar_out = Zip.open_out (out_dir / jf) in
     let intract _ fn =
       if Sys.is_directory (tmp_out_dir / fn) then Zip.add_entry "" jar_out (ensure_dir fn)
       else
-      (printf "@[intracting %d bytes from %s@." (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
+      (if log log_cm then fprintf logf "@[intracting %d bytes from %s@." (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
        Zip.copy_file_to_entry (tmp_out_dir / fn) jar_out fn) in
     U.rel_fs_preorder tmp_out_dir intract F.current_dir_name;
     Zip.close_out jar_out;
