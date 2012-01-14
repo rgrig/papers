@@ -1,5 +1,7 @@
 open Format
 
+let log_cm = 0 (* classmapper *)
+
 let log_cp = 1 lsl 1 (* classpath; bytecode lookup *)
 
 let log_active = log_cp
