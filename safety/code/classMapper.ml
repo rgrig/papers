@@ -22,13 +22,12 @@ let mk_tmp_dir p s =
 let ensure_dir f =
   if F.check_suffix f "/" then f else (f ^ "/")
 
-let open_class ?(version = B.Version.default) fn =
+let open_class fn =
   let read_class_channel ch =
     try
       let cl_in = B.InputStream.make_of_channel ch in
       let cf = B.ClassFile.read cl_in in
-      let cd = B.HighClass.decode ~version cf in
-      Some cd
+      Some (B.HighClass.decode cf)
     with
       | B.InputStream.Exception e ->
 	eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e);
@@ -53,7 +52,7 @@ let open_class ?(version = B.Version.default) fn =
 let output_class ?(version = B.Version.default) fn c =
   let write_class_channel ch =
     try
-      let bytes = B.HighClass.encode ~version c in
+      let bytes = B.HighClass.encode (c, version) in
       B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
     with
       | B.Version.Exception e -> eprintf "@[%s: %s@." fn (B.Version.string_of_error e)
@@ -68,7 +67,7 @@ let output_class ?(version = B.Version.default) fn c =
   with
     | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg
 
-let rec map ?(version = B.Version.default) in_dir out_dir f =
+let rec map in_dir out_dir f =
   let process_jar jf =
   if log log_cm then fprintf logf "@[map jar: %s@." (in_dir / jf);
     let tmp_in_dir = mk_tmp_dir "in_" "_jar" in
@@ -82,7 +81,7 @@ let rec map ?(version = B.Version.default) in_dir out_dir f =
       Zip.copy_entry_to_file jar_in e e_fn) in
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
-    map ~version tmp_in_dir tmp_out_dir f;
+    map tmp_in_dir tmp_out_dir f;
     if log log_cm then fprintf logf "@[REMOVING %s@]" tmp_in_dir;
     U.rm_r tmp_in_dir;
     let jar_out = Zip.open_out (out_dir / jf) in
@@ -96,9 +95,9 @@ let rec map ?(version = B.Version.default) in_dir out_dir f =
     U.rm_r tmp_out_dir in
   let process_class fn =
     if log log_cm then fprintf logf "@[map class: %s@." (in_dir / fn);
-    match open_class ~version (in_dir / fn) with
+    match open_class (in_dir / fn) with
     | None -> U.cp (in_dir / fn) (out_dir / fn)
-    | Some cd ->
+    | Some (cd, version) ->
         let inst_cd = f cd in
         output_class ~version (out_dir / fn) inst_cd in
   let process _ fn =
@@ -112,7 +111,7 @@ let rec map ?(version = B.Version.default) in_dir out_dir f =
   if log log_cm then fprintf logf "@[map: %s -> %s@." in_dir out_dir;
   U.rel_fs_preorder in_dir process F.current_dir_name
 
-let rec iter ?(version = B.Version.default) in_dir f =
+let rec iter in_dir f =
   let iter_jar jf =
   if log log_cm then fprintf logf "@[iter jar: %s@." jf;
     let tmp_in_dir = mk_tmp_dir "iter_" "_jar" in
@@ -123,13 +122,13 @@ let rec iter ?(version = B.Version.default) in_dir f =
       if not e.Zip.is_directory then Zip.copy_entry_to_file jar_in e e_fn in
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
-    iter ~version tmp_in_dir f;
+    iter tmp_in_dir f;
     U.rm_r tmp_in_dir in
   let iter_class fn =
     if log log_cm then fprintf logf "@[iter class: %s@." fn;
-    match open_class ~version (in_dir / fn) with
+    match open_class (in_dir / fn) with
     | None -> ()
-    | Some cd -> f cd in
+    | Some (cd, _) -> f cd in
   let process _ fn =
     printf "@[iterating %s@." (in_dir / fn);
     if Sys.is_directory (in_dir / fn) then printf "@[directory@."

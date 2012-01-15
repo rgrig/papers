@@ -27,9 +27,8 @@ let removeLNT c =
 let () =
   let in_dir = ref Filename.current_dir_name in
   let out_dir = ref (Filename.concat Filename.temp_dir_name "out") in
-  let version = B.Version.Java_1_7 in
   Arg.parse ["-i", Arg.Set_string in_dir, "input directory";
              "-o", Arg.Set_string out_dir, "output directory"]
             (fun _ -> ())
             "usage: /id_instr [-i <input directory>][-o <output directory>]";
-   ClassMapper.map ~version !in_dir !out_dir removeLNT
+   ClassMapper.map !in_dir !out_dir removeLNT
