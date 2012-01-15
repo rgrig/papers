@@ -121,50 +121,54 @@ We have validated our technique by checking several safety properties on large o
 
 % >>>
 \section{Introduction} % <<<
+\dinocomment{dici che proponiamo una extension dei register automata and typestate per fare object oriented checking. Questo rispetto ad altri formalismi ha la caratteristica di avere una view globale. Ma anche grazie al fatto di avere i registers e' piu' expressiva della temporal logic normale. }
 Objects interaction is at the core of the object-oriented paradigm. When designing object-oriented software, 
 programmers have often  a global picture of the co-operation that objects will have in different moments in time and the 
 invariants that all the player should adhere to for the correct functioning of the system.
+These invariants are often naturally expressible as {\em temporal safety properties}, a field extensively 
+studied in several contexts by both the formal methods and the verification community. 
+%
+In this article, we focus on the automatic run-time checking of safety temporal properties in an object-oriented setting. 
+%One first difficulty in attacking this problem is a suitable formal specification language which takes into account the %peculiarities of object-oriented programming. 
 Consider for  example  Java collections. A typical property one would want to state is:
 \begin{quote}
 {\em If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used.}
 \end{quote}
 \noindent
 The formalization of the above constraint is non-trivial since it 
-needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
-
-In this paper we define  \TPL\ (Temporal Object-oriented Property Language), a language for specifying automata equipped with registers that allow a natural and compact formalization of safety temporal properties of
-object-oriented software as the one above. 
-\TPL \ takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows 
-articulating  relationships and interactions among several objects.
-Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object. TOPL, in contrast,  intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.  Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
-One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}. 
+needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction}.
+Although several existing specification languages for safety temporal properties of object-oriented software do exist~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002},
+they do not allow expressing the interaction involved in properties like the above in a straightforward manner. 
+%It seems therefore worthwhile to attempt to define a different language which would make this task easier.  
+For this reasons,  we have defined  \TPL\ (Temporal Object-oriented Property Language).
+%Bierhoff and Aldrich~\cite{dblp:conf/oopsla/bierhoffa07} as well as Naeem and Lhot\'ak~\cite{dblp:conf/oopsla/naeeml08} use specification languages inspired by typestates~\cite{strom1986}.
+%Specifically, Bierhoff and Aldrich~\cite{dblp:conf/oopsla/bierhoffa07} use a combination of linear logic~\cite{dblp:journals/tcs/girard87} and access permissions, while Naeem and Lhot\'ak~\cite{dblp:conf/oopsla/naeeml08} use tracematches.
+%Disney et al.~\cite{disney2011} use a language based on regular grammars to specify higher-order temporal contracts.
+%Finally, Ball and Rajamani~\cite{ball2002} essentially use nondeterministic aspect-oriented programming.
 %
-However, the ability of \TPL's automata to store,  update, and compare values of their registers 
-makes TOPL imore expressive than tracematches. For example, \TPL \ allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems. Moreover, the manipulation of registers  gives the automata more expressivity than standard temporal formalisms (e.g., LTL and CTL) and make \TPL \ specification rather high-level. The latter aspect
-helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
+\TPL \ takes inspiration from several of such existing  languages, but it allows 
+to naturally express  the relationships and interactions among several objects.
+Most of the existing techniques aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
+In contrast, TOPL intentionally avoids such decomposition.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants. 
+Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
+In this way,  
+TOPL helps in  reducing the semantic gap between 
+the intuitive understanding that programmers have of various temporal constraints on their code 
+and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
 
-%Although several existing specification languages for safety temporal properties of object-oriented software do exist~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002},
-%they do not allow expressing the interaction involved in properties like the above in a straightforward manner. 
-%%It seems therefore worthwhile to attempt to define a different language which would make this task easier.  
-%For this reasons,  we have defined  \TPL\ (Temporal Object-oriented Property Language).
-%
-%\TPL \ takes inspiration from several of such existing  languages, but it allows 
-%to naturally express  the relationships and interactions among several objects.
-%Most of the existing techniques aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
-%In contrast, TOPL intentionally avoids such decomposition.
-%Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants. 
-%Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
-%In this way,  
+
+One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}. However, TOPL is strictly more expressive than tracematches as it allow, for example, to encode properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
+
+%Moreover, by being high-level,  
 %TOPL helps in  reducing the semantic gap between 
 %the intuitive understanding that programmers have of various temporal constraints on their code 
 %and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
-
-Having defined \TPL \ automata as a convenient way to provide formal specification of temporal properties
-of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
-Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
+Having defined how to specify temporal properties in a convenient  and formal way, 
+we introduce a technique for automatically checking them at run-time on Java programs.
+Our method involves instrumenting the Java byte code in a way it reflects the TOPL property of interest.
 Automatic run-time checking of TOPL properties is beneficial for the programmer as
  it relieves him/her from the burden of 
 interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
@@ -174,8 +178,7 @@ In contrast, dynamically checking TOPL properties  with the technique we present
 
 In summary, the contributions of this paper are:
 \begin{itemize}
-\item The definition of TOPL, a new specification language tailored 
-to temporal specification of object-oriented software able to express properties involving several objects and their interactions.
+\item The definition of TOPL, a new temporal specification language tailored to object-oriented software able to express properties involving several objects and their relations/interactions.
 \item For TOPL we have defined a precise formal semantics making the language suitable for program analysis (both static and dynamic) and verification. 
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
 \item We have implemented our technique and we report experiments on large open source projects.
