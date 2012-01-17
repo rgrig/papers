@@ -132,7 +132,8 @@ Consider for  example  Java collections. A typical property one would want to st
 The formalization of the above constraint is non-trivial since it 
 needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
 
-In this paper we define  \TPL\ (Temporal Object-oriented Property Language), a language for specifying automata equipped with registers that allow a natural and compact formalization of safety temporal properties of
+In this paper we define  \TPL\ (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of 
+events. These automata allow a natural and compact formalization of safety temporal properties of
 object-oriented software as the one above. 
 \TPL \ takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows 
 articulating  relationships and interactions among several objects.
@@ -174,8 +175,8 @@ In contrast, dynamically checking TOPL properties  with the technique we present
 
 In summary, the contributions of this paper are:
 \begin{itemize}
-\item The definition of TOPL, a new specification language tailored 
-to temporal specification of object-oriented software able to express properties involving several objects and their interactions.
+\item The definition of TOPL, a new specification language for an extension of register automata tailored to
+ expressing  properties involving interaction of objects over time. 
 \item For TOPL we have defined a precise formal semantics making the language suitable for program analysis (both static and dynamic) and verification. 
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
 \item We have implemented our technique and we report experiments on large open source projects.
