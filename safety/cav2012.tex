@@ -328,10 +328,10 @@ The empty map is denoted by~$[]$.
 
 The automaton has variables $x$,~$y$, and~$c$.
 At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
-at vertex \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
+at \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
 At vertex \texttt{one} $x$~is an iterator for a collection~$c$, and
-at vertex \texttt{two}, $x$~and~$y$ are both two iterators for the same collection~$c$.
-Notice that there is a program variable~\Verb@c@ and an automaton variable~$c$.
+at \texttt{two}, $x$~and~$y$ are both two iterators for the same collection~$c$.
+Notice that~\Verb@c@ is a program variable whereas~$c$ is an automaton variable.
 The same name was chosen because the two variables always hold the same value in this example.
 In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
 
