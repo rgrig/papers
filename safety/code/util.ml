@@ -127,17 +127,16 @@ let cartesian xss =
   f [[]] xss
 
 let rec rel_fs_preorder top m f =
-  let f_full = Filename.concat top f in
-  if Sys.file_exists f_full then begin
-    m top f;
-    if Sys.is_directory f_full then begin
-      let children = Array.map (Filename.concat f) (Sys.readdir f_full) in
-      if log log_cm then (
-	fprintf logf "@[traversing %d children:@." (Array.length children);
-	Array.iter (Format.printf "@[  %s@.") children);
-      Array.iter (rel_fs_preorder top m) children
-    end
-  end
+  let (/) = Filename.concat in
+  let here = top/f in
+  assert (Sys.is_directory here);
+  let pc c =
+    if log log_cm then
+      fprintf logf "@[rel_fs_preorder %s %s@." top f;
+    m top (f/c);
+    if Sys.is_directory (here/c) then
+      rel_fs_preorder top m (f/c) in
+  Array.iter pc (Sys.readdir here)
 
 let rec fs_postorder m f =
   if Sys.file_exists f then begin

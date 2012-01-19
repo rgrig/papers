@@ -90,7 +90,7 @@ let rec map in_dir out_dir f =
       else
       (if log log_cm then fprintf logf "@[intracting %d bytes from %s@." (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
        Zip.copy_file_to_entry (tmp_out_dir / fn) jar_out fn) in
-    U.rel_fs_preorder tmp_out_dir intract F.current_dir_name;
+    U.rel_fs_preorder tmp_out_dir intract "";
     Zip.close_out jar_out;
     U.rm_r tmp_out_dir in
   let process_class fn =
@@ -109,7 +109,7 @@ let rec map in_dir out_dir f =
       else U.cp (in_dir / fn) (out_dir / fn)
     end in
   if log log_cm then fprintf logf "@[map: %s -> %s@." in_dir out_dir;
-  U.rel_fs_preorder in_dir process F.current_dir_name
+  U.rel_fs_preorder in_dir process ""
 
 let rec iter in_dir f =
   let iter_jar jf =
@@ -134,7 +134,7 @@ let rec iter in_dir f =
     if Sys.is_directory (in_dir / fn) then printf "@[directory@."
     else if is_jar fn then iter_jar fn
     else if is_class fn then iter_class fn in
-  U.rel_fs_preorder in_dir process F.current_dir_name
+  U.rel_fs_preorder in_dir process ""
 
 (*
 vim:sts=2:sw=2:ts=8:et:

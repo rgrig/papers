@@ -717,7 +717,7 @@ let () =
     let h = compute_inheritance !in_dir in
     let ps = read_properties !fs in
     let p = transform_properties ps in
-(*     ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h); *)
+    ClassMapper.map !in_dir !out_dir (instrument_class (get_tag p) h);
     generate_checkers !out_dir p
   with
     | Helper.Parsing_failed m -> eprintf "@[%s@." m
