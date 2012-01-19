@@ -135,7 +135,7 @@ needs to keep track of {\em several objects} (at least two iterators, and one co
 In this paper we define  \TPL\ (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of 
 events. These automata allow a natural and compact formalisation of safety temporal properties of
 object-oriented software as the one above. 
-Moreover, the manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).  For example, \TPL \ allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
+The manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).  For example, \TPL \ allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
 
 \TPL \ takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows 
 articulating  relationships and interactions among several objects.
@@ -143,7 +143,7 @@ Existing techniques for type-state aim at decomposing properties involving sever
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.  Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
 One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}. 
 %
-However, the ability of \TPL's automata to store,  update, and compare values of their registers 
+Again, the ability of \TPL's automata to store,  update, and compare values of their registers 
 makes TOPL \ more expressive than tracematches.
 
 \TPL \ specification are high-level and this aspect
@@ -201,12 +201,12 @@ In this section we introduce TOPL in an informal way by means of examples.
 
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
-The informal safety property in the introduction can be better restated as:
-\begin{quote}
-\emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
-\end{quote}
-\noindent
-The last statement in \autoref{fig:first.java} violates this property, therefore throwing an exception.
+%The informal safety property in the introduction can be better restated as:
+%\begin{quote}
+%\emph{Modifying a collection through an iterator invalidates other iterators for the same collection}.
+%\end{quote}
+%\noindent
+The last statement in \autoref{fig:first.java} violates the property of the introduction, therefore throwing an exception.
 There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
 Such properties are often explained using diagrams that are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06} or sometimes expressive, but imprecise~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 %\dinocomment{what does it mean exactly? That they do not have defined formal semantics?}
@@ -218,13 +218,13 @@ transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
 There are two special vertices: \start, from where the execution begins; and \error, where the execution ends.
 Labels resemble the shape of statements that enable the corresponding transition.
 
-\begin{figure} % first example <<<
+\begin{figure}[t] % first example <<<
 \include{IncorrectIteratorUse}
 \caption{A first example: Java code}
 \label{fig:first.java}
 \end{figure}
 %
-\begin{figure}
+\begin{figure}[t]
 \begin{tikzpicture}
   \def\x{2.5}
   \def\y{1.5}
@@ -259,12 +259,12 @@ property InvalidateOtherIterators
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}    
-\caption{The property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
+\caption{Property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
 }
 \label{fig:first.topl}
 \end{figure}
 %
-\begin{figure}
+\begin{figure}[t]
 {\def\s#1{\text{\Verb@#1@}}
  \def\m#1{\PY{n+na}{#1}}
  \def\t#1{\mathtt{#1}}
@@ -306,9 +306,9 @@ property InvalidateOtherIterators
       &(\error,[c:1,x:2,y:3])\;\}
   \end{aligned}\\
 \end{align*}}
-\caption{A first example: Running step by step.Lines \{in curly brackets\} describe the state of the automaton;
-lines in \texttt{monotype} show the statements that execute;
-comments start with //.}
+\caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
+lines in \texttt{monotype} show executing statements;
+// are comments.}
 \label{fig:first.steps}
 \end{figure} % >>>
 \autoref{fig:first.steps} shows an execution of the program and of an automaton for the property \texttt{InvalidateOtherIterators}.
@@ -337,9 +337,8 @@ In general, however, program variables and automaton variables live in different
 
 %\begin{notation}
 To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
-Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$).
-Program variables appear in the program;
-automaton variables do \emph{not} appear in the property.
+Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and 
+ do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 %\end{notation}
 %
