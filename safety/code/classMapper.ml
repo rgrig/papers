@@ -69,7 +69,7 @@ let output_class ?(version = B.Version.default) fn c =
 
 let rec map in_dir out_dir f =
   let process_jar jf =
-  if log log_cm then fprintf logf "@[map jar: %s@." (in_dir / jf);
+    if log log_cm then fprintf logf "@[map jar: %s@." (in_dir / jf);
     let tmp_in_dir = mk_tmp_dir "in_" "_jar" in
     let tmp_out_dir = mk_tmp_dir "out_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
@@ -109,6 +109,7 @@ let rec map in_dir out_dir f =
       else U.cp (in_dir / fn) (out_dir / fn)
     end in
   if log log_cm then fprintf logf "@[map: %s -> %s@." in_dir out_dir;
+  U.mkdir_p out_dir;
   U.rel_fs_preorder in_dir process ""
 
 let rec iter in_dir f =
