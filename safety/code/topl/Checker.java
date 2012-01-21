@@ -1029,7 +1029,7 @@ public class Checker {
 		s.append(transition.target);
 		s.append(" [label=\"");
 		for (TransitionStep step : transition.steps) {
-		    s.append(cap <= 0 || step.eventIds.size() <= cap ? step.eventIds.toString() : "[more than " + cap + "]");
+		    s.append(cap <= 0 || step.eventIds.size() <= cap ? step.eventIds.toString() : "[" + step.eventIds.size() + " ids (>" + cap + ")]");
 		    s.append(step.guard.toString());
 		    s.append("<");
 		    for(Map.Entry a : step.action.assignments.entrySet()) {
