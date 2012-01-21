@@ -38,6 +38,9 @@
       ; "var", VAR
       ; "while", WHILE ];
     fun id -> l (try Hashtbl.find table id with Not_found -> ID id)
+
+  let quoted = Str.regexp "\\\\\\(.\\)"
+  let unquote x = Str.global_replace quoted "\\1" x
 }
 
 let id_head = ['a'-'z' 'A'-'Z']
@@ -68,8 +71,8 @@ rule tok1 = parse
   | '}'     { l RC }
   | ')'     { l RP }
   | '*'     { l STAR }
-  | '<' ([^ '>' '\n']* as x) '>'
-            { l (CONSTANT x) }
+  | '<' (([^ '>' '\\' '\n'] | ('\\' _))* as x) '>'
+            { l (CONSTANT (unquote x)) }
   | '"' ([^ '"' '\n']* as x) '"'
             { l (STRING x) }
   | '-'? ['0'-'9']+ as n
