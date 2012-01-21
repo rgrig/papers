@@ -528,21 +528,39 @@ The syntax of TOPL is as follows:
 %\begin{figure}
 \grammar{
   Property& \b{property} Identifier Using\* Transition\* \cr
-  Using& \b{using prefix} StringPattern \cr
+  Using& \b{using prefix} NamePattern \cr
   Transition& Arc \b: Label \(\b, Label\)\* \cr
-  StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
+%  StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
   Arc& Vertex \b{->} Vertex \cr
   Label& Tag\? MethodPattern \cr
   Vertex& Identifier \cr
   Tag& \b{call} \| \b{return} \cr
-  MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
-  ResultPattern& ValuePattern \b{:=} \cr
-  NamePattern& StringPattern \cr
+  MethodPattern& (ValuePattern \b{:=} )\? NamePattern ArgumentsPattern \cr
+%  ResultPattern& ValuePattern \b{:=} \cr
+  NamePattern& \(Letter \| \b. \| \b*\)\+ \cr
   ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
-  ArgumentsPattern& \b[ IntegerPattern \b] \cr
+  ArgumentsPattern& \b[ \b* \b] \|  \b[ IntegerLiteral \b] \cr
   ValuePattern& \b* \| Literal \| UppercaseId \| \b!\? LowercaseId \cr
-  IntegerPattern& \b* \| IntegerLiteral \cr
+%  IntegerPattern& \b* \| IntegerLiteral \cr
 }
+%\grammar{
+%  Property& \b{property} Identifier Using\* Transition\* \cr
+%  Using& \b{using prefix} StringPattern \cr
+%  Transition& Arc \b: Label \(\b, Label\)\* \cr
+%  StringPattern& \(Letter \| \b. \| \b*\)\+ \cr
+%  Arc& Vertex \b{->} Vertex \cr
+%  Label& Tag\? MethodPattern \cr
+%  Vertex& Identifier \cr
+%  Tag& \b{call} \| \b{return} \cr
+%  MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
+%  ResultPattern& ValuePattern \b{:=} \cr
+%  NamePattern& StringPattern \cr
+%  ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
+%  ArgumentsPattern& \b[ IntegerPattern \b] \cr
+%  ValuePattern& \b* \| Literal \| UppercaseId \| \b!\? LowercaseId \cr
+%  IntegerPattern& \b* \| IntegerLiteral \cr
+%}
+
 %\caption{Syntax of TOPL}
 %\label{fig:syntax.topl}
 %\end{figure}
@@ -557,15 +575,14 @@ Each label has a method pattern that is used to identify the set of methods to w
 In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
 The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed (see \autoref{sec:semantics.itopl} for details).
-%\dinocomment{Does anybody else has the ability to distinguish between call/return?}
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
 %
-
-There are three types of patterns used in TOPL---for strings, integers, and values.
-String patterns are POSIX globs~\cite{man:glob.h} and match method names.
-(For simplicity, TOPL does not use full regular expressions as string patterns.)
-Integer patterns specify method arities.
-Value patterns are the most interesting.
+%There are three types of patterns used in TOPL---for strings, integers, and values.
+Name patterns are POSIX globs and match method names.
+%(For simplicity, TOPL does not use full regular expressions as string patterns.)
+%Integer patterns specify method arities.
+%Value patterns are the most interesting.
+\paragraph{On the Value Patterns mechanism.}
 For each automaton variable \Verb@v@ there are three associated patterns.
 The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
 The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
@@ -573,9 +590,10 @@ The negated lowercase pattern \Verb@!v@ reads the value of the automaton variabl
 A Java literal acts as a pattern that matches only the value it denotes.
 A wildcard~* pattern matches any value.
 
+\smallskip
 A TOPL property is \emph{well-formed} when it satisfies the following two conditions:
-labels must contain uppercase value patterns at most once, and
-any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from the \start vertex (i.e., automaton variables must be written before being read).
+{\em (i)} labels must contain uppercase value patterns at most once; {\em (ii)}
+any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
 %
 From now on we assume TOPL properties to be well-formed.
 
@@ -590,7 +608,7 @@ In other words, properties encode bad executions, rather than good executions.
 \newcommand{\World}{ExecState}
 
 Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program,
-gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$ representing the 
+gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$. This automaton represents the 
 semantics of the property interpreted over the program.
 $\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively. 
 
@@ -609,7 +627,7 @@ $(\set{State}, \to , \set{Init}, \set{Error})$ where
 \item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
 \item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
 \item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
-\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma), \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
+\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
 \end{itemize} 
 \end{definition}
 A state of the automaton is
@@ -619,12 +637,12 @@ each label in $\set{Arc}$ carries (potentially) a list of guards and
 we call the length of this list, the \emph{depth} of the arc.
 Since different outgoing arcs for a vertex can have different depths, we have that 
 different target states of execution transitions may receive different events.
-For example for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have
+For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have
 depth 2 and 5 rispectively,
 then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
 
 In order to define the transition relation $\to$ we need to define two auxiliary concepts. 
-The effect of the actions in an arc label on a store when observing a trace is given by the function
+When observing a trace, the effect of actions in an arc label on a store  is given by the function
 \[
    A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
 \] and defined as
@@ -653,6 +671,7 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      \right.
 \end{array}
 \end{array}\]
+\dinocomment{check the above definition for values like $A(\sigma,\epsilon,\tau)$}
 In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event
 and therefore updating the store $\sigma$.
 With $A$ we can define the predicates $enabled$
@@ -699,15 +718,13 @@ the arc of the transition, $\sigma_2$ is defined by the modification imposed by 
 $\tau_2$ is the leftover of the event trace before the transition after dropping
 $|l|$ events.
 \begin{example}
-Consider the two automata in Figure~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume that our input trace is 
-\[
-\cdots e_1 e_1 e_2 \cdots
-\] In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ is followed by another $e_1$.
+Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume that our input trace is 
+$\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
 Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive. 
 Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by 
 the trace $e_1 e_1 e_2 $ from {\tt zero}. 
 On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se. 
-Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$ the transition from {\tt three} to {\tt four} becomes is enabled, the events $e_1e_2$ are consumed and {\tt four} becomes active whereas {\tt three} inactive.
+Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled. Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
 \end{example}
 %\begin{example}
 %Consider {\em Step 3} in Section~\ref{}. The event produced by the statement 
@@ -718,7 +735,7 @@ Notice that the only outgoing transition on the active state {\tt three} needs a
 %\end{example}
 %
 %
-\begin{figure}
+\begin{figure}[t]
 \begin{tikzpicture}
   \def\x{2.5}
   \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
@@ -747,11 +764,11 @@ Notice that the only outgoing transition on the active state {\tt three} needs a
 \[
 \set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
 \]
-A general guard can be instantiated with a pattern  name, $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern. By providing these arguments we obtained an {\em instantiated guard}:
+An {\em instantiated guard} is a general guard provided with instances of a pattern  name $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern:
 \[
 g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
 \]
-that given an event and a store evaluate whether the event satisfy the guard in the store. It is defined as:
+Given an event and a store, an instantiated guard  evaluates whether the event satisfy the guard in the store. It is defined as:
 \newcommand{\sem}[1]{[ \! | #1 | \! ]}
 \[
 g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
@@ -763,13 +780,13 @@ Consider the label
  {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the sequences 
 \[
 \pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
-\] The upper-script stands for the position of a pattern or an expression. The statement generates the trace of events $e_1 \cdot e_2$ where 
+\] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where 
 \[ 
  e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])
 \] 
 The instantiated guard for the label are:
  $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.  
-Notice that the predicates we want to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$, 
+Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$, 
 but inequality for \pattern{v} (because of $\sim$).
 The instantiated guards, can now be evaluated with the events by taking their conjunction:
 \[ 
@@ -865,10 +882,10 @@ very general specifications of object-oriented program behaviour can be given in
 
 In~\cite{disney2011} contracts are used to express legal traces of
 programs in a functional language with references. The contracts
-specify traces as regular expressions over calls and returns and so
-look similar to our automatons, if for a quite different
+specify traces as regular expressions over calls and returns, and hence,
+they resemble our automata, in a quite different
 setting. Here, the specifications are function-centered, though, and
-again, capturing inter object relations seems somewhat awkward.
+again, capturing inter-object relations seems somewhat tricky.
 
 \dinocomment{Add more on dynamic checks and byte code instrumentation}
 
@@ -891,12 +908,131 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 
 %>>>
 \begin{thebibliography}{10}
-\bibitem{man:glob.h}\texttt{man glob.h}.\bibitem{jml}\url{http://www.eecs.ucf.edu/~leavens/JML}.
+
+%\bibitem{man:glob.h}
+%\texttt{man glob.h}.
+
+\bibitem{jml}
+\url{http://www.eecs.ucf.edu/~leavens/JML}.
 
 \bibitem{AL88}
 M.~Abadi and L.~Lamport.
 \newblock The Existence of Refinement Mappings.
-\newblock LICS, pp. 165-175. ACM 1988.\bibitem{DBLP:conf/oopsla/AllanACHKLMSST05}C.~Allan, P.~Avgustinov, A.~S.~Christensen, L.~J.~Hendren,  S.~Kuzins, O.~Lhot{\'a}k, O.~de~Moor, D.~Sereni, G.~Sittampalam, and J.~Tibble.\newblock Adding trace matching with free variables to aspectj.\newblock In {\em OOPSLA}, pp. 345--364. ACM, 2005.\bibitem{dblp:conf/cav/ballr01}T.~Ball and S.~K. Rajamani.\newblock The {SLAM} toolkit.\newblock In  {\em CAV}, LNCS 2102, pp. 260--264. Springer, 2001.\bibitem{ball2002}T.~Ball and S.~K. Rajamani.\newblock {\sc Slic}: a specification language for interface checking (of {C}).\newblock Technical Report MSR-TR-2001-21, Microsoft Research, 2002.\bibitem{DBLP:journals/jot/BarnettDFLS04}M.~Barnett, R.~DeLine, M.~F{\"a}hndrich, K.~R.~M. Leino, and  W.~Schulte.\newblock Verification of object-oriented programs with invariants.\newblock {\em J. of Obj. Technology}, 3(6):27--56,~2004.\bibitem{dblp:conf/sigsoft/BierhoffA05}K.~Bierhoff and J.~Aldrich.\newblock Lightweight object specification with typestates.\newblock In {\em ESEC/SIGSOFT FSE}, pp. 217--226. ACM, 2005.\bibitem{dblp:conf/oopsla/bierhoffa07}K.~Bierhoff and J.~Aldrich.\newblock Modular typestate checking of aliased objects.\newblock In  {\em OOPSLA}, pp. 301--320. ACM, 2007.\bibitem{dblp:conf/ecoop/bierhoffba09}K.~Bierhoff, N.~E. Beckman, and J.~Aldrich.\newblock Practical {API} protocol checking with access permissions.\newblock In {\em ECOOP}, LNCS 5653, pp. 195--219. Springer, 2009.\bibitem{dblp:conf/sigsoft/boddenlh08}E.~Bodden, P.~Lam, and L.J. Hendren.\newblock Finding programming errors earlier by evaluating runtime monitors  ahead-of-time.\newblock In  {\em SIGSOFT FSE}, pp. 36-47. ACM,~2008.\bibitem{dblp:conf/popl/CalcagnoDOY09}C.~Calcagno, D.~Distefano, P.~W. O'Hearn, and H.~Yang.\newblock Compositional shape analysis by means of bi-abduction.\newblock In {\em POPL}, pp. 289--300. ACM, 2009.\bibitem{dblp:conf/sigsoft/AlfaroH01}L.~de~Alfaro and T.~A. Henzinger.\newblock Interface automata.\newblock In {\em ESEC / SIGSOFT FSE}, pages 109--120, 2001.\bibitem{deline2004}R.~DeLine and M. F{\"a}hndrich.\newblock Typestates for objects.\newblock In {\em ECOOP}, LNCS 3086, pp. 465--490. Springer, 2004.\bibitem{DBLP:journals/tocl/DemriL09}S.~Demri and R.~Lazic.\newblock Ltl with the freeze quantifier and register automata.\newblock {\em ACM Trans. Comput. Log.}, 10(3), 2009.\bibitem{disney2011}T.~Disney, C.~Flanagan, J.~McCarthy.\newblock Temporal higher-order contracts.\newblock In {\em ICFP}, 2011.\bibitem{DBLP:conf/oopsla/DistefanoP08}D.~Distefano and M.~J. Parkinson.\newblock {jStar}: towards practical verification for {Java}.\newblock In {\em OOPSLA}, pages 213--226. ACM 2008.\bibitem{dblp:journals/scp/FieldGRY05}J.~Field, D.~Goyal, G.~Ramalingam, E.~Yahav.\newblock Typestate verification: Abstraction techniques and complexity  results.\newblock {\em Sci. Comput. Program.}, 58(1-2):57--82,~2005.\bibitem{dblp:conf/issta/FinkYDRG06}S.~J. Fink, E.~Yahav, N. Dor, G.~Ramalingam, and E.~Geay.\newblock Effective typestate verification in the presence of aliasing.\newblock In  {\em ISSTA}, pp. 133--144. ACM, 2006.%\bibitem{dblp:conf/oopsla/2008}%Gail~E. Harris, editor.%\newblock {\em Proceedings of the 23rd Annual ACM SIGPLAN Conference on%  Object-Oriented Programming, Systems, Languages, and Applications, OOPSLA%  2008, October 19-23, 2008, Nashville, TN, USA}. ACM, 2008.\bibitem{dblp:conf/oopsla/naeeml08}N.~A. Naeem and O.~Lhot{\'a}k.\newblock Typestate-like analysis of multiple interacting objects.\newblock In OOPSLA 2008, pages 347--366. ACM 2008.\bibitem{parkinson-iwaco2007}M.~Parkinson.\newblock Class invariants: the end of the road?\newblock In {\em IWACO 2007}.\bibitem{reynolds2002}J.~C. Reynolds.\newblock Separation logic: A logic for shared mutable data structures.\newblock In {\em LICS}, pages 55--74. IEEE Computer Society, 2002.\bibitem{strom1986}R.~E. Strom and S.Yemini.\newblock Typestate: A programming language concept for enhancing software  reliability.\newblock {\em IEEE Trans. Software Eng.}, 12(1):157--171, 1986.%\end{thebibliography}
+\newblock LICS, pp. 165-175. ACM 1988.
+
+\bibitem{DBLP:conf/oopsla/AllanACHKLMSST05}
+C.~Allan, P.~Avgustinov, A.~S.~Christensen, L.~J.~Hendren,
+  S.~Kuzins, O.~Lhot{\'a}k, O.~de~Moor, D.~Sereni, G.~Sittampalam, and J.~Tibble.
+\newblock Adding trace matching with free variables to aspectj.
+\newblock In {\em OOPSLA}, pp. 345--364. ACM, 2005.
+
+\bibitem{dblp:conf/cav/ballr01}
+T.~Ball and S.~K. Rajamani.
+\newblock The {SLAM} toolkit.
+\newblock In  {\em CAV}, LNCS 2102, pp. 260--264. Springer, 2001.
+
+\bibitem{ball2002}
+T.~Ball and S.~K. Rajamani.
+\newblock {\sc Slic}: a specification language for interface checking (of {C}).
+\newblock Technical Report MSR-TR-2001-21, Microsoft Research, 2002.
+
+\bibitem{DBLP:journals/jot/BarnettDFLS04}
+M.~Barnett, R.~DeLine, M.~F{\"a}hndrich, K.~R.~M. Leino, and
+  W.~Schulte.
+\newblock Verification of object-oriented programs with invariants.
+\newblock {\em J. of Obj. Technology}, 3(6):27--56,~2004.
+
+\bibitem{dblp:conf/sigsoft/BierhoffA05}
+K.~Bierhoff and J.~Aldrich.
+\newblock Lightweight object specification with typestates.
+\newblock In {\em ESEC/SIGSOFT FSE}, pp. 217--226. ACM, 2005.
+
+\bibitem{dblp:conf/oopsla/bierhoffa07}
+K.~Bierhoff and J.~Aldrich.
+\newblock Modular typestate checking of aliased objects.
+\newblock In  {\em OOPSLA}, pp. 301--320. ACM, 2007.
+
+\bibitem{dblp:conf/ecoop/bierhoffba09}
+K.~Bierhoff, N.~E. Beckman, and J.~Aldrich.
+\newblock Practical {API} protocol checking with access permissions.
+\newblock In {\em ECOOP}, LNCS 5653, pp. 195--219. Springer, 2009.
+
+\bibitem{dblp:conf/sigsoft/boddenlh08}
+E.~Bodden, P.~Lam, and L.J. Hendren.
+\newblock Finding programming errors earlier by evaluating runtime monitors
+  ahead-of-time.
+\newblock In  {\em SIGSOFT FSE}, pp. 36-47. ACM,~2008.
+
+\bibitem{dblp:conf/popl/CalcagnoDOY09}
+C.~Calcagno, D.~Distefano, P.~W. O'Hearn, and H.~Yang.
+\newblock Compositional shape analysis by means of bi-abduction.
+\newblock In {\em POPL}, pp. 289--300. ACM, 2009.
+
+\bibitem{dblp:conf/sigsoft/AlfaroH01}
+L.~de~Alfaro and T.~A. Henzinger.
+\newblock Interface automata.
+\newblock In {\em ESEC / SIGSOFT FSE}, pages 109--120, 2001.
+
+\bibitem{deline2004}
+R.~DeLine and M. F{\"a}hndrich.
+\newblock Typestates for objects.
+\newblock In {\em ECOOP}, LNCS 3086, pp. 465--490. Springer, 2004.
+
+\bibitem{DBLP:journals/tocl/DemriL09}
+S.~Demri and R.~Lazic.
+\newblock Ltl with the freeze quantifier and register automata.
+\newblock {\em ACM Trans. Comput. Log.}, 10(3), 2009.
+
+\bibitem{disney2011}
+T.~Disney, C.~Flanagan, J.~McCarthy.
+\newblock Temporal higher-order contracts.
+\newblock In {\em ICFP}, 2011.
+
+\bibitem{DBLP:conf/oopsla/DistefanoP08}
+D.~Distefano and M.~J. Parkinson.
+\newblock {jStar}: towards practical verification for {Java}.
+\newblock In {\em OOPSLA}, pages 213--226. ACM 2008.
+
+\bibitem{dblp:journals/scp/FieldGRY05}
+J.~Field, D.~Goyal, G.~Ramalingam, E.~Yahav.
+\newblock Typestate verification: Abstraction techniques and complexity
+  results.
+\newblock {\em Sci. Comput. Program.}, 58(1-2):57--82,~2005.
+
+\bibitem{dblp:conf/issta/FinkYDRG06}
+S.~J. Fink, E.~Yahav, N. Dor, G.~Ramalingam, and E.~Geay.
+\newblock Effective typestate verification in the presence of aliasing.
+\newblock In  {\em ISSTA}, pp. 133--144. ACM, 2006.
+
+%\bibitem{dblp:conf/oopsla/2008}
+%Gail~E. Harris, editor.
+%\newblock {\em Proceedings of the 23rd Annual ACM SIGPLAN Conference on
+%  Object-Oriented Programming, Systems, Languages, and Applications, OOPSLA
+%  2008, October 19-23, 2008, Nashville, TN, USA}. ACM, 2008.
+
+\bibitem{dblp:conf/oopsla/naeeml08}
+N.~A. Naeem and O.~Lhot{\'a}k.
+\newblock Typestate-like analysis of multiple interacting objects.
+\newblock In OOPSLA 2008, pages 347--366. ACM 2008.
+
+\bibitem{parkinson-iwaco2007}
+M.~Parkinson.
+\newblock Class invariants: the end of the road?
+\newblock In {\em IWACO 2007}.
+
+
+\bibitem{reynolds2002}
+J.~C. Reynolds.
+\newblock Separation logic: A logic for shared mutable data structures.
+\newblock In {\em LICS}, pages 55--74. IEEE Computer Society, 2002.
+
+\bibitem{strom1986}
+R.~E. Strom and S.Yemini.
+\newblock Typestate: A programming language concept for enhancing software
+  reliability.
+\newblock {\em IEEE Trans. Software Eng.}, 12(1):157--171, 1986.
+
+%\end{thebibliography}
 %%\softraggedright
 %\bibliographystyle{plain}
 %\bibliography{safety}
