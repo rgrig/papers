@@ -802,6 +802,11 @@ public class Checker {
     // }}}
     // checker {{{
     public boolean checkerEnabled = false; // brittle
+    public void activate() {
+        checkerEnabled = true;
+        System.out.println("Checker active");
+    }
+
     final private Automaton automaton;
     private HashSet<State> states;
 
@@ -825,16 +830,17 @@ public class Checker {
             return;
         }
         checkerEnabled = false;
-	System.out.print("Received event id " + event.id + "\nStates: [");
-	for (State state : states)
-	    System.out.println("\n  vertex: " + state.vertex +
-			       "\n    events:" + state.events.size() +
-			       "\n    bindings:" + state.store.size());
-	System.out.println("]");
+	System.out.print("Received event id " + event.id + "\nStates: ["); //DBG
+	for (State state : states)                                         //DBG
+	    System.out.println("\n  vertex: " + state.vertex +             //DBG
+			       "\n    events:" + state.events.size() +     //DBG
+			       "\n    bindings:" + state.store.size());    //DBG
+	System.out.println("]");                                           //DBG
         HashSet<State> newActiveStates = new HashSet<State>();
         for (State state : states) {
             state = state.pushEvent(event);
             if (!automaton.isObservable(event.id, state.vertex)) {
+                newActiveStates.add(state);
 		continue;
             }
             if (state.events.size() < automaton.maximumTransitionDepths[state.vertex]) {
@@ -843,10 +849,10 @@ public class Checker {
             }
 	    boolean anyEnabled = false;
             for (Transition transition : automaton.transitions[state.vertex]) {
-//DBG System.out.print("try " + state.vertex + " -> " + transition.target
-//DBG         + " with events");
-//DBG for (Event e : state.events) System.out.print(" " + e.id);
-//DBG System.out.println();
+//DBG System.out.print("try " + state.vertex + " -> " + transition.target //DBG
+//DBG         + " with events");                                          //DBG
+//DBG for (Event e : state.events) System.out.print(" " + e.id);          //DBG
+//DBG System.out.println();                                               //DBG
                 // evaluate transition
                 Treap<Binding> store = state.store;
                 Queue<Event> events = state.events;
@@ -860,13 +866,13 @@ public class Checker {
                     if (!step.evaluateGuard(stepEvent, store)) {
                         break;
                     }
-//DBG System.out.println("step");
+//DBG System.out.println("step"); //DBG
                     store = step.action.apply(stepEvent, store);
                 }
 
                 // record transition
                 if (i == transition.steps.length) {
-//DBG System.out.println("tran");
+//DBG System.out.println("tran"); //DBG
 		    anyEnabled = true;
                     newActiveStates.add(State.make(transition.target, store,
                             events, consumed, state));
@@ -879,7 +885,7 @@ public class Checker {
                 }
             }
 	    if (!anyEnabled) {
-//DBG System.out.println("stay");
+//DBG System.out.println("stay"); //DBG
                 newActiveStates.add(state.popEvent());
             }
         }
