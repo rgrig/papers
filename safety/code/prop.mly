@@ -39,6 +39,7 @@
     for i = 0 to lg - 1 do begin
       if g.[i] = '{' then incr c;
       if g.[i] = '}' then decr c;
+      if !c < 0 then e ();
       try  Buffer.add_string r (U.CharMap.find g.[i] re_of_glob_map)
       with Not_found -> Buffer.add_char r g.[i]
     end done;

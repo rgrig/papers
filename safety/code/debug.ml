@@ -1,11 +1,3 @@
-open Format
+let log_cm = false  (* classmapper *)
+let log_cp = false  (* classpath; bytecode lookup *)
 
-let log_cm = 0 (* classmapper *)
-
-let log_cp = 1 lsl 1 (* classpath; bytecode lookup *)
-
-let log_active = log_cp
-
-let log x = log_active land x <> 0
-
-let logf = std_formatter

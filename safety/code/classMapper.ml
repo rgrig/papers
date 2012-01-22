@@ -30,18 +30,18 @@ let open_class fn =
       Some (B.HighClass.decode cf)
     with
       | B.InputStream.Exception e ->
-	eprintf "@[%s: %s@." fn (B.InputStream.string_of_error e);
+	eprintf "@[dec %s: %s@." fn (B.InputStream.string_of_error e);
 	None
       | B.Version.Exception e ->
-	eprintf "@[%s: %s@." fn (B.Version.string_of_error e);
+	eprintf "@[dec %s: %s@." fn (B.Version.string_of_error e);
 	None
       | B.HighClass.Exception e ->
-	eprintf "@[%s: %s@." fn (B.HighClass.string_of_error e);
+	eprintf "@[dec %s: %s@." fn (B.HighClass.string_of_error e);
 	None
       | B.ClassFile.Exception e ->
-	eprintf "@[%s: %s@." fn (B.ClassFile.string_of_error e);
+	eprintf "@[dec %s: %s@." fn (B.ClassFile.string_of_error e);
 	None
-      | _ -> eprintf "@[  error decoding %s@." fn; None in
+      | _ -> eprintf "@[dec %s: error@." fn; None in
   try
     let ch = open_in fn in
     let cd = read_class_channel ch in
@@ -49,27 +49,28 @@ let open_class fn =
   with
     | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg; None
 
-let output_class ?(version = B.Version.default) fn c =
-  let write_class_channel ch =
-    try
-      let bytes = B.HighClass.encode (c, version) in
-      B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
-    with
-      | B.Version.Exception e -> eprintf "@[%s: %s@." fn (B.Version.string_of_error e)
-      | B.Name.Exception e -> eprintf "@[%s: %s@." fn (B.Name.string_of_error e)
-      | B.AccessFlag.Exception e -> eprintf "@[%s: %s@." fn (B.AccessFlag.string_of_error e)
-      | B.HighClass.Exception e -> eprintf "@[%s: %s@." fn (B.HighClass.string_of_error e)
-      | _ -> eprintf "@[  error encoding %s@." fn in
+let output_class version fn c =
   try
     let ch = open_out fn in
-    write_class_channel ch;
-    close_out ch
+    let bytes = B.HighClass.encode (c, version) in
+    B.ClassFile.write bytes (B.OutputStream.make_of_channel ch);
+    close_out ch;
+    true
   with
-    | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg
+    | Sys_error msg -> eprintf "@[error opening %s: %s@." fn msg; false
+    | B.Version.Exception e ->
+        eprintf "@[enc %s: %s@." fn (B.Version.string_of_error e); false
+    | B.Name.Exception e ->
+        eprintf "@[enc %s: %s@." fn (B.Name.string_of_error e); false
+    | B.AccessFlag.Exception e ->
+        eprintf "@[enc %s: %s@." fn (B.AccessFlag.string_of_error e); false
+    | B.HighClass.Exception e ->
+        eprintf "@[enc %s: %s@." fn (B.HighClass.string_of_error e); false
+    | _ -> eprintf "@[enc %s: error@." fn; false
 
 let rec map in_dir out_dir f =
   let process_jar jf =
-    if log log_cm then fprintf logf "@[map jar: %s@." (in_dir / jf);
+    if log_cm then printf "@\n@[map jar: %s@]" (in_dir / jf);
     let tmp_in_dir = mk_tmp_dir "in_" "_jar" in
     let tmp_out_dir = mk_tmp_dir "out_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
@@ -77,44 +78,45 @@ let rec map in_dir out_dir f =
       let e_fn = tmp_in_dir / e.Zip.filename in
       U.mkdir_p (F.dirname e_fn);
       if not e.Zip.is_directory then
-      (if log log_cm then fprintf logf "@[extracting %d bytes to %s@." e.Zip.uncompressed_size e_fn;
-      Zip.copy_entry_to_file jar_in e e_fn) in
+        (if log_cm then printf "@\n@[extracting %d bytes to %s@]" e.Zip.uncompressed_size e_fn;
+        Zip.copy_entry_to_file jar_in e e_fn) in
     List.iter extract (Zip.entries jar_in);
     Zip.close_in jar_in;
     map tmp_in_dir tmp_out_dir f;
-    if log log_cm then fprintf logf "@[REMOVING %s@]" tmp_in_dir;
+    if log_cm then printf "@\n@[REMOVING %s@]" tmp_in_dir;
     U.rm_r tmp_in_dir;
     let jar_out = Zip.open_out (out_dir / jf) in
     let intract _ fn =
       if Sys.is_directory (tmp_out_dir / fn) then Zip.add_entry "" jar_out (ensure_dir fn)
       else
-      (if log log_cm then fprintf logf "@[intracting %d bytes from %s@." (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
-       Zip.copy_file_to_entry (tmp_out_dir / fn) jar_out fn) in
+        (if log_cm then printf "@\n@[intracting %d bytes from %s@]" (Unix.stat (tmp_out_dir / fn)).Unix.st_size (tmp_out_dir / fn);
+         Zip.copy_file_to_entry (tmp_out_dir / fn) jar_out fn) in
     U.rel_fs_preorder tmp_out_dir intract "";
     Zip.close_out jar_out;
     U.rm_r tmp_out_dir in
   let process_class fn =
-    if log log_cm then fprintf logf "@[map class: %s@." (in_dir / fn);
+    if log_cm then printf "@\n@[map class: %s@]" (in_dir / fn);
+    let copy () = U.cp (in_dir / fn) (out_dir / fn) in
     match open_class (in_dir / fn) with
-    | None -> U.cp (in_dir / fn) (out_dir / fn)
+    | None -> copy ()
     | Some (cd, version) ->
         let inst_cd = f cd in
-        output_class ~version (out_dir / fn) inst_cd in
+        if not (output_class version (out_dir / fn) inst_cd) then copy () in
   let process _ fn =
-    if log log_cm then fprintf logf "@[map: %s@." (in_dir / fn);
+    if log_cm then printf "@\n@[map: %s@]" (in_dir / fn);
     if Sys.is_directory (in_dir / fn) then U.mkdir_p (out_dir / fn)
     else begin
       if is_jar fn then process_jar fn
       else if is_class fn then process_class fn
       else U.cp (in_dir / fn) (out_dir / fn)
     end in
-  if log log_cm then fprintf logf "@[map: %s -> %s@." in_dir out_dir;
+  if log_cm then printf "@\n@[map: %s -> %s@]" in_dir out_dir;
   U.mkdir_p out_dir;
   U.rel_fs_preorder in_dir process ""
 
 let rec iter in_dir f =
   let iter_jar jf =
-  if log log_cm then fprintf logf "@[iter jar: %s@." jf;
+    if log_cm then printf "@[iter jar: %s@]" jf;
     let tmp_in_dir = mk_tmp_dir "iter_" "_jar" in
     let jar_in = Zip.open_in (in_dir / jf) in
     let extract e =
@@ -126,7 +128,7 @@ let rec iter in_dir f =
     iter tmp_in_dir f;
     U.rm_r tmp_in_dir in
   let iter_class fn =
-    if log log_cm then fprintf logf "@[iter class: %s@." fn;
+    if log_cm then printf "@\n@[iter class: %s@]" fn;
     match open_class (in_dir / fn) with
     | None -> ()
     | Some (cd, _) -> f cd in

@@ -495,7 +495,7 @@ let does_method_match
   let ba = U.option true ((=) ma) a in
   let bt = U.option true ((=) mt) t in
   let bn = Str.string_match re mn 0 in
-  if ba && bt && bn && log log_cp then fprintf logf "@[match %s@." mn;
+  if ba && bt && bn && log_cp then printf "@\n@[match %s@]" mn;
 (*    printf "@[(%s, %d) matches: mn: %b, ma: %b, mt: %b@." mn ma bn ba bt; *)
     ba && bt && bn
 
@@ -673,9 +673,9 @@ let pp_class f c =
     fprintf f "@[%s@]" (B.Utils.UTF8.to_string (B.Name.internal_utf8_for_class c.BC.name))
 
 let instrument_class get_tags h c =
-  if log log_cp then fprintf logf "@[instrument %a@]" pp_class c;
+  if log_cp then printf "@\n@[instrument %a@]" pp_class c;
   let instrumented_methods = List.map (instrument_method get_tags h c.BC.name) c.BC.methods in
-  if log log_cp then fprintf logf "@[...done@.";
+  if log_cp then printf "@\n@[...done@]";
     {c with BC.methods = instrumented_methods}
 
 let compute_inheritance in_dir =
