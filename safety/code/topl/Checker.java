@@ -906,7 +906,7 @@ public class Checker {
         /** Returns {@code null} if something goes wrong. */
         public static Checker checker(String filename, Object[] constants) {
             try {
-                Scanner scan = new Scanner(new File(filename));
+                Scanner scan = new Scanner(ClassLoader.getSystemResourceAsStream(filename));
                 return new Checker(new Parser(scan, constants).automaton());
             } catch (Exception e) { // method is used as a static initializer
                 e.printStackTrace();
