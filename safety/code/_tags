@@ -7,4 +7,5 @@
 <classMapper.ml*>: package(barista)
 <*.mly>: explain
 <*.ml>: annot
-true: debug, use_menhir, use_barista, profile
+true: debug, use_menhir, use_barista
+#true: profile # slow

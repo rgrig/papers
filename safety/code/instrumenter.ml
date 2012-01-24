@@ -398,11 +398,11 @@ let check = utf8_for_method "check"
 
 (* bytecode generating helpers *) (* {{{ *)
 let bc_print_utf8 us = [
-  BI.GETSTATIC (java_lang_System, out, `Class java_io_PrintStream);
+  BI.GETSTATIC (`Fieldref (java_lang_System, out, `Class java_io_PrintStream));
   BI.LDC (`String us);
-  BI.INVOKEVIRTUAL (`Class_or_interface java_io_PrintStream,
+  BI.INVOKEVIRTUAL (`Methodref (`Class_or_interface java_io_PrintStream,
 			     println,
-			     ([`Class java_lang_String], `Void));
+			     ([`Class java_lang_String], `Void)));
 ]
 let bc_print s = bc_print_utf8 (utf8 s)
 let bc_print_par p = bc_print_utf8 (p.B.Signature.identifier)
@@ -436,10 +436,10 @@ let bc_box = function
         | `Short -> "Short"
         | _ -> failwith "foo"))
         in
-      [BI.INVOKESTATIC
-          (c,
+      [BI.INVOKESTATIC (`Methodref
+          (`Class_or_interface c,
 	  utf8_for_method "valueOf",
-          ([t], `Class c))]
+          ([t], `Class c)))]
 
 let bc_load i = function
   | `Class _ | `Array _ -> BI.ALOAD i
@@ -470,20 +470,20 @@ let bc_new_event id =
     BI.SWAP;
     bc_push id;
     BI.SWAP;
-    BI.INVOKESPECIAL (event,
+    BI.INVOKESPECIAL (`Methodref (`Class_or_interface event,
 			       init,
 			       ([`Int; `Array (`Class java_lang_Object)], `Void)
-			      )
+			      ))
   ]
 
 let bc_check =
   [
-    BI.GETSTATIC (property, property_checker, `Class checker);
+    BI.GETSTATIC (`Fieldref (property, property_checker, `Class checker));
     BI.SWAP;
-    BI.INVOKEVIRTUAL (`Class_or_interface checker,
+    BI.INVOKEVIRTUAL (`Methodref (`Class_or_interface checker,
 			       check,
 			       ([`Class event], `Void)
-			      )
+			      ))
   ]
 
 (* }}} *)
