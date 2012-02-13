@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=fool safety biabduction tacas
+MAIN=fool biabduction
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))
@@ -8,12 +8,6 @@ JAVATEX=$(patsubst %.java,%.tex,$(JAVA))
 JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
-
-pldi2012.pdf: pldi2012.tex safety.bib architecture.tex
-
-tacas.pdf: tacas.tex safety.bib architecture.tex
-
-safety.pdf: safety.tex safety.bib
 
 fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex Resource.tex SortCompare.tex
 
