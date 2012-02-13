@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=fool biabduction
+MAIN=biabduction cav2012 fool notes
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))
@@ -9,9 +9,13 @@ JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
 
-fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex Resource.tex SortCompare.tex
+cav2012.pdf: cav2012.tex
 
 biabduction.pdf: biabduction.tex
+
+fool.pdf: fool.tex safety.bib sigplanconf.cls pygmentize.sty IncorrectIteratorUse.tex Resource.tex SortCompare.tex
+
+notes.pdf: notes.tex
 
 $(PDF): %.pdf: req
 	@TEXINPUTS=$(INP) python compile.py "$*"

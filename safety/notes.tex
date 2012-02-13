@@ -1,0 +1,183 @@
+\documentclass{article} % <<<
+
+\usepackage[T1]{fontenc}
+\usepackage[sc]{mathpazo}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{rgalg}
+
+\usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
+
+\linespread{1.05} % for Palatino
+
+\newcommand{\sfline}[1]{\\\hbox{\hspace{3em}\textsf{#1}}\\}
+
+\showboxbreadth=100
+\showboxdepth=5
+% >>>
+\begin{document}
+\section{Implementation} % <<<
+
+% - overview
+% - ocaml part
+%   - parser, static checks (briefly)
+%   - instrumenter
+%     - inserted bytecode, Barista
+%     - inheritance
+% - java part
+%   - data structures
+%   - algorithms (briefly)
+
+Ideally, given a \textit{classpath} and a properties \textit{topl\_1}, \textit{topl\_2}, \dots, the user would instrument the code with one command:
+\sfline{toplc \textit{classpath topl\_1 topl\_2 \dots}}
+Then all classes in \textit{classpath} signal if a property is broken.
+All is not automated yet; however, it helps to keep in mind the goal while reading the rest.
+
+The TOPL compiler (\textsf{toplc}) is written in OCaml.
+The TOPL checker is written in Java.
+
+\subsection{Compiler} % <<<
+
+The input of the compiler is a set of properties and a set of classes.
+The output of the compiler is a checker and instrumented classes.
+The checker is itself a Java class.
+The instrumented classes should have almost the same behavior as the given classes:
+They are allowed to use more resources.
+
+\paragraph{Desugaring.}
+The parser desugars the TOPL language into a simpler, intermediate form.
+For example:
+(1)~method-name patterns are prefixed according to the \textsf{prefix} directive;
+(2)~\textsf{call} and \textsf{return} transitions get one step, while other transitions are desugared into a \textsf{call} followed by a \textsf{return};
+(3)~lowercase patterns and constant patterns are turned into guards;
+(4)~uppercase patterns are turned into actions.
+The parser builds an AST that closely follows the language for which we have formal operational semantics.
+
+\paragraph{Static Checks.}
+Next, the compiler checks that the property is well-formed.
+For example:
+(1)~two parallel writes to automaton variables must have distinct destinations;
+(2)~reads from automaton variables must be preceded by writes.
+
+\paragraph{Inheritance.}
+Next, the property is transformed so it explicitly identifies Java methods.
+Each transition step has a guard, and each guard has a tag component.
+A \emph{tag} has a method name pattern, an arity pattern, and an event type pattern.
+The latter is either \textsf{call} or \textsf{return}.
+For example the tag guard ``\textsf{call *.$\langle$freeboogie.*.eval$\rangle$[2]}'' refers to all the calls to methods with two arguments whose full name matches the pattern ``\textsf{freeboogie.*.eval}'' \emph{and all the methods that override them}.
+A tag guard does not determine on its own a set of program points.
+A tag guard together with a set of class signatures determine a set of of program points.
+
+Each observable method in the classpath receives two integer identifiers: one for the call event and one for the return event.
+An \emph{observable} method is one whose name matches a pattern that appears in an \textsf{observing} directive.
+The \textsf{observing} directive is not needed later.
+Each tag guard is translated into a set of identifiers.
+
+\textit{Merging}. At this point several properties are merged into a single property that may have multiple start vertices.
+Vertices are no longer identified by name.
+Start vertices are no longer identified by the string used as their name; instead, start vertices are explicitly enumerated.
+Each property used to have a pattern for observable methods;
+now each vertex has a set of observable event identifiers.
+
+After these modifications the property is dumped into an easy-to-parse textual format, in the file \textsf{Property.text}.
+The initial property may use Java literals.
+For example the transition label ``\textsf{*.eval($\langle$34$\rangle$)}'' turns into a guard that that matches on calls to the method \textsf{eval} for which the value of the first argument is~\textsf{34}.
+The string from the \textsf{message} directive is also a Java literal.
+All such constants are collected into an array \textsf{constants} of \textsf{Object} that is written in the file \textsf{topl/Property.java}.
+The file \textsf{Property.text} refers to constants by their index in the array \textsf{constants}.
+
+Ideally, \textsf{Property.java} would be compiled by \textsf{toplc}.
+Currently one has to manually invoke \textsf{javac}.
+
+\paragraph{Instrumentation.}
+The bytecode of each observable method is instrumented.
+The first and last actions performed by the instrumented version are calls to \sfline{topl.Checker.check(event)}
+Each \textsf{event} carries an identifier and an array of \textsf{Object}.
+The array holds either the arguments, or the return value.
+
+For instrumenting Java bytecode we use a fork of the library Barista.
+Our version of Barista handles low-level details such as relative offsets given as a count of bytes.
+
+% >>>
+\subsection{Checker} % <<<
+
+The runtime checker of TOPL properties resides entirely in the file
+\sfline{topl/Checker.java}
+The checker logs a message when it detects a property violation.
+Ideally, the action to take should be configurable.
+During debugging, for example, an exception might be preferable to a log message.
+
+The main components of the checker are: (1)~the data structures used to represent properties and a parser that instantiates them; (2)~the data structures used to represent the current state of the checker; and (3)~the code that handles one incoming event.
+
+\paragraph{Parsing and AST\null.}
+The parser builds ASTs based on the content of \textsf{Property.text}.
+It is meant to be as straightforward as possible, and its most interesting feature is why it exists at all:
+If we generate directly Java code that instantiates the ASTs, then we sometimes run over the bytecode limit on the size of methods.
+
+The AST is more flexible than what the compiler generates.
+Value guards are arbitrary boolean combinations of atomic value guards, rather than just a conjunction.
+
+\paragraph{States.}
+The checker maintains a set of active states.
+Each state has a queue of events that it did not yet process.
+The queue has size~$\le1$ when transitions have $\le2$~steps.
+The checker does not assume a bounded transition depth, but the compiler produces only transitions with $1$~or~$2$ steps.
+If all transitions would have the same depth, then one global queue of events would suffice.
+
+Each state also has a vertex identifier and a set of bindings from automaton variables to values.
+Vertex identifiers are integers; automaton variables are identified by integers; values are instances of \textsf{Object}.
+Each state is produced by applying an action to another state, which is called the parent.
+For error reporting, each state keeps track of its parent.
+If $\ge2$~outgoing transitions are enabled for an active state, then it produces $\ge2$~active states for the next time step.
+The new active states and their parent are likely to have similar sets of bindings.
+This is why we use persistent (functional) sets for bindings; more precisely, we use treaps.
+
+\paragraph{Step.}
+The method \textsf{topl.Checker.check(event)} is the main loop of the checker.
+One should imagine that the time is discrete, and advances when the program sends an event to the checker.
+
+The checker does not do anything if it is inactive.
+The JVM (\textbf Java \textbf virtual \textbf machine) uses selected parts of the JDK during startup.
+If those parts are instrumented by the TOPL compiler, and if the TOPL checker calls back into the JDK, then the JVM crashes.
+As a workaround, the checker is inactive by default.
+Ideally, \textsf{toplc} should insert bytecode that activates the checker.
+Currently one has to manually insert a call to \textsf{Checker.activate}, probably as the first action of the project's \textsf{main} method.
+The inactive flag is not just a hack to cope with JDK instrumentation:
+It is necessary to avoid recursive invocations of the checker.
+
+The pseudocode of \textsf{topl.Checker.check} follows.
+
+\begin{alg}
+\^  $\proc{Check}(e)$
+\=  $A := \emptyset$
+\=  for each active state $s$
+\+    if $\mathit{vertex}(s)$ does not observe $\mathit{id}(e)$
+\+      insert $s$ into $A$
+\=      continue from $3$
+\-    push $e$ to the queue $\mathit{events}(s)$
+\=    if $\mathit{events}(s)$ is shorter than the longest transition from $\mathit{vertex}(s)$
+\+      continue from $3$
+\1    $\mathit{skip}:=\mathsf{true}$
+\=    for each transition $t$ outgoing from $\mathit{vertex}(s)$
+\+      $\sigma := \mathit{store}(s)$,\quad $E := \mathit{events}(s)$
+\=      for each step $\tau$ of $t$
+\+        pop $\varepsilon$ from the queue $E$
+\+        if $\proc{Guard}(\tau, \varepsilon, \sigma)$
+\+          $\sigma := \proc{Action}(\tau, \varepsilon, \sigma)$
+\-        else
+\+          continue from 11
+\2      $\mathit{skip}:=\mathsf{false}$
+\=      insert state $(\mathit{target}(t), \sigma, E)$ into $A$
+\=      if $\mathit{target}(t)$ is an error vertex, report the error
+\=      if \textit{skip}
+\+        $s' := s$
+\=        insert state $s'$ with one event popped into $A$
+\end{alg}
+
+TODO: forget states (with strategies), runtime abstraction.
+
+% >>>
+% >>>
+\end{document}
+% vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
+% vim:fmr=<<<,>>>:

@@ -838,11 +838,11 @@ public class Checker {
 	System.out.println("]");                                           //DBG
         HashSet<State> newActiveStates = new HashSet<State>();
         for (State state : states) {
-            state = state.pushEvent(event);
             if (!automaton.isObservable(event.id, state.vertex)) {
                 newActiveStates.add(state);
 		continue;
             }
+            state = state.pushEvent(event);
             if (state.events.size() < automaton.maximumTransitionDepths[state.vertex]) {
                 newActiveStates.add(state);
                 continue;
