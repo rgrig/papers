@@ -10,7 +10,10 @@
 
 \linespread{1.05} % for Palatino
 
+\newcounter{propertyCounter}
+
 \newcommand{\sfline}[1]{\\\hbox{\hspace{3em}\textsf{#1}}\\}
+\newcommand{\property}{\stepcounter{propertyCounter}\bigskip\noindent\textbf{\Alph{propertyCounter}.}\enskip}
 
 \showboxbreadth=100
 \showboxdepth=5
@@ -175,6 +178,67 @@ The pseudocode of \textsf{topl.Checker.check} follows.
 \end{alg}
 
 TODO: forget states (with strategies), runtime abstraction.
+
+% >>>
+% >>>
+\section{Dacapo Properties} % <<<
+
+This section collects properties we could possibly check with TOPL\null.
+
+TODO: Extract those from the typestates empirical study.
+
+\subsection{Tomcat} % <<<
+
+Dacapo uses Tomcat version 6.0.20.
+
+The documentation of the following classes contain constraints of the type ``event~$e$ must occur before event~$f$''.
+
+\begin{enumerate}
+\item
+\textsf{java.javax.servlet.Filter}, \textsf{java.javax.servlet.Servlet}
+  \begin{itemize}
+  \item[$e$] \textsf{init} terminated normally (no exception)
+  \item[$f$] another method of the interface is called
+  \end{itemize}
+\item
+\textsf{java.javax.servlet.RequestDispatcher}
+  \begin{itemize}
+  \item[$e$] the method \textsf{m} is called with argument~\textsf{x} on all instances of~\textsf{C}
+  \item[$f$] the method \textsf{n} is called with argument~\textsf{x} on some instance of~\textsf{D}
+  \end{itemize}
+\item
+\textsf{java.javax.servlet.ServletResponse}
+  \begin{itemize}
+  \item[$e$] method \textsf{setCharacterEncoding}, \textsf{setContentType}, or \textsf{setLocale} is called on an object~\textsf{x}
+  \item[$f$] method \textsf{getWriter}, \textsf{flush}, or \textsf{flushBuffer} is called on~\textsf{x}
+  \end{itemize}
+\item
+\textsf{java.javax.servlet.ServletResponse}
+  \begin{itemize}
+  \item[$e$] method \textsf{setBufferSize} is called on an object~\textsf{x}
+  \item[$f$] a method of~\textsf{w} is called, where \textsf{w} is the result of calling \textsf{getWriter} on~\textsf{x}
+  \end{itemize}
+\end{enumerate}
+
+Most getters promise to return the last set value.
+If there was no call to a setter, then sometimes a default value is specified in the documentation.
+
+The following are properties of the type ``method~\textsf{m} returns a boolean that indicates whether event~\textsf{e} occurred''.
+
+\begin{enumerate}
+\item
+\textsf{java.javax.servlet.ServletResponse}
+  \begin{itemize}
+  \item[$e$] 
+  \item[$m$] \textsf{isCommitted} called on~\textsf{x}
+  \end{itemize}
+\end{enumerate}
+
+PB: Could property templates be useful?
+Something like parametric properties.
+
+% >>>
+\subsection{FreeBoogie} % <<<
 
 % >>>
 % >>>
