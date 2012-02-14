@@ -802,7 +802,7 @@ public class Checker {
     // }}}
     // checker {{{
     public boolean checkerEnabled = false; // brittle
-    public void activate() {
+    public synchronized void activate() {
         checkerEnabled = true;
         System.out.println("Checker active");
     }
@@ -825,7 +825,7 @@ public class Checker {
 	System.out.println("\n********************\n* " + msg + "\n********************");
     }
 
-    public void check(Event event) {
+    public synchronized void check(Event event) {
         if (!checkerEnabled) {
             return;
         }
