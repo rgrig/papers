@@ -195,25 +195,25 @@ The documentation of the following classes contain constraints of the type ``eve
 
 \begin{enumerate}
 \item
-\textsf{java.javax.servlet.Filter}, \textsf{java.javax.servlet.Servlet}
+\textsf{javax.servlet.Filter}, \textsf{javax.servlet.Servlet}
   \begin{itemize}
   \item[$e$] \textsf{init} terminated normally (no exception)
   \item[$f$] another method of the interface is called
   \end{itemize}
 \item
-\textsf{java.javax.servlet.RequestDispatcher}
+\textsf{javax.servlet.RequestDispatcher}
   \begin{itemize}
   \item[$e$] the method \textsf{m} is called with argument~\textsf{x} on all instances of~\textsf{C}
   \item[$f$] the method \textsf{n} is called with argument~\textsf{x} on some instance of~\textsf{D}
   \end{itemize}
 \item
-\textsf{java.javax.servlet.ServletResponse}
+\textsf{javax.servlet.ServletResponse}
   \begin{itemize}
   \item[$e$] method \textsf{setCharacterEncoding}, \textsf{setContentType}, or \textsf{setLocale} is called on an object~\textsf{x}
   \item[$f$] method \textsf{getWriter}, \textsf{flush}, or \textsf{flushBuffer} is called on~\textsf{x}
   \end{itemize}
 \item
-\textsf{java.javax.servlet.ServletResponse}
+\textsf{javax.servlet.ServletResponse}
   \begin{itemize}
   \item[$e$] method \textsf{setBufferSize} is called on an object~\textsf{x}
   \item[$f$] a method of~\textsf{w} is called, where \textsf{w} is the result of calling \textsf{getWriter} on~\textsf{x}
@@ -227,7 +227,7 @@ The following are properties of the type ``method~\textsf{m} returns a boolean t
 
 \begin{enumerate}
 \item
-\textsf{java.javax.servlet.ServletResponse}
+\textsf{javax.servlet.ServletResponse}
   \begin{itemize}
   \item[$e$] 
   \item[$m$] \textsf{isCommitted} called on~\textsf{x}
