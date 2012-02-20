@@ -1,9 +1,0 @@
-*.dot
-/*.byte
-/*.native
-/.allout
-/.out
-/_build
-/classes
-/setenv
-/topl/Property.java
