@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=biabduction cav2012 fool notes
+MAIN=biabduction cav2012 fool notes oopsla2012
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))
