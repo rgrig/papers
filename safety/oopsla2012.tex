@@ -36,7 +36,7 @@
 \authorinfo{Dino Distefano}
            {Queen Mary University of London}
            {ddino@eecs.qmul.ac.uk}
-           
+
 \authorinfo{Rasmus Lerchedahl Petersen}
            {Microsoft Research}
            {rusmus@eecs.qmul.ac.uk}
@@ -76,61 +76,58 @@
 
 \begin{abstract} % <<<
 We introduce a new technique for checking, at run-time, temporal safety properties of Java programs.
-Our approach is based on a new specification language for an extended class of register automata able to express complex properties of 
-systems involving multiple interacting objects. The specifications are then used to instrument Java byte-code so that their violations can be automatically detected at run-time. 
+Our approach is based on a new specification language for an extended class of register automata able to express complex properties of systems involving multiple interacting objects.
+The specifications are then used to instrument Java byte-code so that their violations can be automatically detected at run-time.
 We have validated our technique by checking several safety properties on large open source projects.
 \end{abstract}
 
 % >>>
 \section{Introduction} % <<<
-Objects interaction is at the core of the object-oriented paradigm. When designing object-oriented software, 
-programmers have often  a global picture of the co-operation that objects will have in different moments in time and the 
-invariants that all the player should adhere to for the correct functioning of the system.
-Consider for  example  Java collections. A typical property one would want to state is:
+Objects interaction is at the core of the object-oriented paradigm.
+When designing object-oriented software, programmers have often  a global picture of the co-operation that objects will have in different moments in time and the invariants that all the player should adhere to for the correct functioning of the system.
+Consider for  example  Java collections.
+A typical property one would want to state is:
 \begin{quote}
 {\em If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used.}
 \end{quote}
 \noindent
-The formalization of the above constraint is non-trivial since it 
-needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
+The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
 
-In this paper we define topl (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of 
-events. These automata allow a natural and compact formalisation of safety temporal properties of
-object-oriented software as the one above. 
-The manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).  For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
+In this paper we define topl (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of  events.
+These automata allow a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
+The manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
+For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
 
-TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows 
-articulating  relationships and interactions among several objects.
-Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object. TOPL, in contrast,  intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.  Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed. 
-One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}. 
+TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows articulating  relationships and interactions among several objects.
+Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
+TOPL, in contrast,  intentionally avoids such decomposition.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
+Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
+One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}.
 Again, the ability of topl automata to store,  update, and compare values of their registers makes topl more expressive than tracematches.
 
-Topl specification are high-level and this aspect
-helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
+Topl specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
-Having defined TOPL automata as a convenient way to provide formal specification of temporal properties
-of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
+Having defined TOPL automata as a convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
 Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
-Automatic run-time checking of TOPL properties is beneficial for the programmer as
- it relieves him/her from the burden of 
-interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
+Automatic run-time checking of TOPL properties is beneficial for the programmer as it relieves him/her from the burden of interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
 The Java API, for example, has hand-crafted code for checking certain temporal constraints.
 However, such checks are often hard to write, weaved with the code solving the actual problem, and | in the case of the Java API |  do not provide with a trace of the relevant events leading to an error.
 In contrast, dynamically checking TOPL properties  with the technique we present in this paper is transparent to the programmer and, therefore,  it avoids all these issues.
 
 In summary, the contributions of this paper are:
 \begin{itemize}
-\item The definition of TOPL, a specification language for an extension of register automata tailored to
- properties involving object interactions over time. 
-\item For TOPL we have defined a precise formal semantics making the language suitable for program analysis (both static and dynamic) and verification. 
+\item The definition of TOPL, a specification language for an extension of register automata tailored to properties involving object interactions over time.
+\item For TOPL we have defined a precise formal semantics making the language suitable for program analysis (both static and dynamic) and verification.
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
 \item We have implemented our method and we report experiments on large open source projects.
 \end{itemize}
 
-The paper is organized as follows. In Section~\ref{sec:examples} we start with few motivating examples.
+The paper is organized as follows.
+In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives  TOPL's syntax  and semantics.
-Section~\ref{sec:dynamic} explores the use of TOPL for run-time checking of and presents experimental results. Section~\ref{sec:related} discusses related work.
+Section~\ref{sec:dynamic} explores the use of TOPL for run-time checking of and presents experimental results.
+Section~\ref{sec:related} discusses related work.
 Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
 
 % >>>
@@ -191,7 +188,7 @@ property InvalidateOtherIterators
   two -> xBad:   \pattern{y}.remove()
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
-\end{Verbatim}    
+\end{Verbatim}
 \caption{Property {\tt InvalidateOtherIterators} in diagram (left) and textual form (right).
 }
 \label{fig:first.topl}
@@ -262,8 +259,7 @@ The same name was chosen because the two variables always hold the same value in
 In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
 
 To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
-Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and 
- do \emph{not} appear in the property.
+Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
 The interaction between patterns and automatons' memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
@@ -305,7 +301,7 @@ For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
 For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
 \begin{align*}
-&\text{\Verb@one -> one: *@} \quad \mbox{ and } \quad 
+&\text{\Verb@one -> one: *@} \quad \mbox{ and } \quad
 \text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
 \end{align*}
 The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
@@ -334,9 +330,9 @@ However,  the outgoing transition of state {\tt two} is enabled, and therefore {
 For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
 The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3]),$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-As before, in order to match the method name, the prefixes 
+As before, in order to match the method name, the prefixes
 \Verb@java.util.Collection.*[*]@ and \Verb@java.util.Iterator.*[*]@
-are prepended.  
+are prepended.
 Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 We have a match because the expansion \Verb@java.util.Iterator.next@ is overridden by the method that is actually called.
 
@@ -350,9 +346,8 @@ Notice that in order to find a counterexample we need to keep track of the relat
 
 % >>>
 \subsection{Heap Shape and Values Sensitive Properties}  % <<<
-One interesting kind of properties for object-oriented programs is the ability to reason about the shape of 
-the heap composed by the allocated objects. 
-The following TOPL's properties test the shape of a linked list and reports an error if it is cyclic or it has the pan-handle shape (i.e., there is a lasso at some point). 
+One interesting kind of properties for object-oriented programs is the ability to reason about the shape of the heap composed by the allocated objects.
+The following TOPL's properties test the shape of a linked list and reports an error if it is cyclic or it has the pan-handle shape (i.e., there is a lasso at some point).
 %
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
@@ -365,14 +360,12 @@ property ListNotCyclic
    a -> error: x := x.next()
 \end{Verbatim}
 \delimitVerbatim
-The idea is that this property will bind the automaton variable $x$
-with any possible object in the list, and the $y$ with any possible successors (via the next field) 
-of the current binding of $x$. Therefore, if there is a lasso, in the list, this will be detected when a new 
-biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$. The transition \texttt{a ->error} detect
-the case where there is an object pointing to itself. 
+The idea is that this property will bind the automaton variable $x$ with any possible object in the list, and the $y$ with any possible successors (via the next field) of the current binding of $x$.
+Therefore, if there is a lasso, in the list, this will be detected when a new biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$.
+The transition \texttt{a ->error} detect the case where there is an object pointing to itself.
 
 
-The following property detects when a dictionary overwrite one of its bindings. 
+The following property detects when a dictionary overwrite one of its bindings.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
@@ -383,8 +376,7 @@ The following property detects when a dictionary overwrite one of its bindings.
     written -> error:   !v := d.get(k)
 \end{Verbatim}
 \delimitVerbatim
-The overwrite is detected by the guard which checks if the value associated with a key $k$ is
-the same as the original binding recorded in the automaton variable $v$.
+The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
 % >>>
 \section{TOPL Syntax and Semantics} % <<<
@@ -423,41 +415,38 @@ In other words, properties encode bad executions, rather than good executions.
 \subsubsection{TOPL execution automata.}
 \newcommand{\World}{ExecState}
 
-Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program,
-gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$. This automaton represents the 
-semantics of the property interpreted over the program.
-$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions. The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively. 
+Each TOPL's property when considered in conjunction with the set of traces defining the semantics of the program, gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
+This automaton represents the semantics of the property interpreted over the program.
+$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions.
+The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
 
-We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables. Let stores be finite partial maps with finite domain.
+We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
+Let stores be finite partial maps with finite domain.
 \[
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
-Moreover we assume a countable set \set{Event} of events with known arity. Each event~$e$ is of the form $(t_e,[0: v_0,\dots, 1:v_n])$.
+Moreover we assume a countable set \set{Event} of events with known arity.
+Each event~$e$ is of the form $(t_e,[0: v_0,\dots, 1:v_n])$.
 The component $t_e$ is a tag, e.g., call or return, while the second component is an array of values.
 Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
 %
 \begin{definition}[TOPL execution automaton]
-Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple 
+Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple
 $(\set{State}, \to , \set{Init}, \set{Error})$ where
 \begin{itemize}
 \item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
 \item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
 \item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
 \item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
-\end{itemize} 
+\end{itemize}
 \end{definition}
-A state of the automaton is
-given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be
-observed. The reader may wonder why execution states need to contain traces. The reason is that
-each label in $\set{Arc}$ carries (potentially) a list of guards and 
-we call the length of this list, the \emph{depth} of the arc.
-Since different outgoing arcs for a vertex can have different depths, we have that 
-different target states of execution transitions may receive different events.
-For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have
-depth 2 and 5 rispectively,
-then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$. 
+A state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
+The reader may wonder why execution states need to contain traces.
+The reason is that each label in $\set{Arc}$ carries (potentially) a list of guards and we call the length of this list, the \emph{depth} of the arc.
+Since different outgoing arcs for a vertex can have different depths, we have that different target states of execution transitions may receive different events.
+For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have depth 2 and 5 rispectively, then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$.
 
-In order to define the transition relation $\to$ we need to define two auxiliary concepts. 
+In order to define the transition relation $\to$ we need to define two auxiliary concepts.
 When observing a trace, the effect of actions in an arc label on a store  is given by the function
 \[
    A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
@@ -475,7 +464,7 @@ A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      \right.
 \\[5ex]
 A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$} 
+     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$}
      \\
 & \mbox{and  $A(\sigma,e,(g,a))=\sigma'$}
      \\[1ex]
@@ -485,21 +474,15 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
 \end{array}
 \end{array}\]
 \dinocomment{check the above definition for values like $A(\sigma,\epsilon,\tau)$}
-In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event
-and therefore updating the store $\sigma$.
-With $A$ we can define the predicates $enabled$
-testing whether a transition is enabled in a store when observing a trace,  and a predicate
-$Enabled$ testing if there exists an enabled transition starting from an execution state:
+In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event and therefore updating the store $\sigma$.
+With $A$ we can define the predicates $enabled$ testing whether a transition is enabled in a store when observing a trace, and a predicate $Enabled$ testing if there exists an enabled transition starting from an execution state:
 \begin{eqnarray*}
 enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
 \\
 Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ enabled(\sigma,\tau,l) \mid x \to x' : l \}
 \end{eqnarray*}
-Notice that, according to the definition of $enabled(\sigma,\tau,l)$, and in turn of the function $A$, 
-for a transition to be enabled, all the guards along its
-list have to evaluate to true. Evaluating a guard along the transition consumes
-an event |  therefore | to see if a transition is enabled 
-we have to examine $|l|$ events. 
+Notice that, according to the definition of $enabled(\sigma,\tau,l)$, and in turn of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
+Evaluating a guard along the transition consumes an event |  therefore | to see if a transition is enabled we have to examine $|l|$ events.
 
 The transition relation $s \to s'$ is defined by the following rules.
 \[
@@ -507,7 +490,7 @@ The transition relation $s \to s'$ is defined by the following rules.
 \text{(Step)}  &
 \infer[x_1 \to x_2{:} l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
-\text{(Silent)}  & 
+\text{(Silent)}  &
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
@@ -518,25 +501,21 @@ Finally, we can define the language of a TOPL execution automaton $\Xi$, as the 
 ${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
 
 \paragraph{Silent steps.}
-A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given
-state and trace of events, the automaton does not get stuck but it
-consumes one event without changing its state (see the  Silent Step rule). Note that
-a silent step is not equivalent to a self-loop on all states, as
-dropping events is not allowed if there are enabled
-transitions. In that case,  the enabled transitions are performed 
-with the rule (Step) and
-the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of
-the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and
-$\tau_2$ is the leftover of the event trace before the transition after dropping
-$|l|$ events.
+A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given state and trace of events, the automaton does not get stuck but it consumes one event without changing its state (see the  Silent Step rule).
+Note that a silent step is not equivalent to a self-loop on all states, as dropping events is not allowed if there are enabled transitions.
+In that case,  the enabled transitions are performed with the rule (Step) and the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and $\tau_2$ is the leftover of the event trace before the transition after dropping $|l|$ events.
 \begin{example}
-Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$. Moreover, let us assume that our input trace is 
-$\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
-Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive. 
-Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by 
-the trace $e_1 e_1 e_2 $ from {\tt zero}. 
-On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se. 
-Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled. Hence, we need to consider the sequence $e_1e_1$. The latter does not enable any transition either. Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged. At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled. Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
+Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$.
+Moreover, let us assume that our input trace is $\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
+Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive.
+Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by the trace $e_1 e_1 e_2 $ from {\tt zero}.
+On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se.
+Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled.
+Hence, we need to consider the sequence $e_1e_1$.
+The latter does not enable any transition either.
+Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged.
+At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled.
+Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
 \end{example}
 
 \begin{figure}[t]
@@ -551,10 +530,10 @@ Notice that the only outgoing transition on the active state {\tt three} needs a
 
   \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
   \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-  
+
   \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
   \draw[transition] (zero)--node[right]{$e_1$} (two);
-  
+
   \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
 \end{tikzpicture}
 \caption{Example of unmatched events.}
@@ -575,27 +554,27 @@ Given an event and a store, an instantiated guard  evaluates whether the event s
 \newcommand{\sem}[1]{[ \! | #1 | \! ]}
 \[
 g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
-\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store 
+\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store
 and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
 \begin{example}
-Consider the label 
- $\sim \pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement 
- {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the sequences 
+Consider the label
+ $\sim \pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
+ {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the sequences
 \[
-\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0   
-\] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where 
-\[ 
+\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0
+\] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where
+\[
  e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])
-\] 
+\]
 The instantiated guard for the label are:
- $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.  
-Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$, 
+ $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
+Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$,
 but inequality for \pattern{v} (because of $\sim$).
 The instantiated guards, can now be evaluated with the events by taking their conjunction:
-\[ 
- (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1) 
-\] and 
-\[ 
+\[
+ (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1)
+\] and
+\[
  (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
 \]
 \end{example}
@@ -606,12 +585,16 @@ The instantiated guards, can now be evaluated with the events by taking their co
 \section{Run-time checking} \label{sec:dynamic} % <<<
 
 In this section we describe an algorithm to check at run-time  TOPL properties on Java programs.
-Figure~\ref{architecture} summarises our method. There are two main components: 
+Figure~\ref{architecture} summarises our method.
+There are two main components:
 the {\em TOPL compiler} and the {\em Property Checker}.
-The TOPL compiler takes as input the compiled class files and the list of TOPL properties to be checked against the classes. The compiler has two submodules: the {\em instrumenter} and the {\em automaton generator}.
-The latter synthesises a Java program that precisely encodes the set of automata representing the TOPL properties. The instrumenter instruments the byte code with calls to methods of the Java encoding of the automata.
-During their tasks, the two submodules need to exchange information about method identifiers, therefore their operations are intertwined.   
-The property checker module can be seen as a general interpreter able to execute TOPL automata properties. When compiled together with the Java encoding of the automata generated by the TOPL compiler, we obtain an executable property checker instantiated to the particular list of TOPL properties we want to check against the initial class files.
+The TOPL compiler takes as input the compiled class files and the list of TOPL properties to be checked against the classes.
+The compiler has two submodules: the {\em instrumenter} and the {\em automaton generator}.
+The latter synthesises a Java program that precisely encodes the set of automata representing the TOPL properties.
+The instrumenter instruments the byte code with calls to methods of the Java encoding of the automata.
+During their tasks, the two submodules need to exchange information about method identifiers, therefore their operations are intertwined.
+The property checker module can be seen as a general interpreter able to execute TOPL automata properties.
+When compiled together with the Java encoding of the automata generated by the TOPL compiler, we obtain an executable property checker instantiated to the particular list of TOPL properties we want to check against the initial class files.
 When run together with the instrumented class files, the instantiated property checker acts as a monitor that is able to detect violation of the properties of interest.
 
 The TOPL compiler (\textsf{toplc}) is written in OCaml whereas  the TOPL checker is written in Java.
@@ -626,14 +609,13 @@ The TOPL compiler (\textsf{toplc}) is written in OCaml whereas  the TOPL checker
 
 \subsection{TOPL Compiler} % <<<
 
-The input of the compiler is a set of properties and a set of classes and 
-the output  is a checker and instrumented classes. The checker is itself a Java class.
-The instrumented classes should have the same behaviour as the original classes although 
-they are allowed to use more resources.
+The input of the compiler is a set of properties and a set of classes and the output  is a checker and instrumented classes.
+The checker is itself a Java class.
+The instrumented classes should have the same behaviour as the original classes although they are allowed to use more resources.
 The compilation of TOPL properties goes thought the following phases.
 
 \paragraph{Desugaring.}
-The parser de-sugars the TOPL properties into a simpler, intermediate form where 
+The parser de-sugars the TOPL properties into a simpler, intermediate form where
 \begin{itemize}
 \item method-name patterns are prefixed according to the \textsf{prefix} directive;
 \item \textsf{call} and \textsf{return} transitions get one step, while other transitions are de-sugared into a \textsf{call} followed by a \textsf{return};
@@ -645,19 +627,17 @@ The parser builds an AST that closely follows the language for which we have for
 \paragraph{Static Checks.}
 Next, the compiler checks that the property is well-formed.
 In doing so, it effectively checks that:
-\begin{itemize} 
+\begin{itemize}
 \item two parallel writes to automaton variables have distinct destinations;
 \item reads from automaton variables must be preceded by writes.
 \end{itemize}
 
 \paragraph{Dealing with Inheritance.}
 After the above phases, the property is transformed so it explicitly identifies Java methods.
-As described in Section~\ref{sec:syntax},
-each transition step has a guard containing a tag component.
+As described in Section~\ref{sec:syntax}, each transition step has a guard containing a tag component.
 A \emph{tag} has a method name pattern, an arity pattern, and an event type pattern.
 The latter is either \textsf{call} or \textsf{return}.
 For example the tag guard ``\textsf{call *.$\langle$freeboogie.*.eval$\rangle$[2]}'' refers to all the calls to methods with two arguments whose full name matches the pattern ``\textsf{freeboogie.*.eval}'' \emph{and all the methods that override them}.
-%A tag guard does not determine on its own a set of program points.
 A tag guard together with a set of class signatures determine a set of of program points.
 Each tag guard is translated into a set of identifiers.
 
@@ -670,9 +650,7 @@ Each property used to have a pattern for observable methods;
 now each vertex has a set of observable event identifiers.
 \dinocomment{I don't understand this}
 
-The initial property may use Java literals that are collected 
- into an array \textsf{constants} of \textsf{Object} that is written in the file \textsf{topl/Property.java}  whereas
-the property is dumped into an easy-to-parse textual format, in the file \textsf{Property.text} 
+The initial property may use Java literals that are collected into an array \textsf{constants} of \textsf{Object} that is written in the file \textsf{topl/Property.java}  whereas the property is dumped into an easy-to-parse textual format, in the file \textsf{Property.text}
 referring to constants by their index in the array \textsf{constants}.
 
 \paragraph{Instrumentation.}
@@ -687,22 +665,20 @@ Our version of Barista handles low-level details such as relative offsets given 
 % >>>
 \subsection{Checker} % <<<
 
-The runtime checker of TOPL properties resides entirely in the file
-{\sf topl/Checker.java}. 
-The checker logs a message when it detects a property violation. However, 
-the action to take can be configurable and the user can choose to have an exception rather than a log message.
+The runtime checker of TOPL properties resides entirely in the file {\sf topl/Checker.java}.
+The checker logs a message when it detects a property violation. However, the action to take can be configurable and the user can choose to have an exception rather than a log message.
 
-The main components of the checker are: 
+The main components of the checker are:
 \begin{itemize}
 \item parser for the data structures used to represent properties;
-\item the data structures used to represent the current state of the checker; and 
+\item the data structures used to represent the current state of the checker; and
 \item the code that handles one incoming event.
 \end{itemize}
 
 \paragraph{Parsing and AST\null.}
 The parser builds ASTs based on the content of \textsf{Property.text}.
-We needs build \textsf{Property.text} since we have experienced that if we were to 
- generate directly Java code that instantiates the ASTs, 
+We needs build \textsf{Property.text} since we have experienced that if we were to
+ generate directly Java code that instantiates the ASTs,
  then we sometimes run over the bytecode limit on the size of methods.
 
 \paragraph{States.}
@@ -766,16 +742,16 @@ The pseudocode of \textsf{topl.Checker.check} follows.
 
 \paragraph{Run-time completeness.}
 \dinocomment{maybe we remove this paragraph...}
-Doing concrete run-time checking is obviously unsound since only the actual runs are checked. 
-Our checker is also {\em incomplete}, that is:  
-if a run-time execution of the program leads to an error then there is no guarantee that 
-the checker will detect the error.  The program in Figure~\ref{fig:completeness} shows that to
-achieve completeness any run-time checker keeping track of concrete states would need an unbounded
-amount of memory. The method {\tt NeedsUnboundedMemory(int n)}
-declares an array of iterators of a length depending on the external parameter {\tt n}.  In the {\tt for} loop, the array is filled with iterators for the same collection {\tt c} and randomly some of them are exhausted by advancing till the end (inner {\tt while} loop).
-Outside the {\tt for} loop, a random iterator is advanced one more time and we would get an exception if this iterator 
-was one of those exhausted in the previous loop. Because of the random choice of iterators, it becomes apparent that, 
-if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception needs to be thrown or not, we would need to keep information about all the iterators. Moreover, since their number {\tt n} is a parameter, there is no way to bound the amount of memory to keep track of this info. 
+Doing concrete run-time checking is obviously unsound since only the actual runs are checked.
+Our checker is also {\em incomplete}, that is:
+if a run-time execution of the program leads to an error then there is no guarantee that the checker will detect the error.
+The program in Figure~\ref{fig:completeness} shows that to achieve completeness any run-time checker keeping track of concrete states would need an unbounded amount of memory.
+The method {\tt NeedsUnboundedMemory(int n)}
+declares an array of iterators of a length depending on the external parameter {\tt n}.
+ In the {\tt for} loop, the array is filled with iterators for the same collection {\tt c} and randomly some of them are exhausted by advancing till the end (inner {\tt while} loop).
+Outside the {\tt for} loop, a random iterator is advanced one more time and we would get an exception if this iterator was one of those exhausted in the previous loop.
+Because of the random choice of iterators, it becomes apparent that, if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception needs to be thrown or not, we would need to keep information about all the iterators.
+Moreover, since their number {\tt n} is a parameter, there is no way to bound the amount of memory to keep track of this info.
 \begin{figure}[htbp]
 \begin{center}
 \include{Completeness}
@@ -791,38 +767,38 @@ if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception needs 
 % >>>
 \section{Experimental Results} % <<<
 We have used the DACAPO bechmarks~\cite{dblp:conf/oopsla/dacapo} to test our tool.
-We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running 
+We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running
  Linux 2.6.32-40 and  Java 1.6.0\_20.
 To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
 
 \begin{table*}[t]
       \centering
    \begin{tabular}{| l | r | r | r | r | }
-   \hline 
+   \hline
   Benchmark  & Original Time (Stand. Dev.) & Instrumented Time (Stand. Dev.) & Checker Memory & Failed Property
 \\ \hline \hline
 Tomcat 6.0.20 &  5436 (+/-141) & 7449 (+/-134) & &
 \\ \hline
 Benchmark 3 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 4 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 5 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 6 & & &  &
 \\ \hline
 Benchmark 7 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 8 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 9 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 10 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 11 & & &  &
-\\ \hline 
+\\ \hline
 Benchmark 12 & & &  &
-\\ \hline 
+\\ \hline
 \end{tabular}
     \caption{Experimental results on the DACAPO benchmarks. The times are the average of 5 runs.}
    \label{tab:booktabs}
@@ -840,51 +816,51 @@ The following are properties of the type ``method~\textsf{m} returns a boolean t
 \item
 \textsf{javax.servlet.ServletResponse}
   \begin{itemize}
-  \item[$e$] 
+  \item[$e$]
   \item[$m$] \textsf{isCommitted} called on~\textsf{x}
   \end{itemize}
 \end{enumerate}
 
 For Tomcat  6.0.20  we have tested the following properties:
 \begin{itemize}
-\item ForwardOnlyUncommittedResponses\item ResponseUsesEitherWriterOrStream
+\item ForwardOnlyUncommittedResponses
+\item ResponseUsesEitherWriterOrStream
 \end{itemize}
 \dinocomment{Radu can you comment what these properties mean? and describe which porperty was violated?}
 
 % >>>
 \section{Related Work}\label{sec:related} %<<<
-TOPL properties are based on register automata~\cite{DBLP:journals/tocl/DemriL09}. Compare to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size. For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events. On a static setting this phenomenon is normally encoded using non-determinism combined with prophecy variables~\cite{dblp:journals/tcs/abadil91}.
-Our work is also based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs. 
+TOPL properties are based on register automata~\cite{DBLP:journals/tocl/DemriL09}.
+Compare to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size.
+For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
+On a static setting this phenomenon is normally encoded using non-determinism combined with prophecy variables~\cite{dblp:journals/tcs/abadil91}.
+Our work is also based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs.
 We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
-A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/bierhoffa07}. 
-The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions. 
-The method is highly modular and presumably efficient. The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization. Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object. The specified properties are reminiscent of contracts or pre/post-conditions for methods and
-can deal with inheritance.
+A modular static verification method for typestate protocols is introduces in~\cite{dblp:conf/oopsla/bierhoffa07}.
+The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions.
+The method is highly modular and presumably efficient.
+The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization.
+Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object.
+The specified properties are reminiscent of contracts or pre/post-conditions for methods and can deal with inheritance.
 In~\cite{dblp:conf/issta/FinkYDRG06} the authors present sound verification techniques for typestate properties of Java  programs.
 Their approach is divided in several stages with different verifiers varying for cost and precision.
-In the early stages efficient but imprecise analyses are employed whereas
-more expensive and precise techniques are then progressively employed in later stages.
+In the early stages efficient but imprecise analyses are employed whereas more expensive and precise techniques are then progressively employed in later stages.
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 It is likely that our TOPL language could be fruitfully combined with their analysis technique.
 
-An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} . 
+An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} .
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
-In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level. A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.  
-Differences between SLIC and TOPL include: the use (in SLIC) of
-non-determinism to encode universal quantification of dynamically allocated data, and the  ability to have complex code in the automaton transitions. 
-TOPL specifications naturally express universally quantified
-properties over data structures and for computability reasons,  we
-have chosen to limit the  actions performed during automaton transitions. 
+In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
+A specification language for interface checking aimed to C programs (called SLIC) is introduced in~\cite{ball2002}.
+Differences between SLIC and TOPL include: the use (in SLIC) of non-determinism to encode universal quantification of dynamically allocated data, and the  ability to have complex code in the automaton transitions.
+TOPL specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed during automaton transitions.
 Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/cav/ballr01}.
-While SLAM specialises on device drivers and checks client conformance rather than full protocols, 
+While SLAM specialises on device drivers and checks client conformance rather than full protocols,
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
-In~\cite{disney2011} contracts are used to express legal traces of
-programs in a functional language with references. The contracts
-specify traces as regular expressions over calls and returns, and hence,
-they resemble our automata, in a quite different
-setting. Here, the specifications are function-centered, though, and
-again, capturing inter-object relations seems somewhat tricky.
+In~\cite{disney2011} contracts are used to express legal traces of programs in a functional language with references.
+The contracts specify traces as regular expressions over calls and returns, and hence, they resemble our automata, in a quite different setting.
+Here, the specifications are function-centered, though, and again, capturing inter-object relations seems somewhat tricky.
 
 \dinocomment{Add more on dynamic checks and byte code instrumentation}
 
@@ -892,14 +868,14 @@ again, capturing inter-object relations seems somewhat tricky.
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 
 \paragraph{Conclusions.}
-We introduced TOPL---a language for expressing temporal safety properties for object-oriented programs
-via an extension of register automata.
-TOPL can express constraints involving the relation of many objects at the same time. 
-Furthermore, we introduced a technique for checking at run-time the violation of the properties
-on Java program. We have applied our technique to a variety of programs including large open source Java projects.
+We introduced TOPL---a language for expressing temporal safety properties for object-oriented programs via an extension of register automata.
+TOPL can express constraints involving the relation of many objects at the same time.
+Furthermore, we introduced a technique for checking at run-time the violation of the properties on Java program.
+We have applied our technique to a variety of programs including large open source Java projects.
 %
 \paragraph{Future work.}
-In the future, we intend to combine TOPL with  separation logic~\cite{reynolds2002} in order to deal with the heavy use of the heap and aliasing in object-oriented software. Moreover, we aim at developing static analysis techniques for TOPL properties using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
+In the future, we intend to combine TOPL with  separation logic~\cite{reynolds2002} in order to deal with the heavy use of the heap and aliasing in object-oriented software.
+Moreover, we aim at developing static analysis techniques for TOPL properties using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
 This will require investigating suitable abstraction for obtaining meaningful and precise over-approximations of the state space of the programs.
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
 
