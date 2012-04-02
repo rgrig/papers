@@ -75,7 +75,7 @@
 \maketitle
 
 \begin{abstract} % <<<
-We introduce a new technique for checking, at run-time, temporal safety properties of Java programs.
+We introduce a new technique for checking temporal safety properties of Java programs.
 Our approach is based on a new specification language for an extended class of register automata able to express complex properties of systems involving multiple interacting objects.
 The specifications are then used to instrument Java byte-code so that their violations can be automatically detected at run-time.
 We have validated our technique by checking several safety properties on large open source projects.
@@ -83,12 +83,15 @@ We have validated our technique by checking several safety properties on large o
 
 % >>>
 \section{Introduction} % <<<
+
+\rg{Stress the relation with register automata: complement, reversal, nondeterminism.}
+
 Objects interaction is at the core of the object-oriented paradigm.
-When designing object-oriented software, programmers have often  a global picture of the co-operation that objects will have in different moments in time and the invariants that all the player should adhere to for the correct functioning of the system.
-Consider for  example  Java collections.
+Programmers often have an informal and global understanding of how objects relate.
+Consider for example Java collections.
 A typical property one would want to state is:
 \begin{quote}
-{\em If one iterator modifies its collection, then other existing iterators of the same collection become invalid and cannot be used.}
+{\em If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}
 \end{quote}
 \noindent
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
@@ -98,15 +101,7 @@ These automata allow a natural and compact formalisation of safety temporal prop
 The manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
 For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
 
-TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows articulating  relationships and interactions among several objects.
-Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
-TOPL, in contrast,  intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
-Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
-One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}.
-Again, the ability of topl automata to store,  update, and compare values of their registers makes topl more expressive than tracematches.
-
-Topl specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
+TOPL specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
 Having defined TOPL automata as a convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
 Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
@@ -830,6 +825,15 @@ For Tomcat  6.0.20  we have tested the following properties:
 
 % >>>
 \section{Related Work}\label{sec:related} %<<<
+
+TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows articulating  relationships and interactions among several objects.
+Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
+TOPL, in contrast,  intentionally avoids such decomposition.
+Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
+Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
+One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}.
+Again, the ability of topl automata to store,  update, and compare values of their registers makes topl more expressive than tracematches.
+
 TOPL properties are based on register automata~\cite{DBLP:journals/tocl/DemriL09}.
 Compare to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size.
 For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
