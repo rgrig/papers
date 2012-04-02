@@ -96,13 +96,15 @@ A typical property one would want to state is:
 \noindent
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
 In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of  events.
-These automata allow a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
-The manipulation of registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
+TOPL automata allow a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
+The automata we introduce are nondeterministic and have a finite number of register with infinite domain whose value can be manipulated in several ways. 
+The manipulation of the registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
 For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
+Moreover, nondeterminism and infinite alphabets of the registers give us strictly more expressivity than other formalisms such as QVM~\cite{XXX} and Conspec~\cite{XXX}.
 
 TOPL specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
-Having defined TOPL automata as a convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
+Having defined TOPL automata as a powerful and convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
 Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
 Automatic run-time checking of TOPL properties is beneficial for the programmer as it relieves him/her from the burden of interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
 The Java API, for example, has hand-crafted code for checking certain temporal constraints.
