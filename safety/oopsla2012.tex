@@ -374,6 +374,7 @@ The following property detects when a dictionary overwrite one of its bindings.
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
 % >>>
+% >>>
 \section{TOPL Syntax and Semantics} % <<<
 \label{sec:syntax}
 A property has a name, a set of \texttt{using} directives, and a set of transitions.
@@ -761,6 +762,11 @@ Moreover, since their number {\tt n} is a parameter, there is no way to bound th
 % >>>
 % >>>
 \section{Experimental Results} % <<<
+
+\rg{Move after introduction.}
+\rg{Start with a section on methodology.
+Explain why we don't expect to find new bugs.}
+
 We have used the DACAPO bechmarks~\cite{dblp:conf/oopsla/dacapo} to test our tool.
 We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running
  Linux 2.6.32-40 and  Java 1.6.0\_20.
