@@ -366,11 +366,11 @@ The following property detects when a dictionary overwrite one of its bindings.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
-    message "the dictionary overwrite its bindings"
-    prefix <Dictionary>
-    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
-    written -> written: d.put(k, \pattern{V})
-    written -> error:   !v := d.get(k)
+   message "the dictionary overwrite its bindings"
+   prefix <Dictionary>
+   start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
+   written -> written: d.put(k, \pattern{V})
+   written -> error:   !v := d.get(k)
 \end{Verbatim}
 \delimitVerbatim
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
@@ -486,7 +486,7 @@ The transition relation $s \to s'$ is defined by the following rules.
 \[
 \begin{array}{ll}
 \text{(Step)}  &
-\infer[x_1 \to x_2{:} l \mbox{ and } |l|=|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
 \text{(Silent)}  &
 \infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
@@ -562,7 +562,7 @@ Consider the label
 \pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0
 \] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where
 \[
- e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \quad \mbox{ and }  \quad e_2= (ret \ gets, [0: \sem{t}])
+ e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \ \mbox{ and }  \  e_2= (ret \ gets, [0: \sem{t}])
 \]
 The instantiated guard for the label are:
  $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
@@ -860,6 +860,12 @@ In the early stages efficient but imprecise analyses are employed whereas more e
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 It is likely that our TOPL language could be fruitfully combined with their analysis technique.
 
+QVM~\cite{Arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
+sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
+adapted on the fly.
+To improve performance,  the implementation of the monitor is in the virtual machine,which, as a consequence make it not portable in
+different virtual machines.
+\dd{how do we defend ourselves for the fact that we cannot predict overhead?}
 An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} .
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external method.
 In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
