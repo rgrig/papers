@@ -100,7 +100,7 @@ TOPL automata allow a natural and compact formalisation of safety temporal prope
 The automata we introduce are nondeterministic and have a finite number of register with infinite domain whose value can be manipulated in several ways. 
 The manipulation of the registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
 For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
-Moreover, nondeterminism and infinite alphabets of the registers give us strictly more expressivity than other formalisms such as QVM~\cite{XXX} and Conspec~\cite{XXX}.
+Moreover, nondeterminism and infinite alphabets of the registers give us strictly more expressivity than other systems such as QVM~\cite{Arnold:2008}, Conspec~\cite{XXX} and Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
 
 TOPL specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
 
@@ -881,7 +881,7 @@ The contracts specify traces as regular expressions over calls and returns, and 
 Here, the specifications are function-centered, though, and again, capturing inter-object relations seems somewhat tricky.
 
 \dinocomment{Add more on dynamic checks and byte code instrumentation}
-
+\dd{cite grigore rosu's work}
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 
