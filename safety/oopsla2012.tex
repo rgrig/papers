@@ -880,6 +880,10 @@ In~\cite{disney2011} contracts are used to express legal traces of programs in a
 The contracts specify traces as regular expressions over calls and returns, and hence, they resemble our automata, in a quite different setting.
 Here, the specifications are function-centered, though, and again, capturing inter-object relations seems somewhat tricky.
 
+ConSpec~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
+Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{sec:examples.steps}).
+
+
 \dinocomment{Add more on dynamic checks and byte code instrumentation}
 \dd{cite grigore rosu's work}
 % >>>

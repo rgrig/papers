@@ -1,0 +1,32 @@
+\countdef\algLineCnt=255
+\dimendef\algIndent=0
+\dimendef\algDW=1
+\dimendef\algIndentSize=2
+{ \catcode`\^^0d=\active% next lines must contain %
+  \gdef\setupalg{%
+    \parindent=0pt%
+    \algLineCnt=0%
+    \algIndent=0pt%
+    \setbox0=\hbox{\rm0}\algDW=\wd0%
+    \algIndentSize=2em%
+    \def\algShowLine##1{%
+      \advance\algLineCnt by1%
+      \hbox{%
+        \ifnum\algLineCnt<10 \kern\algDW\fi\number\algLineCnt\quad%
+        \hskip\algIndent##1}}%
+    \def\^##1^^0d{\hbox{##1}\vskip2pt\relax}% procedure name line
+    \def\=##1^^0d{\algShowLine{##1}}%  normal line
+    \def\+##1^^0d{\advance\algIndent by\algIndentSize\algShowLine{##1}} % increase indent
+    \def\-##1^^0d{\advance\algIndent by-\algIndentSize\algShowLine{##1}} % decrease indent
+    \def\0##1^^0d{\algIndent=0pt\algShowLine{##1}} % set indent
+    \def\1##1^^0d{\algIndent=\algIndentSize\algShowLine{##1}} % set indent
+    \def\2##1^^0d{\algIndent=2\algIndentSize\algShowLine{##1}} % set indent
+    \def\3##1^^0d{\algIndent=3\algIndentSize\algShowLine{##1}} % set indent
+    \def\4##1^^0d{\algIndent=4\algIndentSize\algShowLine{##1}} % set indent
+    \def\5##1^^0d{\algIndent=5\algIndentSize\algShowLine{##1}} % set indent
+    \def~{\begingroup\let~=\endgroup\bf} % helper for typesetting keywords
+    \def\proc##1{\textnormal{\scshape##1}}%
+    \def\comment{\qquad\rlap{/}\kern.2em/ }%
+  }%
+}
+\newenvironment{alg}{\begingroup\setupalg\catcode`\^^0d=\active}{\endgroup}
