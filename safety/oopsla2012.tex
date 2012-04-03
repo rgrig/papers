@@ -84,9 +84,7 @@ We have validated our technique by checking several safety properties on large o
 % >>>
 \section{Introduction} % <<<
 
-\rg{Stress the relation with register automata: complement, reversal, nondeterminism.}
-
-Objects interaction is at the core of the object-oriented paradigm.
+Interaction of objects is at the core of the object-oriented paradigm.
 Programmers often have an informal and global understanding of how objects relate.
 Consider for example Java collections.
 A typical property one would want to state is:
@@ -95,14 +93,18 @@ A typical property one would want to state is:
 \end{quote}
 \noindent
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
-In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying an extension of register automata~\cite{DBLP:journals/tocl/DemriL09} where transitions can be taken based on variable number of  events.
-TOPL automata allow a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
-The automata we introduce are nondeterministic and have a finite number of register with infinite domain whose value can be manipulated in several ways. 
-The manipulation of the registers  gives them more expressivity than standard temporal formalisms (e.g., LTL and CTL).
-For example, TOPL allows encoding properties involving overwrite of values or shapes of dynamic allocated data structures (e.g., cyclic vs acyclic linked list, etc) often crucial for object-oriented systems.
-Moreover, nondeterminism and infinite alphabets of the registers give us strictly more expressivity than other systems such as QVM~\cite{Arnold:2008}, Conspec~\cite{XXX} and Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
-
-TOPL specification are high-level and this aspect helps reducing the the semantic gap between the intuitive understanding that programmers have of various temporal constraints on their code and the precise formal description needed by verification/analysis tools for automatic checking of these constraints.
+In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying safety temporal properties of Java programs.
+TOPL allows a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
+Similar formalisms used for runtime checking of Java programs include typestates~\cite{dblp:journals/scp/harel87} and tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
+Unlike those, TOPL is based on an automata formalism designed for {\em infinite alphabets}~\cite{dblp:conf/csl/segoufin06}.
+In the context of programs analysis the alphabet is the set of program values.
+This set is infinite since there is no bound on the number of instantiations.
+There are several such automata formalisms;
+TOPL is an extension of register automata~\cite{dblp:journals/tcs/kaminskif94}.
+For standard finite-state automata, nondeterminism does not increase expressivity;
+with infinite alphabets, nondeterminism does increase expressivity.
+Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\cite{dblp:conf/oopsla/chenr07} are essentially deterministic, for speed.
+We chose to give TOPL nondeterministic semantics.
 
 Having defined TOPL automata as a powerful and convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
 Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
@@ -839,10 +841,10 @@ Existing techniques for type-state aim at decomposing properties involving sever
 TOPL, in contrast,  intentionally avoids such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
 Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
-One language in the literature sharing this point of view is tracematches~\cite{DBLP:conf/oopsla/AllanACHKLMSST05}.
+One language in the literature sharing this point of view is tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
 Again, the ability of topl automata to store,  update, and compare values of their registers makes topl more expressive than tracematches.
 
-TOPL properties are based on register automata~\cite{DBLP:journals/tocl/DemriL09}.
+TOPL properties are based on register automata~\cite{dblp:journals/tocl/demril09}.
 Compare to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size.
 For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
 On a static setting this phenomenon is normally encoded using non-determinism combined with prophecy variables~\cite{dblp:journals/tcs/abadil91}.
@@ -860,7 +862,7 @@ In the early stages efficient but imprecise analyses are employed whereas more e
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 It is likely that our TOPL language could be fruitfully combined with their analysis technique.
 
-QVM~\cite{Arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
+QVM~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
 sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
 adapted on the fly.
 To improve performance,  the implementation of the monitor is in the virtual machine,which, as a consequence make it not portable in
@@ -884,6 +886,8 @@ ConSpec~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe secur
 Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{sec:examples.steps}).
 
 
+\rg{I think the paper~\cite{dblp:journals/tocl/demril09} adds an operator to LTL to make it more expressive than register automata.
+We should discuss here, but I moved the citation out of the introduction.}
 \dinocomment{Add more on dynamic checks and byte code instrumentation}
 \dd{cite grigore rosu's work}
 % >>>

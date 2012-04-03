@@ -37,7 +37,7 @@ cleanbib: req
 	@cp safety.bib safety.bib.bak && bibtool safety.bib -r ../lib/bibtool.cfg -o tmp.bib && mv tmp.bib safety.bib
 
 sigplanconf.cls: req
-	@python wget.py http://www.sigplan.org/sigplanconf.cls sigplanconf.cls
+	@python wget.py http://www.cs.colostate.edu/symposium/sigplanconf.cls sigplanconf.cls
 
 req:
 	@(python -V > /dev/null 2> /dev/null && python chk_requirements.py && touch req) || (echo "You need python. Sorry." && exit 1)
