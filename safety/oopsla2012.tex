@@ -1,6 +1,9 @@
 \documentclass{sigplanconf}[10pt] % <<<
 
+% Keep fontenc and inputenc them in this order.
+\usepackage[T1]{fontenc}
 \usepackage[latin1]{inputenc}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphics}
@@ -62,6 +65,15 @@
 \newcommand{\start}{\ensuremath{\mathtt{start}}\xspace}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
 
+\newcommand{\eqquote}[2]{{%
+  \refstepcounter{equation}\label{#2}%
+  \setbox0=\vbox{\advance\hsize by-3\parindent\noindent\em#1}%
+  \newdimen\x\x=\ht0 \advance\x by\dp0%
+  \setbox1=\vbox to\x{\vss\hbox{(\arabic{equation})}\vss}%
+  \leavevmode\\[1ex]%
+  \hbox to\hsize{\hskip 1.5\parindent\box0\hfil\box1}%
+  \\[1ex]}}
+
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
 \newtheorem{notation}{Notation}
@@ -88,13 +100,10 @@ Interaction of objects is at the core of the object-oriented paradigm.
 Programmers often have an informal and global understanding of how objects relate.
 Consider for example Java collections.
 A typical property one would want to state is:
-\begin{quote}
-{\em If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}
-\end{quote}
-\noindent
+\eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction} over time.
-In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying safety temporal properties of Java programs.
-TOPL allows a natural and compact formalisation of safety temporal properties of object-oriented software as the one above.
+
+In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying temporal safety properties of Java programs.
 Similar formalisms used for runtime checking of Java programs include typestates~\cite{dblp:journals/scp/harel87} and tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
 Unlike those, TOPL is based on an automata formalism designed for {\em infinite alphabets}~\cite{dblp:conf/csl/segoufin06}.
 In the context of programs analysis the alphabet is the set of program values.
@@ -106,22 +115,31 @@ with infinite alphabets, nondeterminism does increase expressivity.
 Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\cite{dblp:conf/oopsla/chenr07} are essentially deterministic, for speed.
 We chose to give TOPL nondeterministic semantics.
 
-Having defined TOPL automata as a powerful and convenient way to provide formal specification of temporal properties of objects,  we introduce a technique for automatically checking them at run-time on Java programs.
-Our method involves instrumenting the Java byte code in a way it reflects the property of interest.
-Automatic run-time checking of TOPL properties is beneficial for the programmer as it relieves him/her from the burden of interspersing the code with ad-hoc checks  aimed at tracing the violation of a correct temporal behaviour.
-The Java API, for example, has hand-crafted code for checking certain temporal constraints.
-However, such checks are often hard to write, weaved with the code solving the actual problem, and | in the case of the Java API |  do not provide with a trace of the relevant events leading to an error.
-In contrast, dynamically checking TOPL properties  with the technique we present in this paper is transparent to the programmer and, therefore,  it avoids all these issues.
+We also introduce a technique for automatic run-time checking of TOPL properties.
+Every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
+It is impossible to turn off these checks, even if one has a proof that a certain program correctly uses the library.
+Because these checks are always active, their overhead must be very low.
+As a result, when a check fails, the user does not see an error trace.
+Also, such checks are difficult to write and to maintain.
+Other libraries document such temporal constraints only in comments.
+With TOPL, the programmer describes the property in one place.
+Then the TOPL compiler inserts appropriate checks into Java bytecode.
+The execution is monitored and violations are reported as traces of events.
+The programmer tunes the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters.
+For example, during testing they could allow for a very high overhead, and they could chose to deploy the bytecode without any inserted check.
 
+\rg{Should these sentences be shorter?}
 In summary, the contributions of this paper are:
 \begin{itemize}
-\item The definition of TOPL, a specification language for an extension of register automata tailored to properties involving object interactions over time.
-\item For TOPL we have defined a precise formal semantics making the language suitable for program analysis (both static and dynamic) and verification.
-\item We have defined the formal relation between register automata and TOPL automata.\dd{We need to add Rasmus' encoding}
+\item We define the TOPL specification language, which is tailored to express properties involving object interactions over time in a way that is familiar to Java programmers.
+\item We give precise formal semantics for the TOPL, making it suitable for program analysis, both static and dynamic.
+\item We describe the relation between TOPL's semantic model and register automata. \dd{We need to add Rasmus' encoding}
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
-\item We have implemented our method and we report experiments on large open source projects.
+\item We discuss the implementation of our technique.
+\item We report the results of using our tool on large open-source projects.
 \end{itemize}
 
+\rg{Only update this at the very end.}
 The paper is organized as follows.
 In Section~\ref{sec:examples} we start with few motivating examples.
 Section~\ref{sec:syntax} gives  TOPL's syntax  and semantics.
