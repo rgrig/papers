@@ -134,7 +134,7 @@ For example, during testing they could allow for a very high overhead, and they 
 In summary, the contributions of this paper are:
 \begin{itemize}
 \item We define the TOPL specification language, which is tailored to express properties involving object interactions over time in a way that is familiar to Java programmers.
-\item We give precise formal semantics for the TOPL, making it suitable for program analysis, both static and dynamic.
+\item We give precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
 \item We describe the relation between TOPL's semantic model and register automata. \dd{We need to add Rasmus' encoding}
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
 
@@ -151,6 +151,134 @@ Section~\ref{sec:dynamic} explores the use of TOPL for run-time checking of and 
 Section~\ref{sec:related} discusses related work.
 Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
 
+% >>>
+\section{Experimental Results} % <<<
+
+% plan
+%   - intro: see if it works, see the overhead
+%   - methodology: dacapo, 6 projects, 6 properties, measure overhead, no bugs
+%   - a bug's death: story of bug in tomcat and in dacapo
+%   - projects and properties
+%   - overhead
+
+Our interest in temporal properties of object-oriented programs was initially purely theoretical.
+But, we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
+In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
+
+\subsection{Methodology} % <<<
+
+% plan
+% - expect no bugs: we assume these projects are well-tested (e.g., many users)
+% - dacapo
+% - 6 projects actively developed and used
+% - grep comments, check code,  write property
+% - measure overhead for various parameters
+% - computer specs
+
+We expect our technique to be most useful during development.
+Library writers will document temporal constraints in TOPL, not just in English.
+Each library will have a testing version, obtained by instrumenting the bytecode with the TOPL properties.
+Users will use the testing version of the library to ensure they use it correctly.
+By the time end-users see the application, most temporal bugs are gone.
+Back in the real world, we too would like to know if such a scenario is likely.
+Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
+We have to settle for less.
+
+We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}.
+DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
+We focus on $6$~projects that are still widely developed and used: Eclipse, Tomcat, H2, Batik, Jython, and PMD\null.
+These are all mature projects with many users.
+DaCapo itself was used for many experiments by the research community.
+Hence, we do not expect to find any bugs, but aim to measure the overhead.
+For each project we write $6$~TOPL properties.
+They all encode information that exists in the comments.
+In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
+
+We measure both the time overhead and the space overhead.
+For measuring the time overhead we ask DaCapo to test a project repeatedly until the running time converges.
+For measuring the memory overhead we estimate the size of the heap every time the execution enters the TOPL checker, and take report the maximum.
+Both the run time and the heap size are measured for varying settings of the TOPL checker: maximum number of active states (see later) to track, maximum history length, with and without collection of call-stack traces.
+In particular, the run time and the heap size for a run with a maximum of $0$~active states serve as a baseline.
+The running time is reported also for the original bytecode, with no instrumentation whatsoever.
+
+\rg{Move here the description of the system.}
+
+% >>>
+\subsection{A Bug's Death} % <<<
+
+\rg{Tell the story of the Tomcat and the Dacapo bugs.}
+
+% >>>
+\subsection{Projects} % <<<
+
+\rg{Briefly describe the projects, and the properties we wrote for them.}
+
+% >>>
+\subsection{Overhead} % <<<
+
+We have used the DACAPO bechmarks~\cite{dblp:conf/oopsla/dacapo} to test our tool.
+We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running
+ Linux 2.6.32-40 and  Java 1.6.0\_20.
+To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
+
+\begin{table*}[t]
+      \centering
+   \begin{tabular}{| l | r | r | r | r | }
+   \hline
+  Benchmark  & Original Time (Stand. Dev.) & Instrumented Time (Stand. Dev.) & Checker Memory & Failed Property
+\\ \hline \hline
+Tomcat 6.0.20 &  5436 (+/-141) & 7449 (+/-134) & &
+\\ \hline
+Benchmark 3 & & &  &
+\\ \hline
+Benchmark 4 & & &  &
+\\ \hline
+Benchmark 5 & & &  &
+\\ \hline
+Benchmark 6 & & &  &
+\\ \hline
+Benchmark 7 & & &  &
+\\ \hline
+Benchmark 8 & & &  &
+\\ \hline
+Benchmark 9 & & &  &
+\\ \hline
+Benchmark 10 & & &  &
+\\ \hline
+Benchmark 11 & & &  &
+\\ \hline
+Benchmark 12 & & &  &
+\\ \hline
+\end{tabular}
+    \caption{Experimental results on the DACAPO benchmarks. The times are the average of 5 runs.}
+   \label{tab:booktabs}
+\end{table*}
+
+\paragraph{Tomcat 6.0.20.}
+Dacapo uses Tomcat version 6.0.20. The documentation of several classes (e.g., \textsf{javax.servlet.Filter}, \textsf{javax.servlet.Servlet}, \textsf{javax.servlet.RequestDispatcher}, \textsf{javax.servlet.ServletResponse}, \textsf{javax.servlet.ServletResponse}) contain constraints of the type ``event~$e$ must occur before event~$f$''.
+
+Most getters promise to return the last set value.
+If there was no call to a setter, then sometimes a default value is specified in the documentation.
+
+The following are properties of the type ``method~\textsf{m} returns a boolean that indicates whether event~\textsf{e} occurred''.
+
+\begin{enumerate}
+\item
+\textsf{javax.servlet.ServletResponse}
+  \begin{itemize}
+  \item[$e$]
+  \item[$m$] \textsf{isCommitted} called on~\textsf{x}
+  \end{itemize}
+\end{enumerate}
+
+For Tomcat  6.0.20  we have tested the following properties:
+\begin{itemize}
+\item ForwardOnlyUncommittedResponses
+\item ResponseUsesEitherWriterOrStream
+\end{itemize}
+\dinocomment{Radu can you comment what these properties mean? and describe which porperty was violated?}
+
+% >>>
 % >>>
 \section{TOPL by Examples} \label{sec:examples} % <<<
 
@@ -789,75 +917,6 @@ Moreover, since their number {\tt n} is a parameter, there is no way to bound th
 \dinocomment{talk about our strategy}
 
 % >>>
-% >>>
-\section{Experimental Results} % <<<
-
-\rg{Move after introduction.}
-\rg{Start with a section on methodology.
-Explain why we don't expect to find new bugs.}
-
-We have used the DACAPO bechmarks~\cite{dblp:conf/oopsla/dacapo} to test our tool.
-We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running
- Linux 2.6.32-40 and  Java 1.6.0\_20.
-To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
-
-\begin{table*}[t]
-      \centering
-   \begin{tabular}{| l | r | r | r | r | }
-   \hline
-  Benchmark  & Original Time (Stand. Dev.) & Instrumented Time (Stand. Dev.) & Checker Memory & Failed Property
-\\ \hline \hline
-Tomcat 6.0.20 &  5436 (+/-141) & 7449 (+/-134) & &
-\\ \hline
-Benchmark 3 & & &  &
-\\ \hline
-Benchmark 4 & & &  &
-\\ \hline
-Benchmark 5 & & &  &
-\\ \hline
-Benchmark 6 & & &  &
-\\ \hline
-Benchmark 7 & & &  &
-\\ \hline
-Benchmark 8 & & &  &
-\\ \hline
-Benchmark 9 & & &  &
-\\ \hline
-Benchmark 10 & & &  &
-\\ \hline
-Benchmark 11 & & &  &
-\\ \hline
-Benchmark 12 & & &  &
-\\ \hline
-\end{tabular}
-    \caption{Experimental results on the DACAPO benchmarks. The times are the average of 5 runs.}
-   \label{tab:booktabs}
-\end{table*}
-
-\paragraph{Tomcat 6.0.20.}
-Dacapo uses Tomcat version 6.0.20. The documentation of several classes (e.g., \textsf{javax.servlet.Filter}, \textsf{javax.servlet.Servlet}, \textsf{javax.servlet.RequestDispatcher}, \textsf{javax.servlet.ServletResponse}, \textsf{javax.servlet.ServletResponse}) contain constraints of the type ``event~$e$ must occur before event~$f$''.
-
-Most getters promise to return the last set value.
-If there was no call to a setter, then sometimes a default value is specified in the documentation.
-
-The following are properties of the type ``method~\textsf{m} returns a boolean that indicates whether event~\textsf{e} occurred''.
-
-\begin{enumerate}
-\item
-\textsf{javax.servlet.ServletResponse}
-  \begin{itemize}
-  \item[$e$]
-  \item[$m$] \textsf{isCommitted} called on~\textsf{x}
-  \end{itemize}
-\end{enumerate}
-
-For Tomcat  6.0.20  we have tested the following properties:
-\begin{itemize}
-\item ForwardOnlyUncommittedResponses
-\item ResponseUsesEitherWriterOrStream
-\end{itemize}
-\dinocomment{Radu can you comment what these properties mean? and describe which porperty was violated?}
-
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 
