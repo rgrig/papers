@@ -1,0 +1,56 @@
+;; This buffer is for notes you don't want to save, and for Lisp evaluation.
+;; If you want to create a file, visit that file with C-x C-f,
+;; then enter the text in that file's own buffer.
+
+\section{From FSA to TOPL}
+\rlp{Some definitions and theorems?}
+ 
+Given a finite state automaton~\cite{dblp:journals/tcs/kaminskif94} $A=\langle S, p, u, \rho, T,
+F\rangle$, we will construct a TOPL property $P_A$ to simulate it. The
+simulation is such that for each word $w$, $A$ accepts $w$ iff $P_A$
+accepts $w' = \#^{|u|}w\#$. Thus, $w'$ is an encoding of $w$ that
+caters for the differences of the two formalisms: An FSA has an
+initial state $u$ of length $|u|$. In order to set up the initial
+state, the TOPL property needs to consume $|u|$ symbols, so we have to
+put that many dummy symbols in front of the word. The dummy symbol at
+the end is because the FSA may have many final states whereas a TOPL
+property only has one, so we need to make an extra transition from all
+the erroneous states to the actual error state.
+
+%\begin{definition}
+%Let $A=\langle S, p, u, \rho, T, F\rangle$ be an FSA
+%\end{definition}
+
+To construct the TOPL property we have to define the set Vertex
+of vertices and the set Arc of labelled transitions. We do that as follows:
+\[
+Vertices = S \cup \{start, error\}
+\]
+that is we have the same set of vertices as $A$ plus two new
+ones. $start$ is going to be the initial vertex. It will have a
+transition to the start vertex $p$ of $A$ that sets up the
+initial state. Thus, if $u = w_1w_2\ldots w_n$, then Arc includes
+\[
+start \to p: (*,R_1=w_1);(*,R_2=w_2);\ldots;(*,R_n=w_n)
+\]
+a transition of depth $n = |u|$ that assigns the letters of $u$
+to $n$ automaton variables. The guard $*$ simply ignores the
+event\footnote{One could also chose a guard that forces the event
+to be \#.}. This transition consumes the first $n$ extra
+symbols. Arc further includes
+\[
+\forall (s, i, s') \in T.\ s\to s': r_i=e, skip
+\]
+coresponding to the case where $e$ has been seen before, and
+\[
+\forall (s, i, s') \in T.\ \rho(s)=i.\ s\to s': unknown(e), R_i=e
+\]
+where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
+coresponding to the case where $e$ has not been seen (or has been
+forgotten). In this case, the relevant register is
+updated. Finally Arc includes
+\[
+\forall s\in F.\ s\to error: *, skip
+\]
+to send the vertices in $F$ to the error state. This transition
+consumes the final extra symbol.
