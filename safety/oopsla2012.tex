@@ -88,7 +88,7 @@
 
 \begin{abstract} % <<<
 We introduce a new technique for checking temporal safety properties of Java programs.
-Our approach is based on a new specification language for an extended class of register automata able to express complex properties of systems involving multiple interacting objects.
+Our approach is based on a new specification language for an extended class of {\em register automata} able to express complex properties of systems involving multiple interacting objects.
 The specifications are then used to instrument Java byte-code so that their violations can be automatically detected at run-time.
 We have validated our technique by checking several safety properties on large open source projects.
 \end{abstract}
@@ -106,12 +106,14 @@ The formalization of the above constraint is non-trivial since it needs to keep 
 In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying temporal safety properties of Java programs.
 Similar formalisms used for runtime checking of Java programs include typestates~\cite{dblp:journals/scp/harel87} and tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
 Unlike those, TOPL is based on an automata formalism designed for {\em infinite alphabets}~\cite{dblp:conf/csl/segoufin06}.
-In the context of programs analysis the alphabet is the set of program values.
+In the context of program analysis the alphabet is the set of program values.
 This set is infinite since there is no bound on the number of instantiations.
 There are several such automata formalisms;
 TOPL is an extension of register automata~\cite{dblp:journals/tcs/kaminskif94}.
+%For standard finite-state automata, nondeterminism does not increase expressivity;
+%with infinite alphabets, nondeterminism does increase expressivity.
 For standard finite-state automata, nondeterminism does not increase expressivity;
-with infinite alphabets, nondeterminism does increase expressivity.
+however combining  infinite alphabets and nondeterminism gives strictly more expressive automata. 
 Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\cite{dblp:conf/oopsla/chenr07} are essentially deterministic, for speed.
 We chose to give TOPL nondeterministic semantics.
 
@@ -135,8 +137,13 @@ In summary, the contributions of this paper are:
 \item We give precise formal semantics for the TOPL, making it suitable for program analysis, both static and dynamic.
 \item We describe the relation between TOPL's semantic model and register automata. \dd{We need to add Rasmus' encoding}
 \item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
+<<<<<<< HEAD
 \item We discuss the implementation of our technique.
 \item We report the results of using our tool on large open-source projects.
+=======
+\item We have implemented our method and we report experiments on large open source projects. The results are encouraging: we have found
+violations of properties, and we have observed an acceptable runtime overhead. 
+>>>>>>> several changes
 \end{itemize}
 
 \rg{Only update this at the very end.}
@@ -351,7 +358,8 @@ As before, in order to match the method name, the prefixes
 \Verb@java.util.Collection.*[*]@ and \Verb@java.util.Iterator.*[*]@
 are prepended.
 Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
-We have a match because the expansion \Verb@java.util.Iterator.next@ is overridden by the method that is actually called.
+The expansion \Verb@java.util.Iterator.next@ is overridden by the method that is actually called and therefore 
+we have a match.
 
 The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
 The automaton expresses that a call to one of {\tt j}'s methods while vertex \texttt{yBad} is active constitutes an error.
@@ -399,10 +407,8 @@ The overwrite is detected by the guard which checks if the value associated with
 % >>>
 \section{TOPL Syntax and Semantics} % <<<
 \label{sec:syntax}
-A property has a name, a set of \texttt{using} directives, and a set of transitions.
-Each transition has an arc (directed edge) and labels.
-Each arc has a source and a target vertex.
-All vertices are identified by their name.
+Syntactically, a TOPL property has a name, a set of \texttt{using} directives, and a set of transitions.
+Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
 Labels look like method calls.
 Each label has a method pattern that is used to identify the set of methods to which the label refers.
 In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
@@ -444,8 +450,8 @@ Let stores be finite partial maps with finite domain.
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
 \]
 Moreover we assume a countable set \set{Event} of events with known arity.
-Each event~$e$ is of the form $(t_e,[0: v_0,\dots, 1:v_n])$.
-The component $t_e$ is a tag, e.g., call or return, while the second component is an array of values.
+Each event~$e$ is of the form $(t_e,[0{:} v_0,\dots, 1{:}v_n])$.
+The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second component is an array of values.
 Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
 %
 \begin{definition}[TOPL execution automaton]
@@ -470,9 +476,9 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
    A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
 \] and defined as
 \[
-\begin{array}{c}
+\begin{array}{l}
 \begin{array}{lcl}
-A(\sigma,\epsilon,[]) & = & \bot
+A(\sigma,\epsilon,l) & = & \bot
 \\[2ex]
 A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
@@ -482,17 +488,18 @@ A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      \right.
 \\[5ex]
 A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|=|l|>0$}
+     A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
      \\
-& \mbox{and  $A(\sigma,e,(g,a))=\sigma'$}
+& \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
      \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
 \end{array}
 \end{array}\]
-\dinocomment{check the above definition for values like $A(\sigma,\epsilon,\tau)$}
-In this definition, if the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event and therefore updating the store $\sigma$.
+In this definition, the effect of a list of actions $l$ on an empty trace $\epsilon$ gives the undefined value.
+If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event and therefore updating the store $\sigma$.
+
 With $A$ we can define the predicates $enabled$ testing whether a transition is enabled in a store when observing a trace, and a predicate $Enabled$ testing if there exists an enabled transition starting from an execution state:
 \begin{eqnarray*}
 enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
@@ -606,9 +613,9 @@ In this section we describe an algorithm to check at run-time  TOPL properties o
 Figure~\ref{architecture} summarises our method.
 There are two main components:
 the {\em TOPL compiler} and the {\em Property Checker}.
-The TOPL compiler takes as input the compiled class files and the list of TOPL properties to be checked against the classes.
+The TOPL compiler takes as input compiled class files and a list of TOPL properties to be checked against the classes.
 The compiler has two submodules: the {\em instrumenter} and the {\em automaton generator}.
-The latter synthesises a Java program that precisely encodes the set of automata representing the TOPL properties.
+The latter synthesises a Java program that precisely encodes the automata representing the TOPL properties.
 The instrumenter instruments the byte code with calls to methods of the Java encoding of the automata.
 During their tasks, the two submodules need to exchange information about method identifiers, therefore their operations are intertwined.
 The property checker module can be seen as a general interpreter able to execute TOPL automata properties.
@@ -627,13 +634,14 @@ The TOPL compiler (\textsf{toplc}) is written in OCaml whereas  the TOPL checker
 
 \subsection{TOPL Compiler} % <<<
 
-The input of the compiler is a set of properties and a set of classes and the output  is a checker and instrumented classes.
+The input of the compiler is a set of properties and a set of classes and its output  is a checker and instrumented classes.
 The checker is itself a Java class.
-The instrumented classes should have the same behaviour as the original classes although they are allowed to use more resources.
-The compilation of TOPL properties goes thought the following phases.
+The instrumented classes have the same behaviour as the original classes but
+ they are allowed to use more resources.
+The compilation of TOPL properties is done by the following phases 4 phases.
 
 \paragraph{Desugaring.}
-The parser de-sugars the TOPL properties into a simpler, intermediate form where
+In the first phase the parser de-sugars the TOPL properties into a simpler, intermediate form where
 \begin{itemize}
 \item method-name patterns are prefixed according to the \textsf{prefix} directive;
 \item \textsf{call} and \textsf{return} transitions get one step, while other transitions are de-sugared into a \textsf{call} followed by a \textsf{return};
@@ -643,7 +651,7 @@ The parser de-sugars the TOPL properties into a simpler, intermediate form where
 The parser builds an AST that closely follows the language for which we have formal operational semantics.
 
 \paragraph{Static Checks.}
-Next, the compiler checks that the property is well-formed.
+In the second phase, the compiler checks that the property is well-formed.
 In doing so, it effectively checks that:
 \begin{itemize}
 \item two parallel writes to automaton variables have distinct destinations;
@@ -651,44 +659,43 @@ In doing so, it effectively checks that:
 \end{itemize}
 
 \paragraph{Dealing with Inheritance.}
-After the above phases, the property is transformed so it explicitly identifies Java methods.
+In the third phase, the property is transformed so it explicitly identifies Java methods.
 As described in Section~\ref{sec:syntax}, each transition step has a guard containing a tag component.
 A \emph{tag} has a method name pattern, an arity pattern, and an event type pattern.
 The latter is either \textsf{call} or \textsf{return}.
 For example the tag guard ``\textsf{call *.$\langle$freeboogie.*.eval$\rangle$[2]}'' refers to all the calls to methods with two arguments whose full name matches the pattern ``\textsf{freeboogie.*.eval}'' \emph{and all the methods that override them}.
-A tag guard together with a set of class signatures determine a set of of program points.
+A tag guard together with a set of class signatures determine a set of program points.
 Each tag guard is translated into a set of identifiers.
 
 An \emph{observable} method is one whose name matches a pattern that appears in an \textsf{observing} directive.\dinocomment{check that observing directive have been introduced before}
 Internally, each observable method in the classpath receives two integer identifiers: one for the call event and one for the return event.
 
 At this point several properties are merged into a single property that may have multiple start vertices.
-Vertices are no longer identified by name.
-Each property used to have a pattern for observable methods;
-now each vertex has a set of observable event identifiers.
-\dinocomment{I don't understand this}
+%Vertices are no longer identified by name.
+The pattern of observable methods of the property is now replaced by 
+a set of observable event identifiers for each vertex.
 
 The initial property may use Java literals that are collected into an array \textsf{constants} of \textsf{Object} that is written in the file \textsf{topl/Property.java}  whereas the property is dumped into an easy-to-parse textual format, in the file \textsf{Property.text}
 referring to constants by their index in the array \textsf{constants}.
 
-\paragraph{Instrumentation.}
-The bytecode of each observable method is instrumented.
+\paragraph{Instrumentation.} In the last phase, 
+the bytecode of each observable method is instrumented.
 The first and last actions performed by the instrumented version are calls to {\sf topl.Checker.check(event)}.
 Each \textsf{event} carries an identifier and an array of \textsf{Object}.
 The array holds either the arguments, or the return value.
 
-For instrumenting Java bytecode we use a fork of the library Barista.
+For instrumenting Java bytecode we use a fork of the library Barista~\cite{cite-barista}.
 Our version of Barista handles low-level details such as relative offsets given as a count of bytes.
 
 % >>>
 \subsection{Checker} % <<<
 
 The runtime checker of TOPL properties resides entirely in the file {\sf topl/Checker.java}.
-The checker logs a message when it detects a property violation. However, the action to take can be configurable and the user can choose to have an exception rather than a log message.
+By default, the checker logs a message when it detects a property violation. However, the action to take can be configurable and the user can choose to have an exception instead.
 
 The main components of the checker are:
 \begin{itemize}
-\item parser for the data structures used to represent properties;
+\item a parser for the data structures used to represent properties;
 \item the data structures used to represent the current state of the checker; and
 \item the code that handles one incoming event.
 \end{itemize}
@@ -705,29 +712,28 @@ Each state has a queue of events to be processed.
 The checker does not assume a bounded transition depth, but the compiler produces only transitions with $1$~or~$2$ steps.
 If all transitions would have the same depth, then one global queue of events would suffice.
 
-Each state also has a vertex identifier and a set of bindings from automaton variables to values.
-Vertex identifiers are integers; automaton variables are identified by integers; values are instances of \textsf{Object}.
-Each state is produced by applying an action to another state, which is called the parent.
+Each state also has an integer vertex identifier and a set of bindings from automaton variables to values.
+Automaton variables are identified by integers; values are instances of \textsf{Object}.
+Each state is produced by applying an action to another state (called the parent).
 For error reporting, each state keeps track of its parent.
-If $\ge2$~outgoing transitions are enabled for an active state, then it produces $\ge2$~active states for the next time step.
+An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
 The new active states and their parent are likely to have similar sets of bindings.
-This is why we use persistent (functional) sets for bindings; more precisely, we use treaps.\dinocomment{add a reference here?}
+This is why we use persistent (functional) sets for bindings; more precisely, we use treaps~\cite{treaps}.
 
 \paragraph{Step.}
-The method \textsf{topl.Checker.check(event)} is the main loop of the checker.
-One should imagine that the time is discrete, and advances when the program sends an event to the checker.
+The method \textsf{topl.Checker.check(event)} is the main loop of the checker and is reported in Figure~\ref{checker.check}.
+We assume the time is discrete, and advances when the program sends an event to the checker.
 
 The checker does not do anything if it is inactive.
-The JVM (\textbf Java \textbf virtual \textbf machine) uses selected parts of the JDK during startup.
-If those parts are instrumented by the TOPL compiler, and if the TOPL checker calls back into the JDK, then the JVM crashes.
-As a workaround, the checker is inactive by default.
+%The JVM (\textbf Java \textbf virtual \textbf machine) uses selected parts of the JDK during startup.
+%If those parts are instrumented by the TOPL compiler, and if the TOPL checker calls back into the JDK, then the JVM crashes.
+%As a workaround, the checker is inactive by default.
 Ideally, \textsf{toplc} should insert bytecode that activates the checker.
 Currently one has to manually insert a call to \textsf{Checker.activate}, probably as the first action of the project's \textsf{main} method.
-The inactive flag is not just a hack to cope with JDK instrumentation:
-It is necessary to avoid recursive invocations of the checker.
-
-The pseudocode of \textsf{topl.Checker.check} follows.
-
+The inactive flag is necessary to avoid recursive invocations of the checker.
+\dd{Radu can you explain the algorithm in the figure?}
+\begin{figure}[htbp]
+\begin{center}
 \begin{alg}
 \^  $\proc{Check}(e)$
 \=  $A := \emptyset$
@@ -754,6 +760,10 @@ The pseudocode of \textsf{topl.Checker.check} follows.
 \+        $s' := s$
 \=        insert state $s'$ with one event popped into $A$
 \end{alg}
+\caption{The method \textsf{topl.Checker.check(event)}.}
+\label{checker.check}
+\end{center}
+\end{figure}
 
 %TODO: forget states (with strategies), runtime abstraction.
 
@@ -906,7 +916,7 @@ Because ConSpec automatons are deterministic and have only a countable number of
 
 \rg{I think the paper~\cite{dblp:journals/tocl/demril09} adds an operator to LTL to make it more expressive than register automata.
 We should discuss here, but I moved the citation out of the introduction.}
-\dinocomment{Add more on dynamic checks and byte code instrumentation}
+%\dinocomment{Add more on dynamic checks and byte code instrumentation}
 \dd{cite grigore rosu's work}
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
