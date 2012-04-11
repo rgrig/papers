@@ -535,6 +535,7 @@ The overwrite is detected by the guard which checks if the value associated with
 % >>>
 \section{TOPL Syntax and Semantics} % <<<
 \label{sec:syntax}
+\dinocomment{maybe we should put back the syntax? Otherwise change the name of the section}
 Syntactically, a TOPL property has a name, a set of \texttt{using} directives, and a set of transitions.
 Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
 Labels look like method calls.
@@ -564,19 +565,19 @@ We model the semantics of programs and automata as sets of event traces.
 We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-\subsubsection{TOPL execution automata.}
+\subsubsection{TOPL Execution Automata.}
 \newcommand{\World}{ExecState}
 
-Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, gives rise to an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
+Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, determines  an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
 This automaton represents the semantics of the property interpreted over the program.
 $\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions.
 The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
 
 We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
-Let stores be finite partial maps with finite domain.
+Let stores be finite partial maps with finite domain:
 \[
 \set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
-\]
+\] 
 Moreover we assume a countable set \set{Event} of events with known arity.
 Each event~$e$ is of the form $(t_e,[0{:} v_0,\dots, 1{:}v_n])$.
 The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second component is an array of values.
@@ -596,7 +597,7 @@ A state of the automaton is given by specifying the vertex in the graph as well 
 The reader may wonder why execution states need to contain traces.
 The reason is that each label in $\set{Arc}$ carries (potentially) not
 just a single guard, but a list of guards. We call the length of this list the \emph{depth} of the arc.
-Since different outgoing arcs for a vertex can have different depths, we have that different target states of execution transitions may receive different events.
+Since different outgoing arcs of a vertex can have different depths, we have that different target states of transitions may receive different events.
 For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have depth 2 and 5 respectively, then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$.
 
 In order to define the transition relation $\to$ we need to define two auxiliary concepts.
@@ -607,8 +608,10 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
 \[
 \begin{array}{l}
 \begin{array}{lcl}
-A(\sigma,\epsilon,l) & = & \bot
+A(\sigma,\epsilon,[]) & = & \sigma
 \\[2ex]
+%A(\sigma,\epsilon,l) & = & \bot
+%\\[2ex]
 A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
      \\[1ex]
@@ -626,21 +629,22 @@ A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
      \right.
 \end{array}
 \end{array}\]
-In this definition, the effect of a list of actions $l$ on an empty trace $\epsilon$ gives the undefined value.
-If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event and therefore updating the store $\sigma$.
+In this definition, the effect of an empty list of actions $l$ on an empty trace $\epsilon$ does not change the store.
+If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event 
+and  $\sigma$ is updated. Notice that in  the case $A(\sigma,e\cdot \tau,(g,a)\cdot l)$, the result $\sigma' \in \set{Store}$ and therefore $\sigma' \neq \bot$. 
 
-With $A$ we can define the predicate $enabled$ testing whether a
-transition is enabled in a store when observing a trace, and the
+With $A$ we can test whether a
+transition is enabled in a store when observing a trace, and therefore, we can define the
 predicate $Enabled$ testing if there exists an enabled transition
 starting from an execution state:
-\rlp{consider removing $enabled$, it is only used here and not shorter
-than its definition.}
+%\rlp{consider removing $enabled$, it is only used here and not shorter
+%than its definition.}
 \begin{eqnarray*}
-enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
-\\
-Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ enabled(\sigma,\tau,l) \mid x \to x' : l \}
+%enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
+%\\
+Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
 \end{eqnarray*}
-Notice that, according to the definition of $enabled(\sigma,\tau,l)$, and in turn of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
+Notice that, according to the definition of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
 Evaluating a guard along the transition consumes an event, therefore, to see if a transition is enabled, we have to examine $|l|$ events.
 
 The transition relation $s \to s'$ is defined by the following rules.
