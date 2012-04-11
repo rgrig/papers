@@ -608,18 +608,18 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
 \[
 \begin{array}{l}
 \begin{array}{lcl}
-A(\sigma,\epsilon,[]) & = & \sigma
+A(\sigma,\epsilon,[]) & = & \!\! \sigma
 \\[2ex]
 %A(\sigma,\epsilon,l) & = & \bot
 %\\[2ex]
-A(\sigma,e,(g,a)) & = & \left\{\begin{array}{ll}
+A(\sigma,e,(g,a)) & = & \!\! \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
      \\[1ex]
      \bot & \mbox{otherwise}
      \end{array}
      \right.
 \\[5ex]
-A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \left\{\begin{array}{ll}
+A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \!\! \left\{\begin{array}{ll}
      A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
      \\
 & \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
@@ -720,13 +720,13 @@ g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
 \] The guard is true if and only if the value of $\pattern{v}$ in the automaton store
 and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
 \begin{example}
-\rlp{Notation for not-guard should be unified ($\sim$ here ! earlier).}
+%\rlp{Notation for not-guard should be unified ($\sim$ here ! earlier).}
 Consider the label
- $\sim \pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
+ $ !\pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
  {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the
  following sequence of labels
 \[
-\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = \sim \pattern {v}^0
+\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
 \] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where
 \[
  e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \ \mbox{ and }  \  e_2= (ret \ gets, [0: \sem{t}])
@@ -734,7 +734,7 @@ Consider the label
 The instantiated guard for the label are:
  $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
 Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$,
-but inequality for \pattern{v} (because of $\sim$).
+but inequality for \pattern{v} (because of the negation $!$).
 The instantiated guards, can now be evaluated with the events by taking their conjunction:
 \[
  (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1)
