@@ -777,10 +777,8 @@ The TOPL compiler (\textsf{toplc}) is written in OCaml whereas  the TOPL checker
 
 The input of the compiler is a set of properties and a set of classes and its output  is a checker and instrumented classes.
 The checker is itself a Java class.
-The instrumented classes have the same behaviour as the original classes but
- they are allowed to use more resources.\rlp{What is meant here? That
-   they communicate with the checker?}
-The compilation of TOPL properties is done by the following 4 phases.
+The instrumented classes have the same behaviour as the original classes.
+ The compilation of TOPL properties is done by the following 4 phases.
 
 \paragraph{Desugaring.}
 In the first phase the parser de-sugars the TOPL properties into a simpler, intermediate form where
