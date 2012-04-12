@@ -4,7 +4,7 @@
 Given a register automaton~\cite{dblp:journals/tcs/kaminskif94} $A=\langle S, p, u, \rho, T,
 F\rangle$, we will construct a TOPL property $P_A$ to simulate it. The
 simulation is such that for each word $w$, $A$ accepts $w$ iff $P_A$
-accepts $w' = \#^{|u|}w\#$. Thus, $w'$ is an encoding of $w$ that
+accepts $w' = \#^{|u|}w\#$. \dinocomment{what does it mean? what are the $\#$?} Thus, $w'$ is an encoding of $w$ that
 caters for the differences of the two formalisms: A register automaton has an
 initial state $u$ of length $|u|$. In order to set up the initial
 state, the TOPL property needs to consume $|u|$ symbols, so we have to
@@ -16,11 +16,12 @@ the erroneous states to the actual error state.
 %\begin{definition}
 %Let $A=\langle S, p, u, \rho, T, F\rangle$ be an FSA
 %\end{definition}
-
-To construct the TOPL property we have to define the set Vertex
-of vertices and the set Arc of labelled transitions. We do that as follows:
+\newcommand{\Vertex}{\mathit{Vertex}}
+\newcommand{\Arc}{\mathit{Arc}}
+To construct the TOPL property we have to define the set $\Vertex$
+of vertices and the set $\Arc$ of labelled transitions. We do that as follows:
 \[
-Vertices = S \cup \{start, error\}
+\Vertex = S \cup \{start, error\}
 \]
 that is we have the same set of vertices as $A$ plus two new
 ones. $start$ is going to be the initial vertex. It will have a
@@ -33,7 +34,7 @@ a transition of depth $n = |u|$ that assigns the letters of $u$
 to $n$ automaton variables. The guard $*$ simply ignores the
 event\footnote{One could also chose a guard that forces the event
 to be \#.}. This transition consumes the first $n$ extra
-symbols. Arc further includes
+symbols. $\Arc$ further includes
 \[
 \forall (s, i, s') \in T.\ s\to s': r_i=e, skip
 \]
@@ -44,7 +45,7 @@ coresponding to the case where $e$ has been seen before, and
 where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
 coresponding to the case where $e$ has not been seen (or has been
 forgotten). In this case, the relevant register is
-updated. Finally Arc includes
+updated. Finally $\Arc$ includes
 \[
 \forall s\in F.\ s\to error: *, skip
 \]
