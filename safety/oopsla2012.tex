@@ -364,28 +364,36 @@ property InvalidateOtherIterators
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
       &(\t{one},[c:1,x:3]),\
-      &(\t{two},[c:1,x:2,y:3])\;\}
+   \end{aligned}\\
+& \begin{aligned}   
+      & \quad (\t{two},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
 &\s{i.\m{next}();} \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
       &(\t{one},[c:1,x:3]),\
-      &(\t{two},[c:1,x:2,y:3])\;\}
+   \end{aligned}\\
+& \begin{aligned}   
+      & \quad (\t{two},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
 &\s{i.\m{remove}();} \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
       &(\t{one},[c:1,x:3]),\
-      &(\t{yBad},[c:1,x:2,y:3])\;\}
+   \end{aligned}\\
+& \begin{aligned}   
+      & \quad (\t{yBad},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
 &\s{j.\m{next}()} \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
       &(\t{one},[c:1,x:3]),\
-      &(\error,[c:1,x:2,y:3])\;\}
+   \end{aligned}\\
+& \begin{aligned}   
+      & \quad (\error,[c:1,x:2,y:3])\;\}
   \end{aligned}\\
 \end{align*}}
 \caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
