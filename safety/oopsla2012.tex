@@ -198,7 +198,7 @@ Back in the real world, we too would like to know if such a scenario is likely.
 Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
 We have to settle for less.
 
-We measure the overhead on the test suite DaCapo-9.12~\cite{dblp:conf/oopsla/dacapo}.
+We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
 We focus on $6$~projects that are still widely developed and used: Eclipse, Tomcat, H2, Batik, Jython, and PMD\null.
 These are all mature projects with many users.
@@ -215,7 +215,11 @@ Both the run time and the heap size are measured for varying settings of the TOP
 In particular, the run time and the heap size for a run with a maximum of $0$~active states serve as a baseline.
 The running time is reported also for the original bytecode, with no instrumentation whatsoever.
 
-\rg{Move here the description of the system.}
+All experiments are performed on the same machine.
+The operating system kernel is Linux~2.6.32.
+The Java VM has version~1.6.0\_20.
+The processor is Intel i5 with $4$~cores at $3.33\rm\,GHz$.
+The total system memory is $4\rm\,GiB$.
 
 % >>>
 \subsection{A Bug's Death} % <<<
@@ -262,15 +266,12 @@ It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
 % >>>
 \subsection{Overhead} % <<<
 
-We have used the DACAPO bechmarks~\cite{dblp:conf/oopsla/dacapo} to test our tool.
-We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of memory, running
- Linux 2.6.32-40 and  Java 1.6.0\_20.
 To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
 
 \begin{table*}[t]\centering
 \begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
 \multicolumn{3}{c}{\multirow{2}{*}{DaCapo benchmark}}
-  & \multicolumn{10}{c}{Number of monitored configurations} \\ \cmidrule{4-13}
+  & \multicolumn{10}{c}{Number of tracked active states} \\ \cmidrule{4-13}
 &&
   &\multicolumn{2}{c}{$\le0$}
   &\multicolumn{2}{c}{$\le10^1$}
@@ -285,35 +286,35 @@ To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 s
   & $43.5\rm\,s$ & $\pm1.2\rm\,s$
   & $43.9\rm\,s$ & $\pm1.0\rm\,s$ \\
   &&
+  & \multicolumn{2}{c}{$\sim16\rm\,MiB$}
   & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
   & \multicolumn{2}{c}{$\sim13\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim37\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim14\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim13\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
   \\[1ex]
 \multirow{2}{*}{pmd}
   & $5.2\rm\,s$ & $\pm0.4\rm\,s$
   & $5.4\rm\,s$ & $\pm0.2\rm\,s$
   & $12.2\rm\,s$ & $\pm0.3\rm\,s$
   & $47.7\rm\,s$ & $\pm10.7\rm\,s$
-  & \multicolumn{4}{c}{\multirow{2}{*}{time $>5.2\times100\rm\,s$}}\\
+  & \multicolumn{4}{c}{\multirow{2}{*}{time $>100\times5.2\rm\,s$}}\\
   &&
-  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim24\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim22\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim22\rm\,MiB$}
   \\[1ex]
 \multirow{2}{*}{h2}
   & $6.6\rm\,s$ & $\pm0.2\rm\,s$
   & $9.5\rm\,s$ & $\pm0.2\rm\,s$
   & $130.1\rm\,s$ & $\pm12.2\rm\,s$
-  & \multicolumn{6}{c}{\multirow{2}{*}{time $>6.6\times100\rm\,s$}} \\
+  & \multicolumn{6}{c}{\multirow{2}{*}{time $>100\times6.6\rm\,s$}} \\
   &&
-  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim210\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim209\rm\,MiB$}
   \\
 \end{tabular}
 \caption{
-Experimental Results.
+Experimental results.
 Times are averaged over $10$~runs.
 Heap sizes are rough estimates, obtained by sampling.
 }
