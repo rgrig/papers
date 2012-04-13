@@ -1,4 +1,4 @@
-\documentclass{sigplanconf}[10pt] % <<<
+\documentclass[10pt]{sigplanconf} % <<<
 
 % Keep fontenc and inputenc them in this order.
 \usepackage[T1]{fontenc}
@@ -117,7 +117,7 @@ Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\c
 We chose to give TOPL nondeterministic semantics.
 
 We also introduce a technique for automatic run-time checking of TOPL properties.
-This technique give rises to a flexible methodology to deal with the necessary safety properties that the programmer need to enforce to his code. 
+This technique provides to a flexible methodology to deal with the necessary safety properties that the programmer needs to enforce to his code. 
 Currently, the only option for the developer is to insert explicit checks directly in the code.
 For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
 It is impossible to turn off these checks, even if one has a proof that a certain program correctly uses the library.
@@ -126,11 +126,11 @@ As a result, when a check fails, the user is not provided with an error trace.
 Also, such checks are difficult to write and to maintain.
 Other libraries document such temporal constraints only in (informal) comments.
 With TOPL, the programmer (formally) describes the properties in one place separate from the code. 
-This description serves as a rigorous documentation of which safety properties are enforced in the code.
+This description serves as a rigorous documentation of which safety properties are enforced on the program.
 Then it is the job of the TOPL compiler to insert the appropriate checks implementing the properties into the Java bytecode of the program.
 The execution is monitored and violations are reported as traces of events.
 The programmer has the ability to tune the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters.
-For example, during testing they could allow for a very high overhead, whereas and they could chose to deploy the bytecode without any inserted check.
+For example, during testing they could allow for a very high overhead, whereas they could choose to deploy the bytecode without any inserted check.
 
 \paragraph{Contributions.}
 In summary, the contributions of this paper are:
