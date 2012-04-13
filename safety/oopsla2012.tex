@@ -6,8 +6,10 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{booktabs}
 \usepackage{graphics}
 \usepackage{microtype}  % do not remove
+\usepackage{multirow}
 \usepackage{proof}
 \usepackage{pygmentize}
 \usepackage{rgalg}
@@ -96,7 +98,6 @@
 % >>>
 \begin{document}
 \maketitle
-
 \begin{abstract} % <<<
 We introduce a new technique for checking temporal safety properties of Java programs.
 Our approach is based on a new specification language for an extended class of {\em register automata} able to express complex properties of systems involving multiple interacting objects.
@@ -197,7 +198,7 @@ Back in the real world, we too would like to know if such a scenario is likely.
 Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
 We have to settle for less.
 
-We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}.
+We measure the overhead on the test suite DaCapo-9.12~\cite{dblp:conf/oopsla/dacapo}.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
 We focus on $6$~projects that are still widely developed and used: Eclipse, Tomcat, H2, Batik, Jython, and PMD\null.
 These are all mature projects with many users.
@@ -219,12 +220,44 @@ The running time is reported also for the original bytecode, with no instrumenta
 % >>>
 \subsection{A Bug's Death} % <<<
 
-\rg{Tell the story of the Tomcat and the Dacapo bugs.}
+The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
+The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
+We initially interpreted this comment as follows.
+\eqquote{It is illegal to call both {\tt getWriter} and {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
+The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
+We were not too surprised because we were unsure of the intended meaning of the comment.
+We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
+We investigated.
+The statement that threw a {\tt null}-pointer exception was the following:
+\begin{align}\label{eq:npe-src}
+\text{\Verb@if (log != null) log.write(b);@}
+\end{align}
+It must be that a concurrent thread sets {\tt log} to~{\tt null}.
+The statement is located in the method {\tt write} of the class {\tt TeeOutputStream}.
+The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
+So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
+Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
+\rg{Put here a trace for the error.}
+
+TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
+First, the bytecode instrumented by TOPL helped us notice the problem.
+The reason is \emph{not} that a certain interleaving became more likely.
+Bug~2934521 of DaCapo mentions that exceptions of the Tomcat benchmark are silently ignored.
+This is why the {\tt null}-dereference was not noticed before.
+The TOPL checker tried to report an unrelated issue to {\tt System.err}.
+DaCapo had redirected the standard error stream to its own class, which faulted.
+TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
+This is why we noticed the {\tt null}-dereference.
+Second, TOPL helped us identify the data race.
+It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
+
+
 
 % >>>
 \subsection{Projects} % <<<
 
 \rg{Briefly describe the projects, and the properties we wrote for them.}
+\rg{The versions are: Eclipse 3.5.1, TODO.}
 
 % >>>
 \subsection{Overhead} % <<<
@@ -234,37 +267,56 @@ We run the experiments on and Intel  Core i5 CPU  661  \@ 3.33GHz with 4GB of me
  Linux 2.6.32-40 and  Java 1.6.0\_20.
 To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
 
-\begin{table*}[t]
-      \centering
-   \begin{tabular}{| l | r | r | r | r | }
-   \hline
-  Benchmark  & Original Time (Stand. Dev.) & Instrumented Time (Stand. Dev.) & Checker Memory & Failed Property
-\\ \hline \hline
-Tomcat 6.0.20 &  5436 (+/-141) & 7449 (+/-134) & &
-\\ \hline
-Benchmark 3 & & &  &
-\\ \hline
-Benchmark 4 & & &  &
-\\ \hline
-Benchmark 5 & & &  &
-\\ \hline
-Benchmark 6 & & &  &
-\\ \hline
-Benchmark 7 & & &  &
-\\ \hline
-Benchmark 8 & & &  &
-\\ \hline
-Benchmark 9 & & &  &
-\\ \hline
-Benchmark 10 & & &  &
-\\ \hline
-Benchmark 11 & & &  &
-\\ \hline
-Benchmark 12 & & &  &
-\\ \hline
+\begin{table*}[t]\centering
+\begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
+\multicolumn{3}{c}{\multirow{2}{*}{DaCapo benchmark}}
+  & \multicolumn{10}{c}{Number of monitored configurations} \\ \cmidrule{4-13}
+&&
+  &\multicolumn{2}{c}{$\le0$}
+  &\multicolumn{2}{c}{$\le10^1$}
+  &\multicolumn{2}{c}{$\le10^2$}
+  &\multicolumn{2}{c}{$\le10^3$}
+  &\multicolumn{2}{c}{$\le10^4$} \\ \midrule
+\multirow{2}{*}{tomcat}
+  & $5.3\rm\,s$ & $\pm0.1\rm\,s$
+  & $5.4\rm\,s$ & $\pm0.1\rm\,s$
+  & $5.6\rm\,s$ & $\pm0.2\rm\,s$
+  & $9.0\rm\,s$ & $\pm0.3\rm\,s$
+  & $43.5\rm\,s$ & $\pm1.2\rm\,s$
+  & $43.9\rm\,s$ & $\pm1.0\rm\,s$ \\
+  &&
+  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim13\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim37\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim14\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim13\rm\,MiB$}
+  \\[1ex]
+\multirow{2}{*}{pmd}
+  & $5.2\rm\,s$ & $\pm0.4\rm\,s$
+  & $5.4\rm\,s$ & $\pm0.2\rm\,s$
+  & $12.2\rm\,s$ & $\pm0.3\rm\,s$
+  & $47.7\rm\,s$ & $\pm10.7\rm\,s$
+  & \multicolumn{4}{c}{\multirow{2}{*}{time $>5.2\times100\rm\,s$}}\\
+  &&
+  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  \\[1ex]
+\multirow{2}{*}{h2}
+  & $6.6\rm\,s$ & $\pm0.2\rm\,s$
+  & $9.5\rm\,s$ & $\pm0.2\rm\,s$
+  & $130.1\rm\,s$ & $\pm12.2\rm\,s$
+  & \multicolumn{6}{c}{\multirow{2}{*}{time $>6.6\times100\rm\,s$}} \\
+  &&
+  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  & \multicolumn{2}{c}{$\sim?\rm\,MiB$}
+  \\
 \end{tabular}
-    \caption{Experimental results on the DACAPO benchmarks. The times are the average of 5 runs.}
-   \label{tab:booktabs}
+\caption{
+Experimental Results.
+Times are averaged over $10$~runs.
+Heap sizes are rough estimates, obtained by sampling.
+}
 \end{table*}
 
 \paragraph{Tomcat 6.0.20.}
