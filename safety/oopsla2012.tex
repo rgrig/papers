@@ -689,6 +689,10 @@ ${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{s
 A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given state and trace of events, the automaton does not get stuck but it consumes one event without changing its state (see the  Silent Step rule).
 Note that a silent step is not equivalent to a self-loop on all states, as dropping events is not allowed if there are enabled transitions.
 In that case,  the enabled transitions are performed with the rule (Step) and the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and $\tau_2$ is the leftover of the event trace before the transition after dropping $|l|$ events.
+
+The next example illustrates the difference from self loops by showing
+that weather a transition becomes enabled during a given trace depends
+on the presence of other transitions out of the same vertex. 
 \begin{example}
 Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$.
 Moreover, let us assume that our input trace is $\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
