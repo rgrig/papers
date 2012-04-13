@@ -9,7 +9,7 @@ JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
 
-oopsla2012.pdf: oopsla2012.tex safety.bib sigplanconf.cls
+oopsla2012.pdf: oopsla2012.tex safety.bib sigplanconf.cls FMAtoTOPL.tex
 
 biabduction.pdf: biabduction.tex
 
