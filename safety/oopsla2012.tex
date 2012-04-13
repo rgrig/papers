@@ -466,7 +466,7 @@ property InvalidateOtherIterators
 \end{align*}}
 \caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
 lines in \texttt{monotype} show executing statements;
-// are comments.}
+// are comments.\rlp{Maybe make comments grey?}}
 \label{fig:first.steps}
 \end{figure} % >>>
 \autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and an automaton for \texttt{InvalidateOtherIterators}.
@@ -511,7 +511,7 @@ The called method \texttt{iterator} is in the class \texttt{ArrayList} and has a
 We identify it as follows.
 \verbline{java.lang.ArrayList.iterator[1]}
 The \texttt{using prefix} directives, allows us to write the method pattern \Verb@iterator[1]@
-and have it expanded to is the following:
+and have it expanded to the following:
 \begin{align*}
 &\text{\Verb@java.util.Collection.iterator[1]@} \\
 &\text{\Verb@java.util.Iterator.iterator[1]@}
