@@ -1,13 +1,21 @@
 \section{From register automata to TOPL}
-\rlp{Some definitions and theorems?}
-\dd{Maybe explain the components of a register automaton} 
-Given a register automaton~\cite{dblp:journals/tcs/kaminskif94} $A=\langle S, p, u, \rho, T,
-F\rangle$, we will construct a TOPL property $P_A$ to simulate it. The
+\rlp{Could still explain $\rho$ and $T$ more\ldots}
+In~\cite{dblp:journals/tcs/kaminskif94} a register automaton is
+defined as a six-tuple $A = \langle S, p, u, \rho, T, F\rangle$. Here $S$
+is the set of vertices, $p$ is the starting vertex, $u$ is the initial
+content of the registers, $\rho$ is a map from vertices to the
+register they overwrite, $T$ is the transition relation and $F$ is the
+set of error vertices.
+
+$A$ thus has $n = |u|$ registers. It accepts events from some infinite
+alphabet. We will assume that the symbol $\#$ is not in that alphabet.
+
+Given a register automaton $A$, we will construct a TOPL property $P_A$ to simulate it. The
 simulation is such that for each word $w$, $A$ accepts $w$ iff $P_A$
-accepts $w' = \#^{|u|}w\#$. \dinocomment{what does it mean? what are the $\#$?} Thus, $w'$ is an encoding of $w$ that
+accepts $w' = \#^{|u|}w\#$. Thus, $w'$ is an encoding of $w$ that
 caters for the differences of the two formalisms: A register automaton has an
-initial state $u$ of length $|u|$. In order to set up the initial
-state, the TOPL property needs to consume $|u|$ symbols, so we have to
+initial state $u$ of length $n$. In order to set up the initial
+state, the TOPL property needs to consume $n$ symbols, so we have to
 put that many dummy symbols in front of the word. The dummy symbol at
 the end is because $A$ may have many final states ($|F| > 1$) whereas a TOPL
 property only has one, so we need to make an extra transition from all
@@ -30,7 +38,7 @@ initial state. Thus, if $u = w_1\ldots w_n$, then Arc includes
 \[
 A_{start} = start \to p: (*,R_1=w_1);\ldots;(*,R_n=w_n)
 \]
-a transition of depth $n = |u|$ that assigns the letters of $u$
+a transition of depth $n$ that assigns the letters of $u$
 to $n$ automaton variables. The guard $*$ simply ignores the
 event\footnote{One could also choose a guard that forces the event
 to be \#.}. This transition consumes the first $n$ extra
@@ -39,15 +47,16 @@ symbols. $\Arc$ further includes
 %\forall (s, i, s') \in T.\ s\to s': r_i=e, skip
 %\]
 \[
-A_{seen} = \bigcup_{(s, i, s') \in T} s\to s': r_i=e, skip
+%A_{seen} = \bigcup_{(s, i, s') \in T} s\to s': r_i=e, skip
+A_{seen} = \{s\to s': r_i=e, skip \mid (s, i, s') \in T \}
 \]
-\dinocomment{hi Rasmus, wouldn'r be easier to write $A_{seen} = \{s\to s': r_i=e, skip \mid (s, i, s') \in T \}$. Same remark for the other cases.}
 coresponding to the case where $e$ has been seen before, and
 %\[
 %\forall (s, i, s') \in T.\ \rho(s)=i.\ s\to s': unknown(e), R_i=e
 %\]
 \[
-A_{unseen} = \bigcup_{(s, i, s') \in T,\ \rho(s)=i} s\to s': unknown(e), R_i=e
+%A_{unseen} = \bigcup_{(s, i, s') \in T,\ \rho(s)=i} s\to s': unknown(e), R_i=e
+A_{unseen} = \{s\to s': unknown(e), R_i=e \mid (s, i, s') \in T\ \land\ \rho(s)=i \}
 \]
 where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
 coresponding to the case where $e$ has not been seen (or has been
@@ -57,12 +66,13 @@ updated. Finally $\Arc$ includes
 %\forall s\in F.\ s\to error: *, skip
 %\]
 \[
-A_{error} = \bigcup_{s\in F} s\to error: *, skip
+%A_{error} = \bigcup_{s\in F} s\to error: *, skip
+A_{error} = \{s\to error: *, skip \mid s\in F \}
 \]
 to send the vertices in $F$ to the error state. This transition
 consumes the final extra symbol.
 
 Formally, we can define
 \[
-\Arc = A_{start} \cup A_{seen} \cup A_{unseen} \cup A_{error}.
+\Arc = \{A_{start}\} \cup A_{seen} \cup A_{unseen} \cup A_{error}.
 \]
