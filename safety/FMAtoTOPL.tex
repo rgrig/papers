@@ -1,5 +1,5 @@
 \section{From register automata to TOPL}
-\rlp{Could still explain $\rho$ and $T$ more\ldots}
+%\rlp{Could still explain $\rho$ and $T$ more\ldots}
 In~\cite{dblp:journals/tcs/kaminskif94} a register automaton is
 defined as a six-tuple $A = \langle S, p, u, \rho, T, F\rangle$. Here $S$
 is the set of vertices, $p$ is the starting vertex, $u$ is the initial
@@ -26,17 +26,21 @@ the erroneous states to the actual error state.
 %\end{definition}
 \newcommand{\Vertex}{\mathit{Vertex}}
 \newcommand{\Arc}{\mathit{Arc}}
+\newcommand{\sstart}{\mathit{start}}
+\newcommand{\serror}{\mathit{error}}
+\newcommand{\seen}{\mathit{seen}}
+\newcommand{\unseen}{\mathit{unseen}}
 To construct the TOPL property we have to define the set $\Vertex$
 of vertices and the set $\Arc$ of labelled transitions. We do that as follows:
 \[
-\Vertex = S \cup \{start, error\}
+\Vertex = S \cup \{\sstart, \serror\}
 \]
 that is we have the same set of vertices as $A$ plus two new
 ones. $start$ is going to be the initial vertex. It will have a
 transition to the start vertex $p$ of $A$ that sets up the
-initial state. Thus, if $u = w_1\ldots w_n$, then Arc includes
+initial state. Thus, if $u = w_1\ldots w_n$, then $\Arc$ includes
 \[
-A_{start} = start \to p: (*,R_1=w_1);\ldots;(*,R_n=w_n)
+A_{\sstart} = \{\sstart \to p: (*,R_1=w_1);\ldots;(*,R_n=w_n) \}
 \]
 a transition of depth $n$ that assigns the letters of $u$
 to $n$ automaton variables. The guard $*$ simply ignores the
@@ -48,17 +52,17 @@ symbols. $\Arc$ further includes
 %\]
 \[
 %A_{seen} = \bigcup_{(s, i, s') \in T} s\to s': r_i=e, skip
-A_{seen} = \{s\to s': r_i=e, skip \mid (s, i, s') \in T \}
+A_{\seen} = \{s\to s': r_i=e, skip \mid (s, i, s') \in T \}
 \]
 coresponding to the case where $e$ has been seen before, and
 %\[
 %\forall (s, i, s') \in T.\ \rho(s)=i.\ s\to s': unknown(e), R_i=e
 %\]
 \[
-%A_{unseen} = \bigcup_{(s, i, s') \in T,\ \rho(s)=i} s\to s': unknown(e), R_i=e
-A_{unseen} = \{s\to s': unknown(e), R_i=e \mid (s, i, s') \in T\ \land\ \rho(s)=i \}
+%A_{unseen} = \bigcup_{} 
+A_{\unseen} =\{ s\to s': unk(e), R_i=e \mid (s, i, s') \in T,\ \rho(s)=i \}
 \]
-where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
+where $unk(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
 coresponding to the case where $e$ has not been seen (or has been
 forgotten). In this case, the relevant register is
 updated. Finally $\Arc$ includes
@@ -67,12 +71,12 @@ updated. Finally $\Arc$ includes
 %\]
 \[
 %A_{error} = \bigcup_{s\in F} s\to error: *, skip
-A_{error} = \{s\to error: *, skip \mid s\in F \}
+A_{\serror} = \{s\to \serror: *, skip \mid s\in F \}
 \]
 to send the vertices in $F$ to the error state. This transition
 consumes the final extra symbol.
 
 Formally, we can define
 \[
-\Arc = \{A_{start}\} \cup A_{seen} \cup A_{unseen} \cup A_{error}.
+\Arc = A_{\sstart} \cup A_{\seen} \cup A_{\unseen} \cup A_{\serror}.
 \]
