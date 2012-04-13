@@ -627,7 +627,7 @@ In the simple case, a method pattern consists of a string pattern for the name o
 (For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
 The more interesting case is when there are value patterns for each argument and perhaps even for the result.
 Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
-Name patterns are POSIX globs and match method names.
+%Name patterns are POSIX globs and match method names.
 
 \paragraph{On the Value Patterns mechanism.}
 For each automaton variable \Verb@v@ there are three associated patterns.
@@ -651,9 +651,10 @@ In other words, properties encode bad executions, rather than good executions.
 \subsubsection{TOPL Execution Automata.}
 \newcommand{\World}{ExecState}
 
+Given a TOPL property,  
+let $\set{Vertex}$ be the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ the set of labeled arcs mentioned in transitions.
 Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, determines  an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
 This automaton represents the semantics of the property interpreted over the program.
-$\set{Vertex}$ is the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ is the set of labeled arcs mentioned in transitions.
 The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
 
 We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
@@ -668,7 +669,7 @@ Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$t
 %
 \begin{definition}[TOPL execution automaton]
 Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple
-$(\set{State}, \to , \set{Init}, \set{Error})$ where
+$(\set{ExecState}, \to , \set{Init}, \set{Error})$ where
 \begin{itemize}
 \item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
 \item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
@@ -676,7 +677,7 @@ $(\set{State}, \to , \set{Init}, \set{Error})$ where
 \item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
 \end{itemize}
 \end{definition}
-A state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
+An execution state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
 The reader may wonder why execution states need to contain traces.
 The reason is that each label in $\set{Arc}$ carries (potentially) not
 just a single guard, but a list of guards. We call the length of this list the \emph{depth} of the arc.
