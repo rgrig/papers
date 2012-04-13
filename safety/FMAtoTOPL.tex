@@ -26,29 +26,42 @@ of vertices and the set $\Arc$ of labelled transitions. We do that as follows:
 that is we have the same set of vertices as $A$ plus two new
 ones. $start$ is going to be the initial vertex. It will have a
 transition to the start vertex $p$ of $A$ that sets up the
-initial state. Thus, if $u = w_1w_2\ldots w_n$, then Arc includes
+initial state. Thus, if $u = w_1\ldots w_n$, then Arc includes
 \[
-start \to p: (*,R_1=w_1);(*,R_2=w_2);\ldots;(*,R_n=w_n)
+A_{start} = start \to p: (*,R_1=w_1);\ldots;(*,R_n=w_n)
 \]
 a transition of depth $n = |u|$ that assigns the letters of $u$
 to $n$ automaton variables. The guard $*$ simply ignores the
 event\footnote{One could also chose a guard that forces the event
 to be \#.}. This transition consumes the first $n$ extra
 symbols. $\Arc$ further includes
+%\[
+%\forall (s, i, s') \in T.\ s\to s': r_i=e, skip
+%\]
 \[
-\forall (s, i, s') \in T.\ s\to s': r_i=e, skip
+A_{seen} = \bigcup_{(s, i, s') \in T} s\to s': r_i=e, skip
 \]
 coresponding to the case where $e$ has been seen before, and
+%\[
+%\forall (s, i, s') \in T.\ \rho(s)=i.\ s\to s': unknown(e), R_i=e
+%\]
 \[
-\forall (s, i, s') \in T.\ \rho(s)=i.\ s\to s': unknown(e), R_i=e
+A_{unseen} = \bigcup_{(s, i, s') \in T,\ \rho(s)=i} s\to s': unknown(e), R_i=e
 \]
 where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
 coresponding to the case where $e$ has not been seen (or has been
 forgotten). In this case, the relevant register is
 updated. Finally $\Arc$ includes
+%\[
+%\forall s\in F.\ s\to error: *, skip
+%\]
 \[
-\forall s\in F.\ s\to error: *, skip
+A_{error} = \bigcup_{s\in F} s\to error: *, skip
 \]
 to send the vertices in $F$ to the error state. This transition
 consumes the final extra symbol.
-\dinocomment{we say, Arc includes.... but it's a bit informal. How about defining $\Arc= A_1 \cup A_2 \cup A_3 \cup A_4$ where $A_1$, $A_2$, $A_3$ and $A_4$ are defined with the definition of transitions above?}
+
+Formally, we can define
+\[
+\mathrm{Arc} = A_{start} \cup A_{seen} \cup A_{unseen} \cup A_{error}.
+\]
