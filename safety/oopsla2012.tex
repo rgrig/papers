@@ -990,11 +990,11 @@ It is likely that our TOPL language could be fruitfully combined with their anal
 
 QVM~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
 sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
-adapted on the fly.
-To improve performance,  the implementation of the monitor is in the virtual machine,which, as a consequence make it not portable in
-different virtual machines.
-\dd{how do we defend ourselves for the fact that we cannot predict
-  overhead?}\rlp{by experiments?}
+automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
+To improve performance,  the implementation of the QVM monitor is in the virtual machine,which, as a consequence makes it not portable in
+different virtual machines. 
+%\dd{how do we defend ourselves for the fact that we cannot predict
+%  overhead?}\rlp{by experiments?}
 An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} .
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external methods.
 In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
@@ -1031,7 +1031,7 @@ In the future, we intend to combine TOPL with  separation logic~\cite{reynolds20
 Moreover, we aim at developing static analysis techniques for TOPL properties using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
 This will require investigating suitable abstraction for obtaining meaningful and precise over-approximations of the state space of the programs.
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
-\rlp{What about abstraction even for dynamic analysis?}
+%\rlp{What about abstraction even for dynamic analysis?}
 %>>>
 \bibliographystyle{plain}
 \bibliography{safety}
