@@ -1,4 +1,4 @@
-\documentclass[10pt]{sigplanconf} % <<<
+\documentclass[10pt, preprint]{sigplanconf} % <<<
 
 % Keep fontenc and inputenc them in this order.
 \usepackage[T1]{fontenc}
@@ -405,7 +405,7 @@ lines in \texttt{monotype} show executing statements;
 // are comments.}
 \label{fig:first.steps}
 \end{figure} % >>>
-\autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and of an automaton for the property \texttt{InvalidateOtherIterators}.
+\autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and an automaton for \texttt{InvalidateOtherIterators}.
 At a given moment, the automaton has a set of active states.
 A state is a pair of a vertex and a store.
 The store is a memory that holds (automaton) variables.
@@ -473,7 +473,7 @@ For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
 For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
 \begin{align*}
-&\text{\Verb@one -> one: *@} \quad \mbox{ and } \quad
+\text{\Verb@one -> one: *@} \quad \mbox{ and } \quad \\
 \text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
 \end{align*}
 The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
@@ -503,7 +503,7 @@ For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY
 The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3])$
 has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
 As before, in order to match the method name, the prefixes
-\Verb@java.util.Collection.*[*]@ and \Verb@java.util.Iterator.*[*]@
+\Verb@java.util.Collection.*[*]@ as well as \Verb@java.util.Iterator.*[*]@
 are prepended.
 Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
 One expansion, \Verb@java.util.Iterator.next@, is indeed
@@ -543,7 +543,7 @@ The following property detects when a dictionary overwrite one of its bindings.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
-   message "the dictionary overwrite its bindings"
+   message "dictionary overwrites its bindings"
    prefix <Dictionary>
    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
    written -> written: d.put(k, \pattern{V})
@@ -991,7 +991,7 @@ It is likely that our TOPL language could be fruitfully combined with their anal
 QVM~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
 sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
 automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
-To improve performance,  the implementation of the QVM monitor is in the virtual machine,which, as a consequence makes it not portable in
+To improve performance,  the implementation of the QVM monitor is in the virtual machine,which, as a consequence makes it less portable for
 different virtual machines. 
 %\dd{how do we defend ourselves for the fact that we cannot predict
 %  overhead?}\rlp{by experiments?}
