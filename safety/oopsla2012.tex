@@ -453,6 +453,7 @@ When the transition is performed the values that matched \pattern X~and~\pattern
 For concreteness, let us assume these values are $1$~and~$2$.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
 The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also enabled and performed.
+\rlp{Do we still assume such an implicit transition?}
 
 \paragraph{Step~2.}
 For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
@@ -832,7 +833,7 @@ The first and last actions performed by the instrumented version are calls to {\
 Each \textsf{event} carries an identifier and an array of \textsf{Object}.
 The array holds either the arguments, or the return value.
 
-For instrumenting Java bytecode we use a fork of the library Barista~\cite{cite-barista}.
+For instrumenting Java bytecode we use a fork of the library Barista~\cite{barista}.
 Our version of Barista abstracts away low-level details such as relative offsets given as a count of bytes.
 
 % >>>
@@ -866,7 +867,7 @@ Each state is produced by applying an action to another state (called the parent
 For error reporting, each state keeps track of its parent.
 An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
 The new active states and their parent are likely to have similar sets of bindings.
-The implementation takes advantage of this fact by using persistent (functional) sets for bindings; more precisely, we use treaps~\cite{treaps}.
+The implementation takes advantage of this fact by using persistent (functional) sets for bindings; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
 
 \paragraph{Step.}
 The method \textsf{topl.Checker.check(event)} is the main loop of the checker and is reported in Figure~\ref{checker.check}.
