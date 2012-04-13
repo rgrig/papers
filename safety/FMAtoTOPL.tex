@@ -8,7 +8,7 @@ register they overwrite, $T$ is the transition relation and $F$ is the
 set of error vertices.
 
 $A$ thus has $n = |u|$ registers. It accepts events from some infinite
-alphabet. We will assume that the symbol $\#$ is not in that alphabet.
+alphabet. We will assume that the symbol $\#$ is not in that alphabet and we will use it as dummy symbol useful in the translation.
 
 Given a register automaton $A$, we will construct a TOPL property $P_A$ to simulate it. The
 simulation is such that for each word $w$, $A$ accepts $w$ iff $P_A$
@@ -63,7 +63,7 @@ coresponding to the case where $e$ has been seen before, and
 A_{unseen} = \{s\to s': g_\nu(e), R_i=e \mid (s, i, s') \in T\ \land\ \rho(s)=i \}
 \]
 where $g_\nu(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
-coresponding to the case where $e$ has not been seen (or has been
+corresponding to the case where $e$ has not been seen (or has been
 forgotten). In this case, the relevant register is
 updated. Finally $\Arc$ includes
 %\[
