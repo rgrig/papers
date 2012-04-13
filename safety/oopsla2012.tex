@@ -74,6 +74,17 @@
   \hbox to\hsize{\hskip 1.5\parindent\box0\hfil\box1}%
   \\[1ex]}}
 
+% rg: I tend to give grammars in BFS order
+\def\grammar#1{{
+  \footnotesize
+  \def\b##1{{\rm\Verb@##1@}}\def\*{$^*$}\def\?{$^?$}\def\({$($}\def\){$)$}
+  \def\|{$\mid$}\def\+{$^+$}
+  \smallskip
+  \hbox to\hsize{\hfil\vbox{\halign{\hfil\it##&$\;::=\;$\it##\hfil&\qquad\rm##\hfil\cr#1}}\hfil}
+  \smallskip
+}}
+
+
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
 \newtheorem{notation}{Notation}
@@ -554,10 +565,9 @@ The overwrite is detected by the guard which checks if the value associated with
 
 % >>>
 % >>>
-\section{TOPL Syntax and Semantics} % <<<
+\section{TOPL  Semantics} % <<<
 \label{sec:syntax}
-\dinocomment{maybe we should put back the syntax? Otherwise change the name of the section}
-Syntactically, a TOPL property has a name, a set of \texttt{using} directives, and a set of transitions.
+In the previous section we have seen that syntactically, a TOPL property has a name, a set of \texttt{using} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
 Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
 Labels look like method calls.
 Each label has a method pattern that is used to identify the set of methods to which the label refers.
@@ -1035,6 +1045,33 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 %>>>
 \bibliographystyle{plain}
 \bibliography{safety}
+
+\appendix
+\section{TOPL Syntax}
+\label{app:syntax}
+\begin{tabular}{l}
+\grammar{
+  Property& \b{property} Identifier Item\* \cr
+  Item& Prefix \| Observing \| Transition \cr
+  Prefix& \b{prefix} \b< StringPattern \b> \cr
+  Observing& \b{observing} \b< StringPattern \b> \cr
+  Transition& Arc \b: Label \(\b, Label\)\* \cr
+  StringPattern& \(Letter \| \b. \| \b* \| \b{\{} \| \b{\}} \| \b, \)\+ \cr
+  Arc& Vertex \b{->} Vertex \cr
+  Label& Tag\? MethodPattern \cr
+  Vertex& Identifier \cr
+  Tag& \b{call} \| \b{return} \cr
+  MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
+  ResultPattern& ValuePattern \b{:=} \cr
+  NamePattern& StringPattern \cr
+  ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
+  ArgumentsPattern& \b[ IntegerPattern \b] \cr
+  ValuePattern& \b* \| \b< Literal \b> \| UppercaseId \| LowercaseId \cr
+  IntegerPattern& \b* \| IntegerLiteral \cr
+}
+\end{tabular}
+
+
 \end{document}
 %% vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 %% vim:fmr=<<<,>>>:
