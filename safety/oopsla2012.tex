@@ -356,14 +356,14 @@ property InvalidateOtherIterators
  \def\t#1{\mathtt{#1}}
 \begin{align*}
 &\{\;(\start,[])\;\} \\
-&\s{Iterator<Integer> i = c.\m{iterator}();}  \\
-&\text{//assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
+&\s{Iterator<Integer> i = c.\m{iterator}();}  \quad \text{//{\bf \it Step 1}.} \\
+&\text{// Assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2])\;\}
   \end{aligned}\\
-&\s{Iterator<Integer> j = c.\m{iterator}();}  \\
-&\text{//assume {\tt j} holds $3$} \\
+&\s{Iterator<Integer> j = c.\m{iterator}();}  \quad \text{//{\bf \it Step 2}} \\
+&\text{// Assume {\tt j} holds $3$} \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
@@ -372,7 +372,7 @@ property InvalidateOtherIterators
 & \begin{aligned}   
       & \quad (\t{two},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
-&\s{i.\m{next}();} \\
+&\s{i.\m{next}();} \quad \text{// {\bf \it Step 3}} \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
@@ -381,7 +381,7 @@ property InvalidateOtherIterators
 & \begin{aligned}   
       & \quad (\t{two},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
-&\s{i.\m{remove}();} \\
+&\s{i.\m{remove}();} \quad \text{// {\bf \it Step 4}}  \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
@@ -390,7 +390,7 @@ property InvalidateOtherIterators
 & \begin{aligned}   
       & \quad (\t{yBad},[c:1,x:2,y:3])\;\}
   \end{aligned}\\
-&\s{j.\m{next}()} \\
+&\s{j.\m{next}()} \quad \text{// {\bf \it Step 5}}  \\
 & \begin{aligned}
   \{\;&(\start,[]),\
       &(\t{one},[c:1,x:2]),\
@@ -425,11 +425,11 @@ In general, however, program variables and automaton variables live in different
 To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
 Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and do \emph{not} appear in the property.
 Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
-The interaction between patterns and the automatons' memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+The interaction between patterns and the automaton's memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
 
 We now illustrate all this by going through the execution step by
 step.
-\rlp{Consider mentioning the steps in \autoref{fig:first.steps}.}
+
 \paragraph{Step~1.}
 
 Initially, only the state $(\start,[])$ is active.
