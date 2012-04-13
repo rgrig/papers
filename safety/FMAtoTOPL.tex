@@ -56,9 +56,9 @@ coresponding to the case where $e$ has been seen before, and
 %\]
 \[
 %A_{unseen} = \bigcup_{(s, i, s') \in T,\ \rho(s)=i} s\to s': unknown(e), R_i=e
-A_{unseen} = \{s\to s': unknown(e), R_i=e \mid (s, i, s') \in T\ \land\ \rho(s)=i \}
+A_{unseen} = \{s\to s': g_\nu(e), R_i=e \mid (s, i, s') \in T\ \land\ \rho(s)=i \}
 \]
-where $unknown(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
+where $g_\nu(e) = r_1 \neq e \land \ldots \land r_n \neq e$,
 coresponding to the case where $e$ has not been seen (or has been
 forgotten). In this case, the relevant register is
 updated. Finally $\Arc$ includes
