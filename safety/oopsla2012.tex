@@ -402,8 +402,8 @@ this manner, then the program violates the property.
 \\[2ex]
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
-  using prefix java.util.Collection
-  using prefix java.util.Iterator
+  observe <java.util.{Collection, Iterator}.*>
+  prefix <java.util.{Collection, Iterator}>
   start -> start: *
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> one:    *
@@ -514,7 +514,7 @@ For simplicity, we ignore argument types and identify Java methods only by their
 The called method \texttt{iterator} is in the class \texttt{ArrayList} and has arity~$1$.
 We identify it as follows.
 \verbline{java.lang.ArrayList.iterator[1]}
-The \texttt{using prefix} directives, allows us to write the method pattern \Verb@iterator[1]@
+The \texttt{prefix} directives, allows us to write the method pattern \Verb@iterator[1]@
 and have it expanded to the following:
 \begin{align*}
 &\text{\Verb@java.util.Collection.iterator[1]@} \\
@@ -612,6 +612,7 @@ The following property detects when a dictionary overwrite one of its bindings.
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
    message "dictionary overwrites its bindings"
+   observe <Dictionary.*>
    prefix <Dictionary>
    start -> start: *
    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
@@ -1183,9 +1184,9 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 \begin{tabular}{l}
 \grammar{
   Property& \b{property} Identifier Item\* \cr
-  Item& Prefix \| Observing \| Transition \cr
+  Item& Prefix \| Observe \| Transition \cr
   Prefix& \b{prefix} \b< StringPattern \b> \cr
-  Observing& \b{observing} \b< StringPattern \b> \cr
+  Observe& \b{observe} \b< StringPattern \b> \cr
   Transition& Arc \b: Label \(\b, Label\)\* \cr
   StringPattern& \(Letter \| \b. \| \b* \| \b{\{} \| \b{\}} \| \b, \)\+ \cr
   Arc& Vertex \b{->} Vertex \cr
