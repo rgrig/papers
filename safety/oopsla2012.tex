@@ -540,8 +540,8 @@ For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
 For $(\texttt{one},[c:1,x:2])$ we look at the outgoing transitions from vertex {\tt one}.
 \begin{align*}
-\text{\Verb@one -> one: *@} \quad \mbox{ and } \quad \\
-\text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
+\text{\Verb@one -> one@} &: * \quad \mbox{ and } \quad \\
+\text{\Verb@one -> two@} &: \text{\Verb@\pattern Y := \pattern c.iterator()@}
 \end{align*}
 The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
 The second transitions has two patterns, \pattern Y~and~\pattern c.
