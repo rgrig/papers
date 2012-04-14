@@ -168,26 +168,11 @@ Finally, Section~\ref{sec:conclusions} concludes the paper and describes our pla
 % >>>
 \section{Experimental Results} % <<<
 
-% plan
-%   - intro: see if it works, see the overhead
-%   - methodology: dacapo, 6 projects, 6 properties, measure overhead, no bugs
-%   - a bug's death: story of bug in tomcat and in dacapo
-%   - projects and properties
-%   - overhead
-
 Our interest in temporal properties of object-oriented programs was initially purely theoretical.
 But, we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
 In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
 
 \subsection{Methodology} % <<<
-
-% plan
-% - expect no bugs: we assume these projects are well-tested (e.g., many users)
-% - dacapo
-% - 6 projects actively developed and used
-% - grep comments, check code,  write property
-% - measure overhead for various parameters
-% - computer specs
 
 We expect our technique to be most useful during development.
 Library writers will document temporal constraints in TOPL, not just in English.
@@ -255,13 +240,38 @@ This is why we noticed the {\tt null}-dereference.
 Second, TOPL helped us identify the data race.
 It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
 
-
-
 % >>>
-\subsection{Projects} % <<<
+\subsection{Benchmarks} % <<<
 
-\rg{Briefly describe the projects, and the properties we wrote for them.}
-\rg{The versions are: Eclipse 3.5.1, TODO.}
+All three benchmarks are large open-source projects with many users and active developers.
+
+\paragraph{Tomcat 6.0.20.}
+Tomcat is a servlet server; so, highly concurrent.
+Servlets are Java programs that run in a webserver, extract data from {\tt ServletRequest}s , and send data into {\tt ServletResponse}s.
+A response has two associated incoming channels: a stream and a writer.
+The stream and the writer should not both be used.
+Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
+property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
+A response could be forwarded once the servlet sent data to it.
+But, the servlet must commit a response before forwarding it, by calling {\tt fulsh} on the stream, on ther writer, or on the response itself.
+This is the other property we checked.
+
+\paragraph{H2.}
+H2 is a database server.
+We checked four properties for it.
+Three properties express constraints on the order in which the methods of an interface may be called.
+For example, a client should not attempt to ask for a row from a cursor that did not advance;
+that is, for the interface {\tt Cursor}, the method {\tt next} must be called before calling method {\tt getSearchRow}.
+The fourth property describes the contract of the class {\tt SysConstants}.
+This class reads environment variables when it is loaded.
+Its comments say that it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}.
+It is easy to specify this property because TOPL intentionally treats the special methods {\tt <init>} and {\tt <clinit>} as if they are normal methods.
+
+\paragraph{PMD.}
+PMD looks for bugs, dead code, and a few other problems in Java code.
+We checked five properties for it.
+One of the five involves two objects:
+A scope should be asked what is the definition of a name only if it already replied that it knows the name.
 
 % >>>
 \subsection{Overhead} % <<<
@@ -1098,7 +1108,7 @@ This will require investigating suitable abstraction for obtaining meaningful an
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
 %\rlp{What about abstraction even for dynamic analysis?}
 %>>>
-\bibliographystyle{plain}
+\bibliographystyle{plain} % and appendix <<<
 \bibliography{safety}
 
 \appendix
@@ -1126,7 +1136,7 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 }
 \end{tabular}
 
-
+% >>>
 \end{document}
 %% vim:spell errorformat=%f\:%l-%m,%f\:%l\:%m,%f\:%m
 %% vim:fmr=<<<,>>>:
