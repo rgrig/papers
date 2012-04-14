@@ -610,11 +610,11 @@ The following property detects when a dictionary overwrite one of its bindings.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
-   message "dictionary overwrites its bindings"
-   prefix <Dictionary>
-   start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
-   written -> written: d.put(k, \pattern{V})
-   written -> error:   !v := d.get(k)
+  message "dictionary overwrites its bindings"
+  prefix <Dictionary>
+  start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
+  written -> written: d.put(k, \pattern{V})
+  written -> error:   !v := d.get(k)
 \end{Verbatim}
 \delimitVerbatim
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
@@ -1103,14 +1103,18 @@ TOPL, in contrast,  intentionally avoids such decomposition.
 Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
 Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
 One language in the literature sharing this point of view is tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
-Again, the ability of topl automata to store,  update, and compare values of their registers makes topl more expressive than tracematches.
+The ability of TOPL automata to store,  update, and compare values of their (infinite alphabet) registers combined with nondeterminism makes TOPL strictly more expressive than tracematches.
 
 TOPL properties are based on register automata~\cite{dblp:journals/tocl/demril09}.
 Compared to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size.
 For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
 On a static setting this phenomenon is normally encoded using non-determinism combined with prophecy variables~\cite{dblp:journals/tcs/abadil91}.
-Our work is also based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs.
-We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
+
+Our work 
+extends the fundamental concept 
+of typestate~\cite{strom1986} originally developed for imperative programs
+by integrating notions typical of object-oriented programs.
+ We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions.
 The method is highly modular and presumably efficient.
@@ -1121,7 +1125,7 @@ In~\cite{dblp:conf/issta/FinkYDRG06} the authors present sound verification tech
 Their approach is divided in several stages with different verifiers varying for cost and precision.
 In the early stages efficient but imprecise analyses are employed whereas more expensive and precise techniques are then progressively employed in later stages.
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
-It is likely that our TOPL language could be fruitfully combined with their analysis technique.
+It is likely that  TOPL could be fruitfully combined with their analysis technique.
 
 QVM~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
 sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
