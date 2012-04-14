@@ -404,6 +404,7 @@ this manner, then the program violates the property.
 property InvalidateOtherIterators
   using prefix java.util.Collection
   using prefix java.util.Iterator
+  start -> start: *
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> one:    *
   one -> two:    \pattern{Y} := \pattern{c}.iterator()
@@ -530,15 +531,14 @@ program runs, these values will be the memory addresses of the objects
 \Verb@c@ and \Verb@i@, so $1$ and $2$ are unlikely values, but for the
 example they suffice.
 After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
-The state $(\start,[])$ remains active because the implicit transition \verbline{start -> start: *} is also enabled and performed.
-\rlp{Do we still assume such an implicit transition?}
+The state $(\start,[])$ remains active because the transition \verbline{start -> start: *} is also enabled and performed.
 
 \paragraph{Step~2.}
 For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
 Now we need to consider, in turn, the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\]
 For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
 Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-For $(\texttt{one},[c:1,x:2])$ we look at the transitions outgoing from vertex {\tt one}.
+For $(\texttt{one},[c:1,x:2])$ we look at the outgoing transitions from vertex {\tt one}.
 \begin{align*}
 \text{\Verb@one -> one: *@} \quad \mbox{ and } \quad \\
 \text{\Verb@one -> two: \pattern Y := \pattern c.iterator()@}
@@ -592,7 +592,8 @@ The following TOPL properties test the shape of a linked list and reports an err
 %
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property ListNotCyclic
+ property ListNotCyclic
+   start -> start: *
    start -> a: \pattern{X} := *.getList()
    a -> a:     \pattern{X} := x.next()
    a -> b:     \pattern{Y} := x.next()
@@ -612,6 +613,7 @@ The following property detects when a dictionary overwrite one of its bindings.
  property BadDictionary
    message "dictionary overwrites its bindings"
    prefix <Dictionary>
+   start -> start: *
    start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
    written -> written: d.put(k, \pattern{V})
    written -> error:   !v := d.get(k)
