@@ -244,6 +244,7 @@ It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
 \subsection{Benchmarks} % <<<
 
 All three benchmarks are large open-source projects with many users and active developers.
+The versions were current in 2009 when DaCapo-9.12 was released.
 
 \paragraph{Tomcat 6.0.20.}
 Tomcat is a servlet server; so, highly concurrent.
@@ -256,7 +257,7 @@ A response could be forwarded once the servlet sent data to it.
 But, the servlet must commit a response before forwarding it, by calling {\tt fulsh} on the stream, on ther writer, or on the response itself.
 This is the other property we checked.
 
-\paragraph{H2.}
+\paragraph{H2 1.2.121.}
 H2 is a database server.
 We checked four properties for it.
 Three properties express constraints on the order in which the methods of an interface may be called.
@@ -267,7 +268,7 @@ This class reads environment variables when it is loaded.
 Its comments say that it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}.
 It is easy to specify this property because TOPL intentionally treats the special methods {\tt <init>} and {\tt <clinit>} as if they are normal methods.
 
-\paragraph{PMD.}
+\paragraph{PMD 4.2.5.}
 PMD looks for bugs, dead code, and a few other problems in Java code.
 We checked five properties for it.
 One of the five involves two objects:
@@ -276,83 +277,74 @@ A scope should be asked what is the definition of a name only if it already repl
 % >>>
 \subsection{Overhead} % <<<
 
-To instrument the 160M of DACAPO sources and the JRE, it took  7 minutes and 4 seconds.
+Instrumenting DaCapo, which has $160\rm\,MiB$, takes $7$~minutes.
+One needs to instrument once for a given set of properties, because instrumentation is property-directed.
+A change of a runtime parameter, such as the maximum number of tracked active states, requires recompiling the TOPL checker, but does not require re-instrumenting.
+
+\paragraph{Space.}
+Estimates of heap size showed no significant increase in memory use.
+We used a simple method.
+The heap of a Java program has three parts: used, garbage, and free.
+The class {\tt Runtime} from the package {\tt java.lang} provides an estimate of the total size and of the free size.
+The difference is an estimate of the used size, provided the garbage was collected immediately before.
+We put this code, which estimates memory use, in the TOPL checker.
+So, strictly speaking we did not estimate the memory use without the checker.
+However, we used as a baseline a run that tracked no active state.
+We also run the estimate for various other counts of tracked active states.
+
+\paragraph{Time.}
+\autoref{table:overhead} summarizes the experimental results.
+The reference column shows the running time without any instrumentation.
+A timeout signifies a time greater than the reference time~$\times100$.
+All reported times are averaged over $10$~runs, and are accompanied by the unbiased estimate of standard deviation.
+The TOPL checker essentially simulates a nondeterministic register automaton.
+In theory the set of active states is unbounded, but we impose a size limit on it.
+The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$, $10^3$, and~$10^4$.
+
+For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
+This indicates that $\le10^3$ active states already exhaustively check the given properties.
+For h2 the running time is more than $\times1.4$ the reference time even when the TOPL checker is not tracking any active state.
+This indicates that we instrumented a simple method that runs often.
 
 \begin{table*}[t]\centering
 \begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
-\multicolumn{3}{c}{\multirow{2}{*}{DaCapo benchmark}}
+  &&
   & \multicolumn{10}{c}{Number of tracked active states} \\ \cmidrule{4-13}
-&&
+& \multicolumn{2}{c}{reference}
   &\multicolumn{2}{c}{$\le0$}
   &\multicolumn{2}{c}{$\le10^1$}
   &\multicolumn{2}{c}{$\le10^2$}
   &\multicolumn{2}{c}{$\le10^3$}
   &\multicolumn{2}{c}{$\le10^4$} \\ \midrule
-\multirow{2}{*}{tomcat}
-  & $5.3\rm\,s$ & $\pm0.1\rm\,s$
-  & $5.4\rm\,s$ & $\pm0.1\rm\,s$
-  & $5.6\rm\,s$ & $\pm0.2\rm\,s$
-  & $9.0\rm\,s$ & $\pm0.3\rm\,s$
-  & $43.5\rm\,s$ & $\pm1.2\rm\,s$
-  & $43.9\rm\,s$ & $\pm1.0\rm\,s$ \\
-  &&
-  & \multicolumn{2}{c}{$\sim16\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim13\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim12\rm\,MiB$}
-  \\[1ex]
-\multirow{2}{*}{pmd}
-  & $5.2\rm\,s$ & $\pm0.4\rm\,s$
-  & $5.4\rm\,s$ & $\pm0.2\rm\,s$
-  & $12.2\rm\,s$ & $\pm0.3\rm\,s$
-  & $47.7\rm\,s$ & $\pm10.7\rm\,s$
-  & \multicolumn{4}{c}{\multirow{2}{*}{time $>100\times5.2\rm\,s$}}\\
-  &&
-  & \multicolumn{2}{c}{$\sim24\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim22\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim22\rm\,MiB$}
-  \\[1ex]
-\multirow{2}{*}{h2}
-  & $6.6\rm\,s$ & $\pm0.2\rm\,s$
-  & $9.5\rm\,s$ & $\pm0.2\rm\,s$
-  & $130.1\rm\,s$ & $\pm12.2\rm\,s$
-  & \multicolumn{6}{c}{\multirow{2}{*}{time $>100\times6.6\rm\,s$}} \\
-  &&
-  & \multicolumn{2}{c}{$\sim210\rm\,MiB$}
-  & \multicolumn{2}{c}{$\sim209\rm\,MiB$}
+tomcat
+  & $5.3$ & $\pm0.1$
+  & $5.4$ & $\pm0.1$
+  & $5.6$ & $\pm0.2$
+  & $9.0$ & $\pm0.3$
+  & $43.5$ & $\pm1.2$
+  & $43.9$ & $\pm1.0$ \\
+pmd
+  & $5.2$ & $\pm0.4$
+  & $5.4$ & $\pm0.2$
+  & $12.2$ & $\pm0.3$
+  & $47.7$ & $\pm10.7$
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
+  \\
+h2
+  & $6.6$ & $\pm0.2$
+  & $9.5$ & $\pm0.2$
+  & $130.1$ & $\pm12.2$
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
   \\
 \end{tabular}
 \caption{
-Experimental results.
-Times are averaged over $10$~runs.
-Heap sizes are rough estimates, obtained by sampling.
-}
+  Experimental Results.
+  Times are in seconds, averaged over $10$~runs.
+}\label{table:overhead}
 \end{table*}
-
-\paragraph{Tomcat 6.0.20.}
-Dacapo uses Tomcat version 6.0.20. The documentation of several classes (e.g., \textsf{javax.servlet.Filter}, \textsf{javax.servlet.Servlet}, \textsf{javax.servlet.RequestDispatcher}, \textsf{javax.servlet.ServletResponse}, \textsf{javax.servlet.ServletResponse}) contain constraints of the type ``event~$e$ must occur before event~$f$''.
-
-Most getters promise to return the last set value.
-If there was no call to a setter, then sometimes a default value is specified in the documentation.
-
-The following are properties of the type ``method~\textsf{m} returns a boolean that indicates whether event~\textsf{e} occurred''.
-
-\begin{enumerate}
-\item
-\textsf{javax.servlet.ServletResponse}
-  \begin{itemize}
-  \item[$e$]
-  \item[$m$] \textsf{isCommitted} called on~\textsf{x}
-  \end{itemize}
-\end{enumerate}
-
-For Tomcat  6.0.20  we have tested the following properties:
-\begin{itemize}
-\item ForwardOnlyUncommittedResponses
-\item ResponseUsesEitherWriterOrStream
-\end{itemize}
-\dinocomment{Radu can you comment what these properties mean? and describe which porperty was violated?}
 
 % >>>
 % >>>
