@@ -1,13 +1,13 @@
 \begin{tikzpicture}[node distance=12pt, auto]
 \tikzstyle{system}=[rectangle,
                                 draw=blue!80,
-                                fill=blue!40,
+                                fill=blue!20,
                                 inner sep=0.1cm,
                                 rounded corners=10pt,
                                 style=dashed,thick]
 \tikzstyle{program}=[rectangle,
                                   draw=black,
-                                  fill=orange!40,
+                                  fill=orange!20,
                                   inner sep=0.1cm,
                                   rounded corners=5pt,
                                   style=thick,
@@ -18,33 +18,39 @@
                             inner sep=0.1cm,
                             rounded corners=5pt,
                             style=thick]
-\node[data] (classes) {Java class files};
-\node[data, right=of classes] (properties) {TOPL property files};
+\node[data] (classes) {{.\tt class} files};
+\node[data, right=of classes] (properties) {TOPL properties};
 
 \node[below=of classes] (classesd) {};
 \node[below=of properties] (propertiesd) {};
 
-\node[program, below=40pt of classes] (instrumenter) {Instrumenter};
-\node[program, below=40pt of properties] (genautomaton) {Automaton Generator};
+\node[program, below=40pt of classes, align=center] (instrumenter)
+  {Bytecode\\Instrumenter};
+\node[program, below=40pt of properties, align=center] (genautomaton)
+  {Automaton\\Generator};
 
-\node[data, below=of genautomaton] (javaproperties) {Property.java};
+\node[data, right=of genautomaton, align=center] (javaproperties)
+  {{\tt Property.java}\\(configurations)};
+\node[data, below=of genautomaton] (automaton) {automaton};
 \node[right=of javaproperties] (javadummy) {};
 \node[data, right=of javadummy] (checker) {Checker.java};
 \node[program, below=of javadummy] (javac) {Java Compiler};
 
-\node[data, below=of javac] (classproperties) {Checker.class};
-\node[left=of classproperties] (classdummy) {};
-\node[data, left=of classdummy] (instrclasses) {Instrumented Java class files};
+\node[data, below=of javac, align=center] (classproperties)
+  {compiled\\checker};
+\node[data, align=center] at (instrumenter |- classproperties)
+  (instrclasses) {{\tt .class} files\\(instrumented)};
+\node at ($(instrclasses)!.5!(classproperties)$) (classdummy) {};
 \node[program, below=of classdummy] (jvm) {JVM};
 
 \node[above=5pt] at ($(instrumenter.north)!.5!(genautomaton.north)$) (topllabel) {\emph{TOPL Compiler}};
-\node[above=5pt of checker] (checkerlabel) {\emph{Property Checker}};
+\node[above=5pt of checker] (checkerlabel) {\emph{TOPL Checker}};
 \begin{pgfonlayer}{background}
   \node[system, fit = (topllabel) (instrumenter) (genautomaton)] (TOPLC) {};
   \node[system, fit = (checker) (checkerlabel)] (CHECKER) {};
 \end{pgfonlayer}
 
-\path[ultra thick, ->]
+\path[thick, ->]
 (classes) edge (instrumenter)
 
 (genautomaton) edge (instrumenter)
@@ -52,16 +58,21 @@
 
 (properties) edge (genautomaton)
 (genautomaton)  edge (javaproperties)
-(javac) edge (classproperties);
+(javac) edge (classproperties)
 
-\draw[ultra thick, ->]
-(instrumenter) -- ($(instrumenter.south)-(0,40pt)$) -| (instrclasses);
-\draw[ultra thick, ->]
+(genautomaton) edge (automaton)
+
+(instrumenter) edge (instrclasses);
+
+\draw[thick, ->]
 (instrclasses) -| ($(jvm.north)-(5pt,0)$);
-\draw[ultra thick, ->]
+\draw[thick, ->]
 (classproperties) -| ($(jvm.north)+(5pt,0)$);
-\draw[ultra thick, ->]
+\draw[thick, ->]
 (javaproperties)  -| ($(javac.north)-(5pt,0)$);
-\draw[ultra thick, ->]
+\draw[thick, ->]
 (checker)  -| ($(javac.north)+(5pt,0)$);
+
+\draw[thick, ->, dashed]
+(automaton) -- (classproperties);
 (\end{tikzpicture}
