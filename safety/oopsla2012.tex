@@ -671,7 +671,7 @@ The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second
 Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
 %
 \begin{definition}[TOPL execution automaton]
-Given a TOPL property $(\set{Vertex},\set{Arc})$ and a set of program traces $\set{Trace}$, a {\em TOPL execution automaton} $\Xi$ is a tuple
+Given a set of program traces $\set{Trace}$ and a {\em TOPL} property $(\set{Vertex},\set{Arc})$, a {\em TOPL execution automaton} $\Xi$ is a tuple
 $(\set{ExecState}, \to , \set{Init}, \set{Error})$ where
 \begin{itemize}
 \item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
@@ -695,23 +695,21 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
 \[
 \begin{array}{l}
 \begin{array}{lcl}
-A(\sigma,\epsilon,[]) & = & \!\! \sigma
+\!\!\!\!A(\sigma,\epsilon,[]) \!\!\!\!\!& =  & \!\!\! \sigma
 \\[2ex]
-%A(\sigma,\epsilon,l) & = & \bot
-%\\[2ex]
-A(\sigma,e,(g,a)) & = & \!\! \left\{\begin{array}{ll}
-     a(e,\sigma) & \mbox{if $g(e,\sigma)$}
+\!\!\!\!A(\sigma,e,(g,a)) \!\!\!\!\!& = & \!\!\! \left\{\begin{array}{ll}
+    \!\! a(e,\sigma) & \mbox{if $g(e,\sigma)$}
      \\[1ex]
-     \bot & \mbox{otherwise}
+     \!\! \bot & \mbox{otherwise}
      \end{array}
      \right.
 \\[5ex]
-A(\sigma,e\cdot \tau,(g,a)\cdot l) & = & \!\! \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
+\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) \!\!\!\!\!& = &\! \!\! \left\{\begin{array}{ll}
+    \!\! A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
      \\
 & \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
      \\[1ex]
-     \bot & \mbox{otherwise}
+    \!\! \bot & \mbox{otherwise}
      \end{array}
      \right.
 \end{array}
@@ -720,16 +718,17 @@ In this definition, the effect of an empty list of actions $l$ on an empty trace
 If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event 
 and  $\sigma$ is updated. Notice that in  the case $A(\sigma,e\cdot \tau,(g,a)\cdot l)$, the result $\sigma' \in \set{Store}$ and therefore $\sigma' \neq \bot$. 
 
+\newcommand{\Enabled}{\mathit{Enab}}
 With $A$ we can test whether a
 transition is enabled in a store when observing a trace, and therefore, we can define the
-predicate $Enabled$ testing if there exists an enabled transition
+predicate $\Enabled$ testing if there exists an enabled transition
 starting from an execution state:
 %\rlp{consider removing $enabled$, it is only used here and not shorter
 %than its definition.}
 \begin{eqnarray*}
 %enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
 %\\
-Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
+\Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
 \end{eqnarray*}
 Notice that, according to the definition of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
 Evaluating a guard along the transition consumes an event, therefore, to see if a transition is enabled, we have to examine $|l|$ events.
@@ -737,11 +736,12 @@ Evaluating a guard along the transition consumes an event, therefore, to see if 
 The transition relation $s \to s'$ is defined by the following rules.
 \[
 \begin{array}{ll}
-\text{(Step)}  &
-\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\!\!\!\text{(Step)}  &
+\infer[|l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{x_1 \to x_2{:} l \quad A(\sigma_1,\tau_1,l)=\sigma_2}
+%\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
 \\[2ex]
-\text{(Silent)}  &
-\infer[\neg Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
+\!\!\!\text{(Silent)}  &
+\infer[\neg \Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
 \end{array}
 \]
 Finally, we can define the language of a TOPL execution automaton $\Xi$, as the set of traces it accepts:
@@ -819,8 +819,10 @@ Consider the label
 \[
 \pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
 \] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where
-\[
- e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \ \mbox{ and }  \  e_2= (ret \ gets, [0: \sem{t}])
+\[\begin{array}{l}
+ e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])   \quad  \mbox{ and }  \\
+   e_2= (ret \ gets, [0: \sem{t}])
+ \end{array}
 \]
 The instantiated guard for the label are:
  $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
