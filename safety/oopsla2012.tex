@@ -993,7 +993,8 @@ A state consists of vertex, a store, and a queue of events yet to be processed.
 The vertex is simply an integer.
 The store maps automaton variables ({\tt in}) to values ({\tt Object}).
 A maximum size of~$2$ for the queue of events suffices because transitions have depth $1$~or~$2$.
-(If all transitions would have the same depth, then one global queue of events would suffice.)
+(If all transitions would have the same depth, then one global queue of events would suffice.
+Since the transition depth is bounded the checker could still use a couple of global queues, but we chose for now an implementation that is easy to generalize.)
 
 States are created produced by applying an action to another state (called the parent).
 For error reporting, each state keeps track of its parent.
@@ -1070,20 +1071,10 @@ The solution we implemented tries to better address the average case.
 We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
 
 \paragraph{Approximation.}
-\rg{
-Motivate by using the following example.
-Then explain how approximation is done.}
-\dinocomment{maybe we remove this paragraph...}
-Doing concrete run-time checking is obviously unsound since only the actual runs are checked.
-Our checker is also {\em incomplete}, that is:
-if a run-time execution of the program leads to an error then there is no guarantee that the checker will detect the error.
-The program in Figure~\ref{fig:completeness} shows that to achieve completeness any run-time checker keeping track of concrete states would need an unbounded amount of memory.
-The method {\tt NeedsUnboundedMemory(int n)}
-declares an array of iterators of a length depending on the external parameter {\tt n}.
- In the {\tt for} loop, the array is filled with iterators for the same collection {\tt c} and randomly some of them are exhausted by advancing till the end (inner {\tt while} loop).
-Outside the {\tt for} loop, a random iterator is advanced one more time and we would get an exception if this iterator was one of those exhausted in the previous loop.
-Because of the random choice of iterators, it becomes apparent that, if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception needs to be thrown or not, we would need to keep information about all the iterators.
-Moreover, since their number {\tt n} is a parameter, there is no way to bound the amount of memory to keep track of this info.
+
+\autoref{fig:completeness} illustrates why the checker needs unbounded memory if it must not miss bugs exhibited by an execution.
+The problem is essentially that the set of active states of a nondeterministic automaton is unbounded.
+Of course, an arbitrary amount of space overhead is unacceptable.
 
 \begin{figure}[t]
 \begin{center}
@@ -1092,6 +1083,12 @@ Moreover, since their number {\tt n} is a parameter, there is no way to bound th
 \label{fig:completeness}
 \end{center}
 \end{figure}
+
+Like in the case of trace lengths, we impose a limit that is fixed but configurable by the user.
+In this case, however, we must also pick which active states to forget.
+We implemented three strategies: random, newest, and oldest.
+The words newest\slash oldest refer to a time that is attached to states, and is one more than the time of the parent state.
+The time of a state is the number of times the (Step) transition of the operational semantics was taken in order to produce the state.
 
 %\dinocomment{discuss about: conservative and transparent properties of an inliner}
 %\dinocomment{talk about our strategy}
