@@ -973,7 +973,7 @@ The checker is inactive by default so that the Java standard library may be inst
 The JVM uses certain parts of the standard library during its own startup.
 If those parts happen to be instrumented then they call into the checker.
 If the checker is inactive it immediately returns and the execution continues.
-If the checker would be active then it will call back into the standard library and the JVM will crashe.
+If the checker would be active then it will call back into the standard library and the JVM will crash.
 \item
 For convenience, it contains code that configures the checker.
 To change the parameters of the checker the user changes this code and recompiles {\tt Property.java}.
