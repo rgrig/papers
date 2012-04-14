@@ -415,8 +415,8 @@ this manner, then the program violates the property.
 \\[2ex]
 \begin{Verbatim}[commandchars=\\\{\}]
 property InvalidateOtherIterators
-  observe <java.util.\{Collection, Iterator\}.*>
-  prefix <java.util.\{Collection, Iterator\}>
+  observe <java.util.\{Collection,Iterator\}.*>
+  prefix <java.util.\{Collection,Iterator\}>
   start -> start: *
   start -> one:  \pattern{X} := \pattern{C}.iterator()
   one -> one:    *
