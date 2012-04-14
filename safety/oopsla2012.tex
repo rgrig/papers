@@ -50,7 +50,6 @@
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
 
 \newcommand{\noterg}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
-%\renewcommand{\note}[2]{}
 \newcommand{\rg}[1]{\noterg{rg}{#1}}
 \newcommand{\rlp}[1]{\noterg{rlp}{#1}}
 \newcommand{\dd}[1]{\noterg{dd}{#1}}
@@ -91,8 +90,10 @@
 \newtheorem{example}{Example}
 \newtheorem{notation}{Notation}
 
-% Comment these in the final version.
-\overfullrule=5pt
+% For the final version, switch then comment-status of the following lines.
+%\overfullrule=5pt
+\renewcommand{\noterg}[2]{}
+
 \showboxdepth=10
 \showboxbreadth=30
 % >>>
@@ -359,7 +360,8 @@ h2
 % >>>
 \section{TOPL by Example} \label{sec:examples} % <<<
 
-In this section we introduce TOPL in an informal way by means of examples.
+In this section, which is based on our previous article~\cite{our-fool2011},  we introduce TOPL in an informal way by means of examples.
+
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
