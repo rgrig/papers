@@ -694,13 +694,6 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
 \] and defined as
 \[
 \begin{array}{l}
-%<<<<<<< HEAD
-%\begin{array}{lcl}
-%\!\!\!\!A(\sigma,\epsilon,[]) \!\!\!\!\!& =  & \!\!\! \sigma
-%\\[2ex]
-%\!\!\!\!A(\sigma,e,(g,a)) \!\!\!\!\!& = & \!\!\! \left\{\begin{array}{ll}
-%    \!\! a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-%=======
 \begin{array}{l @{$\; =\;\;$} l}
 A(\sigma,\epsilon,[]) &  \!\! \sigma
 \\[2ex]
@@ -1057,8 +1050,24 @@ If rule (Step) did not apply for any outgoing transition, then rule (Silent) is 
 
 \paragraph{Garbage Collection.}
 
-%TODO: forget states (with strategies), runtime abstraction.
+States point to their parent when they are created.
+But, if they continue to do so forever, then the memory footprint of the states would be proportional to the number of events received by the checker.
+The space overhead would be too big for long running programs.
+Usually, most of the states are not needed.
+The typical property has a $*$-loop on the \start vertex.
+An error trace going all the way back to the beginning would mention that this loop is taken many times before something interesting happens.
+In general it is very unlikely that the user needs a trace with more than about $10$~states.
+The history length~$h$ is one of the parameters configurable from {\tt Property.java}.
 
+We should allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
+After each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
+However, if there are $n$~active states, the traversal would take $O(nh)$~time.
+The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
+So, the checker would become much slower if $h>d$, which usually is the case.
+
+One solution could be to perform the BFS once in every $h/d$~steps.
+The solution we implemented tries to better address the average case.
+We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
 
 \paragraph{Approximation.}
 \rg{
