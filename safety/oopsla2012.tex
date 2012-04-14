@@ -351,6 +351,7 @@ h2
 \section{TOPL by Example} \label{sec:examples} % <<<
 
 In this section we introduce TOPL in an informal way by means of examples.
+\rg{Make sure {\tt observe} is used.}
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
@@ -886,57 +887,91 @@ The configuration parameters of the checker include:
 
 \subsection{The TOPL Compiler} \label{sec:toplc} % <<<
 
-The input of the compiler is a set of properties and a set of classes and its output  is a checker and instrumented classes.
-The checker is itself a Java class.
-The instrumented classes have the same behaviour as the original classes.
- The compilation of TOPL properties is done by the following 4 phases.
+The compiler has six phases, which are described below.
 
-\paragraph{Desugaring.}
-In the first phase the parser de-sugars the TOPL properties into a simpler, intermediate form where
+\paragraph{Parsing and Desugaring.}
+TOPL properties are read first, before the Java project.
+The parser desugars the TOPL properties into a simpler, intermediate form where
 \begin{itemize}
-\item method-name patterns are prefixed according to the \textsf{prefix} directive;
-\item \textsf{call} and \textsf{return} transitions get one step, while other transitions are de-sugared into a \textsf{call} followed by a \textsf{return};
-\item lowercase patterns and constant patterns are turned into guards;
-\item uppercase patterns are turned into actions.
+\item Method-name patterns are prefixed according to the {\tt prefix} directive.
+\item Lowercase patterns and constant patterns are turned into guards.
+\item Uppercase patterns are turned into actions.
+\item Transitions of length 2 or of length 1 are built according to whether the guards and the actions refer to both call-time and return-time or not. (In particular, there are no transitions of length~$0$.)
 \end{itemize}
-The parser builds an AST that closely follows the language for which we have formal operational semantics.
+The parser builds an AST that closely follows the language for which we gave formal operational semantics.
 
 \paragraph{Static Checks.}
-In the second phase, the compiler checks that the property is well-formed.
-In doing so, it effectively checks that:
+Next, the compiler checks that the property is well-formed:
 \begin{itemize}
 \item two parallel writes to automaton variables have distinct destinations;
 \item reads from automaton variables must be preceded by writes.
 \end{itemize}
 
-\paragraph{Dealing with Inheritance.}
-In the third phase, the property is transformed so it explicitly identifies Java methods.
-As described in Section~\ref{sec:syntax}, each transition step has a guard containing a tag component.
-A \emph{tag} has a method name pattern, an arity pattern, and an event type pattern.
-The latter is either \textsf{call} or \textsf{return}.
-For example the tag guard ``\textsf{call *.$\langle$freeboogie.*.eval$\rangle$[2]}'' refers to all the calls to methods with two arguments whose full name matches the pattern ``\textsf{freeboogie.*.eval}'' \emph{and all the methods that override them}.
-A tag guard together with a set of class signatures determine a set of program points.
-Each tag guard is translated into a set of identifiers.
+The compiler warns if some vertices are unused.
+Properties with unused vertices are still well-formed.
+We plan to also statically check whether the automaton can never fail.
 
-An \emph{observable} method is one whose name matches a pattern that appears in an \textsf{observing} directive.\dinocomment{observing directive has not been introduced before}
-Internally, each observable method in the classpath receives two integer identifiers: one for the call event and one for the return event.
+\paragraph{Generate Event Identifiers.}
 
-At this point several properties are merged into a single property that may have multiple start vertices.
-%Vertices are no longer identified by name.
-The pattern of observable methods of the property is now replaced by 
-a set of observable event identifiers for each vertex.
+In this phase, each observable method is assigned two identifiers, one for the call event and one for the return event.
+A method is \emph{observable} when its full name or the full name of a method it overrides matches the {\tt observe} directive.
+The bytecode is read to collect all method names and to build the inheritance tree.
 
-The initial property may use Java literals that are collected into an array \textsf{constants} of \textsf{Object} that is written in the file \textsf{topl/Property.java}  whereas the property is dumped into an easy-to-parse textual format, in the file \textsf{Property.text}
-referring to constants by their index in the array \textsf{constants}.
+\paragraph{Construct the Automaton.}
 
-\paragraph{Instrumentation.} In the last phase, 
-the bytecode of each observable method is instrumented.
-The first and last actions performed by the instrumented version are calls to {\sf topl.Checker.check(event)}.
-Each \textsf{event} carries an identifier and an array of \textsf{Object}.
+In this phase, all properties are merged into one automaton.
+From now on vertices are integers, rather than strings.
+All vertices that had the name \start are now in the set of start vertices;
+all vertices that had the name \error now have an error message attached.
+Each TOPL property has its own {\tt observe} directive.
+This information must be encoded in the automaton:
+Each vertex is given a set of event identifiers.
+
+The guards of the automaton are of two kinds.
+Those that test program values are essentially left unchanged in this phase.
+Those that check the event type, the method name, and the method arity are all transformed into one guard that is represented by a set of event identifiers.
+The evaluation of the guard at runtime is a set containment test.
+
+The automaton is dumped into the file {\tt Property.text}.
+The TOPL compiler does not interpret Java expressions.
+If a guard compares a program value with a literal, then the literal is saved in an array in {\tt Property.java}, and {\tt Property.text} points to it.
+
+\paragraph{Generate Checker Configurations.}
+
+In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java}.
+This file serves three purposes:
+\begin{itemize}
+\item
+It contains an array with all the constants used in the TOPL property.
+For example, if a guard requires that a certain argument equals the expression~$41/7$, then $42/7$ is stored in this array.
+\item
+It activates the checker.
+The checker is inactive by default so that the Java standard library may be instrumented.
+The JVM uses certain parts of the standard library during its own startup.
+If those parts happen to be instrumented then they call into the checker.
+If the checker is inactive it immediately returns and the execution continues.
+If the checker would be active then it will call back into the standard library and the JVM will crashe.
+\item
+For convenience, it contains code that configures the checker.
+To change the parameters of the checker the user changes this code and recompiles {\tt Property.java}.
+\end{itemize}
+
+\paragraph{Instrumentation.}
+
+In this phase, the bytecode of observable methods is instrumented.
+The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
+This method takes an event as an argument.
+Each event carries an identifier and an array of {\tt Object}.
 The array holds either the arguments, or the return value.
 
-For instrumenting Java bytecode we use a fork of the library Barista~\cite{barista}.
-Our version of Barista abstracts away low-level details such as relative offsets given as a count of bytes.
+To instrument Java bytecode we use a fork of the library Barista~\cite{barista}.
+The high-level bytecode representation of the original library is rather low-level.
+For example, it still represents jumps as byte counts.
+We changed Barista's high-level representation to make it easy to use for instrumentation.
+Hence, we had to rewrite the code that transformed between the low-level and the high-level representation.
+These changes amount to more than half our implementation effort.
+(For example, adding the number of lines changed by each commit gives $48\rm\,K$.)
+
 
 % >>>
 \subsection{Checker} % <<<
