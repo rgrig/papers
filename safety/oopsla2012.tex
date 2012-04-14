@@ -360,6 +360,9 @@ There are two iterators on the same collection, one of them modifies the collect
 Such properties are often explained using diagrams that are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06} or sometimes expressive, but imprecise~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
 \autoref{fig:first.topl} (top)  captures precisely a temporal property involving three interacting objects.
 Below the same property is described in the textual form of TOPL, isomorphic to the diagram.
+The first line is an observe directive that declares that we are
+interested in all method calls (denoted by the wild card *) on
+instances of \Verb@java.util.Collection@ and \Verb@java.util.Iterator@ \emph{and} all those that override them.
 
 In a TOPL property, vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
 transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
@@ -520,7 +523,7 @@ and have it expanded to the following:
 &\text{\Verb@java.util.Collection.iterator[1]@} \\
 &\text{\Verb@java.util.Iterator.iterator[1]@}
 \end{align*}
-It means that these two methods \emph{and} all those that override them match.
+Similar to the \textt{observe} directives, tt means that these two methods \emph{and} all those that override them match.
 Here, \texttt{ArrayList} implements \texttt{Collection} and so
 \texttt{ArrayList.iterator} matches.
 
@@ -588,7 +591,9 @@ Notice that in order to find a counterexample we need to keep track of the relat
 % >>>
 \subsection{Heap Shape and Values Sensitive Properties}  % <<<
 One interesting kind of properties for object-oriented programs is the ability to reason about the shape of the heap composed by the allocated objects.
-The following TOPL properties test the shape of a linked list and reports an error if it is cyclic or it has the pan-handle shape (i.e., there is a lasso at some point).
+The following TOPL properties test the shape of a linked list and
+reports an error if it is cyclic or it has the pan-handle shape (i.e.,
+there is a lasso at some point). Directives are omitted.
 %
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
