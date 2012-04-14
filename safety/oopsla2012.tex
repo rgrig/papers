@@ -694,33 +694,25 @@ When observing a trace, the effect of actions in an arc label on a store  is giv
 \] and defined as
 \[
 \begin{array}{l}
-<<<<<<< HEAD
-\begin{array}{lcl}
-\!\!\!\!A(\sigma,\epsilon,[]) \!\!\!\!\!& =  & \!\!\! \sigma
-\\[2ex]
-\!\!\!\!A(\sigma,e,(g,a)) \!\!\!\!\!& = & \!\!\! \left\{\begin{array}{ll}
-    \!\! a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-=======
+%<<<<<<< HEAD
+%\begin{array}{lcl}
+%\!\!\!\!A(\sigma,\epsilon,[]) \!\!\!\!\!& =  & \!\!\! \sigma
+%\\[2ex]
+%\!\!\!\!A(\sigma,e,(g,a)) \!\!\!\!\!& = & \!\!\! \left\{\begin{array}{ll}
+%    \!\! a(e,\sigma) & \mbox{if $g(e,\sigma)$}
+%=======
 \begin{array}{l @{$\; =\;\;$} l}
 A(\sigma,\epsilon,[]) &  \!\! \sigma
 \\[2ex]
-%A(\sigma,\epsilon,l) & \bot
-%\\[2ex]
 A(\sigma,e,(g,a)) & \!\! \left\{\begin{array}{ll}
      a(e,\sigma) & \mbox{if $g(e,\sigma)$}
->>>>>>> eba6ee801e4c6266d4879c1d3e059879c5c14a80
      \\[1ex]
      \!\! \bot & \mbox{otherwise}
      \end{array}
      \right.
 \\[5ex]
-<<<<<<< HEAD
-\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) \!\!\!\!\!& = &\! \!\! \left\{\begin{array}{ll}
+\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) &  \!\! \left\{\begin{array}{ll}
     \!\! A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
-=======
-A(\sigma,e\cdot \tau,(g,a)\cdot l) & \!\! \left\{\begin{array}{ll}
-     A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
->>>>>>> eba6ee801e4c6266d4879c1d3e059879c5c14a80
      \\
 & \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
      \\[1ex]
@@ -834,18 +826,11 @@ Consider the label
 \[
 \pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
 \] The upper-script stands for the position of a pattern in an expression. The statement generates the trace of events $e_1 \cdot e_2$ where
-<<<<<<< HEAD
-\[\begin{array}{l}
- e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])   \quad  \mbox{ and }  \\
-   e_2= (ret \ gets, [0: \sem{t}])
- \end{array}
-=======
 \[
 \begin{array}{l l}
  & e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \\
  \mbox{ and }  &  e_2= (ret \ gets, [0: \sem{t}]) 
 \end{array}
->>>>>>> eba6ee801e4c6266d4879c1d3e059879c5c14a80
 \]
 The instantiated guard for the label are:
  $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
