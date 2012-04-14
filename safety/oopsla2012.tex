@@ -101,7 +101,7 @@
 \begin{abstract} % <<<
 We introduce a new technique for checking temporal safety properties of Java programs.
 Our approach is based on a new specification language for an extended class of {\em register automata} able to express complex properties of systems involving multiple interacting objects.
-The specifications are then used to instrument Java byte-code so that their violations can be automatically detected at run-time.
+The specifications are then used to instrument Java bytecode so that their violations can be automatically detected at runtime.
 We have validated our technique by checking several safety properties on large open source projects.
 \end{abstract}
 
@@ -110,7 +110,7 @@ We have validated our technique by checking several safety properties on large o
 Interaction of objects is at the core of the object-oriented paradigm.
 Programmers often have an informal and global understanding of how objects relate.
 Consider for example Java collections.
-A typical property one would want to state is:
+A typical property one would want to state~is:
 \eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
 
@@ -128,8 +128,8 @@ however combining  infinite alphabets and nondeterminism gives strictly more exp
 Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\cite{dblp:conf/oopsla/chenr07} are essentially deterministic, for speed.
 We chose to give TOPL nondeterministic semantics.
 
-We also introduce a technique for automatic run-time checking of TOPL properties.
-This technique provides to a flexible methodology to deal with the necessary safety properties that the programmer needs to enforce to his code. 
+We also introduce a technique for automatic runtime checking of TOPL properties.
+This technique provides to programmers a flexible methodology to enforce the safety properties with which the code should comply.
 Currently, the only option for the developer is to insert explicit checks directly in the code.
 For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
 It is impossible to turn off these checks, even if one has a proof that a certain program correctly uses the library.
@@ -137,9 +137,9 @@ Because these checks are always active, their overhead must be very low.
 As a result, when a check fails, the user is not provided with an error trace.
 Also, such checks are difficult to write and to maintain.
 Other libraries document such temporal constraints only in (informal) comments.
-With TOPL, the programmer (formally) describes the properties in one place separate from the code. 
+With TOPL, the programmer (formally) describes the properties in one place, which is separate from the code. 
 This description serves as a rigorous documentation of which safety properties are enforced on the program.
-Then it is the job of the TOPL compiler to insert the appropriate checks implementing the properties into the Java bytecode of the program.
+Then it is the job of the TOPL compiler to insert the appropriate checks into the Java bytecode of the program.
 The execution is monitored and violations are reported as traces of events.
 The programmer has the ability to tune the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters.
 For example, during testing they could allow for a very high overhead, whereas they could choose to deploy the bytecode without any inserted check.
@@ -150,26 +150,27 @@ In summary, the contributions of this paper are:
 \item We define the TOPL specification language, which is tailored to express properties involving object interactions over time in a way that is familiar to Java programmers.
 \item We give precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
 \item We define a precise relation between TOPL's semantic model and register automata. 
-\item We introduce a technique to automatically check at run-time violations of TOPL properties in Java programs.
+\item We introduce a technique to automatically check at runtime violations of TOPL properties in Java programs.
 
 \item We discuss the implementation of our technique.
 \item We report the results of using our tool on large open-source projects. The results are encouraging: we have found
 violations of properties, and we have observed an acceptable runtime overhead. 
 \end{itemize}
 
-\rg{Only update this at the very end.}
 The paper is organized as follows.
-In Section~\ref{sec:examples} we start with few motivating examples.
-Section~\ref{sec:syntax} gives  TOPL's syntax  and semantics.
-Section~\ref{sec:dynamic} explores the use of TOPL for run-time checking of and presents experimental results.
-Section~\ref{sec:related} discusses related work.
-Finally, Section~\ref{sec:conclusions} concludes the paper and describes our plans for future work.
+\autoref{sec:results} gives the experimental results.
+\autoref{sec:examples} introduces the TOPL language with examples.
+\autoref{sec:semantics} gives TOPL's semantics.
+\autoref{sec:ra-topl} describes the relationship between TOPL automata and register automata.
+\autoref{sec:implementation} describes a the interesting aspects of the implementation.
+\autoref{sec:related} discusses related work.
+Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
 
 % >>>
-\section{Experimental Results} % <<<
+\section{Experimental Results}\label{sec:results} % <<<
 
 Our interest in temporal properties of object-oriented programs was initially purely theoretical.
-But, we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
+But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
 In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
 
 \subsection{Methodology} % <<<
@@ -185,20 +186,15 @@ We have to settle for less.
 
 We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
-We focus on $6$~projects that are still widely developed and used: Eclipse, Tomcat, H2, Batik, Jython, and PMD\null.
+We focus on $3$~projects that are still widely developed and used: Tomcat, H2, and PMD\null.
 These are all mature projects with many users.
 DaCapo itself was used for many experiments by the research community.
 Hence, we do not expect to find any bugs, but aim to measure the overhead.
-For each project we write $6$~TOPL properties.
-They all encode information that exists in the comments.
+For each project we write a few TOPL properties that encode information that exists in the code comments.
 In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
 
 We measure both the time overhead and the space overhead.
-For measuring the time overhead we ask DaCapo to test a project repeatedly until the running time converges.
-For measuring the memory overhead we estimate the size of the heap every time the execution enters the TOPL checker, and report the maximum.
-Both the run time and the heap size are measured for varying settings of the TOPL checker: maximum number of active states to track (see later), maximum history length, with and without collection of call-stack traces.
-In particular, the run time and the heap size for a run with a maximum of $0$~active states serve as a baseline.
-The running time is reported also for the original bytecode, with no instrumentation whatsoever.
+The time overhead is reported measured for various configurations of the checker, and also for the original bytecode, with no instrumentation whatsoever.
 
 All experiments are performed on the same machine.
 The operating system kernel is Linux~2.6.32.
@@ -212,7 +208,7 @@ The total system memory is $4\rm\,GiB$.
 The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
 The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
 We initially interpreted this comment as follows.
-\eqquote{It is illegal to call both {\tt getWriter} and {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
+\eqquote{It is illegal to call both the method {\tt getWriter} and the method {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
 The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
 We were not too surprised because we were unsure of the intended meaning of the comment.
 We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
@@ -226,7 +222,7 @@ The statement is located in the method {\tt write} of the class {\tt TeeOutputSt
 The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
 So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
 Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
-\rg{Put here a trace for the error.}
+%XXX\rg{Put here a trace for the error.}
 
 TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
 First, the bytecode instrumented by TOPL helped us notice the problem.
@@ -239,6 +235,19 @@ TOPL caught the error and reported it as an internal issue, because no exception
 This is why we noticed the {\tt null}-dereference.
 Second, TOPL helped us identify the data race.
 It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
+However, it would have been more difficult to figure out which threads exactly used the stream simultaneously.
+
+We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
+\eqquote{The stream and the writer of a response cannot both be used.}
+{eq:prop-ws-weak}
+This property involves three related objects.
+The full TOPL property appears in~\autoref{fig:tomcat-prop}.
+It turns out this property is also violated.
+After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
+They say that the stream and the response cannot be used without an intervening {\tt reset}.
+In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
+This brings out another advantage of TOPL:
+Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
 
 % >>>
 \subsection{Benchmarks} % <<<
@@ -1079,7 +1088,7 @@ Of course, an arbitrary amount of space overhead is unacceptable.
 \begin{figure}[t]
 \begin{center}
 \include{Completeness}
-\caption{Counterexample to run-time completeness.}
+\caption{Counterexample to runtime completeness.}
 \label{fig:completeness}
 \end{center}
 \end{figure}
@@ -1107,7 +1116,7 @@ Again, the ability of topl automata to store,  update, and compare values of the
 
 TOPL properties are based on register automata~\cite{dblp:journals/tocl/demril09}.
 Compared to this formalism, a major difference is that in TOPL automata, transitions can be taken based upon sequences of events of different size.
-For run-time checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
+For runtime checking this requires a sort of backtracking to fire different transitions for different  sequences of events.
 On a static setting this phenomenon is normally encoded using non-determinism combined with prophecy variables~\cite{dblp:journals/tcs/abadil91}.
 Our work is also based on the concept of typestate~\cite{strom1986} originally developed for imperative programs and extends this fundamental concept by integrating notions typical of object-oriented programs.
 We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
@@ -1158,7 +1167,7 @@ We should discuss here, but I moved the citation out of the introduction.}
 \paragraph{Conclusions.}
 We introduced TOPL---a language for expressing temporal safety properties for object-oriented programs via an extension of register automata.
 TOPL can express constraints involving the relation of many objects at the same time.
-Furthermore, we introduced a technique for checking at run-time the violation of the properties on Java program.
+Furthermore, we introduced a technique for checking at runtime the violation of the properties on Java program.
 We have applied our technique to a variety of programs including large open source Java projects.
 %
 \paragraph{Future work.}
@@ -1195,6 +1204,33 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
   IntegerPattern& \b* \| IntegerLiteral \cr
 }
 \end{tabular}
+
+
+\begin{figure*}[h]\label{fig:tomcat-prop}
+\begin{Verbatim}
+property InterleavedResponse2
+  // vertex names: w = got writer; W = used writer; similarly for s, S
+  message "Incompatible methods for putting data into a response were used."
+  observe <javax.servlet.ServletOutputStream.*>
+  observe <java.io.PrintWriter.*>
+  observe <javax.servlet.ServletResponse.{getOutputStream,getWriter}>
+  prefix <javax.servlet.ServletResponse>
+  start -> start: *
+  start -> w: W := R.getWriter()
+  start -> s: S := R.getOutputStream()
+  w -> sw: S := r.getOutputStream()
+  s -> sw: W := r.getWriter()
+  w -> W: w.*
+  sw -> sW: w.*
+  s -> S: s.*
+  sw -> Sw: s.*
+  W -> sW: S := r.getOutputStream()
+  S -> Sw: W := r.getWriter()
+  sW -> error: s.*
+  Sw -> error: w.*
+\end{Verbatim}
+\caption{Example Tomcat Propery}
+\end{figure*}
 
 % >>>
 \end{document}
