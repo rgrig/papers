@@ -621,8 +621,7 @@ The overwrite is detected by the guard which checks if the value associated with
 
 % >>>
 % >>>
-\section{TOPL  Semantics} % <<<
-\label{sec:syntax}
+\section{TOPL  Semantics}\label{sec:semantics} % <<<
 In the previous section we have seen that syntactically, a TOPL property has a name, a set of \texttt{using} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
 Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
 Labels look like method calls.
@@ -972,58 +971,47 @@ Hence, we had to rewrite the code that transformed between the low-level and the
 These changes amount to more than half our implementation effort.
 (For example, adding the number of lines changed by each commit gives $48\rm\,K$.)
 
-
 % >>>
-\subsection{Checker} % <<<
+\subsection{The TOPL Checker} % <<<
 
-The runtime checker of TOPL properties resides entirely in the file {\sf topl/Checker.java}.
-By default, the checker logs a message when it detects a property violation. However, the action to take is configurable and the user can choose to have an exception instead.
-
-The main components of the checker are:
+The checker logs the property violations that it detects.
+Its components are:
 \begin{itemize}
-\item a parser for the data structures used to represent properties;
-\item the data structures used to represent the current state of the checker; and
-\item the code that handles one incoming event.
+\item the data structures used to represent the automaton, and a parser that instantiates them while processing {\tt Property.text};
+\item the data structures used to represent the current state of the checker;
+\item the code that handles one incoming event;
+\item the code that garbage collects old states; and
+\item the code that chooses which of the active states to forget.
 \end{itemize}
-
-\paragraph{Parsing and AST\null.}
-The parser builds ASTs based on the content of \textsf{Property.text}.
-We need to build \textsf{Property.text} since we have experienced that if we were to
- generate directly Java code that instantiates the ASTs,
- then we sometimes run over the bytecode limit on the size of methods.
 
 \paragraph{States.}
 The checker maintains a set of active states.
-Each state has a queue of events to be processed.
-The checker does not assume a bounded transition depth, but the compiler produces only transitions with $1$~or~$2$ steps.
-If all transitions would have the same depth, then one global queue of events would suffice.
+A state consists of vertex, a store, and a queue of events yet to be processed.
+The vertex is simply an integer.
+The store maps automaton variables ({\tt in}) to values ({\tt Object}).
+A maximum size of~$2$ for the queue of events suffices because transitions have depth $1$~or~$2$.
+(If all transitions would have the same depth, then one global queue of events would suffice.)
 
-Each state also has an integer vertex identifier and a set of bindings from automaton variables to values.
-Automaton variables are identified by integers; values are instances of \textsf{Object}.
-Each state is produced by applying an action to another state (called the parent).
+States are created produced by applying an action to another state (called the parent).
 For error reporting, each state keeps track of its parent.
 An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
-The new active states and their parent are likely to have similar sets of bindings.
-The implementation takes advantage of this fact by using persistent (functional) sets for bindings; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
+The new active states and their parent are likely to have similar stores.
+The implementation takes advantage of this fact by using persistent (functional) sets for bindings to represent stores; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
 
 \paragraph{Step.}
-The method \textsf{topl.Checker.check(event)} is the main loop of the checker and is reported in Figure~\ref{checker.check}.
-We assume the time is discrete, and advances when the program sends an event to the checker.
 
-The checker does not do anything if it is inactive.
-%The JVM (\textbf Java \textbf virtual \textbf machine) uses selected parts of the JDK during startup.
-%If those parts are instrumented by the TOPL compiler, and if the TOPL checker calls back into the JDK, then the JVM crashes.
-%As a workaround, the checker is inactive by default.
-Ideally, \textsf{toplc} should insert bytecode that activates the checker.
-Currently one has to manually insert a call to
-\textsf{Checker.activate}, probably as the first action of the
-project's \textsf{main} method.\rlp{Is this still true?}
-The inactive flag is necessary to avoid recursive invocations of the checker.
-\dd{Radu can you explain the algorithm in the figure?}
-\begin{figure}[htbp]
+The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
+It corresponds to the operational semantics (\autoref{sec:semantics}), but is written in an imperative style.
+For each transition outgoing from a vertex, lines~\hbox{11--17} try to apply rule (Step) from \autoref{sec:semantics}.
+Line~17 is reached if the rule (Step) does not apply, and execution continues with the next outgoing transition.
+Line~18 is reached if the rule (Step) does apply.
+Its effect is recorded by adding a new state to set~$A$
+If rule (Step) did not apply for any outgoing transition, then rule (Silent) is applied by lines~22--23.
+
+\begin{figure*}[t]
 \begin{center}
 \begin{alg}
-\^  $\proc{Check}(e)$
+\^  $\proc{Step}(e)$
 \=  $A := \emptyset$
 \=  for each active state $s$
 \+    if $\mathit{vertex}(s)$ does not observe $\mathit{id}(e)$
@@ -1048,15 +1036,24 @@ The inactive flag is necessary to avoid recursive invocations of the checker.
 \+        $s' := s$
 \=        insert state $s'$ with one event popped into $A$
 \end{alg}
-\caption{The method \textsf{topl.Checker.check(event)}.}
-\label{checker.check}
+\bigskip
+\caption{
+  Executing one step.
+  The code builds the set~$A$ of states that are active after processing one event.
+}
+\label{fig:checker.step}
 \end{center}
-\end{figure}
+\end{figure*}
+
+\paragraph{Garbage Collection.}
 
 %TODO: forget states (with strategies), runtime abstraction.
 
 
-\paragraph{Run-time completeness.}
+\paragraph{Approximation.}
+\rg{
+Motivate by using the following example.
+Then explain how approximation is done.}
 \dinocomment{maybe we remove this paragraph...}
 Doing concrete run-time checking is obviously unsound since only the actual runs are checked.
 Our checker is also {\em incomplete}, that is:
@@ -1068,7 +1065,8 @@ declares an array of iterators of a length depending on the external parameter {
 Outside the {\tt for} loop, a random iterator is advanced one more time and we would get an exception if this iterator was one of those exhausted in the previous loop.
 Because of the random choice of iterators, it becomes apparent that, if we were to decide at {\tt a[r.nextInt(n)].next()} whether an exception needs to be thrown or not, we would need to keep information about all the iterators.
 Moreover, since their number {\tt n} is a parameter, there is no way to bound the amount of memory to keep track of this info.
-\begin{figure}[htbp]
+
+\begin{figure}[t]
 \begin{center}
 \include{Completeness}
 \caption{Counterexample to run-time completeness.}
