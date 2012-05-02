@@ -1,0 +1,436 @@
+\documentclass{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{vaucanson-g}
+%\usepackage{semantic}
+%\usepackage[all]{xy}
+%\renewcommand{\dbltopfraction}{1.0}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{definition}[theorem]{Definition}
+%\newenvironment{proof}[1][]{{\bfseries Proof#1: }}{\qed}
+\newcommand{\nada}{$\text{}$}
+%\newcommand{\qedsymbol}{$\scriptstyle\blacksquare$}
+%\newcommand{\qed}{\nada\hfill\makebox[1ex][r]{\rm\qedsymbol}\nada\\}
+
+\setlength\marginparwidth{11mm}
+\newcommand{\sidenote}[1]{\marginpar{\parbox{12mm}{\color{blue}\raggedright\tiny #1}}}
+
+\newcommand\boldemph[1]{\emph{\textbf{#1}}}
+\newcommand\ang[1]{\langle#1\rangle}
+\newcommand\pbij{\rightleftharpoons}
+\newcommand\mosim{\overset{\scriptscriptstyle m}{\sim}}
+\newcommand\sysim{\overset{\scriptscriptstyle s}{\sim}}
+\newcommand\pisim{\overset{\scriptscriptstyle \pi}{\sim}}
+\newcommand\xpisim{\overset{\scriptscriptstyle\xpi}{\sim}}
+\renewcommand\AA{\mathcal{A}}
+\newcommand\BB{\mathcal{B}}
+\newcommand\CC{\mathcal{C}}
+\newcommand\PP{\mathcal{P}}
+\newcommand\PPfn{\mathcal{P}_{\!\mathsf{fn}}}
+\newcommand\LL{\mathcal{L}}
+\newcommand\II{\mathcal{I}}
+\newcommand\A{\mathbb{A}}
+\newcommand\C{\mathbb{C}}
+\renewcommand\L{\mathbb{L}}
+\newcommand\any{?}
+\newcommand\fsh{^\circledast}
+\newcommand\loc{^\bullet}
+\newcommand\inp{\mathsf{inp}}
+\newcommand\out{\mathsf{out}}
+\newcommand\com{\mathsf{com}}
+\newcommand\bou{\mathsf{bou}}
+\newcommand\fn{\mathsf{fn}}
+\newcommand\bn{\mathsf{bn}}
+\newcommand\Pinp[1][P]{#1_{\inp}}
+\newcommand\Pinpp[1][P]{#1_{\inp'}}
+\newcommand\Pout[1][P]{#1_{\out}}
+\newcommand\Poutt[1][P]{#1_{\out'}}
+\newcommand\Pcom[1][P]{#1_{\com}}
+\newcommand\zero{\mathbf{0}}
+\newcommand\para{\,|\,}
+%\newcommand\trdelta[2][\delta]{\overset{#2}\longrightarrow_{#1}}
+%\newcommand\trdeltA[2][\delta']{\overset{#2}\longrightarrow_{#1}}
+%\newcommand\trdeltaa[2][\delta]{\overset{#2}\longrightarrow\!\!\!\!\!\!\!\!\!\longrightarrow_{#1}}
+\newcommand\trdelta[2][]{\overset{#2}\longrightarrow}
+\newcommand\trdeltA[2][]{\overset{#2}\longrightarrow}
+\newcommand\trdeltaa[2][]{\overset{#2}\longrightarrow\!\!\!\!\!\!\!\!\!\longrightarrow}
+\newcommand\trans[1]{\overset{#1}\longrightarrow}
+\newcommand\range[1]{\mathsf{img}(#1)}
+\newcommand\derange[1]{\mathsf{dom}(#1)}
+\newcommand\xdom{S_1}
+\newcommand\xcod{S_2}
+\newcommand\id{\mathsf{id}}
+\newcommand\kati[2]{#1\mathbin{\leftrightarrow}#2}
+\newcommand\ee{\epsilon}
+\newcommand\ells{\vec{\ell}}
+\newcommand\linfer[4][]{\hbox{\sc #2$\infer[#1]{#3}{#4}$}}
+\newcommand\tp{\vdash}
+\newcommand\roof[2]{\lceil#1\rceil^{#2}}
+\newcommand\fra[1][]{\langle Q_{#1},q_{0#1},\sigma_{0#1},\delta_{#1},F_{#1}\rangle}
+\newcommand\frA[1][]{\langle Q_{#1}',q_{0#1}',\sigma_{0#1}',\delta_{#1}',F_{#1}'\rangle}
+\newcommand\HY{\,---\,}
+\newcommand\myinference[4][]{\inference[\sc #1]{#2}{#3}{\,\scriptstyle #4}}
+\newcommand\perm[1][(\A)]{\mathsf{Perm}#1}
+\newcommand\wreg[1]{\mathsf{Reg}^{\mathsf{w}}_{#1}}
+\newcommand\wL{\L^{\mathsf{w}}}
+\newcommand\xpi{\mathsf{x}\pi}
+%\newcommand\TD[1][]{\sidenote{{\large TD}#1}}
+\newcommand\mybot{_{\!\bot}}
+\newcommand\pplus{^{\text{++}}}
+\newcommand\tata[1]{\| #1 \|}
+%\newcommand\draft[1]{\rput(16.2,2){\fbox{\em Preliminary version of #1}}}
+
+% TOPL macros
+\newcommand\names{\mathcal{N}}
+\newcommand\const{\mathcal{C}}
+\newcommand\reg{\mathsf{Reg}}
+\newcommand\his{\mathsf{His}}
+\newcommand\img{\mathsf{img}}
+\newcommand\dom{\mathsf{dom}}
+\newcommand\ta{,}
+
+\title{History-Register Automata}
+\author{RG \& NT}
+
+\begin{document}
+\maketitle
+
+
+
+\section{Definitions}
+%
+We distinguish between two sets of input symbols:
+\begin{itemize}
+ \item a countably infinite set of \emph{names}, $\names$, and
+ \item a finite set of \emph{constants}, $\const$.
+\end{itemize}
+Constants have an auxiliary role and are non-storable.\footnote{We could possibly simulate them, though, by some dummy initial names.}
+We let $a,b$, \emph{etc.}~range over names.
+We define automata which operate over the infinite alphabet:
+\[
+\LL = \const\cup\names
+\]
+In particular, the automata carry a fixed amount of \emph{registers} where they can store names coming from the input, after comparing them with names appearing already in the registers. Each register can store one name. In addition to registers, the automata carry a fixed amount of \emph{histories} where, again, they can store input names. In contrast to registers, histories have unbounded size.  Moreover, each history is unordered and the only comparison that can be made for a given input name with respect to a history is whether the name appears already in the history or not.
+
+For each $n\in\omega$, we write $[n]$ for the set $\{1,\dots,n\}$.
+For each $m,n$ we will define a class of automata which use $n$ registers and $m$ histories.
+In particular, we set
+\[ \reg = [n] \rightharpoonup \names\qquad\qquad \his=[m]\to\PPfn(\names) \]
+to be the set of \emph{register assignments} of size $n$ and the set of \emph{history assignments} of size $m$ respectively, where
+we write 
+$\PPfn(\names)$ for the set of finite subsets of $\names$. 
+%We also set $\img(\rho)=\{\,a\in\names\ |\ \exists i.\,\rho(i)=a\,\})$, and $\dom(\rho)=\{\,i\in[n]\ |\ \rho(i)\in\names\,\}$.
+%
+Moreover, we define the set of symbolic labels:
+\[
+\L = \const\cup\PP([m])\cup \{((M,N),(X,Y))\in\PP([n])^2\times\PP([m])^2\ |\ M\subseteq N\land X\subseteq Y\}
+\]
+We range over labels of the second type by $X$, and over those of the third type by $(M\ta N;X\ta Y)$.
+Symbolic labels appear in the transition relation of our automata. They are finite descriptions of the operations of an automaton over $\LL$. Intuitively,
+\begin{itemize}
+\item $c$ means \emph{accept constant $c$};
+\item $X$ means \emph{clear history $H_i$, all $i\in X$, without accepting any symbol ($\epsilon$-transition)};
+\item $(M\ta N;X\ta Y)$ means:
+\begin{itemize}
+ \item \emph{accept name $a$ if it appears precisely in registers $R_i$, $i\in M$, and in histories $H_j$, $j\in X$;}
+ \item \emph{update registers and histories so that $a$ appears precisely in registers $R_i$, $i\in N$, and in histories $H_j$, $j\in Y$, after update;}
+\end{itemize}
+\end{itemize}
+We can now define our automata.
+
+\begin{definition}
+A \boldemph{history-register automaton (HRA)} of $n$ registers and $m$ histories is a tuple $\AA=\langle Q,q_0,\rho_0,H_0,\delta,F\rangle$ where:
+\begin{itemize}
+\item $Q$ is a finite set of states, $q_0$ is the initial one, $F\subseteq Q$ are the final ones,
+\item $(\rho_0,H_0)\in\reg\times\his$ \ are the initial register and history assignments,
+\item $\delta\subseteq Q\times\L\times Q$ \ is the transition relation.
+\end{itemize}
+For brevity, we shall call $\AA$ an $(n,m)$-automaton.
+\end{definition}
+
+We already gave an informal account of the semantics of HRAs. 
+This is formally defined by means of {configurations} representing the current computation state of the automaton, which apart from a state contains the current register assignment and set of histories. That is,
+a \emph{configuration} of $\AA$ is a triple $(q,\rho,H)\in\hat{Q}$, where:
+\[ \hat{Q}=Q\times\reg \times \his\]
+From $\delta$ we define a transition graph on configurations as follows. 
+
+\begin{definition}
+Let $\AA$ be an $(n,m)$-automaton. We define the relation
+\[ \trdelta{}\;\subseteq\;\hat Q\times\LL\times\hat Q \]
+as follows.
+For all $(q,\rho,H)\in\hat{Q}$ and $(q,\ell,q')\in\delta$:
+\begin{itemize}
+ \item If $\ell=c$ then $(q,\sigma,H)\trdelta{c}(q',\sigma,H)$.
+ \item If $\ell=X$ then $(q,\sigma,H)\trdelta{\epsilon}(q',\sigma,H')$ with $H'=H[i\mapsto\emptyset\ |\ i\in X]$.
+ \item If $\ell=(M\ta N;X\ta Y)$ and there exists $a$ such that
+ \begin{itemize}
+   \item for all $i\in[n]$, $\rho(i)=a$ iff $i\in M$,
+   \item for all $j\in[m]$, $a\in H_j$ iff $j\in X$,   
+ \end{itemize}
+ then $(q,\rho,H)\trdelta{a}(q',\rho',H')$ with $\rho'=\rho[i\mapsto a\ |\ i\in N]$ and $H'=H[j\mapsto H(j)\cup\{a\}\ |\ j\in Y]$.
+\end{itemize}
+%
+%Let $H_0=\{(i,\emptyset)\ |\ i\in[m]\}$.
+A configuration $\hat{q}$ is \emph{reachable} if $(q_0,\sigma_0,H_0)\trdeltaa{\ells}\hat{q}$ for some $\ells\in\LL^{*}$. 
+The set of strings {accepted} by $\AA$ is:
+\[
+\mathcal{L}(\AA) = \{\,\ells\in\LL^{*}\ |\ (q_0,\rho_0,H_0)\trdeltaa{\ells}(q,\rho,H) \land q\in F\,\}
+\]
+and forms the language recognised by $\AA$.
+\end{definition}
+
+\begin{remark}
+Instead of a language $\LL$ of names and constants, we could have chosen one with mixed elements in \emph{data word} form
+$(c,a)$. It seems the two presentations are equivalent, but perhaps the chosen one is more concise.
+\end{remark}
+
+\begin{remark}
+It is easy to see that HRAs are more expressive than FRAs:
+\begin{itemize}
+\item If we exclude fresh-name transitions then we are left with FMAs (i.e.\ RAs), which are equivalent to $(n,0)$-automata (the latter are called M-automata and where shown equivalent to FMAs in the original FMA paper).
+\item Freshness can then be accomplished by including a single history and define fresh transitions to be of the form $(q,(\emptyset\ta N,\emptyset\ta \{1\}),q')$.
+\end{itemize}
+On the other hand, the following languages are not definable by FRAs.
+\begin{itemize}
+\item $\LL_1=\{ a_1\cdots a_{k}a_1'\cdots a_{k'}'\in\names^*\ |\ \forall i,j.\,(a_i=a_j\lor a_i'=a_j')\implies i=j\}$.\\
+This is recognised by the $(0,1   )$-automaton:
+\begin{center}
+\SmallPicture\VCDraw{\begin{VCPicture}{(0,-2)(6,1)}
+% states
+\FinalState[q_0]{(0,0)}{q0} \FinalState[q_1]{(6,0)}{q1} 
+% initial--final
+\Initial{q0}
+% transitions
+\EdgeL{q0}{q1}{\{1\}}
+\LoopS{q0}{\emptyset\ta \emptyset;\emptyset\ta \{1\}} \LoopS{q1}{\emptyset\ta \emptyset;\emptyset\ta \{1\}}
+%
+\end{VCPicture}}
+\end{center}
+\item $\LL_2=\{ a_1a_1'\cdots a_{k}a_{k}'\in\names^*\ |\ \forall i,j.\,(a_i=a_j\lor a_i'=a_j')\implies i=j\}$
+This is recognised by the $(0,2)$-automaton:
+\begin{center}
+\SmallPicture\VCDraw{\begin{VCPicture}{(0,-3)(6,2)}
+% states
+\FinalState[q_0]{(0,0)}{q0} \State[q_1]{(6,0)}{q1} 
+% initial--final
+\Initial{q0}
+% transitions
+\ArcR{q0}{q1}{\scriptstyle\emptyset\ta \emptyset;\emptyset\ta \{1\}} 
+\VArcR{arcangle=-40,ncurv=1.1}{q0}{q1}{\scriptstyle\emptyset\ta \emptyset;\{2\}\ta \{1,2\}}
+\ArcR{q1}{q0}{\scriptstyle\emptyset\ta \emptyset;\emptyset\ta \{2\}} 
+\VArcR{arcangle=-40,ncurv=1.1}{q1}{q0}{\scriptstyle\emptyset\ta \emptyset;\{1\}\ta \{1,2\}}
+%
+\end{VCPicture}}
+\end{center}
+\end{itemize}
+Although $\LL_1$ is not FRA-recognisable, it is recognisable by FRAs with history resets. On the other hand, $\LL_2$ seems substantially unapproachable for FRAs.
+\end{remark}
+
+%\begin{remark}[Silent transitions and rollback]
+%In HRAs we can simulate the following behaviour. Suppose $q$ is a state of an $(m,n)$-automaton $\AA$ and that the outgoing transitions of $q$ are $S=\{(q,\ell_i,q_i)\ |\ i\in[k]\}$, for some $k$, and none of them is an $\epsilon$-transition. We want to impose on $\AA$ the condition stipulating that, in a given configuration $(q,\rho,H)$ and given input $\ell$, if none of the given transitions can be satisfied then the automaton will remain in the same configuration and, at the same time, consume $\ell$. We can achieve this be adding to $\AA$ transitions $\{(q,\ell_j',q)\ |\ j\in[k']\}$ where $(\ell_j')_{j\in[k']}$ is an enumeration of the set:
+%\[
+%\{ c\ | \not\!\exists i.\,(q,c,q_i)\in S\} 
+%\cup
+%\{ (M\ta M;X\ta X)\ | \not\!\exists N,Y,i.\,(q,(M\ta N;X\ta Y),q_i)\in S\} 
+%\]
+%Basically, what we are saying here is that our automata are closed under complementation. 
+%\\
+%Taking advantage of the fact that silent transitions are definable in these automata, we also get rollback for free: in order to try a multi-step transition, break it in steps (without silent transitions between the steps) and try it non-deterministically.
+%\end{remark} 
+
+\paragraph{Bisimulation}
+Bisimulation equivalence turns out to be a great tool for relating automata, even from different paradigms. It implies language equivalence and is generally easier to reason about than language equivalence.
+
+\begin{definition}\label{d:bisim}
+Let $\AA_i=\langle Q_i,q_{0i},\rho_{0i},H_{0i},\delta_i,F_i\rangle$ be HRAs of type $(n,m)$. A relation $R\subseteq\hat Q_1\times\hat Q_2$ is called a \boldemph{simulation} on $\AA_1$ and $\AA_2$ if, for all $(\hat{q}_1,\hat{q}_2)\in R$,
+\begin{itemize}
+\item if $\hat q_1\trdeltaa[\delta_2]{\epsilon}\hat q_1'$ and $\pi_1(\hat q_1')\in F_1$ then $\hat q_2\trdeltaa[\delta_2]{\epsilon}\hat q_2'$ for some $\pi_1(\hat q_2')\in F_2$,
+%\item if $\hat q_1\trdelta[\delta_1]{\epsilon}\hat q_1'$ then $(\hat q_1',\hat q_2)\in R$,
+\item if $\hat q_1\trdeltaa{\epsilon}\trdelta[\delta_1]{\ell}\hat q_1'$ then $\hat q_2\trdeltaa{\epsilon}\trdelta[\delta_2]{\ell}\hat q_2'$ for some $(\hat q_1',\hat q_2')\in R$.
+\end{itemize}
+$R$ is called a \boldemph{bisimulation} if both $R$ and $R^{-1}$ are simulations.
+%\boldemph{Bisimilarity}, written $\sim$, is the largest bisimulation relation.
+We say that $\AA_1$ and $\AA_2$ are \boldemph{bisimilar}, written $\AA_1\sim\AA_2$, if there is a bisimulation $R$ such that $((q_{01},\rho_{01},H_0),(q_{02},\rho_{02},H_0))\in R$.
+\end{definition}
+
+\begin{lemma}\label{l:bisim}
+If $\AA_1\sim\AA_2$ then $\LL(\AA_1)=\LL(\AA_2)$.
+\end{lemma}
+\begin{proof}
+This is a standard result.
+\end{proof}
+
+A first result we can show is that the presence of registers does not add to expressivity. In fact, registers can be seen as histories in each of which at most one name can be stored.
+
+\newcommand\qwe[1]{\widetilde{#1}}
+
+\begin{lemma}
+For each $(n,m)$-automaton $\AA$ there is a
+$(0,m{+}n)$-automaton $\AA'$ such that $\AA\sim\AA'$
+\end{lemma}
+\begin{proof}
+We construct $\AA'$ by adding $n$ extra histories and replacing each transition of the form $q\xrightarrow{M\ta N;X\ta Y}q'$ by $q\xrightarrow{\qwe{N}\setminus \qwe{M}}\cdot\xrightarrow{X\cup\qwe{M}\ta Y\cup\qwe{N}}q'$, where $\qwe{i}=i+m$, for each $i$, and $\qwe{M}=\{\qwe{i}\ |\ i\in M\}$. That is, each register is simulated by an extra history; we ensure that each extra history always has at most one name by clearing it before adding a new name in it.
+\\
+Formally, let $\AA=\langle Q,q_{0},\rho_{0},H_0,\delta,F\rangle$ and construct $\AA'=\langle Q',q_{0},\emptyset,H_0',\delta',F\rangle$ by setting
+$Q'=Q\uplus\delta$, $H_0'=H_0+\rho_0$ where 
+\[
+H+\rho = H\cup \{(\qwe{i},\{a\})\ |\ (i,a)\in\rho\}\cup\{(\qwe{i},\emptyset)\ |\ i\not\in\dom(\rho)\}
+\]
+and 
+by including in $\delta'$ precisely the following transitions.
+\begin{itemize}
+\item For each $q\xrightarrow{c}q'$ in $\delta$, add $q\xrightarrow{c}q'$ in $\delta'$.
+\item For each $q\xrightarrow{X}q'$ in $\delta$, add $q\xrightarrow{X}q'$ in $\delta'$.
+\item For each $q\xrightarrow{M\ta N;X\ta Y}q'$ in $\delta$, add $q\xrightarrow{\qwe{N}\setminus\qwe{M}}(q,M\ta N;X\ta Y,q')\xrightarrow{X\cup\qwe{M}\ta Y\cup\qwe{N}}q'$ in $\delta'$ (we omit the $\emptyset\ta \emptyset$ for registers for brevity).
+\end{itemize}
+Setting $R=\{((q,\rho,H),(q,\emptyset,H+\rho)) \}$ 
+it follows that $R$ is a bisimulation.
+\end{proof}
+
+This allows us to show the following.
+
+\begin{lemma}
+Emptiness is decidable for HRAs.
+\end{lemma}
+\begin{proof}[Proof (sketch):]
+By the previous lemma, it suffices to show that emptiness is decidable for $(0,m)$-automata. For each such automaton $\AA$, we construct a Reset Vector Addition System with States (R-VASS) $\AA'$ with $2^m$ dimensions: one dimension $\qwe{X}$ for each $X\subseteq[m]$. WLOG we can assume that $\AA$ contains no constant transitions. We map each state of $\AA$ to a corresponding state in $\AA'$. Moreover, we map each transition $q\xrightarrow{X}q'$ of $\AA$ to a sequence of transitions $q\xrightarrow{\mathtt{rst}\qwe{X_1}}\cdots\xrightarrow{\mathtt{rst}\qwe{X_i}}q'$ in $\AA'$ (where $X_1,\cdots,X_i$ an enumeration of $\PP(X)$), and each transition $q\xrightarrow{X\ta Y}q'$ to a sequence of transitions $q\xrightarrow{\mathtt{dec}\qwe{X}}\cdot\xrightarrow{\mathtt{inc}\qwe{Y}}q'$ in $\AA'$, where $\mathtt{rst},\mathtt{dec},\mathtt{inc}$ are the instructions for resetting, decreasing and increasing in each dimension respectively. We can now show that $\LL(\AA)=\emptyset$ iff $\LL(\AA')=\emptyset$. Since emptiness of R-VASSs is decidable, so is emptiness for HRAs. Moreover, the complexity is non-primitive recursive~\cite{Schnoebelen_MFCS10}.
+\end{proof}
+
+Since HRAs extend register automata, their universality problem is undecidable. Therefore, HRAs are not closed under complementation. This can be shown concretely by the following example, adapted from~\cite{Manuel_Ramanujam_2011}.
+
+\begin{example}
+Consider the language 
+\[
+\LL_3=\{w\in\names^*\ |\ \text{ not all names in $w$ occur exactly twice in it }\}\,.
+\]
+$\LL_3$ is accepted by the following $(0,2)$-$HRA$ (we omit registers from transitions).
+\begin{center}
+\SmallPicture\VCDraw{\begin{VCPicture}{(0,-2)(15,2)}
+% states
+\State[q_0]{(0,0)}{q0} \FinalState[q_1]{(5,0)}{q1} \State[q_2]{(10,0)}{q2} \FinalState[q_3]{(15,0)}{q3} 
+% initial--final
+\Initial{q0}
+% transitions
+\EdgeL{q0}{q1}{\scriptstyle\emptyset\ta \{2\}} 
+\EdgeL{q1}{q2}{\scriptstyle\{2\}\ta \{1,2\}} 
+\EdgeL{q2}{q3}{\scriptstyle\{1,2\}\ta \{1,2\}} 
+\LoopS{q0}{\scriptstyle\emptyset\ta \{1\}}
+\LoopN{q0}{\scriptstyle\{1\}\ta \{1\}}
+\LoopS{q1}{\scriptstyle\emptyset\ta \{1\}}
+\LoopN{q1}{\scriptstyle\{1\}\ta \{1\}}
+\LoopS{q2}{\scriptstyle\emptyset\ta \{1\}}
+\LoopN{q2}{\scriptstyle\{1\}\ta \{1\}}
+\LoopS{q3}{\scriptstyle -\ta -}
+%
+\end{VCPicture}}
+\end{center}
+On the other hand, $\overline{\LL_3}=\{w\in\names^*\ |\ \text{ all names in $w$ occur exactly twice in it }\}$ is not HRA recognisable. For suppose it were recognisable by a $(0,m)$-automaton $\AA$ with $k$ states. Then, $\AA$ would accept the word
+\[
+w = a_1\cdots a_{k}\,a_1\cdots a_{k}
+\]
+where all $a_i$'s are distinct. Let $q$ be a state visited twice by $\AA$ while accepting the second half of $w$, and suppose that these visits partition $w$ in $w=uvv'$, where $|u|\geq k$, so that $\AA$ is in configuration $(q,H)$ right after $u$, and in configuration $(q,H')$ right after $uv$ (we omit register assignments for brevity). Then, $w$ is accepted by a run which traverses a path of the form
+\begin{equation}\label{eq:path}
+q_0\rightarrow\cdots\rightarrow \underbrace{q\rightarrow\cdots\rightarrow q}_p\!\!\!\!\overbrace{\,\,\,\,\rightarrow\cdots\rightarrow q_F}^{p'}
+\end{equation}
+for some final state $q_F$. The subpath $p'$ cannot be traversed by $\AA$ from configuration $(q,H)$ as then $\AA$ would accept some word $uv''$ of length $<2k$, which cannot be a member of $\overline{\LL_3}$. The only way in which such a traversal can fail is by reaching a transition $q_1'\xrightarrow{X\ta Y}q_2'$ in $p'$ with configuration $(q_1',H_1')$ such that $\bigcap_{i\in X}H_1'(i)=\emptyset$. On the other hand, in the original run which accepts $w$, this transition is reached with some configuration $(q_1',H_1)$ such that $\bigcap_{i\in X}H_1(i)\not=\emptyset$. This implies that there is a transition $q_1\xrightarrow{Z\ta X}q_2$ in $p$ such that no clearance of any history in $X$ occurs between $q_2$ and $q_1'$ in~\eqref{eq:path}. We can therefore rewrite~\eqref{eq:path} as \
+$
+q_0\to\cdots\to q\to\cdots\to q_1\xrightarrow{Z\ta X}q_2\to\cdots\to q\to\cdots\to q_1'\xrightarrow{X\ta Y}q_2'\to\cdots\to q_F
+$
+and partition $w$ in $w=u_1b_1u_2b_2u_3$ where $b_1,b_2$ the names accepted by the two denoted transitions respectively. Since $|u_1|\geq k$, $b_1$ does not occur in $u_2b_2u_3$. Hence,~\eqref{eq:path} can be traversed in the same way as in the run that accepts $w$ but with the two denoted transitions accepting the same name. That is, the word $u_1b_1u_2b_1u_3$ is also accepted by $\AA$, contradicting $\LL(\AA)=\overline{\LL_3}$.
+
+\end{example}
+
+\section{Rollbacks}
+
+In this section we show that our automata can simulate \emph{rollback behaviour}. In particular, let us assume automata with transition labels of the from $\ell_1\cdots\ell_n$, where $n$ is not fixed and each $\ell_i$ is of the form $(M\ta N;X\ta Y)$ as before. The semantics of these automata are the same as before, with the proviso that each label $\ell_1\cdots\ell_n$ yields $n$ consecutive transitions. Moreover, the following rollback behaviour is catered for.
+
+\begin{quote}
+Suppose the automaton is in configuration $(q,\rho,H)$ where the outgoing transitions of $q$ are $\vec{\ell},\cdots,\vec{\ell}_m$. If, for all $1\leq i\leq m$, the next $|\vec{\ell}_i|$ input symbols do not lead to a transition through $\vec{\ell}_i$ then the automaton drops the first input symbol and remains in configuration $(q,\rho,H)$.
+\end{quote}
+We call such automata \emph{rollback HRA's}.
+
+Let $\AA=\langle Q,q_0,\rho_0,\delta,F\rangle$ be a rollback-HRA of $n$ registers and $n$ histories (WLOG assume same number of registers and histories). 
+Moreover, let 
+\[
+T=\{\, \vec{\ell}\ |\ \exists\vec\ell',q,q'.\,\vec\ell'\not=\epsilon\land (q,\vec\ell'\vec\ell,q')\in\delta\,\}
+\]
+and assume for simplicity that all transitions in $\AA$ have labels of the form $(M\ta N;X\ta Y)$.
+We construct an equivalent $HRA$ $\AA'$ of $(k+1)\times n$ registers and histories, where $k=\max\{|\vec\ell|\ |\ \vec\ell\in T\}$.
+The construction of $\AA'$ is based on the following rationale. Let $q$ be a state of $\AA$ with outgoing transitions labelled $\vec\ell_1,\cdots,\vec\ell_m$ where each $\vec\ell_i=\ell_i\vec\ell_i'$ leads to state $q_i$. In $\AA'$, each label $\ell_i$ contributes a transition to state $(q_i,\vec\ell_i')$. The reading of the latter is: 
+\emph{$\AA'$ is in the process of accepting $\vec\ell_i'$ and moving to $q_i$}.
+Moreover, and in order to simulate rollback, we add a \emph{drop transition} from $q$ to $(q,\vec\ell_1',\cdots,\vec\ell_m')$, where by ``drop" we mean that the transition accepts any input and leaves the registers and histories untouched. The reading of this transition is:
+\emph{$\AA'$ is in state $q$ but is not allowed to accept any of the $\vec\ell_i'$'s}.\footnote{In effect, not all of the $\vec\ell_1',\cdots,\vec\ell_m'$ should be included in $(q,\vec\ell_1',\cdots,\vec\ell_m')$, but only those $\vec\ell_i'$ such that $\ell_i$ corresponds to the specific drop.}
+
+More specifically, we set $\AA'=\langle Q',q_0',\rho_0',\delta',F'\rangle$ with 
+\[
+Q' = Q\times T\times ([k]\rightharpoonup T)
+\]
+$q_0'=(q_0,\epsilon,\emptyset)$ and $F'=\{(q,\epsilon,\emptyset)\ |\ q\in F\}$.
+Thus, in each state $(q,\vec\ell,\phi)$, the automaton is in the process of accepting sequence $\vec\ell$ with the proviso that no element from the range of $\phi$ will be accepted on the way.
+Labels of $\AA'$ are of the form:
+\[
+(M_0\uplus\cdots\uplus M_k\ta N_0\uplus\cdots\uplus N_k,\,X_0\uplus\cdots\uplus X_k\ta Y_0\uplus\cdots\uplus Y_k)
+\]
+Put otherwise, they come in $k+1$ bulks of the form $(M_i\ta N_i;X_i\ta Y_i)$.
+We can therefore denote them more compactly as functions
+\[
+\hat\ell: [k]\cup\{0\}\to\L(\AA)
+\]
+where $\L(\AA)$ is the set of transition labels appearing in $\AA$. Note that registers and histories come in $k+1$ bulks of $n$ and, for each $i$, $\hat\ell(i)$ concerns registers and histories of the $i$-th bulk. The 0th bulk of $\AA'$ concerns the computation that `really happens' (e.g.\ the sequence of labels that is currently being accepted). The other $k$ bulks concern the alternatives that need to be ruled out, that is, all those sequences of labels that should meanwhile not be accepted.
+
+In $\AA'$ we allow also for transitions of the form:
+\[
+(q,\cdots)\xrightarrow{\mathit{cp}\,;\,\hat\ell}(q',\cdots)
+\]
+where $\mathit{cp}\subseteq[k]$. If the automaton reaches $(q,\cdots)$ in configuration $((q,\cdots),\rho,H)$ then, for each $i\in[k]$, it will copy the contents of the first bulk of registers and histories to the $i$-th bulk, that is, set
+\[
+\rho(i\times k+j):=\rho(j),\quad
+H(i\times k+j):=H(j),\quad\text{for all }j\in[n]
+\]
+and then process label $\hat\ell$. We can show that such transitions can be simulated by ordinary HRA's (at the cost of extra states and registers\ta histories).
+
+We construct $\delta'$ by including in it precisely the following transitions. 
+\begin{itemize}
+\item For each $(q,\vec\ell,q')\in\delta$ with $\vec\ell=\vec\ell_1\ell\vec\ell_2$, include:
+\[
+(q,\epsilon,\phi)\xrightarrow{\hat{\ell}}(q',\vec\ell_2,\phi')\text{ (if $\vec\ell_1=\epsilon$) \
+and \ }
+(q',\ell\vec\ell_2,\phi)\xrightarrow{\hat{\ell}}(q',\vec\ell_2,\phi')\text{ (otherwise)}
+\]
+Here $\hat\ell(0)=\ell$ and, moreover, the conditions below should be satisfied.
+\begin{itemize}
+\item If $i\in[k]\setminus\dom(\phi)$ then $i\notin\dom(\phi')$ and $\hat\ell(i)=(M\ta M;X\ta X)$, some $M,X$.\footnote{That is, each inactive bulk remains inactive. Note that all possible combinations of $M$ and $X$ are allowed here, so that no transition gets blocked because of an inactive bulk.}
+\item If $\phi(i)=(M\ta N;X\ta Y)\,\vec\ell'$ then:
+\begin{itemize}
+\item either $\hat\ell(i)=(M'\ta M';X'\ta X')$ with $(M',X')\not=(M,X)$ and $i\notin\dom(\phi')$,
+\item or $\hat\ell(i)=(M\ta N;X\ta Y)$ and $\phi'(i)=\vec\ell'$.\footnote{That is, if the $i$-th bulk is active and contains a sequence $\ell'\vec\ell'$ then either the transition of $\AA'$ cannot realise $\ell'$ so the bulk is rendered inactive, or it can realise it so the sequence of this bulk is updated to $\ell'$. Since the whole sequence should not be accepted, if $\vec\ell'$ is empty the the former should be the case.}
+\end{itemize}
+In particular, if $\vec\ell'=\epsilon$ then the former must be the case.
+\end{itemize}
+\item For each state $q$ with outgoing transition labels $\vec\ell_1,\cdots,\vec\ell_m$, 
+let $s$ be the set of the first $m$ indices in $\{ i\in[k]\ |\ i\notin\dom(\phi)\lor\phi(i)\notin\{\vec\ell_1,\cdots,\vec\ell_m\}\}$ and include:
+\[
+(q,\epsilon,\phi)\xrightarrow{\mathit{cp}\,;\,\hat\ell}(q,\epsilon,\phi')
+\]
+Here $\hat\ell(0)=(M\ta M;X\ta X)$, some $M,X$, and $\mathit{cp}=s$.\footnote{In this case, the automaton will drop an input so the sequences of labels $\vec\ell_1,\cdots,\vec\ell_m$ need to be included in $\phi$. We choose to put them in bulks $s$, in which case we copy the 0th bulk or registers and histories to each of the bulks in $s$. Moreover, each of the sequences already in $\phi$ will be updated.}
+Moreover, the conditions below should be satisfied.
+\begin{itemize}
+\item If $i\in[k]\setminus(\dom(\phi)\cup s)$ then $i\notin\dom(\phi')$ and $\hat\ell(i)=(M\ta M;X\ta X)$, some $M,X$.\footnote{That is, each inactive bulk remains inactive, apart from the bulks in $s$ that will be newly introduced.}
+\item If $i=s_j$ ($j$th element in $s$) and $\vec\ell_j=(M\ta N;X\ta Y)\,\vec\ell'$, or $\phi(i)=(M\ta N;X\ta Y)\,\vec\ell'$, then
+\begin{itemize}
+\item either $\hat\ell(i)=(M'\ta M';X'\ta X')$ with $(M',X')\not=(M,X)$ and $i\notin\dom(\phi')$,
+\item or $\hat\ell(i)=(M\ta N;X\ta Y)$ and $\phi'(i)=\vec\ell'$.\footnote{That is, we put each $\vec\ell_j$ in the $s_j$th bulk of $\phi$ and then consume the first element of each transition in the bulk as above.}
+\end{itemize}
+In particular, if $\vec\ell'=\epsilon$ then the former must be the case.
+\end{itemize}
+\end{itemize}
+\end{document}
+
+%BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
