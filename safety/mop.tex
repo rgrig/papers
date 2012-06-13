@@ -1,0 +1,30 @@
+\def\pmap{\rightharpoonup}
+\centerline{\bf mop}
+
+\medskip\noindent This note summarizes the article {\it Semantics and Algorithmics for Parametric Monitoring\/}.
+\medskip
+
+The model of computation is a set of automaton instances running in parallel.
+The automata are deterministic and may have an infinite number of states.
+Each instance sees only a slice of the trace.
+There is a set~$X$ of {\it parameters\/}, a set~$V$ of {\it values\/}; conceptually, there is one automaton instance running for each binding $\theta:X\pmap V$.
+Each event has a name $e : E$ and a binding $\theta':X\pmap V$.
+The automaton instance for~$\theta$ sees exactly the events carrying bindings $\theta'\le\theta$.
+The order is the usual order on partial maps:
+$\theta'\le\theta$ means that the two maps agree on the domain of~$\theta'$, which is no bigger than the domain of~$\theta$.
+
+An automaton has a possibly infinite set~$S$ of states and a transition function $\sigma:(S\times E)\to S$.
+Notice that the transition function sees only the name of the event, not the bindings.
+For each automaton instance~$\theta$, a different set~$F\subseteq S$ is accepting.
+
+The paper culminates with an online algorithm for slicing traces.
+Its simple version is straightforward, but I wouldn't say simple.
+To get the intuition behind it, please consider the following problem.
+Suppose we have some hash function for sequences of integers that may be computed online (one integer at a time), such as $h({\bf x}y)=31h({\bf x})+y$.
+We are given a sequence~${\bf x}$ of integers and we are asked to process it one integer at a time and construct a data structure that can answer queries of the form:
+``What is the hash of the subsequence of integers $\le k$?''
+Preprocessing $O(n\lg\lg n)$ time, these queries can be answered in $O(\lg\lg n)$ time, where $n=|{\bf x}|$.
+TODO: Continue here.
+
+\bye
+% vim:wrap:linebreak:fmr=<<<,>>>:nosi:spell:
