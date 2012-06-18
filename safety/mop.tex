@@ -7,24 +7,54 @@
 The model of computation is a set of automaton instances running in parallel.
 The automata are deterministic and may have an infinite number of states.
 Each instance sees only a slice of the trace.
-There is a set~$X$ of {\it parameters\/}, a set~$V$ of {\it values\/}; conceptually, there is one automaton instance running for each binding $\theta:X\pmap V$.
-Each event has a name $e : E$ and a binding $\theta':X\pmap V$.
+There is a set~$X$ of {\it parameters\/} and a set~$V$ of {\it values\/}; there is one automaton instance running for each binding $\theta\in X\pmap V$.
+Each event has a name $e\in E$ and a binding $\theta'\in X\pmap V$.
 The automaton instance for~$\theta$ sees exactly the events carrying bindings $\theta'\le\theta$.
 The order is the usual order on partial maps:
-$\theta'\le\theta$ means that the two maps agree on the domain of~$\theta'$, which is no bigger than the domain of~$\theta$.
+$\theta'\le\theta$ means that the two maps agree on the domain of~$\theta'$, which is included in the domain of~$\theta$.
 
-An automaton has a possibly infinite set~$S$ of states and a transition function $\sigma:(S\times E)\to S$.
-Notice that the transition function sees only the name of the event, not the bindings.
-For each automaton instance~$\theta$, a different set~$F\subseteq S$ is accepting.
+An automaton has a possibly infinite set~$S$ of states and a transition function $\delta\in(S\times E)\to S$.
+Notice that the transition function sees only the name of the event, but not the bindings.
+The accepting states of instance~$\theta$ are those in the set $\alpha(\theta)$, where $\alpha\in(X\pmap V)\to S\to 2$.
+The automaton is essentially described by the pair~$(\alpha,\delta)$.
 
 The paper culminates with an online algorithm for slicing traces.
-Its simple version is straightforward, but I wouldn't say simple.
+Its simplest version is straightforward, but not simple.
 To get the intuition behind it, please consider the following problem.
-Suppose we have some hash function for sequences of integers that may be computed online (one integer at a time), such as $h({\bf x}y)=31h({\bf x})+y$.
-We are given a sequence~${\bf x}$ of integers and we are asked to process it one integer at a time and construct a data structure that can answer queries of the form:
-``What is the hash of the subsequence of integers $\le k$?''
-Preprocessing $O(n\lg\lg n)$ time, these queries can be answered in $O(\lg\lg n)$ time, where $n=|{\bf x}|$.
-TODO: Continue here.
+Suppose we have a hash function for sequences of integers that may be computed online (one integer at a time), such as $h({\bf y}z)=31h({\bf y})+z$.
+We are given a sequence~${\bf y}$ of integers and we are asked to process it one integer at a time and construct a data structure that can answer queries of the form:
+``What is the hash of the subsequence of integers $\le z$?''
+The following solution is straightforward.
+Preprocess the sequence as shown below.
+$$\vbox{
+  \settabs\+\quad&\quad&\cr
+  \+    $d[-\infty]:=0$\cr
+  \+    for each $y$ in ${\bf y}$, in order\cr
+  \+&     $x:=\max\{x'\in{\it keys}(d):x'\le y\}$\cr
+  \+&     $d[y]:=31d[x]+y$\cr
+  \+&     for each $z$ in $\{z'\in{\it keys}(d):y<z'\}$\cr
+  \+&&      $d[z]:=31d[z]+y$\cr
+}$$
+Then answer the query~$z$ with $d[\max\{y\in{\it keys}(d):y\le z\}]$.
+
+Why is this algorithm correct?
+A little detour to establish terminology comes before the key observation.
+Let ${\bf y}/z$ denote the subsequence of~${\bf y}$ that retains integers~$\le z$.
+This notation introduces the operations $(\bullet/z)\in Z^*\to Z^*$ and $({\bf y}/\bullet)\in Z\to Z^*$.
+Note that ${\bf y}/\bullet$ is ascending
+$${\bf y}/z_1\le {\bf y}/z_2 \qquad\hbox{if $z_1\le z_2$}$$
+and reaches its maximum, which is ${\bf y}$, at $\max{\bf y}$
+$${\bf y}/(\max{\bf y})={\bf y}$$
+(Here ${\bf x}\le{\bf y}$ means that ${\bf x}$~is a subsequence of~${\bf y}$.)
+The set~$I{\bf y}$ of {\it interesting\/} subsequences of~${\bf y}$ is the range of~${\bf y}/\bullet$.
+Given the previous two observations, it is easy to see that $|I{\bf y}|$ is one more the number of distinct elements of~${\bf y}$.
+Now comes the key observation:
+An interesting subsequence of~${\bf y}z$ is either an interesting subsequence of~${\bf y}$ or it is obtained by appending~$z$ to an interesting subsequence of~${\bf y}$:
+$$I({\bf y}z)\subseteq I{\bf y} \cup (I{\bf y})z$$
+
+Is this algorithm fast?
+In the worst case, exercised by a decreasing sequence~${\bf y}$, the preprocessing takes $\Omega(|{\bf y}|^2)$~time, because of the inner loop.
+On average
 
 \bye
 % vim:wrap:linebreak:fmr=<<<,>>>:nosi:spell:
