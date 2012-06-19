@@ -23,9 +23,37 @@ Its simplest version is straightforward, but not simple.
 To get the intuition behind it, please consider the following problem.
 Suppose we have a hash function for sequences of integers that may be computed online (one integer at a time), such as $h({\bf y}z)=31h({\bf y})+z$.
 We are given a sequence~${\bf y}$ of integers and we are asked to process it one integer at a time and construct a data structure that can answer queries of the form:
-``What is the hash of the subsequence of integers $\le z$?''
-The following solution is straightforward.
-Preprocess the sequence as shown below.
+`What is the hash of the subsequence of integers $\le z$?''
+
+\medskip
+
+Consider the sequence ${\bf y}=[5,9,5,9,4]$.
+The query `$\le5$' should be answered by the hash of $[5,5,4]$;
+the query `$\le4$' should be answered by the hash of $[4]$;
+the query `$\le0$' should be answered by the hash of $[]$.
+The are $3$~distinct values from the input sequence partition the integers into $3+1$~intervals.
+$$Z=(-\infty.\,.\,4)\cup[4.\,.\,5)\cup[5.\,.\,9)\cup[9.\,.\,\infty)$$
+Each interval corresponds to one possible answer.
+For example, all queries `$\le z$' with $z\in[4.\,.\,5)$ have the same answer as the query~`$\le4$'.
+So, the preprocessing phase could build the dictionary
+$$d=\{\,
+-\infty\mapsto h([]),\;
+4\mapsto h([4]),\;
+5\mapsto h([5,5,4]),\;
+9\mapsto h([5,9,5,9,4])
+\,\}$$
+Answering a query amounts to a predecessor search in~$d$, in $O(\lg\lg|d|)$~time.
+
+The straightforward solution is to start with the dictionary $\{\,-\infty\mapsto h([])\,\}$, which corresponds to the empty sequence, and update it for each integer in the input sequence.
+For example, once the sequence $[5,9,5,9]$ was processed the state would be the dictionary
+$$d'=\{\,
+-\infty\mapsto h([]),\;
+5\mapsto h([5,5]),\;
+9\mapsto h([5,9,5,9])
+\,\}$$
+Processing the last integer, which is~$4$, amounts to updating $d'$ into~$d$.
+
+The preprocessing algorithm is the following.
 $$\vbox{
   \settabs\+\quad&\quad&\cr
   \+    $d[-\infty]:=0$\cr
@@ -35,26 +63,40 @@ $$\vbox{
   \+&     for each $z$ in $\{z'\in{\it keys}(d):y<z'\}$\cr
   \+&&      $d[z]:=31d[z]+y$\cr
 }$$
-Then answer the query~$z$ with $d[\max\{y\in{\it keys}(d):y\le z\}]$.
 
 Why is this algorithm correct?
-A little detour to establish terminology comes before the key observation.
-Let ${\bf y}/z$ denote the subsequence of~${\bf y}$ that retains integers~$\le z$.
-This notation introduces the operations $(\bullet/z)\in Z^*\to Z^*$ and $({\bf y}/\bullet)\in Z\to Z^*$.
-Note that ${\bf y}/\bullet$ is ascending
-$${\bf y}/z_1\le {\bf y}/z_2 \qquad\hbox{if $z_1\le z_2$}$$
-and reaches its maximum, which is ${\bf y}$, at $\max{\bf y}$
-$${\bf y}/(\max{\bf y})={\bf y}$$
-(Here ${\bf x}\le{\bf y}$ means that ${\bf x}$~is a subsequence of~${\bf y}$.)
-The set~$I{\bf y}$ of {\it interesting\/} subsequences of~${\bf y}$ is the range of~${\bf y}/\bullet$.
-Given the previous two observations, it is easy to see that $|I{\bf y}|$ is one more the number of distinct elements of~${\bf y}$.
-Now comes the key observation:
-An interesting subsequence of~${\bf y}z$ is either an interesting subsequence of~${\bf y}$ or it is obtained by appending~$z$ to an interesting subsequence of~${\bf y}$:
-$$I({\bf y}z)\subseteq I{\bf y} \cup (I{\bf y})z$$
+The {\it slice\/}~${\bf y}/z$ is the subsequence of~${\bf y}$ that retains integers~$\le z$.
+Clearly, $({\bf x}\cdot{\bf y})/z=({\bf x}/z)\cdot({\bf y}/z)$, where $\cdot$ denotes sequence concatenation.
+In particular $({\bf y}\cdot[y])/z$ is $({\bf y}/z)\cdot([y]/z)$;
+and $[y]/z$ is $[y]$~or~$[]$, depending on whether $y\le z$.
+Intuitively, this means that slices can be computed incrementally, which in turn implies that the dictionary~$d$ can be computed incrementally.
+The following are invariants of the outer loop:
+$$\eqalign{
+  {\it keys}(d)&=\{ \max{\bf x} : \hbox{${\bf x}={\bf y}/z$ for some integer $z$} \}\cr
+  d[z]&=h({\bf y}/z)\quad\hbox{for all $z\in{\it keys}(d)$}\cr
+}$$
 
 Is this algorithm fast?
-In the worst case, exercised by a decreasing sequence~${\bf y}$, the preprocessing takes $\Omega(|{\bf y}|^2)$~time, because of the inner loop.
-On average
+It takes $\sim mn$~time, where $m$~is the length of the sequence and $n$~is the number of distinct integers in the sequence.
+Still, the running time is cut roughly in half if one can quickly
+(1)~find the (immediate) predecessor~$x$ of the integer~$y$ being processed, and
+(2)~iterate over all~$z$ that are strictly bigger than~$y$.
+On average, it's reasonable to expect about half of the keys of~$d$ to be bigger than the current~integer.
+
+\medskip
+
+Let's now go back to the original problem, that of slicing traces of events.
+It is essentially the same:
+The `hash' of ${\bf y}$ is the state of an automaton instance after procesing~${\bf y}$.
+The {\it main difference\/} is that the elements of the sequence, which are parameter bindings $\theta:X\pmap V$, are not equipped with a total order, only a partial order.
+In general in a partial order there is no such thing as an immediate predecessor.
+However, partial maps $\theta_1$~and~$\theta_2$ can be joined into $\theta_1\cup\theta_2$ if they agree on their common domain.
+It turns out that
+$${\it keys}(d)=\{\cup{\bf x} : \hbox{${\bf x}={\bf y}/\theta$ for some $\theta\in X\pmap V$}\}$$
+is closed under~$\cup$, which is why it contains a unique immediate predecessor for any parameter binding.
+The search for this intermediate predecessor isn't smart: starting with $\theta$, mop first sees if $\theta$ is in~${\it keys}(d)$, then tries to drop $1$~binding from~$\theta$, then $2$~bindings, and so on.
+The main thing mop does to speed up computation is that it maintains for each element of ${\it keys}(d)$ the set of strictly bigger elements, so that the inner loop of the algorithm is sped up.
+
 
 \bye
 % vim:wrap:linebreak:fmr=<<<,>>>:nosi:spell:
