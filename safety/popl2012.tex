@@ -1125,33 +1125,49 @@ TOPL automata are a variant of {\it register automata\/}~\cite{dblp:journals/tcs
 Register automata work with infinite alphabets, as do a few other types of automata~\cite{dblp:conf/csl/segoufin06}.
 Intuitively, such models are a good fit for expressing properties of programs because the set of program values is infinite.
 For example objects could be instantiated inside non-terminating loops.
-This work validates the intuition by exhibiting a working runtime verification system.
-On the other hand, automata theorists are mainly interested in intrinsic qualities of the model.
-For example the emptiness problem is NP-complete~\cite{dblp:journals/tcs/sakamotoi00} or PSPACE-complete~\cite{dblp:journals/tocl/demril09}, depending on the exact variant of register automata.
-Such results suggest techniques to statically analyze and transform TOPL properties -- an opportunity for future work.
+Our paper exhibits a working runtime verification system based on register automata, thus validating the intuition.
+
+\rg{Add a section that imports results from RAs, and then summarize here:
+closure under various operations, projection on~$C^*, $emptiness, language inclusion, universality, nondeterminism.}
 \rg{TODO: Discuss rollback, once it's settled in the body of the article.}
+\rg{TODO: In future work, discuss other RA news that may be relevant.}
 
 Related work from the area of program verification splits by programming paradigm (object-oriented or functional) and by time of checking (runtime or static).
 The work on runtime verification of object-oriented programs is closest to TOPL\null.
 
-{\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} is a framework for runtime verification of Java programs.
-Roughly, the alphabet considered is $C\times V^n$, where $C$~is finite and $V$~is infinite.
-Conceptually, the framework implements a function $(C\times V^n)^*\to {\cal P}(C^*)$ that slices a trace over an infinite alphabet into several traces over a finite alphabet.
-Then one can use any of several plugins that act as recognizers $C^*\to\B$ of languages over a finite alphabet.
-The slicing function is fixed.
-The plugins, on the other hand, are arbitrary functions as far as the framework is concerned.
-They are not even constrained to be computable.
-In practice, however, they implement monitors for various decidable logics, such as finite state machines or LTL\null.
-The formal treatment~\cite{dblp:journals/corr/abs-1112-5761} claims that results hold for $n=|\N|$, but the proofs and the implementation handle only the case $n\in\N$.
-Experimental results show that JavaMOP is the most efficient runtime verification system~\cite{dblp:journals/sttt/meredithjgcr12}.
+{\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
+They differ in many details, but the essential ideas fit a common intuition.
+To communicate this intuition we depart from the terminologies of \cite{dblp:journals/sttt/meredithjgcr12}~and~\cite{dblp:conf/oopsla/allanachklmsst05}, which are themselves different from each other.
+The alphabet is~$\Sigma=C\times V$, where $C$~is a finite set of constants and $V$~is an infinite set of values.
+The task is to build a recognizer $\Sigma^*\to\B$.
+Both approaches build upon a basic recognizer $C^*\to\B$ over finite alphabets.
+Tracematches specify this recognizer by regular expressions, while JavaMOP supports several other logics.
+Both approaches make further assumptions on the structure of~$V$, and then define a way to specify a family $P\subset\Sigma\to\B$ of predicates over letters.
+Each such predicate~$p\in P$ determines a slice $\tau_p\in C^*$ of the trace $\tau\in\Sigma^*$ by retaining exactly those constants from letters satisfying~$p$.
+The trace~$\tau$ is recognized when any of its slices satisfy the basic recognizer.
 
-There exist TOPL properties that are not expressible in JavaMOP with {\em any} existing or potential plugin.
-For example taint properties that allow deriving new dirty values from old dirty values.
-Consider a taint property that identifies a source of dirty strings, a sink, and says that the result of concatenating a dirty string with another string is dirty itself.
-Intuitively, a fixed $n\in\N$ does not suffice because the number of dirty strings derived from one source is unbounded.
-(In the jargon of JavaMOP this property requires an unbounded number of parameters.)
+The implementation of JavaMOP is more efficient than that of tracematches~\cite{dblp:journals/corr/abs-1112-5761}.
+\rg{TODO: Comment on the efficiency of JavaMOP compared to TOPL after I do the experiments.}
+
+There exist properties expressible in TOPL that cannot be expressed as JavaMOP properties or as tracematches.
+Consider the language of traces
+${\rm s}(v_1) {\rm d}(v_1,v_2){\rm d}(v_2,v_3)\ldots{\rm d}(v_{n-1},v_n){\rm t}(v_n)$
+with $v_i=v_j$ if and only if $i=1$ and $j=n$.
+This is a taint property: the dirty value~$v_1$ is produced, then comes a chain in which new dirty values are derived from old dirty values, and finally the dirty value~$v_n$ is misused.
+It cannot be recognized in the framework used by JavaMOP and by tracemaches because slicing is pointwise.
+\rg{Add this property as an example and then just refer to its name.}
 \rg{TODO: Email Grigore Rosu to make sure this is true.}
+\rg{TODO: Add the Singleton pattern as another example of what they can't handle, because they do not have negation.}
 
+Any algorithm that analyzes or transforms JavaMOP properties must be specific to a certain plugin because the formalization of the framework~\cite{dblp:journals/corr/abs-1112-5761} imposes no constraint on recognizers $C^*\to\B$.
+In contrast, any algorithmic result discovered for register automata implies one for TOPL properties.
+For example we know that the emptiness problem is decidable, and we know that it is impossible to compute the negation of a property.
+
+{\it Tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are likely to have the exact same expressivity as JavaMOP with the plugin for regular expressions.
+But, we are unaware of a fully formal comparison.
+Tracematches evolved from the work on aspect-oriented programming.
+Unsurprisingly, the user may specify arbitrary code to run when a match is found.
+The formal semantics ignore this arbitrary code and how it could influence further matches.
 
 
 TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows articulating  relationships and interactions among several objects.
