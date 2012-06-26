@@ -252,8 +252,8 @@ Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of valu
 Most of the time we will only consider sequences of assignments.
 Simple assignments $({\sf set}\,i:=j)$ are defined by saying that
 \[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
-  ({\sf set}\,i:=j)\bigl((w_1,\ldots,w_n)\bigr) \]
-if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=w_j$.
+  ({\sf set}\,i:=j)\bigl((u_1,\ldots,u_n)\bigr) \]
+if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=u_j$.
 The sequence operator~$;$ is defined by saying that the relation $(a_1;a_2)(\ell)$ is the composition of the relations $a_1(\ell)$ and $a_2(\ell)$, for all~$\ell$.
 The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(\sigma,\sigma)\mid\sigma\in S\,\}$ for all~$\ell$.
 
@@ -266,10 +266,10 @@ G_{\rm RA} &::= {\sf equals}\,i
 \end{align*}
 They are interpreted as follows:
 \begin{align*}
-\bigl(w,(v_1,\ldots,v_m)\bigr)&\models{\sf fresh}
-  &&\text{when $w\ne v_k$ for all $k$} \\
-\bigl(w,(v_1,\ldots,v_m)\bigr)&\models{\sf equals}\,i
-  &&\text{when $w=v_i$}
+\bigl(u,(v_1,\ldots,v_m)\bigr)&\models{\sf fresh}
+  &&\text{when $u\ne v_k$ for all $k$} \\
+\bigl(u,(v_1,\ldots,v_m)\bigr)&\models{\sf equals}\,i
+  &&\text{when $u=v_i$}
 \end{align*}
 
 With these notations we can fix a definition for register automata.
