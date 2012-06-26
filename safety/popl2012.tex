@@ -6,6 +6,7 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{booktabs}
 \usepackage{graphics}
 \usepackage{microtype}  % do not remove
@@ -86,9 +87,15 @@
 }}
 
 
+\newtheorem{theorem}{Theorem}
+
+\theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
+
+\theoremstyle{remark}
 \newtheorem{notation}{Notation}
+\newtheorem{remark}{Remark}
 
 % For the final version, switch then comment-status of the following lines.
 \overfullrule=5pt
@@ -121,7 +128,7 @@ Unlike those, TOPL is based on an automata formalism designed for {\em infinite 
 In the context of program analysis the alphabet is the set of program values.
 This set is infinite since there is no bound on the number of instantiations.
 There are several such automata formalisms;
-TOPL is an extension of register automata~\cite{dblp:journals/tcs/kaminskif94}.
+TOPL is an extension of register automata~\cite{dblp:conf/focs/kaminskif90}.
 %For standard finite-state automata, nondeterminism does not increase expressivity;
 %with infinite alphabets, nondeterminism does increase expressivity.
 For standard finite-state automata, nondeterminism does not increase expressivity;
@@ -168,196 +175,133 @@ The paper is organized as follows.
 Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
 
 % >>>
-\section{Experimental Results}\label{sec:results} % <<<
+\section{Overview and Background}\label{sec:overview} % <<<
 
-Our interest in temporal properties of object-oriented programs was initially purely theoretical.
-But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
-In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
+\autoref{fig:concepts} shows the main concepts of concern.
+Register automata are well-studied devices, introduced decades ago.
+The gap between TOPL properties and register automata is filled by two semantic models, namely TOPL automata with and without rollback.
+The model with rollback is better suited for implementation;
+the model without rollback is easier to analyze.
 
-\subsection{Methodology} % <<<
+Runtime verification with automata boils down to solving the membership problem for some one-way automaton.
+The membership problem asks whether a given word~$w$ belongs to the language of an automaton~${\cal A}$.
+Each arrow in \autoref{fig:concepts} represents a reduction of the membership problem: an algorithm that transforms an instance of the problem for one model of automata into an instance for another model of automata.
+The word undergoes only trivial transformations to overcome technicalities.
+However, in some cases the output automaton is significantly bigger than the input automaton.
 
-We expect our technique to be most useful during development.
-Library writers will document temporal constraints in TOPL, not just in English.
-Each library will have a testing version, obtained by instrumenting the bytecode with the TOPL properties.
-Users will use the testing version of the library to ensure they use it correctly.
-By the time end-users see the application, most temporal bugs are gone.
-Back in the real world, we too would like to know if such a scenario is likely.
-Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
-We have to settle for less.
+\begin{figure}[th]\centering
+\begin{tikzpicture}[auto,node distance=5mm]
+  \node (lang) {TOPL properties};
+  \node (rtopl) [below=of lang] {TOPL automata with rollback};
+  \node (x) [below=of rtopl] {};
+  \node (topl) [left=of x] {TOPL automata};
+  \node (ra) [right=of x] {register automata};
+  \path[draw,->,>=latex]
+    (lang) edge (rtopl)
+    (rtopl) edge[<->] (topl)
+    (topl) edge (ra)
+    (ra) edge (rtopl);
+\end{tikzpicture}
+\caption{Main concepts}
+\label{fig:concepts}
+\end{figure}
 
-We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
-DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
-We focus on $3$~projects that are still widely developed and used: Tomcat, H2, and PMD\null.
-These are all mature projects with many users.
-DaCapo itself was used for many experiments by the research community.
-Hence, we do not expect to find any bugs, but aim to measure the overhead.
-For each project we write a few TOPL properties that encode information that exists in the code comments.
-In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
+We review here register automata and several results about them.
+Together with the reductions presented later, these results imply similar results about TOPL automata.
 
-We measure both the time overhead and the space overhead.
-The time overhead is reported measured for various configurations of the checker, and also for the original bytecode, with no instrumentation whatsoever.
+We begin by defining a generic automaton, of which both TOPL and register automata are instances.
+The alphabet~$\Sigma=V^n$ is an $n$-tuple of values from a possibly infinite set $V$.
+A store $\sigma$ is an assignment of values to each of the $m$~registers;
+we denote the set of stores by $S=V^m$.
+A guard $g$ is a formula in some logic interpreted over pairs of letters and stores;
+we write $(\ell,\sigma)\models g$ to denote that letter $\ell\in\Sigma$ and store $\sigma\in S$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
+An action $a$ is a small program acting on stores, which has relational semantics;
+we denote the set of actions by $A=\Sigma\to(S\times S)$.
+We will later specialize to specific and simple logics (for guards) and programming languages (for actions).
+Labels are pairs $(g,a)$ of guards and actions;
+we denote the set of labels by $L=G\times A$.
 
-All experiments are performed on the same machine.
-The operating system kernel is Linux~2.6.32.
-The Java VM has version~1.6.0\_20.
-The processor is Intel i5 with $4$~cores at $3.33\rm\,GHz$.
-The total system memory is $4\rm\,GiB$.
+\begin{definition}
+An \emph{automaton}~${\cal A}$ with $m$~registers over $n$-tuples of values from the set~$V$ consists of
+\begin{itemize}
+\item a finite set~$Q$ of states
+\item an initial state $q_0\in Q$
+\item an initial store $\sigma_0\in S$
+\item a set $F\subseteq Q$ of final states
+\item a finite transition relation $\delta\subset Q\times L\times Q$
+\end{itemize}
+\end{definition}
 
-% >>>
-\subsection{A Bug's Death} % <<<
+A configuration~$x$ is a pair~$(q,\sigma)$ of a state~$q$ and a store~$\sigma$;
+we denote the set of configurations by $X=Q\times S$.
+The initial configuration is $(q_0,\sigma_0)$.
+A configuration is final when its state is final.
+The configuration graph of the automaton is a subset of $X\times\Sigma\times X$.
+We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ is in the configuration graph of~${\cal A}$.
+If the automaton if clear from the context we omit the subscript.
 
-The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
-The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
-We initially interpreted this comment as follows.
-\eqquote{It is illegal to call both the method {\tt getWriter} and the method {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
-The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
-We were not too surprised because we were unsure of the intended meaning of the comment.
-We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
-We investigated.
-The statement that threw a {\tt null}-pointer exception was the following:
-\begin{align}\label{eq:npe-src}
-\text{\Verb@if (log != null) log.write(b);@}
-\end{align}
-It must be that a concurrent thread sets {\tt log} to~{\tt null}.
-The statement is located in the method {\tt write} of the class {\tt TeeOutputStream}.
-The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
-So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
-Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
-%XXX\rg{Put here a trace for the error.}
+\begin{definition}
+The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\ell,\sigma_1)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
+\end{definition}
 
-TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
-First, the bytecode instrumented by TOPL helped us notice the problem.
-The reason is \emph{not} that a certain interleaving became more likely.
-Bug~2934521 of DaCapo mentions that exceptions of the Tomcat benchmark are silently ignored.
-This is why the {\tt null}-dereference was not noticed before.
-The TOPL checker tried to report an unrelated issue to {\tt System.err}.
-DaCapo had redirected the standard error stream to its own class, which faulted.
-TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
-This is why we noticed the {\tt null}-dereference.
-Second, TOPL helped us identify the data race.
-It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
-However, it would have been more difficult to figure out which threads exactly used the stream simultaneously.
+The language~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration.
 
-We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
-\eqquote{The stream and the writer of a response cannot both be used.}
-{eq:prop-ws-weak}
-This property involves three related objects.
-The full TOPL property appears in~\autoref{fig:tomcat-prop}.
-It turns out this property is also violated.
-After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
-They say that the stream and the response cannot be used without an intervening {\tt reset}.
-In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
-This brings out another advantage of TOPL:
-Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
+\smallskip
 
-% >>>
-\subsection{Benchmarks} % <<<
+Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.
+Most of the time we will only consider sequences of assignments.
+Simple assignments $({\sf set}\,i:=j)$ are defined by saying that
+\[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
+  ({\sf set}\,i:=j)\bigl((w_1,\ldots,w_n)\bigr) \]
+if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=w_j$.
+The sequence operator~$;$ is defined by saying that the relation $(a_1;a_2)(\ell)$ is the composition of the relations $a_1(\ell)$ and $a_2(\ell)$, for all~$\ell$.
+The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(\sigma,\sigma)\mid\sigma\in S\,\}$ for all~$\ell$.
 
-All three benchmarks are large open-source projects with many users and active developers.
-The versions were current in 2009 when DaCapo-9.12 was released.
+Register automata work with $\Sigma=V$; that is, $n=1$.
+In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
+The syntax of guards for register automata is the following:
+\begin{align*}
+G_{\rm RA} &::= {\sf fresh}\\
+G_{\rm RA} &::= {\sf equals}\,i
+\end{align*}
+They are interpreted as follows:
+\begin{align*}
+\bigl(w,(v_1,\ldots,v_m)\bigr)&\models{\sf fresh}
+  &&\text{when $w\ne v_k$ for all $k$} \\
+\bigl(w,(v_1,\ldots,v_m)\bigr)&\models{\sf equals}\,i
+  &&\text{when $w=v_i$}
+\end{align*}
 
-\paragraph{Tomcat 6.0.20.}
-Tomcat is a servlet server; so, highly concurrent.
-Servlets are Java programs that run in a webserver, extract data from {\tt ServletRequest}s , and send data into {\tt ServletResponse}s.
-A response has two associated incoming channels: a stream and a writer.
-The stream and the writer should not both be used.
-Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
-property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
-A response could be forwarded once the servlet sent data to it.
-But, the servlet must commit a response before forwarding it, by calling {\tt fulsh} on the stream, on ther writer, or on the response itself.
-This is the other property we checked.
+With these notations we can fix a definition for register automata.
 
-\paragraph{H2 1.2.121.}
-H2 is a database server.
-We checked four properties for it.
-Three properties express constraints on the order in which the methods of an interface may be called.
-For example, a client should not attempt to ask for a row from a cursor that did not advance;
-that is, for the interface {\tt Cursor}, the method {\tt next} must be called before calling method {\tt getSearchRow}.
-The fourth property describes the contract of the class {\tt SysConstants}.
-This class reads environment variables when it is loaded.
-Its comments say that it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}.
-It is easy to specify this property because TOPL intentionally treats the special methods {\tt <init>} and {\tt <clinit>} as if they are normal methods.
+\begin{definition}
+A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf equals}\,i,\; {\sf nop})$, where $i\in\{1,\ldots,m\}$.
+\label{def:ra}
+\end{definition}
 
-\paragraph{PMD 4.2.5.}
-PMD looks for bugs, dead code, and a few other problems in Java code.
-We checked five properties for it.
-One of the five involves two objects:
-A scope should be asked what is the definition of a name only if it already replied that it knows the name.
+There are several variants of definitions for register automata in the literature.
+It is even the case that the complexity of the emptiness problem depends on the exact definition one chooses.
+Our definition corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
+The following theorem summarizes some known results that apply to the definition we chose.
 
-% >>>
-\subsection{Overhead} % <<<
+\begin{theorem}
+The following properties of register automata are known:
+\begin{enumerate}
+\item The emptiness problem is NP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
+\item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01}.
+\item The containment, equivalence, and universality problems are decidable for \emph{two} registers.~\cite{dblp:conf/focs/kaminskif90}
+\item The universality, containment, and equivalence problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
+\item Register automata are closed under union, intersection, concatenation, and Kleene star.~\cite{dblp:conf/focs/kaminskif90}
+\item Register automata are \emph{not} closed under complementation~\cite{dblp:conf/focs/kaminskif90}.
+\item Nondeterministic register automata are strictly more expressive than deterministic register automata~\cite{dblp:conf/focs/kaminskif90}.
+\item The language ${\cal L}({\cal A})\cap C^*$ is regular for any register automaton~${\cal A}$ and any finite subset $C\subset V$ of values~\cite{dblp:conf/focs/kaminskif90}.
+\item Register automata are as expressive as Fraisse automata over the class of finite sets when the set~$V$ of values is countable~\cite{dblp:conf/lics/bojanczykkl11}.
+\end{enumerate}
+\end{theorem}
 
-Instrumenting DaCapo, which has $160\rm\,MiB$, takes $7$~minutes.
-One needs to instrument once for a given set of properties, because instrumentation is property-directed.
-A change of a runtime parameter, such as the maximum number of tracked active states, requires recompiling the TOPL checker, but does not require re-instrumenting.
+All of these result carry over, perhaps slightly modified, to TOPL automata.
 
-\paragraph{Space.}
-Estimates of heap size showed no significant increase in memory use.
-We used a simple method.
-The heap of a Java program has three parts: used, garbage, and free.
-The class {\tt Runtime} from the package {\tt java.lang} provides an estimate of the total size and of the free size.
-The difference is an estimate of the used size, provided the garbage was collected immediately before.
-We put this code, which estimates memory use, in the TOPL checker.
-So, strictly speaking we did not estimate the memory use without the checker.
-However, we used as a baseline a run that tracked no active state.
-We also run the estimate for various other counts of tracked active states.
-
-\paragraph{Time.}
-\autoref{table:overhead} summarizes the experimental results.
-The reference column shows the running time without any instrumentation.
-A timeout signifies a time greater than the reference time~$\times100$.
-All reported times are averaged over $10$~runs, and are accompanied by the unbiased estimate of standard deviation.
-The TOPL checker essentially simulates a nondeterministic register automaton.
-In theory the set of active states is unbounded, but we impose a size limit on it.
-The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$, $10^3$, and~$10^4$.
-
-For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
-This indicates that $\le10^3$ active states already exhaustively check the given properties.
-For h2 the running time is more than $\times1.4$ the reference time even when the TOPL checker is not tracking any active state.
-This indicates that we instrumented a simple method that runs often.
-
-\begin{table*}[t]\centering
-\begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
-  &&
-  & \multicolumn{10}{c}{Number of tracked active states} \\ \cmidrule{4-13}
-& \multicolumn{2}{c}{reference}
-  &\multicolumn{2}{c}{$\le0$}
-  &\multicolumn{2}{c}{$\le10^1$}
-  &\multicolumn{2}{c}{$\le10^2$}
-  &\multicolumn{2}{c}{$\le10^3$}
-  &\multicolumn{2}{c}{$\le10^4$} \\ \midrule
-tomcat
-  & $5.3$ & $\pm0.1$
-  & $5.4$ & $\pm0.1$
-  & $5.6$ & $\pm0.2$
-  & $9.0$ & $\pm0.3$
-  & $43.5$ & $\pm1.2$
-  & $43.9$ & $\pm1.0$ \\
-pmd
-  & $5.2$ & $\pm0.4$
-  & $5.4$ & $\pm0.2$
-  & $12.2$ & $\pm0.3$
-  & $47.7$ & $\pm10.7$
-  & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
-  \\
-h2
-  & $6.6$ & $\pm0.2$
-  & $9.5$ & $\pm0.2$
-  & $130.1$ & $\pm12.2$
-  & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
-  \\
-\end{tabular}
-\caption{
-  Experimental Results.
-  Times are in seconds, averaged over $10$~runs.
-}\label{table:overhead}
-\end{table*}
-
-% >>>
-% >>>
+%>>>
 \section{TOPL by Example} \label{sec:examples} % <<<
 
 In this section, which is based on our previous article~\cite{our-fool2011},  we introduce TOPL in an informal way by means of examples.
@@ -1116,12 +1060,202 @@ The time of a state is the number of times the (Step) transition of the operatio
 
 % >>>
 % >>>
+\section{Experimental Results}\label{sec:results} % <<<
+
+Our interest in temporal properties of object-oriented programs was initially purely theoretical.
+But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
+In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
+
+\subsection{Methodology} % <<<
+
+We expect our technique to be most useful during development.
+Library writers will document temporal constraints in TOPL, not just in English.
+Each library will have a testing version, obtained by instrumenting the bytecode with the TOPL properties.
+Users will use the testing version of the library to ensure they use it correctly.
+By the time end-users see the application, most temporal bugs are gone.
+Back in the real world, we too would like to know if such a scenario is likely.
+Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
+We have to settle for less.
+
+We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
+DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
+We focus on $3$~projects that are still widely developed and used: Tomcat, H2, and PMD\null.
+These are all mature projects with many users.
+DaCapo itself was used for many experiments by the research community.
+Hence, we do not expect to find any bugs, but aim to measure the overhead.
+For each project we write a few TOPL properties that encode information that exists in the code comments.
+In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
+
+We measure both the time overhead and the space overhead.
+The time overhead is reported measured for various configurations of the checker, and also for the original bytecode, with no instrumentation whatsoever.
+
+All experiments are performed on the same machine.
+The operating system kernel is Linux~2.6.32.
+The Java VM has version~1.6.0\_20.
+The processor is Intel i5 with $4$~cores at $3.33\rm\,GHz$.
+The total system memory is $4\rm\,GiB$.
+
+% >>>
+\subsection{A Bug's Death} % <<<
+
+The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
+The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
+We initially interpreted this comment as follows.
+\eqquote{It is illegal to call both the method {\tt getWriter} and the method {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
+The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
+We were not too surprised because we were unsure of the intended meaning of the comment.
+We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
+We investigated.
+The statement that threw a {\tt null}-pointer exception was the following:
+\begin{align}\label{eq:npe-src}
+\text{\Verb@if (log != null) log.write(b);@}
+\end{align}
+It must be that a concurrent thread sets {\tt log} to~{\tt null}.
+The statement is located in the method {\tt write} of the class {\tt TeeOutputStream}.
+The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
+So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
+Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
+%XXX\rg{Put here a trace for the error.}
+
+TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
+First, the bytecode instrumented by TOPL helped us notice the problem.
+The reason is \emph{not} that a certain interleaving became more likely.
+Bug~2934521 of DaCapo mentions that exceptions of the Tomcat benchmark are silently ignored.
+This is why the {\tt null}-dereference was not noticed before.
+The TOPL checker tried to report an unrelated issue to {\tt System.err}.
+DaCapo had redirected the standard error stream to its own class, which faulted.
+TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
+This is why we noticed the {\tt null}-dereference.
+Second, TOPL helped us identify the data race.
+It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
+However, it would have been more difficult to figure out which threads exactly used the stream simultaneously.
+
+We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
+\eqquote{The stream and the writer of a response cannot both be used.}
+{eq:prop-ws-weak}
+This property involves three related objects.
+The full TOPL property appears in~\autoref{fig:tomcat-prop}.
+It turns out this property is also violated.
+After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
+They say that the stream and the response cannot be used without an intervening {\tt reset}.
+In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
+This brings out another advantage of TOPL:
+Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
+
+% >>>
+\subsection{Benchmarks} % <<<
+
+All three benchmarks are large open-source projects with many users and active developers.
+The versions were current in 2009 when DaCapo-9.12 was released.
+
+\paragraph{Tomcat 6.0.20.}
+Tomcat is a servlet server; so, highly concurrent.
+Servlets are Java programs that run in a webserver, extract data from {\tt ServletRequest}s , and send data into {\tt ServletResponse}s.
+A response has two associated incoming channels: a stream and a writer.
+The stream and the writer should not both be used.
+Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
+property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
+A response could be forwarded once the servlet sent data to it.
+But, the servlet must commit a response before forwarding it, by calling {\tt fulsh} on the stream, on ther writer, or on the response itself.
+This is the other property we checked.
+
+\paragraph{H2 1.2.121.}
+H2 is a database server.
+We checked four properties for it.
+Three properties express constraints on the order in which the methods of an interface may be called.
+For example, a client should not attempt to ask for a row from a cursor that did not advance;
+that is, for the interface {\tt Cursor}, the method {\tt next} must be called before calling method {\tt getSearchRow}.
+The fourth property describes the contract of the class {\tt SysConstants}.
+This class reads environment variables when it is loaded.
+Its comments say that it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}.
+It is easy to specify this property because TOPL intentionally treats the special methods {\tt <init>} and {\tt <clinit>} as if they are normal methods.
+
+\paragraph{PMD 4.2.5.}
+PMD looks for bugs, dead code, and a few other problems in Java code.
+We checked five properties for it.
+One of the five involves two objects:
+A scope should be asked what is the definition of a name only if it already replied that it knows the name.
+
+% >>>
+\subsection{Overhead} % <<<
+
+Instrumenting DaCapo, which has $160\rm\,MiB$, takes $7$~minutes.
+One needs to instrument once for a given set of properties, because instrumentation is property-directed.
+A change of a runtime parameter, such as the maximum number of tracked active states, requires recompiling the TOPL checker, but does not require re-instrumenting.
+
+\paragraph{Space.}
+Estimates of heap size showed no significant increase in memory use.
+We used a simple method.
+The heap of a Java program has three parts: used, garbage, and free.
+The class {\tt Runtime} from the package {\tt java.lang} provides an estimate of the total size and of the free size.
+The difference is an estimate of the used size, provided the garbage was collected immediately before.
+We put this code, which estimates memory use, in the TOPL checker.
+So, strictly speaking we did not estimate the memory use without the checker.
+However, we used as a baseline a run that tracked no active state.
+We also run the estimate for various other counts of tracked active states.
+
+\paragraph{Time.}
+\autoref{table:overhead} summarizes the experimental results.
+The reference column shows the running time without any instrumentation.
+A timeout signifies a time greater than the reference time~$\times100$.
+All reported times are averaged over $10$~runs, and are accompanied by the unbiased estimate of standard deviation.
+The TOPL checker essentially simulates a nondeterministic register automaton.
+In theory the set of active states is unbounded, but we impose a size limit on it.
+The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$, $10^3$, and~$10^4$.
+
+For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
+This indicates that $\le10^3$ active states already exhaustively check the given properties.
+For h2 the running time is more than $\times1.4$ the reference time even when the TOPL checker is not tracking any active state.
+This indicates that we instrumented a simple method that runs often.
+
+\begin{table*}[t]\centering
+\begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
+  &&
+  & \multicolumn{10}{c}{Number of tracked active states} \\ \cmidrule{4-13}
+& \multicolumn{2}{c}{reference}
+  &\multicolumn{2}{c}{$\le0$}
+  &\multicolumn{2}{c}{$\le10^1$}
+  &\multicolumn{2}{c}{$\le10^2$}
+  &\multicolumn{2}{c}{$\le10^3$}
+  &\multicolumn{2}{c}{$\le10^4$} \\ \midrule
+tomcat
+  & $5.3$ & $\pm0.1$
+  & $5.4$ & $\pm0.1$
+  & $5.6$ & $\pm0.2$
+  & $9.0$ & $\pm0.3$
+  & $43.5$ & $\pm1.2$
+  & $43.9$ & $\pm1.0$ \\
+pmd
+  & $5.2$ & $\pm0.4$
+  & $5.4$ & $\pm0.2$
+  & $12.2$ & $\pm0.3$
+  & $47.7$ & $\pm10.7$
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
+  \\
+h2
+  & $6.6$ & $\pm0.2$
+  & $9.5$ & $\pm0.2$
+  & $130.1$ & $\pm12.2$
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
+  & \multicolumn{2}{c}{timeout}
+  \\
+\end{tabular}
+\caption{
+  Experimental Results.
+  Times are in seconds, averaged over $10$~runs.
+}\label{table:overhead}
+\end{table*}
+
+% >>>
+% >>>
 \section{Related Work}\label{sec:related} %<<<
 
 TOPL is an application of automata theory to program verification.
 Consequently, there is related work in the area of automata theory and there is related work in the area of program verification.
 
-TOPL automata are a variant of {\it register automata\/}~\cite{dblp:journals/tcs/kaminskif94}, which were introduced in~1994.
+TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, which were introduced in~1990.
 Register automata work with infinite alphabets, as do a few other types of automata~\cite{dblp:conf/csl/segoufin06}.
 Intuitively, such models are a good fit for expressing properties of programs because the set of program values is infinite.
 For example objects could be instantiated inside non-terminating loops.
