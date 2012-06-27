@@ -31,10 +31,10 @@
 % comment the next line for printing
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
 \hypersetup{
-  pdftitle={Runtime Checking with Register Automata},
+  pdftitle={Runtime Verification with Register Automata},
   pdfauthor={Radu Grigore and Dino Distefano and Rasmus Lechedahl Petersen}}
 
-\title{Runtime Checking with Register Automata}
+\title{Runtime Verification with Register Automata}
 %\authorinfo{Authors info whitheld for double-blind submission}
 \authorinfo{Radu Grigore}
            {Queen Mary University of London}
@@ -214,7 +214,7 @@ The alphabet~$\Sigma=V^n$ is an $n$-tuple of values from a possibly infinite set
 A store $\sigma$ is an assignment of values to each of the $m$~registers;
 we denote the set of stores by $S=V^m$.
 A guard $g$ is a formula in some logic interpreted over pairs of letters and stores;
-we write $(\ell,\sigma)\models g$ to denote that letter $\ell\in\Sigma$ and store $\sigma\in S$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
+we write $(\sigma,\ell)\models g$ to denote that store $\sigma\in S$ and the letter $\ell\in\Sigma$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
 An action $a$ is a small program acting on stores, which has relational semantics;
 we denote the set of actions by $A=\Sigma\to(S\times S)$.
 We will later specialize to specific and simple logics (for guards) and programming languages (for actions).
@@ -241,9 +241,10 @@ We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ i
 If the automaton if clear from the context we omit the subscript.
 
 \begin{definition}
-The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\ell,\sigma_1)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
+The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
 \end{definition}
 
+\rg{TODO: Define nondeterministic\slash deterministic.}
 The language~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration.
 
 \smallskip
@@ -261,33 +262,53 @@ Register automata work with $\Sigma=V$; that is, $n=1$.
 In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
 The syntax of guards for register automata is the following:
 \begin{align*}
-G_{\rm RA} &::= {\sf fresh}\\
-G_{\rm RA} &::= {\sf equals}\,i
+G_{\rm RA} &\;::=\; {\sf fresh}\\
+G_{\rm RA} &\;::=\; {\sf eq}\,i
 \end{align*}
 They are interpreted as follows:
 \begin{align*}
-\bigl(u,(v_1,\ldots,v_m)\bigr)&\models{\sf fresh}
-  &&\text{when $u\ne v_k$ for all $k$} \\
-\bigl(u,(v_1,\ldots,v_m)\bigr)&\models{\sf equals}\,i
-  &&\text{when $u=v_i$}
+\bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf fresh}
+  &&\text{when $u_i\ne v$ for all $i$} \\
+\bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf eq}\,i
+  &&\text{when $u_i=v$}
 \end{align*}
 
 With these notations we can fix a definition for register automata.
 
 \begin{definition}
-A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf equals}\,i,\; {\sf nop})$, where $i\in\{1,\ldots,m\}$.
+A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in\{1,\ldots,m\}$.
 \label{def:ra}
 \end{definition}
 
 There are several variants of definitions for register automata in the literature.
-It is even the case that the complexity of the emptiness problem depends on the exact definition one chooses.
-Our definition corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
-The following theorem summarizes some known results that apply to the definition we chose.
+It is even the case that several published results hold only for certain variants of the definition.
+Our variant corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
+
+\begin{example}
+The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the following register automaton with $3$~registers over the alphabet $\Sigma=V\cup\{\bot\}$:
+\begin{itemize}
+\item $Q=\{1,2,3,4\}$
+  and $q_0=1$
+  and $\sigma_0=(\bot,\bot,\bot)$
+  and $F=\{4\}$
+\item $\delta$ consists of
+  $\bigl(1,({\sf fresh},{\sf set}\,1),2\bigr)$
+  and $\bigl(2,({\sf fresh},{\sf set}\,2),3\bigr)$
+  and $\bigl(2,({\sf eq}\,1,{\sf nop}),3\bigr)$
+  and $\bigl(3,({\sf fresh},{\sf set}\,1),4\bigr)$.
+\end{itemize}
+Observe that:
+(1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
+(2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
+(3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
+\end{example}
+
+The following theorem summarizes known results that apply to the definition we chose.
 
 \begin{theorem}
 The following properties of register automata are known:
 \begin{enumerate}
-\item The emptiness problem is NP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
+\item The emptiness problem is coNP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
 \item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01}.
 \item The containment, equivalence, and universality problems are decidable for \emph{two} registers.~\cite{dblp:conf/focs/kaminskif90}
 \item The universality, containment, and equivalence problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
@@ -299,9 +320,281 @@ The following properties of register automata are known:
 \end{enumerate}
 \end{theorem}
 
-All of these result carry over, perhaps slightly modified, to TOPL automata.
+These results have analogues for TOPL automata.
 
 %>>>
+\section{TOPL Automata}\label{sec:topl_automata} % <<<
+
+We now gradually move towards a model that is better suited for runtime verification of Java programs.
+TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike register automata, which force $n=1$.
+It is then natural to consider different guards and actions, which handle specific components of the letters.
+TOPL guards are the following:
+\begin{align*}
+G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \\
+G_{\rm TOPL} &\;::=\; {\sf neq}\,i\ne j \\
+G_{\rm TOPL} &\;::=\; {\sf true} \\
+G_{\rm TOPL} &\;::=\; G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
+\end{align*}
+If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
+These abbreviations are similar to the one used for assignments.
+The guards are interpreted as follows:
+\begin{align*}
+\bigl((u_1,\ldots,u_m),(v_1,\ldots,v_n)\bigr) &\models {\sf eq}\,i=j
+  &&\text{when $u_i=v_j$} \\
+\bigl((u_1,\ldots,u_m),(v_1,\ldots,v_n)\bigr) &\models {\sf neq}\,i\ne j
+  &&\text{when $u_i\ne v_j$}
+\end{align*}
+and
+\begin{align*}
+(\sigma,\ell) &\models {\sf true}
+  &&\text{always} \\
+(\sigma,\ell) &\models g_1\mathrel{\sf and} g_2
+  &&\text{when $(\sigma,\ell)\models g_1$ and $(\sigma,\ell)\models g_2$}
+\end{align*}
+
+We can now define TOPL automata.
+
+\begin{definition}
+A \emph{TOPL automaton} is an automaton whose guards are from the set~$G_{\rm TOPL}$ (defined above) and whose actions are sequences of assignments (defined in \autoref{sec:overview}).
+\end{definition}
+
+\begin{example}
+Consider again the language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$.
+It is recognized by the following TOPL automaton with $2$~registers over the alphabet $\Sigma=V$:
+\begin{itemize}
+\item $Q=\{1,2,3,4\}$ and $q_0=1$ and $F=\{4\}$
+\item $\delta$ consists of
+  $\bigl(1,({\sf true}, {\sf set}\,1),2\bigr)$
+  and $\bigl(2,({\sf true}, {\sf set}\,2),3\bigr)$
+  and $\bigl(3,({\sf neq}\,1\mathrel{\sf and}{\sf neq}\,2, {\sf nop}),4\bigr)$.
+\end{itemize}
+Any initial store~$\sigma_0$ works.
+\end{example}
+
+% >>>
+\section{TOPL  Semantics}\label{sec:semantics} % <<<
+In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
+Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
+Labels look like method calls.
+Each label has a method pattern that is used to identify the set of methods to which the label refers.
+In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
+(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
+The more interesting case is when there are value patterns for each argument and perhaps even for the result.
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
+%Name patterns are POSIX globs and match method names.
+
+\paragraph{On the Value Patterns mechanism.}
+For each automaton variable \Verb@v@ there are three associated patterns.
+The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
+The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
+The negated lowercase pattern \Verb@!v@ reads the value of the automaton variable \Verb@v@ and only matches different values.
+A Java literal acts as a pattern that matches only the value it denotes.
+A wildcard~* pattern matches any value.
+
+\smallskip
+A TOPL property is \emph{well-formed} when it satisfies the following two conditions:
+{\em (i)} labels must contain uppercase value patterns at most once; {\em (ii)}
+any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
+From now on we assume TOPL properties to be well-formed.
+
+\subsection{Semantics}\label{sec:semantics_sub} % <<<
+We model the semantics of programs and automata as sets of event traces.
+We say that a program \emph{violates} a property when their sets of traces intersect.
+In other words, properties encode bad executions, rather than good executions.
+
+\subsubsection{TOPL Execution Automata.}
+\newcommand{\World}{ExecState}
+
+Given a TOPL property,  
+let $\set{Vertex}$ be the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ the set of labeled arcs mentioned in transitions.
+Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, determines  an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
+This automaton represents the semantics of the property interpreted over the program.
+The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
+
+We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
+Let stores be finite partial maps with finite domain:
+\[
+\set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
+\] 
+Moreover we assume a countable set \set{Event} of events with known arity.
+Each event~$e$ is of the form $(t_e,[0{:} v_0,\dots, 1{:}v_n])$.
+The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second component is an array of values.
+Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
+%
+\begin{definition}[TOPL execution automaton]
+Given a set of program traces $\set{Trace}$ and a {\em TOPL} property $(\set{Vertex},\set{Arc})$, a {\em TOPL execution automaton} $\Xi$ is a tuple
+$(\set{ExecState}, \to , \set{Init}, \set{Error})$ where
+\begin{itemize}
+\item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
+\item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
+\item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
+\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
+\end{itemize}
+\end{definition}
+An execution state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
+The reader may wonder why execution states need to contain traces.
+The reason is that each label in $\set{Arc}$ carries (potentially) not
+just a single guard, but a list of guards. We call the length of this list the \emph{depth} of the arc.
+Since different outgoing arcs of a vertex can have different depths, we have that different target states of transitions may receive different events.
+For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have depth 2 and 5 respectively, then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$.
+
+In order to define the transition relation $\to$ we need to define two auxiliary concepts.
+When observing a trace, the effect of actions in an arc label on a store  is given by the function
+\[
+   A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
+\] and defined as
+\[
+\begin{array}{l}
+\begin{array}{l @{$\; =\;\;$} l}
+A(\sigma,\epsilon,[]) &  \!\! \sigma
+\\[2ex]
+A(\sigma,e,(g,a)) & \!\! \left\{\begin{array}{ll}
+     a(e,\sigma) & \mbox{if $g(e,\sigma)$}
+     \\[1ex]
+     \!\! \bot & \mbox{otherwise}
+     \end{array}
+     \right.
+\\[5ex]
+\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) &  \!\! \left\{\begin{array}{ll}
+    \!\! A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
+     \\
+& \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
+     \\[1ex]
+    \!\! \bot & \mbox{otherwise}
+     \end{array}
+     \right.
+\end{array}
+\end{array}\]
+In this definition, the effect of an empty list of actions $l$ on an empty trace $\epsilon$ does not change the store.
+If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event 
+and  $\sigma$ is updated. Notice that in  the case $A(\sigma,e\cdot \tau,(g,a)\cdot l)$, the result $\sigma' \in \set{Store}$ and therefore $\sigma' \neq \bot$. 
+
+\newcommand{\Enabled}{\mathit{Enab}}
+With $A$ we can test whether a
+transition is enabled in a store when observing a trace, and therefore, we can define the
+predicate $\Enabled$ testing if there exists an enabled transition
+starting from an execution state:
+%\rlp{consider removing $enabled$, it is only used here and not shorter
+%than its definition.}
+\begin{eqnarray*}
+%enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
+%\\
+\Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
+\end{eqnarray*}
+Notice that, according to the definition of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
+Evaluating a guard along the transition consumes an event, therefore, to see if a transition is enabled, we have to examine $|l|$ events.
+
+The transition relation $s \to s'$ is defined by the following rules.
+\[
+\begin{array}{ll}
+\!\!\!\text{(Step)}  &
+\infer[|l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{x_1 \to x_2{:} l \quad A(\sigma_1,\tau_1,l)=\sigma_2}
+%\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
+\\[2ex]
+\!\!\!\text{(Silent)}  &
+\infer[\neg \Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
+\end{array}
+\]
+Finally, we can define the language of a TOPL execution automaton $\Xi$, as the set of traces it accepts:
+\[
+{\cal L}(\Xi) = \{ \tau \mid \exists \sigma' \tau', (\mathtt{start},[],\tau) \to^* (\mathtt{error},\sigma',\tau')\}
+\]
+${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
+
+\paragraph{Silent steps.}
+A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given state and trace of events, the automaton does not get stuck but it consumes one event without changing its state (see the  Silent Step rule).
+Note that a silent step is not equivalent to a self-loop on all states, as dropping events is not allowed if there are enabled transitions.
+In that case,  the enabled transitions are performed with the rule (Step) and the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and $\tau_2$ is the leftover of the event trace before the transition after dropping $|l|$ events.
+
+The next example illustrates the difference from self loops by showing
+that weather a transition becomes enabled during a given trace depends
+on the presence of other transitions out of the same vertex. 
+\begin{example}
+Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$.
+Moreover, let us assume that our input trace is $\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
+Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive.
+Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by the trace $e_1 e_1 e_2 $ from {\tt zero}.
+On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se.
+Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled.
+Hence, we need to consider the sequence $e_1e_1$.
+The latter does not enable any transition either.
+Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged.
+At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled.
+Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
+\end{example}
+
+\begin{figure}[t]
+\begin{tikzpicture}
+  \def\x{2.5}
+  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
+  \tikzset{transition/.style={->,>=latex}}
+  \tikzset{every label/.style={gray}}
+  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
+  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
+  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
+
+  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
+  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
+
+  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
+  \draw[transition] (zero)--node[right]{$e_1$} (two);
+
+  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
+\end{tikzpicture}
+\caption{Example of unmatched events.}
+\label{fig:unmatched-example}
+\end{figure}
+
+\subsubsection{On labels and guards.} % <<<
+
+A label is a list of pairs $(g,a)$ of guards and actions. A  {\em general guard} is a partial function of type:
+\[
+\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
+\]
+An {\em instantiated guard} is a general guard provided with instances of a pattern  name $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern:
+\[
+g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
+\]
+Given an event and a store, an instantiated guard  evaluates whether the event satisfy the guard in the store. It is defined as:
+\newcommand{\sem}[1]{[ \! | #1 | \! ]}
+\[
+g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
+\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store
+and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
+\begin{example}
+%\rlp{Notation for not-guard should be unified ($\sim$ here ! earlier).}
+Consider the label
+ $ !\pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
+ {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the
+ following sequence of labels
+\[
+\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
+\] where the upper-script stands for the position of a pattern in an
+expression.
+The statement, on the other hand, generates the trace of events $e_1 \cdot e_2$ where
+\[
+\begin{array}{l l}
+ & e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \\
+ \mbox{ and }  &  e_2= (ret \ gets, [0: \sem{t}]) 
+\end{array}
+\]
+The instantiated guard for the label are:
+ $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
+Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$,
+but inequality for \pattern{v} (because of the negation $!$).
+The instantiated guards, can now be evaluated with the events by taking their conjunction:
+\[
+ (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1)
+\] and
+\[
+ (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
+\]
+\end{example}
+
+% >>>
+% >>>
+\input{FMAtoTOPL}
+% >>>
 \section{TOPL by Example} \label{sec:examples} % <<<
 
 In this section, which is based on our previous article~\cite{our-fool2011},  we introduce TOPL in an informal way by means of examples.
@@ -583,229 +876,6 @@ The following property detects when a dictionary overwrite one of its bindings.
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
 % >>>
-% >>>
-\section{TOPL  Semantics}\label{sec:semantics} % <<<
-In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
-Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
-Labels look like method calls.
-Each label has a method pattern that is used to identify the set of methods to which the label refers.
-In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
-(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
-%Name patterns are POSIX globs and match method names.
-
-\paragraph{On the Value Patterns mechanism.}
-For each automaton variable \Verb@v@ there are three associated patterns.
-The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
-The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
-The negated lowercase pattern \Verb@!v@ reads the value of the automaton variable \Verb@v@ and only matches different values.
-A Java literal acts as a pattern that matches only the value it denotes.
-A wildcard~* pattern matches any value.
-
-\smallskip
-A TOPL property is \emph{well-formed} when it satisfies the following two conditions:
-{\em (i)} labels must contain uppercase value patterns at most once; {\em (ii)}
-any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
-From now on we assume TOPL properties to be well-formed.
-
-\subsection{Semantics}\label{sec:semantics} % <<<
-We model the semantics of programs and automata as sets of event traces.
-We say that a program \emph{violates} a property when their sets of traces intersect.
-In other words, properties encode bad executions, rather than good executions.
-
-\subsubsection{TOPL Execution Automata.}
-\newcommand{\World}{ExecState}
-
-Given a TOPL property,  
-let $\set{Vertex}$ be the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ the set of labeled arcs mentioned in transitions.
-Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, determines  an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
-This automaton represents the semantics of the property interpreted over the program.
-The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
-
-We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
-Let stores be finite partial maps with finite domain:
-\[
-\set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
-\] 
-Moreover we assume a countable set \set{Event} of events with known arity.
-Each event~$e$ is of the form $(t_e,[0{:} v_0,\dots, 1{:}v_n])$.
-The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second component is an array of values.
-Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
-%
-\begin{definition}[TOPL execution automaton]
-Given a set of program traces $\set{Trace}$ and a {\em TOPL} property $(\set{Vertex},\set{Arc})$, a {\em TOPL execution automaton} $\Xi$ is a tuple
-$(\set{ExecState}, \to , \set{Init}, \set{Error})$ where
-\begin{itemize}
-\item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
-\item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
-\item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
-\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
-\end{itemize}
-\end{definition}
-An execution state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
-The reader may wonder why execution states need to contain traces.
-The reason is that each label in $\set{Arc}$ carries (potentially) not
-just a single guard, but a list of guards. We call the length of this list the \emph{depth} of the arc.
-Since different outgoing arcs of a vertex can have different depths, we have that different target states of transitions may receive different events.
-For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have depth 2 and 5 respectively, then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$.
-
-In order to define the transition relation $\to$ we need to define two auxiliary concepts.
-When observing a trace, the effect of actions in an arc label on a store  is given by the function
-\[
-   A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
-\] and defined as
-\[
-\begin{array}{l}
-\begin{array}{l @{$\; =\;\;$} l}
-A(\sigma,\epsilon,[]) &  \!\! \sigma
-\\[2ex]
-A(\sigma,e,(g,a)) & \!\! \left\{\begin{array}{ll}
-     a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-     \\[1ex]
-     \!\! \bot & \mbox{otherwise}
-     \end{array}
-     \right.
-\\[5ex]
-\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) &  \!\! \left\{\begin{array}{ll}
-    \!\! A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
-     \\
-& \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
-     \\[1ex]
-    \!\! \bot & \mbox{otherwise}
-     \end{array}
-     \right.
-\end{array}
-\end{array}\]
-In this definition, the effect of an empty list of actions $l$ on an empty trace $\epsilon$ does not change the store.
-If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event 
-and  $\sigma$ is updated. Notice that in  the case $A(\sigma,e\cdot \tau,(g,a)\cdot l)$, the result $\sigma' \in \set{Store}$ and therefore $\sigma' \neq \bot$. 
-
-\newcommand{\Enabled}{\mathit{Enab}}
-With $A$ we can test whether a
-transition is enabled in a store when observing a trace, and therefore, we can define the
-predicate $\Enabled$ testing if there exists an enabled transition
-starting from an execution state:
-%\rlp{consider removing $enabled$, it is only used here and not shorter
-%than its definition.}
-\begin{eqnarray*}
-%enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
-%\\
-\Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
-\end{eqnarray*}
-Notice that, according to the definition of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
-Evaluating a guard along the transition consumes an event, therefore, to see if a transition is enabled, we have to examine $|l|$ events.
-
-The transition relation $s \to s'$ is defined by the following rules.
-\[
-\begin{array}{ll}
-\!\!\!\text{(Step)}  &
-\infer[|l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{x_1 \to x_2{:} l \quad A(\sigma_1,\tau_1,l)=\sigma_2}
-%\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
-\\[2ex]
-\!\!\!\text{(Silent)}  &
-\infer[\neg \Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
-\end{array}
-\]
-Finally, we can define the language of a TOPL execution automaton $\Xi$, as the set of traces it accepts:
-\[
-{\cal L}(\Xi) = \{ \tau \mid \exists \sigma' \tau', (\mathtt{start},[],\tau) \to^* (\mathtt{error},\sigma',\tau')\}
-\]
-${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-
-\paragraph{Silent steps.}
-A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given state and trace of events, the automaton does not get stuck but it consumes one event without changing its state (see the  Silent Step rule).
-Note that a silent step is not equivalent to a self-loop on all states, as dropping events is not allowed if there are enabled transitions.
-In that case,  the enabled transitions are performed with the rule (Step) and the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and $\tau_2$ is the leftover of the event trace before the transition after dropping $|l|$ events.
-
-The next example illustrates the difference from self loops by showing
-that weather a transition becomes enabled during a given trace depends
-on the presence of other transitions out of the same vertex. 
-\begin{example}
-Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$.
-Moreover, let us assume that our input trace is $\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
-Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive.
-Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by the trace $e_1 e_1 e_2 $ from {\tt zero}.
-On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se.
-Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled.
-Hence, we need to consider the sequence $e_1e_1$.
-The latter does not enable any transition either.
-Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged.
-At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled.
-Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
-\end{example}
-
-\begin{figure}[t]
-\begin{tikzpicture}
-  \def\x{2.5}
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
-
-  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-
-  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-  \draw[transition] (zero)--node[right]{$e_1$} (two);
-
-  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-\end{tikzpicture}
-\caption{Example of unmatched events.}
-\label{fig:unmatched-example}
-\end{figure}
-
-\subsubsection{On labels and guards.} % <<<
-
-A label is a list of pairs $(g,a)$ of guards and actions. A  {\em general guard} is a partial function of type:
-\[
-\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
-\]
-An {\em instantiated guard} is a general guard provided with instances of a pattern  name $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern:
-\[
-g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
-\]
-Given an event and a store, an instantiated guard  evaluates whether the event satisfy the guard in the store. It is defined as:
-\newcommand{\sem}[1]{[ \! | #1 | \! ]}
-\[
-g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
-\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store
-and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
-\begin{example}
-%\rlp{Notation for not-guard should be unified ($\sim$ here ! earlier).}
-Consider the label
- $ !\pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
- {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the
- following sequence of labels
-\[
-\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
-\] where the upper-script stands for the position of a pattern in an
-expression.
-The statement, on the other hand, generates the trace of events $e_1 \cdot e_2$ where
-\[
-\begin{array}{l l}
- & e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \\
- \mbox{ and }  &  e_2= (ret \ gets, [0: \sem{t}]) 
-\end{array}
-\]
-The instantiated guard for the label are:
- $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
-Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$,
-but inequality for \pattern{v} (because of the negation $!$).
-The instantiated guards, can now be evaluated with the events by taking their conjunction:
-\[
- (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1)
-\] and
-\[
- (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
-\]
-\end{example}
-
-% >>>
-% >>>
-\input{FMAtoTOPL}
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
 

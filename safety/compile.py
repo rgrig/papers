@@ -8,32 +8,34 @@ def bibtex(f):
 def latex(f):
   return os.spawnlp(os.P_WAIT, 'pdflatex', 'pdflatex', f)
 
-def grep(fn, r):
+def grep(fn, pat, pp = False):
+  r = 0
   f = open(fn, 'r')
-  r = re.compile(r)
+  pat = re.compile(pat)
   for l in f:
-    if r.search(l):
-      f.close()
-      return True
+    if pat.search(l):
+      r += 1
+      if pp:
+        print l,
   f.close()
-  return False
+  return r
 
 def compile(f):
   log = '%s.log' % f
   if latex(f) != 0:
     return
+  wp, wn = None, grep(log, 'Warning')
   if grep(log, 'Citation .* undefined'):
     if bibtex(f) != 0:
       return
     latex(f)
-  count = 0
-  while grep(log, '[Rr]erun'):
+    wp, wn = wn, grep(log, 'Warning')
+  while wp == None or wp > wn:
     latex(f)
-    count += 1
-    if count > 5:
-      print('I run pdflatex many times for %s. Something is wrong.' % f)
-      print('Please take a look at %s and see why it says "rerun".' % log)
-      return
+    wp, wn = wn, grep(log, 'Warning')
+  if wn > 0:
+    print '\n\n***\nRemaining warnings:'
+    grep(log, 'Warning', True)
 
 for f in sys.argv[1:]:
   if f[-4:] == '.tex':
