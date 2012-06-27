@@ -326,6 +326,9 @@ These results have analogues for TOPL automata.
 \section{TOPL Automata}\label{sec:topl_automata} % <<<
 
 We now gradually move towards a model that is better suited for runtime verification of Java programs.
+
+\subsection{Without Rollback}
+
 TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike register automata, which force $n=1$.
 It is then natural to consider different guards and actions, which handle specific components of the letters.
 TOPL guards are the following:
@@ -370,6 +373,18 @@ It is recognized by the following TOPL automaton with $2$~registers over the alp
 \end{itemize}
 Any initial store~$\sigma_0$ works.
 \end{example}
+
+\rg{TODO: TOPL-to-RA transformation.}
+
+\subsection{With Rollback}
+
+\rg{TODO: Define rollback.}
+\rg{TODO: rTOPL-to-TOPL transformation.}
+\rg{TODO: RA-to-rTOPL transformation (from latter section).}
+
+\subsection{Properties}
+
+\rg{TODO: Port theorem~1 to TOPL and rTOPL.}
 
 % >>>
 \section{TOPL  Semantics}\label{sec:semantics} % <<<
