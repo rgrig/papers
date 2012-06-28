@@ -61,6 +61,7 @@
 \newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
+\newcommand{\limp}{\Rightarrow}
 \newcommand{\pattern}[1]{\ensuremath{\mathtt{\underline{#1}}}}
 \newcommand{\pmap}{\rightharpoonup}
 \newcommand{\set}[1]{\ensuremath{\mathsf{#1}}}
@@ -92,6 +93,7 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \newtheorem{example}{Example}
+\providecommand*{\exampleautorefname}{Example}
 
 \theoremstyle{remark}
 \newtheorem{notation}{Notation}
@@ -183,11 +185,12 @@ The gap between TOPL properties and register automata is filled by two semantic 
 The model with rollback is better suited for implementation;
 the model without rollback is easier to analyze.
 
-Runtime verification with automata boils down to solving the membership problem for some one-way automaton.
-The membership problem asks whether a given word~$w$ belongs to the language of an automaton~${\cal A}$.
-Each arrow in \autoref{fig:concepts} represents a reduction of the membership problem: an algorithm that transforms an instance of the problem for one model of automata into an instance for another model of automata.
-The word undergoes only trivial transformations to overcome technicalities.
-However, in some cases the output automaton is significantly bigger than the input automaton.
+The arrows in \autoref{fig:concepts} represent algorithms for which the language of the target is essentially the same as the language of the source, in a sense made precise later.
+Thus, the target of an arrow is at least as expressive as its source.
+All three automata models have the same expressivity because they form a cycle.
+In general, decision problems on automata (such as membership, emptiness, language inclusion), are decidable for all three models, or undecidable for all three models.
+However, some arrows produce outputs that are significantly bigger than their inputs.
+In particular, the cycle of arrows does not imply that decidable problems have the same complexity for all three models.
 
 \begin{figure}[th]\centering
 \begin{tikzpicture}[auto,node distance=5mm]
@@ -285,7 +288,7 @@ There are several variants of definitions for register automata in the literatur
 It is even the case that several published results hold only for certain variants of the definition.
 Our variant corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
 
-\begin{example}
+\begin{example}\label{ex:ra1}
 The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the following register automaton with $3$~registers over the alphabet $\Sigma=V\cup\{\bot\}$:
 \begin{itemize}
 \item $Q=\{1,2,3,4\}$
@@ -305,7 +308,11 @@ Observe that:
 (4)~The action of the last transition is superfluous, but required by the definition.
 \end{example}
 
-The following theorem summarizes known results that apply to the definition we chose.
+The following are standard decision problems for automata.
+The membership problem asks whether $w\in{\cal L}({\cal A})$ for a given word~$w$ and a given automaton~${\cal A}$.
+The emptiness problem asks whether $w\notin{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
+The universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
+The language inclusion problem asks whether $w\in{\cal L}({\cal A}_1)\limp w\in{\cal L}({\cal A}_2)$ for all words~$w$ and given automata ${\cal A}_1$~and~${\cal A}_2$.
 
 \begin{theorem}
 The following properties of register automata are known:
@@ -322,7 +329,16 @@ The following properties of register automata are known:
 \end{enumerate}
 \end{theorem}
 
-These results have analogues for TOPL automata.
+These results have analogues for TOPL automata, but not exact analogues.
+The details depend on what exactly the arrows from \autoref{fig:concepts} are.
+The gist will generally be a transformation of the following kind:
+From an automaton~${\cal A}$ in one model, construct an automaton~${\cal A}'$ in another model such that
+\[ v_1\ldots v_k \in {\cal L}({\cal A})
+  \iff
+f(v_1)\ldots f(v_k)\in{\cal L}({\cal A}') \]
+for some fixed $f$ that is easily computable.
+The interesting ideas will be in how ${\cal A}'$~is built;
+$f$~handles technicalities.
 
 %>>>
 \section{TOPL Automata}\label{sec:topl_automata} % <<<
@@ -363,7 +379,7 @@ We can now define TOPL automata.
 A \emph{TOPL automaton} is an automaton whose guards are from the set~$G_{\rm TOPL}$ (defined above) and whose actions are sequences of assignments (defined in \autoref{sec:overview}).
 \end{definition}
 
-\begin{example}
+\begin{example}\label{ex:topl1}
 Consider again the language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$.
 It is recognized by the following TOPL automaton with $2$~registers over the alphabet $\Sigma=V$:
 \begin{itemize}
@@ -376,7 +392,23 @@ It is recognized by the following TOPL automaton with $2$~registers over the alp
 Any initial store~$\sigma_0$ works.
 \end{example}
 
-\rg{TODO: TOPL-to-RA transformation.}
+Examples \ref{ex:ra1}~and~\ref{ex:topl1} hint that a general  transformation from TOPL automata to register automata is not very easy to find.
+It is easy, however, to transform a TOPL automaton with an arbitrary $n$ into an equivalent TOPL automaton with $n=1$.
+Each letter $(v_1,\ldots,v_n)$ is transformed into the word $v_1\ldots v_n v_1\ldots v_n$.
+Each transition is transformed into $2n$~transitions: the first $n$ retain the guards, the last $n$ retain the actions, in the obvious manner.
+It is, therefore, enough to transform TOPL automata with $n=1$ into register automata.
+
+One difficulty presents itself by comparing the guards available in $G_{\rm TOPL}$ and $G_{\rm RA}$:
+The TOPL automata guard ${\sf neq}\,i$ is more precise than its register automata equivalent, namely ${\sf fresh}$.
+More generally, the labels of register automata do not allow storing a value twice.
+
+
+\rg{Ideas for TOP-to-RA transformation:
+Get rid of repeated values in registers.
+For this, build an automaton with states $(q,P)$ where $P$ is a partition of the registers in the original.
+}
+
+
 
 \subsection{With Rollback}
 
