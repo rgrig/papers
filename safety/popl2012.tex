@@ -210,7 +210,8 @@ We review here register automata and several results about them.
 Together with the reductions presented later, these results imply similar results about TOPL automata.
 
 We begin by defining a generic automaton, of which both TOPL and register automata are instances.
-The alphabet~$\Sigma=V^n$ is an $n$-tuple of values from a possibly infinite set $V$.
+The letters are $n$-tuples of values from a possibly infinite set~$V$;
+we denote the alphabet by~$\Sigma=V^n$.
 A store $\sigma$ is an assignment of values to each of the $m$~registers;
 we denote the set of stores by $S=V^m$.
 A guard $g$ is a formula in some logic interpreted over pairs of letters and stores;
@@ -301,6 +302,7 @@ Observe that:
 (1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
 (2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
+(4)~The action of the last transition is superfluous, but required by the definition.
 \end{example}
 
 The following theorem summarizes known results that apply to the definition we chose.
