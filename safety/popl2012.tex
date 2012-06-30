@@ -68,13 +68,20 @@
 \newcommand{\start}{\ensuremath{\mathtt{start}}\xspace}
 \newcommand{\verbline}[2][]{\[\text{\Verb@#2@}#1\]}
 
+\newcommand{\quoteindent}{1.5\parindent} % could be re-defined before a quote
 \newcommand{\eqquote}[2]{{%
   \refstepcounter{equation}\label{#2}%
-  \setbox0=\vbox{\advance\hsize by-3\parindent\noindent\em#1}%
+  \newdimen\qi\qi=\quoteindent
+  \setbox0=\vbox{\advance\hsize by-2\qi\noindent\em#1}%
   \newdimen\x\x=\ht0 \advance\x by\dp0%
   \setbox1=\vbox to\x{\vss\hbox{(\arabic{equation})}\vss}%
   \leavevmode\\[1ex]%
-  \hbox to\hsize{\hskip 1.5\parindent\box0\hfil\box1}%
+  \hbox to\hsize{\hskip\qi\box0\hfil\box1}%
+  \\[1ex]}}
+\newcommand{\emquote}[1]{{%
+  \\[1ex]%
+  \newdimen\qi\qi=\quoteindent%
+  \hbox to\hsize{\hfil\vbox{\advance\hsize by-2\qi\noindent\em#1}\hfil}%
   \\[1ex]}}
 
 % rg: I tend to give grammars in BFS order
@@ -88,6 +95,9 @@
 }}
 
 
+\newtheorem{lemma}{Lemma}
+\providecommand*{\lemmaautorefname}{Lemma}
+\newtheorem{proposition}{Proposition}
 \newtheorem{theorem}{Theorem}
 
 \theoremstyle{definition}
@@ -277,10 +287,11 @@ They are interpreted as follows:
   &&\text{when $u_i=v$}
 \end{align*}
 
+We write $[m]$ for the set $\{1,2,\ldots,m\}$.
 With these notations we can fix a definition for register automata.
 
 \begin{definition}
-A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in\{1,\ldots,m\}$.
+A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in[m]$.
 \label{def:ra}
 \end{definition}
 
@@ -314,12 +325,12 @@ The emptiness problem asks whether $w\notin{\cal L}({\cal A})$ for all words~$w$
 The universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
 The language inclusion problem asks whether $w\in{\cal L}({\cal A}_1)\limp w\in{\cal L}({\cal A}_2)$ for all words~$w$ and given automata ${\cal A}_1$~and~${\cal A}_2$.
 
-\begin{theorem}
+\begin{theorem}\label{th:ra}
 The following properties of register automata are known:
 \begin{enumerate}
 \item The emptiness problem is coNP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
 \item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01}.
-\item The containment, equivalence, and universality problems are decidable for \emph{two} registers.~\cite{dblp:conf/focs/kaminskif90}
+\item The containment, equivalence, and universality problems are decidable for $2$~registers.~\cite{dblp:conf/focs/kaminskif90}
 \item The universality, containment, and equivalence problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
 \item Register automata are closed under union, intersection, concatenation, and Kleene star.~\cite{dblp:conf/focs/kaminskif90}
 \item Register automata are \emph{not} closed under complementation~\cite{dblp:conf/focs/kaminskif90}.
@@ -400,15 +411,83 @@ It is, therefore, enough to transform TOPL automata with $n=1$ into register aut
 
 One difficulty presents itself by comparing the guards available in $G_{\rm TOPL}$ and $G_{\rm RA}$:
 The TOPL automata guard ${\sf neq}\,i$ is more precise than its register automata equivalent, namely ${\sf fresh}$.
-More generally, the labels of register automata do not allow storing a value twice.
+More generally, the labels of register automata do not allow storing a value twice:
+Transition that contain an assignment must have the guard ${\sf fresh}$.
+The key idea is of the encoding the following.
+\emquote{The set of registers holding value~$v$ in a configuration of the TOPL automaton are represented by one register holding value~$v$ in a configuration of the equivalent register automaton.}
+Let us develop the idea in some detail.
+Consider a TOPL automaton with $m$~registers and states~$Q$.
+The equivalent register automaton we build has $m$~registers and states $Q\times{\cal P}([m])^m$.
+The register automaton configuration
+\[\bigl((q,(I_1,\ldots,I_m)),\;(u_1,\ldots,u_m)\bigr)\]
+relates to the TOPL automaton configuration
+\[(q,(v_1,\ldots,v_m))\]
+as follows:
+\[u_i=v_j \iff j\in I_i\]
+Two sets $I_i$~and~$I_j$ are disjoint, for $i\ne j$.
+If $I_i=\emptyset$, then $u_i$ is different from all the values held in the registers of the TOPL automaton, but is otherwise unconstrained.
+Each state of the TOPL automaton is encoded with $2^{m^2}$~states in the register automaton.
 
+Each transition $(q_1,(g,a),q_2)$ of the TOPL automaton is encoded into several transitions of the register automaton that have the shape
+\[\Bigl(\bigl(q_1,(I_1,\ldots,I_m)\bigr), (g',a'),\bigl(q_2,(I'_1,\ldots,I'_m)\bigr)\Bigr)\]
+For each $g$,~$a$, $I_1$,~$I_2$ \dots,~$I_m$, we will specify several $g'$,~$a'$, $I'_1$,~$I'_2$ \dots,~$I'_m$.
+After the transformation to unary alphabets there are two types of labels, corresponding to the first $n$~transitions encoding guards and, respectively, the last $n$~transitions encoding actions:
+\begin{itemize}
+\item $({\sf eq}\,i_1\mathrel{\sf and}{\sf eq}\,i_2\ldots
+  \mathrel{\sf and}{\sf neq}\,i'_1\mathrel{\sf and}{\sf neq}\,i'_2\ldots,\;
+  {\sf nop})$ which we abbreviate as
+  $({\sf eq}\,I\mathrel{\sf and}{\sf neq}\,I',\;{\sf nop})$,
+  with $I,I'\subseteq[m]$ being sets of registers
+\item $({\sf true},\;{\sf set}\,i)$ or $({\sf true},\;{\sf nop})$
+\end{itemize}
 
-\rg{Ideas for TOP-to-RA transformation:
-Get rid of repeated values in registers.
-For this, build an automaton with states $(q,P)$ where $P$ is a partition of the registers in the original.
-}
+Consider a transition labeled by $({\sf eq}\,I\mathrel{\sf and}{\sf neq}\,I',{\sf nop})$.
+It is encoded by transitions labeled $({\sf eq}\,i,{\sf nop})$ for all~$i$ such that $I\subseteq I_i$ and $I'\cap I_i=\emptyset$.
+In other words, we enumerate all supersets of~$I$ that to not intersect~$I'$ and are among the sets of registers which hold the same value, according to the encoding of the source state.
+If $I=\emptyset$, then a transition labeled $({\sf fresh},{\sf nop})$ must be added in the encoding.
+Because the action is ${\sf nop}$, the partition $I_1$, \dots,~$I_m$ needs not be updated, so $I'_i=I_i$ for all~$i$.
 
+Consider a transition labeled by $({\sf true},{\sf set}\,i)$.
+Either the letter is in some registers or it is in none.
+Thus, the encoding consists of transitions labeled $({\sf eq}\,j,{\sf nop})$ for all~$j\in[m]$ and transitions labeled $({\sf fresh},{\sf set}\,k)$~for a $k$.
+The target~$k$ of the assignment is an index such that $I_k=\emptyset$ or, if there is no such $I_k$, an index such that $I_k=\{i\}$.
+The partition $I_1$, \dots,~$I_m$ needs to be updated.
+\[I'_j=
+\begin{cases}
+\{i\} &\text{if $j=k$}\\
+I_j-\{i\} &\text{otherwise}
+\end{cases}\]
 
+Consider a transition labeled by $({\sf true}, {\sf nop})$.
+It is a special case of $({\sf eq}\,I\mathrel{\sf and}{\sf neq}\,I',{\sf nop})$, with empty $I$~and~$I'$.
+
+Transitions labeled by $({\sf fresh},{\sf nop})$, which are produced by the encoding described so far, are not allowed in register automata.
+They are handled by adding one register.
+We omit the exact encoding.
+
+We have proved the following result.
+
+\begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
+There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet~$V$, with $m+1$~registers, $O(n\,2^{m^2}|Q|)$~states, and $O(mn\,2^{m^2}|\delta|)$~transitions such that
+\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
+  f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
+where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n v_1\ldots v_n$.
+\end{lemma}
+
+Even with only $2$~registers the increase in size is significant.
+\rg{TODO: Put an example in the appendix.}
+
+The following properties are consequences of \autoref{th:ra} and \autoref{lemma:topl-to-ra}.
+
+\begin{proposition}
+TOPL automata have the following properties:
+\begin{enumerate}
+\item The emptiness problem is decidable.
+\item The membership problem is decidable.
+\item The containment, equivalence, and universality problems are decidable for $1$~register.
+\end{enumerate}
+\end{proposition}
+\rg{TODO: More specific complexity classes for the problems above.}
 
 \subsection{With Rollback}
 
