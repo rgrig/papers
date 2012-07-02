@@ -252,7 +252,7 @@ The initial configuration is $(q_0,\sigma_0)$.
 A configuration is final when its state is final.
 The configuration graph of the automaton is a subset of $X\times\Sigma\times X$.
 We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ is in the configuration graph of~${\cal A}$.
-If the automaton if clear from the context we omit the subscript.
+If the automaton is clear from the context, we omit the subscript.
 
 \begin{definition}
 The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
@@ -447,16 +447,16 @@ The guard requires the current letter to be different from the values in the set
 The current letter must be different from the values held in the set~$r(I')$ of registers of~${\cal A}_3$.
 It may be either fresh, or equal to a register outside of the set~$r(I')$.
 Thus, the encoding consists of several parallel transitions from~$(q_1,r)$ to~$(q_2,r)$.
-One is labeled $({\sf fresh},{\sf nop})$, and several are labeled $({\sf eq}\,j,{\sf nop})$ for $j\in[m]-r(I')$.
+One is labeled $({\sf fresh},{\sf nop})$, and several are labeled $({\sf eq}\,j,{\sf nop})$ for each $j\in[m]-r(I')$.
 
-\emph{Case $I'\ne\emptyset$.}\quad
+\emph{Case $I\ne\emptyset$.}\quad
 The guard also requires that the current letter equals the value in the set~$I$ of registers of~${\cal A}_2$.
 This cannot be true if $|r(I)|>1$ or $r(I)\cap r(I')\ne\emptyset$: The encoding in this case is no transition.
 Otherwise, $r(I)=\{i\}$ for some~$i$, and the encoding is a transition from~$(q_1,r)$ to~$(q_2,r)$ labeled by $({\sf eq}\,i,{\sf nop})$.
 
 \smallskip
 Consider a transition $\bigl(q_1,({\sf true},{\sf set}\,i),q_2\bigr)$.
-Either the current letter is in some registers or it is in none.
+Either the current letter is in some register or it is in none.
 To account for the first case, the encoding contains parallel transitions from~$(q_1,r)$ to $(q_2,r)$ labeled by $({\sf eq}\,j,{\sf nop})$, for all $j\in[m]$.
 To account for the second case, the encoding contains a transition from~$(q_1,r)$ to~$(q_2,r')$ labeled by $({\sf fresh},{\sf set}\,k)$.
 If $r$ is a permutation then $k=r(i)$; otherwise $k$ is chosen from the set $[m]-r([m])$.
