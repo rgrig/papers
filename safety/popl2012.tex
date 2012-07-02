@@ -102,6 +102,7 @@
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
+\providecommand*{\definitionautorefname}{Definition}
 \newtheorem{example}{Example}
 \providecommand*{\exampleautorefname}{Example}
 
@@ -235,7 +236,7 @@ We will later specialize to specific and simple logics (for guards) and programm
 Labels are pairs $(g,a)$ of guards and actions;
 we denote the set of labels by $L=G\times A$.
 
-\begin{definition}
+\begin{definition}\label{def:automaton}
 An \emph{automaton}~${\cal A}$ with $m$~registers over $n$-tuples of values from the set~$V$ consists of
 \begin{itemize}
 \item a finite set~$Q$ of states
@@ -254,7 +255,7 @@ The configuration graph of the automaton is a subset of $X\times\Sigma\times X$.
 We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ is in the configuration graph of~${\cal A}$.
 If the automaton is clear from the context, we omit the subscript.
 
-\begin{definition}
+\begin{definition}\label{def:cgraph}
 The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
 \end{definition}
 
@@ -356,7 +357,7 @@ $f$~handles technicalities.
 
 We now gradually move towards a model that is better suited for runtime verification of Java programs.
 
-\subsection{Without Rollback}
+\subsection{Without Rollback} %<<<
 
 TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike register automata, which force $n=1$.
 It is then natural to consider different guards and actions, which handle specific components of the letters.
@@ -489,6 +490,49 @@ where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n v_1\ldots v_n$.
 Even with only $2$~registers the increase in size is significant.
 \rg{TODO: Put an example in the appendix.}
 
+%>>>
+\subsection{With Rollback}
+
+TOPL automata are almost convenient for runtime verification of Java.
+But, consider the constraint that iterators should advance only if {\tt hasNext} returned {\tt true}.
+The event `{\tt hasNext} was called on the iterator that is being tracked' and the event `{\tt hasNext} returned {\tt true}' are distinct.
+Yet, it is convenient to pretend that two such consecutive events make one composed event.
+This motivates rollback, a mechanism by which transitions consume multiple consecutive letters.
+
+\begin{definition}\label{def:rollback}
+A \emph{rollback automaton}~${\cal A}$ consists of:
+\begin{itemize}
+\item a finite set~$Q$ of states; an initial state $q_0\in Q$; an initial store $\sigma_0\in S$; a set $F\subseteq Q$ of final states
+\item a finite transition relation $\delta\subset Q\times L^*\times Q$
+\end{itemize}
+where $L$ is a set of labels as defined in \autoref{sec:overview}.
+\end{definition}
+
+The difference between rollback automata and (simple) automata, according to definitions \ref{def:automaton}~and~\ref{def:rollback}, is that rollback transitions have a list of labels, while simple transitions have exactly one label.
+A transition with exactly one label is said to be a \emph{unit transition}.
+If a rollback automaton has only unit transitions, then it is also a (simple) automaton.
+
+The semantics of a rollback automaton cannot be described by the configuration graph from \autoref{def:cgraph}, because that definition does not handle non-unit transitions.
+Instead we define a rollback configuration graph.
+Perhaps surprisingly, in the case of simple automata, the rollback configuration graph does not coincide to the configuration graph.
+The discrepancy is explained by the different goals of the two models: automata without rollback are meant to be easy to analyze, while rollback automata are meant to be convenient for specifying properties of object-oriented programs.
+Often the desired behavior for a letter is to remain in the same configuration.
+Without rollback, this behavior is achieved by explicit loops in the automaton.
+The definition of the rollback configuration graph reduces the need to explicitly list such skip loops.
+
+A \emph{rollback configuration} is a pair~$(x,w)$ of a configuration~$x$ and a word~$w$;
+we denote the set of rollback configurations by $Y=X\times\Sigma^*$.
+The (simple) automaton ${\cal T}(\ell_1,\ldots,\ell_d)$ is defined to have states $0$,~$1$, \dots,~$d$, out of which $0$~is initial and $d$~is final, and transitions $(i-1,\ell_i,i)$ for all $i\in[d]$.
+
+\rg{TODO: Define rollback.}
+\rg{TODO: rTOPL-to-TOPL transformation.}
+\rg{TODO: RA-to-rTOPL transformation (from latter section).}
+
+\subsection{Properties}
+
+\rg{TODO: Port theorem~1 to TOPL and rTOPL.}
+
+
 The following properties are consequences of \autoref{th:ra} and \autoref{lemma:topl-to-ra}.
 
 \begin{proposition}
@@ -500,16 +544,6 @@ TOPL automata have the following properties:
 \end{enumerate}
 \end{proposition}
 \rg{TODO: More specific complexity classes for the problems above.}
-
-\subsection{With Rollback}
-
-\rg{TODO: Define rollback.}
-\rg{TODO: rTOPL-to-TOPL transformation.}
-\rg{TODO: RA-to-rTOPL transformation (from latter section).}
-
-\subsection{Properties}
-
-\rg{TODO: Port theorem~1 to TOPL and rTOPL.}
 
 % >>>
 \section{TOPL  Semantics}\label{sec:semantics} % <<<
