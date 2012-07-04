@@ -157,17 +157,16 @@ to address certain properties not easily dealt with other approaches.
 Technically we started from register automata and have extended them driven by typical properties needed for real-world object-oriented systems.
 The extension has been careful crafted in order to be able to define the precise mathematical connection with register automata and yet
 make easy for programmers to express properties about their code. This process has resulted in the definition of two new classes of 
-automata: a high-level one where properties about programs are naturally expressed, and a low level one where the connection with  register
-automata can be formally defined. Finally we defined a formal language TOPL (Temporal Object Property Language) mapping directly on the 
+automata: a high-level one where properties about programs are naturally expressed, and a low level one which simplifies the formal connection with  register automata. 
+Finally we defined a formal language TOPL (Temporal Object Property Language) mapping directly on the 
 high-level automata (but not the other way around). 
 
 We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmer to express rigorous temporal 
 properties about their programs which will be then automatically checked by the system.
 The formal correspondence between the properties and register automata that we have defined gives rigorous mathematical foundation to
 the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL properties we can statically analyze whether it defines a non empty language or not.  The formalities are completely hidden from 
-the programmer.  Thus our technique provides developers with a flexible methodology for enforcing the safety properties with which the code should comply. Currently, the only option for programmers is to insert explicit checks directly in the code.
-Being parametric our system provides with the ability to tune the system in terms of 
-coverage,  overhead, and trace reporting. 
+the programmer.  Thus our technique provides developers with a flexible methodology for enforcing the safety properties with which the code should comply. 
+Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a numerical parameter. 
 
 
 %For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
@@ -241,7 +240,7 @@ In summary, the contributions of this paper are:
 \item We define TOPL, a formal specification language tailored to express properties involving object interactions over time in a way that is familiar to object-oriented programmers.
 \item We give precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
 \item We define a precise correspondence between TOPL's semantic models and register automata. This allows us to check several properties of TOPL specifications.
-\item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A parameter $k$ is used to tune the precision of the system.
+\item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A numerical parameter is used to tune the precision of the system.
 
 \item We report the results of using our tool on large open-source projects. The results are encouraging: we have found
 violations of properties, and we have observed an acceptable runtime overhead. 
