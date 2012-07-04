@@ -426,7 +426,7 @@ $f$~handles technicalities.
 
 We now gradually move towards a model that is better suited for runtime verification of Java programs.
 
-\subsection{Without Rollback} %<<<
+\subsection{Simple TOPL Automata} %<<<
 
 TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike register automata, which force $n=1$.
 It is then natural to consider different guards and actions, which handle specific components of the letters.
@@ -479,8 +479,14 @@ The encoding ${\cal A}_2\to{\cal A}_3$ is more difficult than the other two.
 
 \paragraph{Step ${\cal A}_1\to{\cal A}_2$.}
 The automaton~${\cal A}_2$ works over the alphabet~$V$, while ${\cal A}_1$ may work on an alphabet~$V^n$ with $n>1$.
-Each letter $(v_1,\ldots,v_n)$ is transformed into the word $v_1\ldots v_n v_1\ldots v_n$.
-Each transition is transformed into $2n$~transitions: the first $n$ retain the guards, the last $n$ retain the actions, in the obvious manner.
+Each letter $(v_1,\ldots,v_n)$ is transformed into the word $v_1\ldots v_n$ repeated $m+1$ times.
+Each transition $\bigl(q_1,(g,a),q_2\bigr)$ is encoded with a path from~$q_1$ to~$q_2$ of length $(m+1)n$.
+The first $n$~transitions encode the guard~$g$ -- they are labeled $(g_1,{\sf nop})$, \dots, $(g_n,{\sf nop})$.
+The guard~$g_j$ contains the conjunct ${\sf eq}\,i$ if and only if $g$~contains the conjunct ${\sf eq}\,i=j$; similarly for ${\sf neq}$.
+The following $mn$~transitions encode the action~$a$ -- they are labeled $({\sf true}, a_1)$, \dots, $({\sf true}, a_{mn})$.
+If the last assignment of~$a$ to register~$i$ is ${\sf set}\,i:=j$, then $a_{(i-1)m+j}$ is ${\sf set}\,i$.
+Otherwise, if $a$ does not assign at all to register~$i$, then $a_{(i-1)m+1}$ is ${\sf nop}$.
+
 The labels of~${\cal A}_2$ have one of the following shapes:
 \begin{itemize}
 \item $({\sf eq}\,i_1\mathrel{\sf and}{\sf eq}\,i_2\ldots
@@ -489,7 +495,7 @@ The labels of~${\cal A}_2$ have one of the following shapes:
 \item $({\sf true},\;{\sf set}\,i)$
 \item $({\sf true},\;{\sf nop})$
 \end{itemize}
-If ${\cal A}_1$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_2$ has $O(n|Q|)$~states and $O(n|\delta|)$~transitions.
+If automaton~${\cal A}_1$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_2$ has $O(mn|Q|)$~states and $O(mn|\delta|)$~transitions.
 
 \paragraph{Step ${\cal A}_2\to{\cal A}_3$.}
 The automaton~${\cal A}_3$ uses guards from~$G_{\rm RA}$, while ${\cal A}_2$ uses guards from~$G_{\rm TOPL}$.
@@ -503,6 +509,10 @@ Let $m$~and~$Q$ denote the count of registers and, respectively, the set of stat
 The set of states of~${\cal A}_3$ is~$Q\times([m]\to[m])$.
 Each state~$q$ of~${\cal A}_2$ is encoded with $m^m$ states $(q,r)$ of~${\cal A}_3$.
 The configuration $\bigl((q,r),(u_1,\ldots,u_m)\bigr)$ of~${\cal A}_3$ simulates the configuration $\bigl(q,(v_1,\ldots,v_m)\bigr)$ of~${\cal A}_2$ with $v_i=u_{r(i)}$.
+Moreover, we ensure that no two registers of~${\cal A}_3$ hold the same value;
+that is, the stores of~${\cal A}_3$ are injective, $u_i\ne u_j$ if $i\ne j$.
+To ensure that the initial store of~${\cal A}_3$ is injective we may need to use up to $m-1$ dummy values.
+
 Each transition $\bigl(q_1,(g,a),q_2\bigr)$ of~${\cal A}_2$ is encoded into several transitions $\bigl((q_1,r),(g',a'),(q_2,r')\bigr)$ of~${\cal A}_3$.
 Here $r$ takes all $m^m$ possible values, and $g'$,~$a'$, and~$r'$ are chosen depending on $g$,~$a$, and~$r$, as described below.
 
@@ -513,9 +523,9 @@ Note that transitions labeled by $({\sf true},{\sf nop})$ are a special case.
 We analyze separately the cases $I=\emptyset$ and $I\ne\emptyset$.
 
 \emph{Case $I=\emptyset$}.\quad
-The guard requires the current letter to be different from the values in the set~$I'$ of registers of~${\cal A}_2$.
-The current letter must be different from the values held in the set~$r(I')$ of registers of~${\cal A}_3$.
-It may be either fresh, or equal to a register outside of the set~$r(I')$.
+The guard requires the current letter~$\ell$ to be different from the values in the set~$I'$ of registers of~${\cal A}_2$.
+So, $\ell$~must be different from the values held in the set~$r(I')$ of registers of~${\cal A}_3$.
+Because the stores of~${\cal A}_3$ have no repeated value, $\ell$ may be either fresh, or equal to a register outside of the set~$r(I')$.
 Thus, the encoding consists of several parallel transitions from~$(q_1,r)$ to~$(q_2,r)$.
 One is labeled $({\sf fresh},{\sf nop})$, and several are labeled $({\sf eq}\,j,{\sf nop})$ for each $j\in[m]-r(I')$.
 
@@ -527,40 +537,37 @@ Otherwise, $r(I)=\{i\}$ for some~$i$, and the encoding is a transition from~$(q_
 \smallskip
 Consider a transition $\bigl(q_1,({\sf true},{\sf set}\,i),q_2\bigr)$.
 Either the current letter is in some register or it is in none.
-To account for the first case, the encoding contains parallel transitions from~$(q_1,r)$ to $(q_2,r)$ labeled by $({\sf eq}\,j,{\sf nop})$, for all $j\in[m]$.
-To account for the second case, the encoding contains a transition from~$(q_1,r)$ to~$(q_2,r')$ labeled by $({\sf fresh},{\sf set}\,k)$.
-If $r$ is a permutation then $k=r(i)$; otherwise $k$ is chosen from the set $[m]-r([m])$.
-Also,
-\[r'(j)=
-\begin{cases}
-k &\text{if $j=i$}\\
-r(j) &\text{otherwise}
-\end{cases}\]
+To account for the first case, the encoding contains parallel transitions from~$(q_1,r)$ to $(q_2,r'_j)$ labeled by $({\sf eq}\,j,{\sf nop})$, for all $j\in[m]$.
+Here $r'_j$~is the same as~$r$ except that $r'_j(i)=j$.
+To account for the second case, the encoding contains a transition from~$(q_1,r)$ to~$(q_2,r'_j)$ labeled by $({\sf fresh},{\sf set}\,j)$, for one~$j$ chosen as follows.
+If $r$ is a permutation then $j=r(i)$; otherwise $j$ is any element of $[m]-r([m])$.
 
 \smallskip
-Finally, if the initial store of~${\cal A}_2$ is not injective, we must introduce some fresh dummy letters so that the initial store of~${\cal A}_3$ is injective, because all stores of~${\cal A}_3$ must be injective.
-
 If automaton~${\cal A}_2$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_3$ has $O(m^m|Q|)$~states and $O(m^{m+1}|\delta|)$~transitions.
 
 \paragraph{Step ${\cal A}_3\to{\cal A}_4$.}
 Transitions labeled by $({\sf fresh},{\sf nop})$, which are produced by the encoding described so far, are not allowed in register automata.
 They can be handled by adding one register, without significantly increasing the number of transitions.
-We omit the exact encoding.
+First, each label $({\sf fresh},{\sf nop})$ is transformed into $({\sf fresh},{\sf set}\,m+1)$.
+Second, for each transition labeled $({\sf fresh},a)$, we add a parallel transition labeled $({\sf eq}\,m+1,a)$.
 
+If the automaton~${\cal A}_3$ has $m$~registers and $|\delta|$~transitions, then ${\cal A}_4$~has $m+1$~registers and $O(|\delta|)$ transitions.
+
+\smallskip
 We have proved the following result.
 
 \begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
-There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet~$V$, with $m+1$~registers, $O(n\,m^m|Q|)$~states, and $O(n\,m^{m+1}|\delta|)$~transitions such that
+There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet $V'$, with $m+1$~registers, $O(n\,m^{m+1}|Q|)$~states, and $O(n\,m^{m+2}|\delta|)$~transitions such that
 \[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
   f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
-where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n v_1\ldots v_n$.
+where $f\bigl((v_1,\ldots,v_n)\bigr)$ is $v_1\ldots v_n$ repeated $m+1$ times, and $V'$ is~$V$ with up to $m-1$ extra dummy values.
 \end{lemma}
 
 Even with only $2$~registers the increase in size is significant.
 \rg{TODO: Put an example in the appendix.}
 
 %>>>
-\subsection{With Rollback}
+\subsection{Automata with Rollback and Skip} %<<<
 
 TOPL automata are almost convenient for runtime verification of Java.
 But, consider the constraint that iterators should advance only if {\tt hasNext} returned {\tt true}.
@@ -582,7 +589,7 @@ A transition with exactly one label is said to be a \emph{unit transition}.
 If a rollback automaton has only unit transitions, then it is also a (simple) automaton.
 
 The semantics of a rollback automaton cannot be described by the configuration graph from \autoref{def:cgraph}, because that definition does not handle non-unit transitions.
-Instead we define a rollback configuration graph.
+Instead, we define a rollback configuration graph.
 Perhaps surprisingly, in the case of simple automata, the rollback configuration graph does not coincide to the configuration graph.
 The discrepancy is explained by the different goals of the two models: automata without rollback are meant to be easy to analyze, while rollback automata are meant to be convenient for specifying properties of object-oriented programs.
 Often the desired behavior for a letter is to remain in the same configuration.
@@ -597,7 +604,8 @@ The (simple) automaton ${\cal T}(\ell_1,\ldots,\ell_d)$ is defined to have state
 \rg{TODO: rTOPL-to-TOPL transformation.}
 \rg{TODO: RA-to-rTOPL transformation (from latter section).}
 
-\subsection{Properties}
+%>>>
+\subsection{Properties} %<<<
 
 \rg{TODO: Port theorem~1 to TOPL and rTOPL.}
 
@@ -614,6 +622,7 @@ TOPL automata have the following properties:
 \end{proposition}
 \rg{TODO: More specific complexity classes for the problems above.}
 
+% >>>
 % >>>
 \section{TOPL  Semantics}\label{sec:semantics} % <<<
 In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
