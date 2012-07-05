@@ -132,40 +132,34 @@ We have validated our technique by checking several safety properties on large o
 % >>>
 \section{Introduction} % <<<
 
-% Describe runtime verification
 Runtime verification is a technique where behaviour of programs is monitored at runtime in order to check whether executions
 can violate certain safety properties.
 Systems for runtime verification stand somehow in between static verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, in model checking. Moreover, compared to traditional formal verification techniques, runtime verification systems check only certain program executions, but the error reports are accurate and detected violations represent real bugs in the program.
 
-%say current shortcoming
-In the context of object-oriented programming,  leading runtime verification techniques such as JavaMOP~\cite{}, 
-TraceMatches~\cite{}, and QVM~\cite{}, or techniques based on typestate, such as~\cite{xxxxx}, although powerful,  present some limitations in  
-terms of expressivity of the language, the ability to express concisely properties related to the interaction of several objects 
-over time (typestate),  or expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
-
-%Systems for run time verification so far have been.... eiterh with this or that problem.
-%- needs of infinite objects or lenghts of the property
-%- talk only of one object
-%- expressing trivial properties
+In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{}, 
+TraceMatches~\cite{}, and QVM~\cite{}, or techniques based on typestate~\cite{xxxxx}. Although powerful,  these methods present some limitations. For example in  
+terms of  language expressivity; or in the ability to express concisely properties related to the interaction of several objects 
+over time (typestate); or in expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
 
 Register Automata~\cite{xxxx} are automata where a number of registers are used to store and compare data. Value of registers can be updated overtime and  data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
 relations of a (possibly unbounded) number of object in a finite manner. They have been studied extensively from the theoretical point of
-view and essential results for their static analysis have been established (e.g., decidability of emptyness, closure under intersection, etc.).
+view and essential results for their analysis have been established (e.g., decidability of emptyness, closure under intersection, and so forth).
 
-Thus, it seems sensible to attempt an approach to runtime verification that takes register automata as starting point formalism with the aim
-to address certain properties not easily dealt with other approaches.
+Thus, it seems sensible to attempt an approach to runtime verification taking register automata as starting point formalism with the aim
+of addressing certain properties not easily dealt with other approaches.
 Technically we started from register automata and have extended them driven by typical properties needed for real-world object-oriented systems.
-The extension has been careful crafted in order to be able to define the precise mathematical connection with register automata and yet
+The extension has been careful crafted in order to be able to define the precise mathematical connection with register automata, and yet,
 make easy for programmers to express properties about their code. This process has resulted in the definition of two new classes of 
-automata: a high-level one where properties about programs are naturally expressed, and a low level one which simplifies the formal connection with  register automata. 
-Finally we defined a formal language TOPL (Temporal Object Property Language) mapping directly on the 
+automata: a high-level and a low-level one. In the high-level automata properties about programs are naturally expressed. Low-level automata, 
+on the other hand, simplifies the formal connection with  register automata. 
+Finally we defined a formal language --- called TOPL (Temporal Object Property Language) --- mapping directly on the 
 high-level automata (but not the other way around). 
 
 We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmer to express rigorous temporal 
-properties about their programs which will be then automatically checked by the system.
-The formal correspondence between the properties and register automata that we have defined gives rigorous mathematical foundation to
-the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL properties we can statically analyze whether it defines a non empty language or not.  The formalities are completely hidden from 
-the programmer.  Thus our technique provides developers with a flexible methodology for enforcing the safety properties with which the code should comply. 
+properties about their programs. These properties will be then automatically checked by the system.
+The formal correspondence between the properties and register automata defined in this paper gives rigorous mathematical foundation to
+the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can statically analyse whether it defines a non empty language or not.  The formalities are completely hidden from 
+the programmer.  Thus our technique provides developers with a flexible methodology for enforcing the safety properties their code should comply with. 
 Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a numerical parameter. 
 
 
@@ -180,74 +174,20 @@ Our system can be tuned  in terms of coverage,  overhead, and trace reporting by
 %The execution is monitored and violations are reported as traces of events.
 %The programmer has the ability to tune the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters. For example, during testing they could allow for a very high overhead, whereas they could choose to deploy the bytecode without any inserted check.
 
-
-
-% Say how we solve that and therefore we are better.
-%It makes sense to try to define a formalism to overcome these shortcoming of existing systems.
-%RA have certain interesting capabilities that could be useful.
-%In this paper we define a runtime verfication technique which overcome some of the above problems.
-%- It's based on formal systems (extension of RA), can reuse results (for example emptyness) to say if the property makes sense
-%- It is easy for programmers to write. TOPL is tailored to OOP.
-%
-%We define a precise correspondence between RA and TOPL, therefore our running system lays on rigorous mathematical foundation.
-
-
-
-
-
-
-%Interaction of objects is at the core of the object-oriented paradigm.
-%Programmers often have an informal and global understanding of how objects relate.
-%Consider for example Java collections.
-%A typical property one would want to state~is:
-%\eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
-%The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
-
-%In this paper we define TOPL (Temporal Object-oriented Property Language), a language for specifying temporal safety properties of Java programs.
-%Similar formalisms used for runtime checking of Java programs include typestates~\cite{dblp:journals/scp/harel87} and tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
-%Unlike those, TOPL is based on an automata formalism designed for {\em infinite alphabets}~\cite{dblp:conf/csl/segoufin06}.
-%In the context of program analysis the alphabet is the set of program values.
-%This set is infinite since there is no bound on the number of instantiations.
-%There are several such automata formalisms;
-%TOPL is an extension of register automata~\cite{dblp:conf/focs/kaminskif90}.
-%%For standard finite-state automata, nondeterminism does not increase expressivity;
-%%with infinite alphabets, nondeterminism does increase expressivity.
-%For standard finite-state automata, nondeterminism does not increase expressivity;
-%however combining  infinite alphabets and nondeterminism gives strictly more expressive automata. 
-%Runtime checkers based on typestates~\cite{arnold:2008}, tracematches, or LTL~\cite{dblp:conf/oopsla/chenr07} are essentially deterministic, for speed.
-%We chose to give TOPL nondeterministic semantics.
-
-%We also introduce a technique for automatic runtime checking of TOPL properties.
-%This technique provides to programmers a flexible methodology to enforce the safety properties with which the code should comply.
-%Currently, the only option for the developer is to insert explicit checks directly in the code.
-%For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
-%It is impossible to turn off these checks, even if one has a proof that a certain program correctly uses the library.
-%Because these checks are always active, their overhead must be very low.
-%As a result, when a check fails, the user is not provided with an error trace.
-%Also, such checks are difficult to write and to maintain.
-%Other libraries document such temporal constraints only in (informal) comments.
-%With TOPL, the programmer (formally) describes the properties in one place, which is separate from the code. 
-%This description serves as a rigorous documentation of which safety properties are enforced on the program.
-%Then it is the job of the TOPL compiler to insert the appropriate checks into the Java bytecode of the program.
-%The execution is monitored and violations are reported as traces of events.
-%The programmer has the ability to tune the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters.
-%For example, during testing they could allow for a very high overhead, whereas they could choose to deploy the bytecode without any inserted check.
-
-
 \paragraph{Contributions.}
 In summary, the contributions of this paper are:
 \begin{itemize}
 \item We define TOPL, a formal specification language tailored to express properties involving object interactions over time in a way that is familiar to object-oriented programmers.
-\item We give precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
-\item We define a precise correspondence between TOPL's semantic models and register automata. This allows us to check several properties of TOPL specifications.
+\item We define a precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
+\item We define a precise correspondence between TOPL automata and register automata. This allows us to check several characteristic of TOPL specifications (e.g., the non-emptiness of their language).
 \item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A numerical parameter is used to tune the precision of the system.
 
-\item We report the results of using our tool on large open-source projects. The results are encouraging: we have found
+\item We report the experimental results of running our tool on large open-source projects. The results are encouraging: we have found
 violations of properties, and we have observed an acceptable runtime overhead. 
 \end{itemize}
 
 
-The paper is organized as follows.
+The paper is organized as follows.\dinocomment{fix at the end}
 \autoref{sec:results} gives the experimental results.
 \autoref{sec:examples} introduces the TOPL language with examples.
 \autoref{sec:semantics} gives TOPL's semantics.
@@ -255,6 +195,24 @@ The paper is organized as follows.
 \autoref{sec:implementation} describes a the interesting aspects of the implementation.
 \autoref{sec:related} discusses related work.
 Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
+
+
+\section{Motivating Examples}
+Interaction of objects is at the core of the object-oriented paradigm.
+Programmers often have an informal and global understanding of how objects relate.
+Consider for example Java collections.
+A typical property one would want to state~is:
+\eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
+The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
+\begin{figure}[t] % first example <<<
+\include{IncorrectIteratorUse}
+\caption{A first example: Java code}
+\label{fig:first.java}
+\end{figure}
+The program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
+There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
+
+
 
 % >>>
 \section{Overview and Background}\label{sec:overview} % <<<
@@ -394,6 +352,7 @@ The membership problem asks whether $w\in{\cal L}({\cal A})$ for a given word~$w
 The emptiness problem asks whether $w\notin{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
 The universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
 The language inclusion problem asks whether $w\in{\cal L}({\cal A}_1)\limp w\in{\cal L}({\cal A}_2)$ for all words~$w$ and given automata ${\cal A}_1$~and~${\cal A}_2$.
+\dinocomment{it  can be shortened}
 
 \begin{theorem}\label{th:ra}
 The following properties of register automata are known:
@@ -442,16 +401,16 @@ These abbreviations are similar to the one used for assignments.
 The guards are interpreted as follows:
 \begin{align*}
 \bigl((u_1,\ldots,u_m),(v_1,\ldots,v_n)\bigr) &\models {\sf eq}\,i=j
-  &&\text{when $u_i=v_j$} \\
+  &&\text{iff $u_i=v_j$} \\
 \bigl((u_1,\ldots,u_m),(v_1,\ldots,v_n)\bigr) &\models {\sf neq}\,i\ne j
-  &&\text{when $u_i\ne v_j$}
+  &&\text{iff $u_i\ne v_j$}
 \end{align*}
 and
 \begin{align*}
 (\sigma,\ell) &\models {\sf true}
   &&\text{always} \\
 (\sigma,\ell) &\models g_1\mathrel{\sf and} g_2
-  &&\text{when $(\sigma,\ell)\models g_1$ and $(\sigma,\ell)\models g_2$}
+  &&\text{iff $(\sigma,\ell)\models g_1$ and $(\sigma,\ell)\models g_2$}
 \end{align*}
 
 We can now define TOPL automata.
@@ -873,11 +832,11 @@ program, by making transitions when the program executes corresponding
 statements. If the program drives the automaton to the error state in
 this manner, then the program violates the property.
 
-\begin{figure}[t] % first example <<<
-\include{IncorrectIteratorUse}
-\caption{A first example: Java code}
-\label{fig:first.java}
-\end{figure}
+%\begin{figure}[t] % first example <<<
+%\include{IncorrectIteratorUse}
+%\caption{A first example: Java code}
+%\label{fig:first.java}
+%\end{figure}
 %
 \begin{figure}[t]
 \begin{tikzpicture}
