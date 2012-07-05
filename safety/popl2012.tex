@@ -136,12 +136,11 @@ Runtime verification is a technique where behaviour of programs is monitored at 
 can violate certain safety properties.
 Systems for runtime verification stand somehow in between static verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, in model checking. Moreover, compared to traditional formal verification techniques, runtime verification systems check only certain program executions, but the error reports are accurate and detected violations represent real bugs in the program.
 
-In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{}, 
-TraceMatches~\cite{}, and QVM~\cite{}, or techniques based on typestate~\cite{xxxxx}. Although powerful,  these methods present some limitations. For example in  
+In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, and Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, or techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example in  
 terms of  language expressivity; or in the ability to express concisely properties related to the interaction of several objects 
 over time (typestate); or in expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
 
-Register Automata~\cite{xxxx} are automata where a number of registers are used to store and compare data. Value of registers can be updated overtime and  data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
+Register Automata~\cite{dblp:conf/focs/kaminskif90} are automata where a number of registers are used to store and compare data. Value of registers can be updated overtime and  data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
 relations of a (possibly unbounded) number of object in a finite manner. They have been studied extensively from the theoretical point of
 view and essential results for their analysis have been established (e.g., decidability of emptyness, closure under intersection, and so forth).
 
