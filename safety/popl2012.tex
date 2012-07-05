@@ -218,16 +218,16 @@ There are two iterators on the same collection, one of them modifies the collect
 
 \autoref{fig:concepts} shows the main concepts of concern.
 Register automata are well-studied devices, introduced decades ago.
-The gap between TOPL properties and register automata is filled by two semantic models, namely TOPL automata with and without rollback.
-The model with rollback is better suited for implementation;
-the model without rollback is easier to analyze.
+The gap between TOPL properties and register automata is filled by two semantic models, namely high-level  and low-level TOPL automata.
+The high-level model (also called  automata with rollback) is better suited for implementation;
+the low-level model (called without rollback) is easier to analyze.
 
-The arrows in \autoref{fig:concepts} represent algorithms for which the language of the target is essentially the same as the language of the source, in a sense made precise later.
+The arrows in \autoref{fig:concepts} represent algorithms for which the language of the target is essentially the same as the language of the source, in a sense made precise later. \dinocomment{this sentence here is confusing. I would just remove it}
 Thus, the target of an arrow is at least as expressive as its source.
 All three automata models have the same expressivity because they form a cycle.
-In general, decision problems on automata (such as membership, emptiness, language inclusion), are decidable for all three models, or undecidable for all three models.
-However, some arrows produce outputs that are significantly bigger than their inputs.
-In particular, the cycle of arrows does not imply that decidable problems have the same complexity for all three models.
+In general, decision problems on automata (such as membership, emptiness, language inclusion), are either decidable for all three models, or undecidable for all three models.
+%However, some arrows produce outputs that are significantly bigger than their inputs.
+However, the cycle of arrows does not imply that decidable problems have the same complexity for all three models.
 
 \begin{figure}[th]\centering
 \begin{tikzpicture}[auto,node distance=5mm]
@@ -284,46 +284,48 @@ If the automaton is clear from the context, we omit the subscript.
 \begin{definition}\label{def:cgraph}
 The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
 \end{definition}
-
+\dinocomment{$a(\ell)$ doesn't seem to be defined}
 \rg{TODO: Define nondeterministic\slash deterministic.}
-The language~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration.
+The language~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration.\dinocomment{can we give the precise definition. "label walks" is not clear}
 
 \smallskip
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.
-Most of the time we will only consider sequences of assignments.
-Simple assignments $({\sf set}\,i:=j)$ are defined by saying that
+Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.\dd{why do we need to remark this?}
+For actions most of the time we will only consider sequences of assignments.
+Simple assignments $({\sf set}\,i:=j)$ are defined by 
 \[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
   ({\sf set}\,i:=j)\bigl((u_1,\ldots,u_n)\bigr) \]
 if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=u_j$.
 The sequence operator~$;$ is defined by saying that the relation $(a_1;a_2)(\ell)$ is the composition of the relations $a_1(\ell)$ and $a_2(\ell)$, for all~$\ell$.
 The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(\sigma,\sigma)\mid\sigma\in S\,\}$ for all~$\ell$.
 
-Register automata work with $\Sigma=V$; that is, $n=1$.
+Register automata work with arity $n=1$, that is $\Sigma=V$.
 In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
 The syntax of guards for register automata is the following:
 \begin{align*}
-G_{\rm RA} &\;::=\; {\sf fresh}\\
-G_{\rm RA} &\;::=\; {\sf eq}\,i
+G_{\rm RA} &\;::=\; {\sf fresh} \mid {\sf eq}\,i
+%G_{\rm RA} &\;::=\; {\sf eq}\,i
 \end{align*}
 They are interpreted as follows:
 \begin{align*}
 \bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf fresh}
-  &&\text{when $u_i\ne v$ for all $i$} \\
+  &&\text{iff $u_i\ne v$ for all $i$} \\
 \bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf eq}\,i
-  &&\text{when $u_i=v$}
+  &&\text{iff $u_i=v$}
 \end{align*}
 
 We write $[m]$ for the set $\{1,2,\ldots,m\}$.
 With these notations we can fix a definition for register automata.
 
 \begin{definition}
-A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in[m]$.
+A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels 
+are given by $L=\{({\sf fresh},\;{\sf set}\,i), ({\sf eq}\,i,\; {\sf nop})  \mid i\in[m] \}$.
+%have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in[m]$.
 \label{def:ra}
 \end{definition}
 
 There are several variants of definitions for register automata in the literature.
-It is even the case that several published results hold only for certain variants of the definition.
+%It is even the case that several published results hold only for certain variants of the definition.
 Our variant corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
 
 \begin{example}\label{ex:ra1}
@@ -333,25 +335,24 @@ The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the 
   and $q_0=1$
   and $\sigma_0=(\bot,\bot,\bot)$
   and $F=\{4\}$
-\item $\delta$ consists of
-  $\bigl(1,({\sf fresh},{\sf set}\,1),2\bigr)$
-  and $\bigl(2,({\sf fresh},{\sf set}\,2),3\bigr)$
-  and $\bigl(2,({\sf eq}\,1,{\sf nop}),3\bigr)$
-  and $\bigl(3,({\sf fresh},{\sf set}\,1),4\bigr)$.
+\item The set of transition is
+\begin{align*}\delta =\{ & \bigl(1,({\sf fresh},{\sf set}\,1),2\bigr), \ \bigl(2,({\sf fresh},{\sf set}\,2),3\bigr), \\
+& \bigl(2,({\sf eq}\,1,{\sf nop}),3\bigr), \bigl(3,({\sf fresh},{\sf set}\,1),4\bigr) \}.
+\end{align*}
 \end{itemize}
 Observe that:
 (1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
 (2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
 (4)~The action of the last transition is superfluous, but required by the definition.
+\dd{should the transition with nop remain in 2?}
 \end{example}
 
-The following are standard decision problems for automata.
-The membership problem asks whether $w\in{\cal L}({\cal A})$ for a given word~$w$ and a given automaton~${\cal A}$.
-The emptiness problem asks whether $w\notin{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
-The universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$ and a given automaton~${\cal A}$.
-The language inclusion problem asks whether $w\in{\cal L}({\cal A}_1)\limp w\in{\cal L}({\cal A}_2)$ for all words~$w$ and given automata ${\cal A}_1$~and~${\cal A}_2$.
-\dinocomment{it  can be shortened}
+Let's consider the following  standard decision problems for automata. For an automaton ${\cal A}$,
+the membership problem asks whether $w\in {\cal L}({\cal A})$ for a given word~$w$.
+The emptiness problem asks whether ${\cal L}({\cal A}) = \emptyset$.
+The  universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$.
+For automata ${\cal A_1}$ and ${\cal A_2}$, the  language inclusion problem asks whether ${\cal L}({\cal A}_1) \subseteq {\cal L}({\cal A}_2)$.
 
 \begin{theorem}\label{th:ra}
 The following properties of register automata are known:
@@ -368,7 +369,7 @@ The following properties of register automata are known:
 \end{enumerate}
 \end{theorem}
 
-These results have analogues for TOPL automata, but not exact analogues.
+These results have analogues for TOPL automata.
 The details depend on what exactly the arrows from \autoref{fig:concepts} are.
 The gist will generally be a transformation of the following kind:
 From an automaton~${\cal A}$ in one model, construct an automaton~${\cal A}'$ in another model such that
