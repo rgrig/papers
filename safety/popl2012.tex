@@ -197,22 +197,39 @@ Finally, \autoref{sec:conclusions} concludes the paper and describes our plans f
 
 
 \section{Motivating Examples}
-\dd{to be done properly once the example we use became clear}
 Interaction of objects is at the core of the object-oriented paradigm.
-Programmers often have an informal and global understanding of how objects relate.
-Consider for example Java collections.
-A typical property one would want to state~is:
+%Programmers often have an informal and global understanding of how objects relate.
+Consider the classes in Figure~\ref{fig:first.java}.
+Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface. 
+Class {\tt Concat} is used to concatenate two object of type {\tt Str}. The concatenation implements also the
+ {\tt Str} interface.
+
+A typical property one would want to state for a program using these classes (as well as Java collections in general) is:
 \eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
-The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
+The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection), their {\em interaction over time}, and possible {\em variable updates}.
 \begin{figure}[t] % first example <<<
-\include{IncorrectIteratorUse}
+%\include{IncorrectIteratorUse}
+\begin{tiny}
+\include{Taint}
+\end{tiny}
 \caption{A first example: Java code}
 \label{fig:first.java}
 \end{figure}
-The program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
-There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-
-
+%The program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
+%There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
+To understand the need for keeping track of variables updates, consider the following snippet of code
+\begin{verbatim}
+ ....
+ i=s.itr();
+ .....
+ while (ch.more_input()) {
+   CharArray c = ch.get_input();
+   s = Concat(s,c);
+ }
+\end{verbatim}
+where strings are read  from an input channel and accumulated in the {\tt Concat} object {\tt s}.
+The number of concatenations is not known in advance. Consequently, in order to have a finite specification,
+it is necessary to be able to re-bound the value of the specification variables in different moment in time.
 
 % >>>
 \section{Overview and Background}\label{sec:overview} % <<<
