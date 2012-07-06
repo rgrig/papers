@@ -132,19 +132,18 @@ We have validated our technique by checking several safety properties on large o
 % >>>
 \section{Introduction} % <<<
 
-Runtime verification is a technique where behaviour of programs is monitored at runtime in order to check whether executions
+Runtime verification is a technique where behaviour of programs is monitored at runtime to check whether executions
 can violate certain safety properties.
-Systems for runtime verification stand somehow in between static verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, in model checking. Moreover, compared to traditional formal verification techniques, runtime verification systems check only certain program executions, but the error reports are accurate and detected violations represent real bugs in the program.
+Systems for runtime verification stand somehow in between classic verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, in model checking. Moreover, compared to traditional formal verification techniques, runtime verification systems check only certain program executions, but the error reports are accurate and detected violations represent real bugs in the program.
 
-In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, and Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, or techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example in  
-terms of  language expressivity; or in the ability to express concisely properties related to the interaction of several objects 
-over time (typestate); or in expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
+In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, and techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example  in terms of  language expressivity, or in the ability to express concisely properties related to the interaction of several objects 
+over time (typestate), or in expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
 
 Register Automata~\cite{dblp:conf/focs/kaminskif90} are automata where a number of registers are used to store and compare data. Value of registers can be updated overtime and  data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
-relations of a (possibly unbounded) number of object in a finite manner. They have been studied extensively from the theoretical point of
+relations of a (possibly unbounded) number of objects in a finite manner. They have been studied extensively from the theoretical point of
 view and essential results for their analysis have been established (e.g., decidability of emptyness, closure under intersection, and so forth).
 
-Thus, it seems sensible to attempt an approach to runtime verification taking register automata as starting point formalism with the aim
+Thus, it seems sensible to attempt an approach to runtime verification taking register automata as starting point  with the aim
 of addressing certain properties not easily dealt with other approaches.
 Technically we started from register automata and have extended them driven by typical properties needed for real-world object-oriented systems.
 The extension has been careful crafted in order to be able to define the precise mathematical connection with register automata, and yet,
@@ -157,8 +156,8 @@ high-level automata (but not the other way around).
 We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmer to express rigorous temporal 
 properties about their programs. These properties will be then automatically checked by the system.
 The formal correspondence between the properties and register automata defined in this paper gives rigorous mathematical foundation to
-the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can statically analyse whether it defines a non empty language or not.  The formalities are completely hidden from 
-the programmer.  Thus our technique provides developers with a flexible methodology for enforcing the safety properties their code should comply with. 
+the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can statically analyse whether it defines a non empty language or not.  The formal development is completely hidden from 
+the programmer.  Thus our technique provides developers with a flexible methodology for enforcing those safety properties their code should comply with. 
 Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a numerical parameter. 
 
 
@@ -178,7 +177,7 @@ In summary, the contributions of this paper are:
 \begin{itemize}
 \item We define TOPL, a formal specification language tailored to express properties involving object interactions over time in a way that is familiar to object-oriented programmers.
 \item We define a precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
-\item We define a precise correspondence between TOPL automata and register automata. This allows us to check several characteristic of TOPL specifications (e.g., the non-emptiness of their language).
+\item We define a precise formal correspondence between TOPL automata and register automata. This allows us to check several characteristic of TOPL specifications (e.g., the non-emptiness of their language).
 \item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A numerical parameter is used to tune the precision of the system.
 
 \item We report the experimental results of running our tool on large open-source projects. The results are encouraging: we have found
