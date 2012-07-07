@@ -268,7 +268,7 @@ We review here register automata and several results about them.
 Together with the reductions presented later, these results imply similar results about TOPL automata.
 
 We begin by defining a generic automaton, of which both TOPL and register automata are instances.
-A letter~$\ell$ is an $n$-tuple of values from a possibly infinite set~$V$;
+A letter~$\ell$ is an $n$-tuple $(v_1,\ldots,v_n)$ of values from a possibly infinite set~$V$;
 we denote the alphabet by~$\Sigma=V^n$.
 A store $\sigma$ is an assignment of values to each of the $m$~registers;
 we denote the set of stores by $S=V^m$.
@@ -312,6 +312,7 @@ The \emph{language}~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set o
   \{\,\ell_1\ldots\ell_k\mid \text{$x_0$ initial,
   $x_{i-1}\stackrel{\ell_i}\to_{\cal A} x_i$ for $i\in[k]$,
   $x_k$ final}\,\}\]
+Being a walk rather than a path, the configurations $x_0$,~$x_1$, \dots,~$x_k$ need not be distinct.
 
 \smallskip
 
@@ -397,9 +398,9 @@ These results have analogues for TOPL automata.
 The details depend on what exactly the arrows from \autoref{fig:concepts} are.
 The gist will generally be a transformation of the following kind:
 From an automaton~${\cal A}$ in one model, construct an automaton~${\cal A}'$ in another model such that
-\[ v_1\ldots v_k \in {\cal L}({\cal A})
+\[ \ell_1\ldots \ell_k \in {\cal L}({\cal A})
   \iff
-f(v_1)\ldots f(v_k)\in{\cal L}({\cal A}') \]
+f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
 for some fixed $f$ that is easily computable.
 The interesting ideas will be in how ${\cal A}'$~is built;
 $f$~handles technicalities.
@@ -583,7 +584,7 @@ A \emph{rollback automaton}~${\cal A}$ consists of:
 where $L$ is a set of labels as defined in \autoref{sec:overview}.
 \end{definition}
 
-The difference between rollback automata and (simple) automata, according to definitions \ref{def:automaton}~and~\ref{def:rollback}, is that rollback transitions have a list of labels, while simple transitions have exactly one label.
+The difference between rollback automata and (simple) automata, according to definitions \ref{def:automaton}~and~\ref{def:rollback}, is that rollback transitions have a list of labels ${\bf l}=[(g_1,a_1),\ldots,(g_d,a_d)]$, while simple transitions have exactly one label $(g,a)$.
 A transition with exactly one label is said to be a \emph{unit transition}.
 If a rollback automaton has only unit transitions, then it is also a (simple) automaton.
 
@@ -597,7 +598,21 @@ The definition of the rollback configuration graph reduces the need to explicitl
 
 A \emph{rollback configuration} is a pair~$(x,w)$ of a configuration~$x$ and a word~$w$;
 we denote the set of rollback configurations by $Y=X\times\Sigma^*$.
-The (simple) automaton ${\cal T}(\ell_1,\ldots,\ell_d)$ is defined to have states $0$,~$1$, \dots,~$d$, out of which $0$~is initial and $d$~is final, and transitions $(i-1,\ell_i,i)$ for all $i\in[d]$.
+The (simple) automaton ${\cal T}\bigl((g_1,a_1),\ldots,(g_d,a_d)\bigr)$ is defined to have states $0$,~$1$, \dots,~$d$, out of which $0$~is initial and $d$~is final, and transitions $\bigl(i-1,(g_i,a_i),i\bigr)$ for all $i\in[d]$.
+
+\begin{definition}
+The \emph{rollback configuration graph} of an automaton consists of two types of transitions:
+\begin{enumerate}
+\item \emph{non-skip transitions}
+  \[\bigl((q_1,\sigma_1),\ell_1\ldots\ell_d w\bigr)\xrightarrow{\ell_1\ldots\ell_d}\bigl((q_2,\sigma_2),w\bigr)\]
+when there exists a transition $(q_1,{\bf l},q_2)\in\delta$ such that the (simple) configuration graph of ${\cal T}({\bf l})$ contains a walk from $x_0=(q_1,\sigma_1)$ to $x_d=(q_2,\sigma_2)$ that is labeled by~$\ell_1\ldots\ell_d$:
+\[ x_{i-1}\stackrel{\ell_i}\to_{{\cal T}({\bf l})} x_i\qquad\text{for $i\in[d]$} \]
+The automaton constructor ${\cal T}$ is defined above.
+\item \emph{skip transitions}
+  \[(x_1,\ell w)\stackrel\ell\to(x_2,w)\]
+when $(x_1,\ell w)$ has no outgoing non-skip transition.
+\end{enumerate}
+\end{definition}
 
 \rg{TODO: Define rollback.}
 \rg{TODO: rTOPL-to-TOPL transformation.}

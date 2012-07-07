@@ -2,22 +2,37 @@ history = 1
 states = 10
 
               original  HasNext UnsafeIterator  UnsafeMapIterator UnsafeFileWriter
-avrora         8130     60546   323074
-batik          1216      2960     3796
-eclipse       15611     12206X   14988X
-fop             312      1941     3598
-h2             6182      6829    19968
-jython         1895     46085    83042
-luindex         829       823      874
-lusearch       1547      1533    16030
-pmd            3087     42563   240283
-sunflow        3905      3921     3838
-tomcat         2489      8294    50856
-tradebeans     5475         XX       XX
-tradesoap      6937         XX       XX
-xalan          1455     14466   424982
+avrora         8130     60546   323074          179875             5939
+batik          1216      2960     3796            3266             1227
+eclipse       15611     12206X   14988X          12847X           23384
+fop             312      1941     3598            2653              314
+h2             6182      6829    19968           11151             5989
+jython         1895     46085    83042           62725             1815
+luindex         829       823      874             871              852
+lusearch       1547      1533    16030           12842             1670
+pmd            3087     42563   240283          105605             3265
+sunflow        3905      3921     3838            3912             4256
+tomcat         2489      8294    50856           31035             2706
+tradebeans     5475         XX       XX              XX               XX
+tradesoap      6937         XX       XX              XX               XX
+xalan          1455     14466   424982          272032             1230
 
 
 history = 1
 states = 3
+                        HasNext UnsafeIterator  UnsafeMapIterator UnsafeFileWriter
+avrora                  27781                                       8341
+batik                    1805                                       1283
+eclipse                 22441         X               X            21568
+fop                       904                                        315
+h2                       5899                                       6394
+jython                  19809                                       1918
+luindex                   830                                        819
+lusearch                 1507                                       1471
+pmd                     19911                                       3224
+sunflow                  3773                                       3934
+tomcat                   4192                                       2629
+tradebeans                  XX       XX              XX               XX
+tradesoap                   XX       XX              XX               XX
+xalan                    7065                                       1462
 
