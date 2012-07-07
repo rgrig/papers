@@ -462,6 +462,7 @@ The encoding ${\cal A}_2\to{\cal A}_3$ is more difficult than the other two.
 
 \paragraph{Step ${\cal A}_1\to{\cal A}_2$.}
 The automaton~${\cal A}_2$ works over the alphabet~$V$, while ${\cal A}_1$ may work on an alphabet~$V^n$ with $n>1$.
+The number of registers is preserved.
 Each letter $(v_1,\ldots,v_n)$ is transformed into the word $v_1\ldots v_n$ repeated $m+1$ times.
 Each transition $\bigl(q_1,(g,a),q_2\bigr)$ is encoded with a path from~$q_1$ to~$q_2$ of length $(m+1)n$.
 The first $n$~transitions encode the guard~$g$ -- they are labeled $(g_1,{\sf nop})$, \dots, $(g_n,{\sf nop})$.
@@ -481,6 +482,8 @@ The labels of~${\cal A}_2$ have one of the following shapes:
 If automaton~${\cal A}_1$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_2$ has $O(mn|Q|)$~states and $O(mn|\delta|)$~transitions.
 
 \paragraph{Step ${\cal A}_2\to{\cal A}_3$.}
+Again, the number of registers is preserved. For this step, the
+transformation of letters is the identity.
 The automaton~${\cal A}_3$ uses guards from~$G_{\rm RA}$, while ${\cal A}_2$ uses guards from~$G_{\rm TOPL}$.
 Observe that a register automaton never stores a value twice, because assignments are guarded by ${\sf fresh}$.
 This is the main obstacle.
@@ -533,6 +536,7 @@ Transitions labeled by $({\sf fresh},{\sf nop})$, which are produced by the enco
 They can be handled by adding one register, without significantly increasing the number of transitions.
 First, each label $({\sf fresh},{\sf nop})$ is transformed into $({\sf fresh},{\sf set}\,m+1)$.
 Second, for each transition labeled $({\sf fresh},a)$, we add a parallel transition labeled $({\sf eq}\,m+1,a)$.
+Again, the transformation of letters is the identity.
 
 If the automaton~${\cal A}_3$ has $m$~registers and $|\delta|$~transitions, then ${\cal A}_4$~has $m+1$~registers and $O(|\delta|)$ transitions.
 
@@ -550,6 +554,18 @@ Even with only $2$~registers the increase in size is significant.
 \rg{TODO: Put an example in the appendix.}
 
 %>>>
+\begin{lemma}[RA to TOPL]\label{lemma:ra-to-topl}
+There exists an algorithm that, given a register automaton~${\cal A}$ over the alphabet~$V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a TOPL automaton~${\cal A}'$ over the alphabet $V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions such that
+\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
+  \ell_1\ldots \ell_k\in{\cal L}({\cal A}') \]
+\end{lemma}
+\begin{proof}
+  As might be expected from the theorem, the encoding is quite
+  simple. A guard of the form $({\sf fresh},\;{\sf set}\,i)$ is
+  translated to $({\sf neq}\,1  \mathrel{\sf and} \ldots  \mathrel{\sf and} {\sf neq}\,m,\;{\sf set}\,i)$, while a label of the
+  form $({\sf eq}\,i,\; {\sf nop})$ is simply kept.
+\end{proof}
+
 \subsection{Automata with Rollback and Skip} %<<<
 
 TOPL automata are almost convenient for runtime verification of Java.
