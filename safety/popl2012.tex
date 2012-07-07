@@ -315,10 +315,7 @@ The \emph{language}~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set o
 
 \smallskip
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.\dd{why do we need to remark this?
-\rg{I wouldn't say we `need' to remark this.
-Still, $A$ is uncountable, so there is no finite representation for \emph{all} its members.
-That's motivation to focus on a subset of $A$, which is what comes next.}}
+Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is uncountable. Therefore we want to focus on a subset of $A$.
 For actions most of the time we will only consider sequences of assignments.
 Simple assignments $({\sf set}\,i:=j)$ are defined by 
 \[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
@@ -373,7 +370,6 @@ Observe that:
 (2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
 (4)~The action of the last transition is superfluous, but required by the definition.
-\dd{should the transition with nop remain in 2? \rg{no}}
 \end{example}
 
 Let's consider the following  standard decision problems for automata. For an automaton ${\cal A}$,
