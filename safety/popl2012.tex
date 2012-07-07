@@ -196,8 +196,8 @@ The paper is organized as follows.\dinocomment{fix at the end}
 \autoref{sec:related} discusses related work.
 Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
 
-
-\section{Motivating Examples}
+%>>>
+\section{Motivating Examples} %<<<
 Interaction of objects is at the core of the object-oriented paradigm.
 %Programmers often have an informal and global understanding of how objects relate.
 Consider the classes in Figure~\ref{fig:first.java}.
@@ -233,6 +233,7 @@ The number of concatenations is not known in advance. Consequently, in order to 
 it is necessary to be able to re-bound the value of the specification variables in different moment in time.
 
 % >>>
+% >>>
 \section{Overview and Background}\label{sec:overview} % <<<
 
 \autoref{fig:concepts} shows the main concepts of concern.
@@ -241,12 +242,10 @@ The gap between TOPL properties and register automata is filled by two semantic 
 The high-level model (also called  automata with rollback) is better suited for implementation;
 the low-level model (called without rollback) is easier to analyze.
 
-The arrows in \autoref{fig:concepts} represent algorithms for which the language of the target is essentially the same as the language of the source, in a sense made precise later. \dinocomment{this sentence here is confusing. I would just remove it}
-Thus, the target of an arrow is at least as expressive as its source.
+The target of an arrow is at least as expressive as its source.
 All three automata models have the same expressivity because they form a cycle.
 In general, decision problems on automata (such as membership, emptiness, language inclusion), are either decidable for all three models, or undecidable for all three models.
-%However, some arrows produce outputs that are significantly bigger than their inputs.
-However, the cycle of arrows does not imply that decidable problems have the same complexity for all three models.
+However, decidable problems do not necessarily have the same complexity for the three models.
 
 \begin{figure}[th]\centering
 \begin{tikzpicture}[auto,node distance=5mm]
@@ -269,7 +268,7 @@ We review here register automata and several results about them.
 Together with the reductions presented later, these results imply similar results about TOPL automata.
 
 We begin by defining a generic automaton, of which both TOPL and register automata are instances.
-The letters are $n$-tuples of values from a possibly infinite set~$V$;
+A letter~$\ell$ is an $n$-tuple of values from a possibly infinite set~$V$;
 we denote the alphabet by~$\Sigma=V^n$.
 A store $\sigma$ is an assignment of values to each of the $m$~registers;
 we denote the set of stores by $S=V^m$.
@@ -277,6 +276,7 @@ A guard $g$ is a formula in some logic interpreted over pairs of letters and sto
 we write $(\sigma,\ell)\models g$ to denote that store $\sigma\in S$ and the letter $\ell\in\Sigma$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
 An action $a$ is a small program acting on stores, which has relational semantics;
 we denote the set of actions by $A=\Sigma\to(S\times S)$.
+Thus, an action applied to a letter $a(\ell)$ is a relation on stores.
 We will later specialize to specific and simple logics (for guards) and programming languages (for actions).
 Labels are pairs $(g,a)$ of guards and actions;
 we denote the set of labels by $L=G\times A$.
@@ -303,13 +303,22 @@ If the automaton is clear from the context, we omit the subscript.
 \begin{definition}\label{def:cgraph}
 The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
 \end{definition}
-\dinocomment{$a(\ell)$ doesn't seem to be defined}
-\rg{TODO: Define nondeterministic\slash deterministic.}
-The language~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration.\dinocomment{can we give the precise definition. "label walks" is not clear}
+An automatons is \emph{nondeterministic} when its configuration graph contains two distinct transitions that have the same source~$x$ and are labeled by the same letter~$\ell$:
+\[ \text{$x\stackrel\ell\to y$ and $x\stackrel\ell\to z$,\quad with $y\ne z$} \]
+Otherwise, the automaton is \emph{deterministic}.
+
+The \emph{language}~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration:
+\[ {\cal L}({\cal A}) =
+  \{\,\ell_1\ldots\ell_k\mid \text{$x_0$ initial,
+  $x_{i-1}\stackrel{\ell_i}\to_{\cal A} x_i$ for $i\in[k]$,
+  $x_k$ final}\,\}\]
 
 \smallskip
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.\dd{why do we need to remark this?}
+Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.\dd{why do we need to remark this?
+\rg{I wouldn't say we `need' to remark this.
+Still, $A$ is uncountable, so there is no finite representation for \emph{all} its members.
+That's motivation to focus on a subset of $A$, which is what comes next.}}
 For actions most of the time we will only consider sequences of assignments.
 Simple assignments $({\sf set}\,i:=j)$ are defined by 
 \[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
@@ -364,7 +373,7 @@ Observe that:
 (2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
 (4)~The action of the last transition is superfluous, but required by the definition.
-\dd{should the transition with nop remain in 2?}
+\dd{should the transition with nop remain in 2? \rg{no}}
 \end{example}
 
 Let's consider the following  standard decision problems for automata. For an automaton ${\cal A}$,
