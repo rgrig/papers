@@ -315,10 +315,9 @@ The \emph{language}~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set o
 
 \smallskip
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is rather big.\dd{why do we need to remark this?
-\rg{I wouldn't say we `need' to remark this.
-Still, $A$ is uncountable, so there is no finite representation for \emph{all} its members.
-That's motivation to focus on a subset of $A$, which is what comes next.}}
+Given a number~$m$ of registers, an arity~$n$ for letters, and a set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is infinite. Therefore we want to focus on a subset of $A$.
+\dd{Ok, I changed it in this was. "rather big" didn't mean anything an seem to come out of the blue. Also I think you meant "countable"
+rather then "uncountable" since the latter would be the cardinality of the real numbers. I'd be surprised if you meant that. To avoid problem I used the word infinite.}
 For actions most of the time we will only consider sequences of assignments.
 Simple assignments $({\sf set}\,i:=j)$ are defined by 
 \[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
