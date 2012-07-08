@@ -137,7 +137,7 @@ can violate certain safety properties.
 Systems for runtime verification stand somehow in between classic verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, it is done in model checking. Moreover, compared to traditional formal verification techniques, runtime verification systems check only certain program executions, but the error reports are accurate and detected violations represent real bugs in the program.
 
 In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, and techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example  in terms of  language expressivity, or in the ability to express concisely properties related to the interaction of several objects 
-over time (typestate), or in expressing concisely properties requiring an unbounded number of different objects re-biding (sometimes called "parameters" in the runtime verification community).
+over time (typestate), or in expressing concisely properties requiring an unbounded number of different object re-bidings (sometimes called "parameters" in the runtime verification community).
 
 Register Automata~\cite{dblp:conf/focs/kaminskif90} are automata where a number of registers are used to store and compare data. Value of registers can be updated overtime and  data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
 relations of a (possibly unbounded) number of objects in a finite manner. They have been studied extensively from the theoretical point of
@@ -145,7 +145,7 @@ view and essential results for their analysis have been established (e.g., decid
 
 Thus, it seems sensible to attempt an approach to runtime verification taking register automata as starting point. The aim is to
 exploit the flexibility and the power of registers to
-address certain properties not easily dealt with other approaches.
+address certain properties not easily dealt with in other approaches.
 On the formal side, we started from register automata and have extended them driven by typical properties needed for real-world object-oriented systems.
 The extension has been careful crafted in order to be able to define the precise mathematical connection with register automata, and yet,
 make easy for programmers to express properties about their code. This process has resulted in the definition of two new classes of 
@@ -198,8 +198,7 @@ Finally, \autoref{sec:conclusions} concludes the paper and describes our plans f
 
 %>>>
 \section{Motivating Examples} %<<<
-Interaction of objects is at the core of the object-oriented paradigm.
-%Programmers often have an informal and global understanding of how objects relate.
+Interaction among objects is at the core of the object-oriented paradigm.
 Consider the classes in Figure~\ref{fig:first.java}.
 Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface. 
 Class {\tt Concat} is used to concatenate two object of type {\tt Str}. The concatenation implements also the
