@@ -190,7 +190,6 @@ violations of properties, and we have observed an acceptable runtime overhead.
 The paper is organized as follows.\dinocomment{fix at the end}
 \autoref{sec:results} gives the experimental results.
 \autoref{sec:examples} introduces the TOPL language with examples.
-\autoref{sec:semantics} gives TOPL's semantics.
 \autoref{sec:implementation} describes a the interesting aspects of the implementation.
 \autoref{sec:related} discusses related work.
 Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
@@ -443,7 +442,6 @@ The following properties of register automata are known:
 \item Register automata are \emph{not} closed under complementation~\cite{dblp:conf/focs/kaminskif90}.
 \item Nondeterministic register automata are strictly more expressive than deterministic register automata~\cite{dblp:conf/focs/kaminskif90}.
 \item The language ${\cal L}({\cal A})\cap C^*$ is regular for any register automaton~${\cal A}$ and any finite subset $C\subset V$ of values~\cite{dblp:conf/focs/kaminskif90}.
-\item Register automata are as expressive as Fraisse automata over the class of finite sets when the set~$V$ of values is countable~\cite{dblp:conf/lics/bojanczykkl11}.
 \end{enumerate}
 \end{theorem}
 
@@ -660,7 +658,7 @@ Recall that $\ell_1\ldots\ell_k\in{\cal L}({\cal A})$ when there exist (not nece
 When the store of~$x_k$ is~$\sigma_k$ we say that \emph{${\cal A}$ can accept $\ell_1\ldots\ell_k$ with store~$\sigma_k$}.
 A word may be accepted with multiple stores.
 
-\begin{definition}
+\begin{definition}\label{def:rcg}
 The \emph{rollback configuration graph} of an automaton consists of two types of transitions:
 \begin{enumerate}
 \item \emph{rollback transitions}
@@ -760,18 +758,26 @@ TOPL automata have the following properties:
 
 % >>>
 % >>>
-\section{TOPL  Semantics}\label{sec:semantics} % <<<
-In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
-Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
-Labels look like method calls.
-Each label has a method pattern that is used to identify the set of methods to which the label refers.
-In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
-(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
-%Name patterns are POSIX globs and match method names.
+\section{TOPL Properties}\label{sec:topl} % <<<
 
-\paragraph{On the Value Patterns mechanism.}
+\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
+We model the semantics of programs and automata as sets of event traces.
+We say that a program \emph{violates} a property when their sets of traces intersect.
+In other words, properties encode bad executions, rather than good executions.
+
+\subsection{The Alphabet}
+\rg{TODO: Explain that the alphabet $V^n$ actually has some extra structure.
+The values are partitioned into event ids, primitive values, and object references.
+For letter $(v_1,\ldots,v_n)$ the first component $v_1$ is always an event id.
+The event id is essentially a method name plus call\slash return info.
+The last few components may have a dummy $\bot$ value.
+The distinction between primitives and objects is drawn because the implementation uses different methods to compare for equality; actually, it might be better to mention this only in the implementation section.}
+
+\subsection{Guards and Actions from Patterns}
+\rg{TODO: Explain how pattern become guards, actions, and stuff in the initial store.
+For example constants like {\tt true} put something in the initial store.}
+\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
+
 For each automaton variable \Verb@v@ there are three associated patterns.
 The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
 The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
@@ -784,156 +790,6 @@ A TOPL property is \emph{well-formed} when it satisfies the following two condit
 {\em (i)} labels must contain uppercase value patterns at most once; {\em (ii)}
 any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
 From now on we assume TOPL properties to be well-formed.
-
-\subsection{Semantics}\label{sec:semantics_sub} % <<<
-We model the semantics of programs and automata as sets of event traces.
-We say that a program \emph{violates} a property when their sets of traces intersect.
-In other words, properties encode bad executions, rather than good executions.
-
-\subsubsection{TOPL Execution Automata.}
-\newcommand{\World}{ExecState}
-
-Given a TOPL property,  
-let $\set{Vertex}$ be the set of vertices mentioned as endpoints of the arcs and $\set{Arc}$ the set of labeled arcs mentioned in transitions.
-Each TOPL property, when considered in conjunction with the set of traces defining the semantics of the program, determines  an automaton defined over the labeled multigraph  on $\set{Vertex}$ and $\set{Arc}$.
-This automaton represents the semantics of the property interpreted over the program.
-The automaton has two special vertices, {\tt start} and {\tt error},  i.e., the initial and accepting vertex respectively.
-
-We assume a countable set \set{Value} of values and a countable set $\set{Variable}$ of automaton variables.
-Let stores be finite partial maps with finite domain:
-\[
-\set{Store} = \set{Variable} \pmap_{\mathit{fin}} \set{Value}
-\] 
-Moreover we assume a countable set \set{Event} of events with known arity.
-Each event~$e$ is of the form $(t_e,[0{:} v_0,\dots, 1{:}v_n])$.
-The component $t_e$ is a tag, e.g., {\em call} or {\em return}, while the second component is an array of values.
-Within guards and actions we write $tag(e)$ for the tag, and $e[i]$ for the $i$th value of the array.
-%
-\begin{definition}[TOPL execution automaton]
-Given a set of program traces $\set{Trace}$ and a {\em TOPL} property $(\set{Vertex},\set{Arc})$, a {\em TOPL execution automaton} $\Xi$ is a tuple
-$(\set{ExecState}, \to , \set{Init}, \set{Error})$ where
-\begin{itemize}
-\item $\set{\World} \subseteq (\set{Vertex}\times \set{Store})\times\set{Trace}$ is a set of {\em execution states}.
-\item $\to \subseteq \set{\World} \times \set{\World}$ is a set of {\em execution transitions}
-\item $\set{Init}= \{ (\texttt{start}, [], \tau) \mid \tau \in \set{Trace} \}$ is the set of initial execution states;
-\item $\set{Error} \subseteq \{ (\texttt{error}, \sigma, \tau) \mid \sigma \in \set{Store},  \ \tau \in \set{Trace} \}$ is the set of accepting (error) execution states.
-\end{itemize}
-\end{definition}
-An execution state of the automaton is given by specifying the vertex in the graph as well as the value of defined automaton variables and a trace of events to be observed.
-The reader may wonder why execution states need to contain traces.
-The reason is that each label in $\set{Arc}$ carries (potentially) not
-just a single guard, but a list of guards. We call the length of this list the \emph{depth} of the arc.
-Since different outgoing arcs of a vertex can have different depths, we have that different target states of transitions may receive different events.
-For example, for a trace of events $e_1 e_2 e_3\cdots$, if two outgoing transitions from the same state have depth 2 and 5 respectively, then the end state of the first transition will see $e_3$, while the end state of the second transition $e_6$.
-
-In order to define the transition relation $\to$ we need to define two auxiliary concepts.
-When observing a trace, the effect of actions in an arc label on a store  is given by the function
-\[
-   A : \set{Store} \times \set{Trace} \times \set{Label} \to \set{Store}_\bot
-\] and defined as
-\[
-\begin{array}{l}
-\begin{array}{l @{$\; =\;\;$} l}
-A(\sigma,\epsilon,[]) &  \!\! \sigma
-\\[2ex]
-A(\sigma,e,(g,a)) & \!\! \left\{\begin{array}{ll}
-     a(e,\sigma) & \mbox{if $g(e,\sigma)$}
-     \\[1ex]
-     \!\! \bot & \mbox{otherwise}
-     \end{array}
-     \right.
-\\[5ex]
-\!\!\!\!A(\sigma,e{\cdot} \tau,(g,a){\cdot} l) &  \!\! \left\{\begin{array}{ll}
-    \!\! A(\sigma',\tau,l) & \mbox{if $|\tau|{=}|l|{>}0$ and }
-     \\
-& \mbox{$A(\sigma,e,(g,a)){=}\sigma'$}
-     \\[1ex]
-    \!\! \bot & \mbox{otherwise}
-     \end{array}
-     \right.
-\end{array}
-\end{array}\]
-In this definition, the effect of an empty list of actions $l$ on an empty trace $\epsilon$ does not change the store.
-If the event $e$ passes the guard $g$ in the store $\sigma$, the corresponding action $a$ is performed on that event 
-and  $\sigma$ is updated. Notice that in  the case $A(\sigma,e\cdot \tau,(g,a)\cdot l)$, the result $\sigma' \in \set{Store}$ and therefore $\sigma' \neq \bot$. 
-
-\newcommand{\Enabled}{\mathit{Enab}}
-With $A$ we can test whether a
-transition is enabled in a store when observing a trace, and therefore, we can define the
-predicate $\Enabled$ testing if there exists an enabled transition
-starting from an execution state:
-%\rlp{consider removing $enabled$, it is only used here and not shorter
-%than its definition.}
-\begin{eqnarray*}
-%enabled(\sigma,\tau,l) & \Leftrightarrow & A(\sigma,\tau,l) \neq \bot
-%\\
-\Enabled(x,\sigma,\tau) & \Leftrightarrow  & \bigvee \{ A(\sigma,\tau,l) \neq \bot \mid x \to x' : l \}
-\end{eqnarray*}
-Notice that, according to the definition of the function $A$, for a transition to be enabled, all the guards along its list have to evaluate to true.
-Evaluating a guard along the transition consumes an event, therefore, to see if a transition is enabled, we have to examine $|l|$ events.
-
-The transition relation $s \to s'$ is defined by the following rules.
-\[
-\begin{array}{ll}
-\!\!\!\text{(Step)}  &
-\infer[|l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{x_1 \to x_2{:} l \quad A(\sigma_1,\tau_1,l)=\sigma_2}
-%\infer[x_1 \to x_2{:} l \mbox{ and } |l|{=}|\tau_1| ]{ (x_1,\sigma_1,\tau_1 \cdot \tau_2 ) \  \to \  (x_2, \sigma_2, \tau_2)}{A(\sigma_1,\tau_1,l)=\sigma_2}
-\\[2ex]
-\!\!\!\text{(Silent)}  &
-\infer[\neg \Enabled(x_1,\sigma_1,\tau_1) ]{ (x_1,\sigma_1,\tau_1) \  \to \  (x_1, \sigma_1, \tau_2)}{ \tau_1=e \cdot \tau_2}
-\end{array}
-\]
-Finally, we can define the language of a TOPL execution automaton $\Xi$, as the set of traces it accepts:
-\[
-{\cal L}(\Xi) = \{ \tau \mid \exists \sigma' \tau', (\mathtt{start},[],\tau) \to^* (\mathtt{error},\sigma',\tau')\}
-\]
-${\cal L}(\Xi)$ are the traces that drive the automaton $\Xi$ from the \texttt{start} vertex (with an empty store) to the \texttt{error} vertex.
-
-\paragraph{Silent steps.}
-A peculiar aspect of the transition relation $\to$ is that if no transitions are enabled for a given state and trace of events, the automaton does not get stuck but it consumes one event without changing its state (see the  Silent Step rule).
-Note that a silent step is not equivalent to a self-loop on all states, as dropping events is not allowed if there are enabled transitions.
-In that case,  the enabled transitions are performed with the rule (Step) and the automaton execution state becomes $(x_2, \sigma_2,\tau_2)$, where $x_2$ is the target vertex of the arc of the transition, $\sigma_2$ is defined by the modification imposed by the function $A$ and $\tau_2$ is the leftover of the event trace before the transition after dropping $|l|$ events.
-
-The next example illustrates the difference from self loops by showing
-that weather a transition becomes enabled during a given trace depends
-on the presence of other transitions out of the same vertex. 
-\begin{example}
-Consider the automata in Fig.~\ref{fig:unmatched-example} and assume that the set of active states for the left-hand side automaton is $\{ \texttt{zero} \}$ and for the right-hand side one is $\{ \texttt{three}\}$.
-Moreover, let us assume that our input trace is $\cdots e_1 e_1 e_2 \cdots$ In the left-hand side automaton, the first occurrence of the event $e_1$ enables the transition  from {\tt zero} to {\tt two}, however, the transition from {\tt zero} to {\tt one} cannot fire since the first occurrence of $e_1$ (in the trace) is followed by another $e_1$.
-Consequently, after the first occurrence of $e_1$ state {\tt two} becomes active and {\tt zero} inactive.
-Notice that, in the left-hand side automaton, state {\tt one} cannot be reached by the trace $e_1 e_1 e_2 $ from {\tt zero}.
-On the contrary, for the right-hand side automaton, the first occurrence of $e_1$ does not enable any transition per se.
-Notice that the only outgoing transition on the active state {\tt three} needs a sequence of two events to be enabled.
-Hence, we need to consider the sequence $e_1e_1$.
-The latter does not enable any transition either.
-Therefore, according to our semantics,  the first occurrence of $e_1$ is consumed silently and the set of active states (i.e., $\{ \texttt{three} \}$) remains unchanged.
-At this point, the second occurrence of $e_1$ is considered, and since it is followed by $e_2$, the transition from {\tt three} to {\tt four} becomes enabled.
-Events $e_1e_2$ are consumed, {\tt four} becomes active and {\tt three} inactive.
-\end{example}
-
-\begin{figure}[t]
-\begin{tikzpicture}
-  \def\x{2.5}
-  \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
-  \tikzset{transition/.style={->,>=latex}}
-  \tikzset{every label/.style={gray}}
-  \node[vertex] (zero) at (0,0) [label=above:\texttt{zero}] {};
-  \node[vertex] (one) at (-1,-1) [label=left:\texttt{one}] {};
-  \node[vertex] (two) at (1,-1) [label=right:\texttt{two}] {};
-
-  \node[vertex] (three) at (3,0) [label=left:\texttt{three}] {};
-  \node[vertex] (four) at (4,0) [label=right:\texttt{four}] {};
-
-  \draw[transition] (zero)--node[left]{$ e_1;e_2$} (one);
-  \draw[transition] (zero)--node[right]{$e_1$} (two);
-
-  \draw[transition] (three)--node[above]{$e_1;e_2$} (four);
-\end{tikzpicture}
-\caption{Example of unmatched events.}
-\label{fig:unmatched-example}
-\end{figure}
-
-\subsubsection{On labels and guards.} % <<<
 
 A label is a list of pairs $(g,a)$ of guards and actions. A  {\em general guard} is a partial function of type:
 \[
@@ -979,13 +835,27 @@ The instantiated guards, can now be evaluated with the events by taking their co
 \]
 \end{example}
 
-% >>>
-% >>>
+
+\subsection{Observable Events}
+\rg{TODO: Discuss how we pre-filter events base on the method names.}
+
+\subsection{Syntax}
+\rg{TODO: This might remain in the appendix.}
+\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
+
+In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
+Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
+Labels look like method calls.
+Each label has a method pattern that is used to identify the set of methods to which the label refers.
+In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
+(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
+The more interesting case is when there are value patterns for each argument and perhaps even for the result.
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
+
 % >>>
 \section{Examples} \label{sec:examples} % <<<
 
-In this section, which is based on our previous article~\cite{our-fool2011},  we introduce TOPL in an informal way by means of examples.
-
+In this section, which is based on our previous article~\cite{our-fool2011},  we demonstrate TOPL's expressivity.
 
 \subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
 
@@ -1263,6 +1133,19 @@ The following property detects when a dictionary overwrite one of its bindings.
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
 % >>>
+\subsection{Taint Properties} % <<<
+
+\rg{TODO: Explain how to express the generic taint property.}
+
+% >>>
+\subsection{Iterating Dirty Ropes} % <<<
+
+\rg{TODO: Revisit the motivating example.
+Ropes may represent strings.
+So, ropes may be tainted or not.
+Also, one could iterate over a subrope.}
+
+% >>>
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
 
@@ -1427,8 +1310,8 @@ The implementation takes advantage of this fact by using persistent (functional)
 \paragraph{Step.}
 
 The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
-It corresponds to the operational semantics (\autoref{sec:semantics}), but is written in an imperative style.
-For each transition outgoing from a vertex, lines~\hbox{11--17} try to apply rule (Step) from \autoref{sec:semantics}.
+It corresponds to the operational semantics (\autoref{def:rcg}), but is written in an imperative style.
+For each transition outgoing from a vertex, lines~\hbox{11--17} follow the step transitions from \autoref{def:rcg}.
 Line~17 is reached if the rule (Step) does not apply, and execution continues with the next outgoing transition.
 Line~18 is reached if the rule (Step) does apply.
 Its effect is recorded by adding a new state to set~$A$
@@ -1601,6 +1484,9 @@ Since TOPL properties are processed by tools, they are less likely to become out
 
 % >>>
 \subsection{Benchmarks} % <<<
+
+\rg{TODO: Add the JDK properties from JavaMOP people.}
+\rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
 
 All three benchmarks are large open-source projects with many users and active developers.
 The versions were current in 2009 when DaCapo-9.12 was released.
@@ -1829,7 +1715,7 @@ In the future, we intend to combine TOPL with  separation logic~\cite{reynolds20
 Moreover, we aim at developing static analysis techniques for TOPL properties using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
 This will require investigating suitable abstraction for obtaining meaningful and precise over-approximations of the state space of the programs.
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
-%\rlp{What about abstraction even for dynamic analysis?}
+\rlp{What about abstraction even for dynamic analysis?}
 %>>>
 \bibliographystyle{plain} % and appendix <<<
 \bibliography{safety}
