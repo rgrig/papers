@@ -443,6 +443,8 @@ The following properties of register automata are known:
 \end{enumerate}
 \end{theorem}
 
+\rg{TODO: DIscuss the relevance of the last two points.}
+
 These results have analogues for TOPL automata.
 The details depend on what exactly the arrows from \autoref{fig:concepts} are.
 The gist will generally be a transformation of the following kind:
@@ -668,7 +670,7 @@ The \emph{rollback configuration graph} of an automaton consists of two types of
 \begin{enumerate}
 \item \emph{rollback transitions}
   \[\bigl((q_1,s_1),ww'\bigr)\stackrel w\hookrightarrow\bigl((q_2,s_2),w'\bigr)\]
-when there exists a transition $(q_1,{\bf l},q_2)\in\delta$ such that ${\cal T}(s_1;{\bf l})$ can accept $w$ with store~$s_2$
+when there exists a transition $(q_1,\bar\lambda,q_2)\in\delta$ such that ${\cal T}(s_1;\bar\lambda)$ can accept $w$ with store~$s_2$
 \item \emph{skip transitions}
   \[(x,\ell w)\stackrel\ell\hookrightarrow(x,w)\]
 when no rollback transition starts from $(x,\ell w)$
@@ -696,7 +698,7 @@ The rollback language, on the other hand, consists of all words that contain the
 
 It is possible, however, to transform TOPL automata such that their rollback languages coincide with their simple languages.
 
-\begin{lemma}[TOPL to rTOPL]
+\begin{lemma}[TOPL to rTOPL]\label{lemma:topl-to-rtopl}
 There exists an algorithm that, given a TOPL automaton~${\cal A}$ with $|Q|$~states, at most $d$~transitions outgoing of each state, and guards with at most $k$~conjuncts, builds a TOPL automaton~${\cal A}'$ with $|Q|+1$ states and at most $(d+k^d)|Q|$ transitions such that
 \[ w\in{\cal L}({\cal A}) \iff w\in{\cal L}_\rho({\cal A}')\]
 \end{lemma}
@@ -714,12 +716,12 @@ So, we synthesize a guard~$g$ that holds exactly in this situation.
 Informally, we want to add a transition from~$q$ to~$q_{\rm stuck}$ with the guard $g=\lnot g_1\land\ldots\land\lnot g_d$ and the action ${\sf nop}$.
 There is one small complication: $G_{\rm TOPL}$ does not have a negation operator.
 However, we can negate the simple guards ${\sf eq}$ and ${\sf neq}$, we can use distributivity to put $g$ in disjunctive normal form, and we can simulate disjunction by parallel transitions.
-Thus, if each $g_i$ contains up to $k$ simple conjuncts, we add at most $k^d$ loop transitions on state~$q$.
+Thus, if each $g_i$ contains up to $k$ simple conjuncts, we add at most $k^d$ transitions from state~$q$.
 \end{proof}
 
 The converse transformation is more difficult.
 There are many obvious ways to simulate a rollback TOPL automaton with a simple TOPL automaton, and many of them are wrong.
-Rollback, which ensures that several letters occur atomically, and skip, which filters nonrelevant letters, usually lead to intuitive behaviors, but not always, as the following example illustrates.
+Rollback, which ensures that several letters occur atomically, and skip, which filters irrelevant letters, usually lead to intuitive behaviors, but not always, as the following example illustrates.
 
 \begin{example}
 Consider the following rollback TOPL automaton with $2$~registers over the alphabet $\Sigma=V=\{A,B\}$:
@@ -733,33 +735,41 @@ For example it contains $A$, $BA$, $BAA$, and $BAAB$, but not $BAB$ or~$BBAB$.
 
 The key idea for encoding rollback TOPL automata into simple TOPL automata is the following:
 \emquote{It is sufficient to simulate rollback configurations with words shorter than the longest transition.}
-The length of a transition $(q_1,{\bf l},q_2)$ is the number~$|{\bf l}|$ of labels.
+The length of a transition is the number of labels it has.
 Since the set~$\delta$ of transitions is finite, there is a maximum~$d$ of the transition lengths.
 The rollback configuration $((q,s),w)$ is simulated by some configuration $((q,s),w')$, where $w'$ is a prefix of~$w$, and $|w'|<d$.
 Because $|w'|$ is bounded, we can represent $((q,s),w')$ by a simple configuration $(q',s')$ as follows.
 The store~$s'$ contains the values from~$s$ and those from~$w'$.
 If $s$~has $m$~registers, and letters are $n$-tuples, then $s'$~has $m+(d-1)n$ registers.
 The state~$q'$ encodes both the state~$q$ and which of the registers store~$w'$.
+\rg{TODO:Make the above more informal.}
 
+\begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
+There exists bla
+\end{lemma}
+\begin{proof}
+\rg{TODO: The formal version of the proof.}
+\end{proof}
 
-\rg{TODO: rTOPL-to-TOPL transformation.}
+\begin{remark}
+It follows from \autoref{lemma:topl-to-rtopl} and \autoref{lemma:rtopl-to-topl} that rollback TOPL automata and simple TOPL automata are equally expressive.
+\end{remark}
 
 %>>>
 \subsection{Properties} %<<<
 
-\rg{TODO: Port theorem~1 to TOPL and rTOPL.}
+The following are consequences of \autoref{th:ra} and Lemmas \ref{lemma:ra-to-topl},~\ref{lemma:topl-to-ra}, \ref{lemma:topl-to-rtopl}, and~\ref{lemma:rtopl-to-topl}.
 
-
-The following properties are consequences of \autoref{th:ra} and \autoref{lemma:topl-to-ra}.
-
-\begin{proposition}
-TOPL automata have the following properties:
+\begin{theorem}\label{th:main}
+Register automata, simple TOPL automata, and rollback TOPL automata share the following properties:
 \begin{enumerate}
-\item The emptiness problem is decidable.
-\item The membership problem is decidable.
-\item The containment, equivalence, and universality problems are decidable for $1$~register.
+\item The emptiness and the membership problems are decidable.
+\item The language inclusion, the language equivalence, and the universality problems are decidable for $1$~register.
+\item The language inclusion, the language equivalence, and the universality problems are undecidable in general.
+\item The languages of these automata are closed under union, intersection, concatenation, and Kleene star.
+\item The languages of these automata are not closed under complementation.
 \end{enumerate}
-\end{proposition}
+\end{theorem}
 \rg{TODO: More specific complexity classes for the problems above.}
 
 % >>>
