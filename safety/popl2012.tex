@@ -1157,13 +1157,13 @@ The TOPL compiler ({\tt toplc}) instruments Java bytecode;
 The TOPL checker (class {\tt topl.Checker}) monitors the execution and reports violations.
 \autoref{architecture} depicts how the compiler and the checker fit together, thus summarizing our runtime checking technique.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \begin{center}
 \input{architecture}
 \caption{Architecture of the TOPL tool}
 \label{architecture}
 \end{center}
-\end{figure*}
+\end{figure}
 
 The compiler takes as input a Java project and a set of TOPL properties.
 The Java project is defined to be all files in a given directory, recursively descending into jar files, zip files, and subdirectories.
