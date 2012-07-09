@@ -160,9 +160,10 @@ We complement the theoretical construction with a practical tool.
 We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmer to express rigorous temporal 
 properties about their programs. These properties will be then automatically checked by the system.
 The formal correspondence between the properties and register automata defined in this paper gives rigorous mathematical foundation to
-the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can statically analyse whether its language is empty.  The formal development is completely hidden from 
-the programmer.  Thus TOPL provides developers with a flexible methodology for enforcing safety constraints on their code.
-Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a numerical parameter. 
+the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can decide whether its language is empty.  The formal development is completely hidden from 
+the programmer.  
+%Thus TOPL provides developers with a flexible methodology for enforcing safety constraints on their code.
+Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of  four parameters. 
 
 
 %For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
@@ -199,14 +200,31 @@ Finally, \autoref{sec:conclusions} concludes the paper and describes our plans f
 %>>>
 \section{Motivating Examples} %<<<
 Interaction among objects is at the core of the object-oriented paradigm.
-Consider the classes in Figure~\ref{fig:first.java}.
+Consider for example  Java collections. A typical property one would want to state  is:
+\eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
+The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
+
+A slightly more complex scenario is described by classes in Figure~\ref{fig:first.java}.
 Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface. 
 Class {\tt Concat} is used to concatenate two object of type {\tt Str}. The concatenation implements also the
- {\tt Str} interface.
+ {\tt Str} interface. 
+Consider the case where {\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.} 
+Rope's operations like insert, concat, delete may update the shape of the tree and references to its root. 
+In this case we may have two (or more) collections {\em sharing} some elements. Consequently iterators operating on these different collections may invalidate each other. We need to modify~\eqref{q:concur-it} increasing its complexity: 
+\eqquote{If one iterator modifies its collection, then other existing iterators of collections sharing some elements become invalid, which means they cannot be used further.}{q:concur-it2}
 
-A typical property one would want to state for a program using these classes (as well as Java collections in general) is:
-\eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
-The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection), their {\em interaction over time}, and possible {\em variable updates}.
+\paragraph{Re-binding of specification variables.}
+Now let's consider the case where we want to perform taint checking for input coming from a web form.  What we want to check is the following
+property:
+\eqquote{Any value introduced by the {\tt input()} method should not reach the  {\tt sink()} method without passing first from the {\tt sanitizer()} method.}{q:concur-it2}
+This property is at first sight simple. However, it's difficulty can vary depending from the context. Consider in fact the case where
+the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}. 
+The number of user inputs, and therefore of concatenations, it is not known a priori and in general unbounded.
+Consequently we will have a possibly an unbounded number of tainted objects. 
+In a temporal specification we would then need either different logical variables for each different tainted objects or
+the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in such a way that at the semantic level we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
+different values during the computation allows to keep the specification finite. 
+%
 \begin{figure}[t] % first example <<<
 %\include{IncorrectIteratorUse}
 \begin{tiny}
@@ -215,38 +233,24 @@ The formalization of the above constraint is non-trivial since it needs to keep 
 \caption{A first example: Java code}
 \label{fig:first.java}
 \end{figure}
-%The program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
-%There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-%To understand the need for keeping track of variables updates, consider the following snippet of code
-%\begin{verbatim}
-% ....
-% i=s.itr();
-% .....
-% while (ch.more_input()) {
-%   CharArray c = ch.get_input();
-%   s = Concat(s,c);
-% }
-%\end{verbatim}
-%where strings are read  from an input channel and accumulated in the {\tt Concat} object {\tt s}.
-To understand the need for variable updates in the specification, consider the case where 
-{\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.} 
-Rope's operations like insert, concat, delete may update the shape of the tree and references to its root. 
-In a temporal specification we would then need either different logical variable for the different values of the root or
-the ability to re-bound variable in the temporal specification. 
-As  number of the operations on the rope is not known, and  in general can be unbounded, re-binding specification variables with
-different values during the computation allows to keep the specification finite. 
+%
 
-\paragraph{Data Structures Shapes.}
-One interesting kind of properties for object-oriented programs is the ability to reason about the evolving shape of the heap composed by the allocated objects.
-\emquote{The shape of the list should not become neither circular nor pan-handle.}
-This is useful for example when we traverse a loop like the following
-\begin{verbatim}
+The problem of rebinding of variable in the specification arises also in other contexts. For example, 
+when  reasoning about the evolving shape of dynamic allocated data-structures. 
+Consider the following loop using a list:
+ \begin{verbatim}
   while (l.next()!=null) {
+     // here using the list l in some way...
      ......
   }
 \end{verbatim}
-as a circular/pan-handle list would cause non-termination. Also for encoding properties of this kind it is necessary to be able to update the 
-value of the specification variables.
+If the list {\tt l} is circular or pan-handle shape the loop will diverge.
+At run time, it would be impossible even to observe the problem.  
+ If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
+in the context of this discussion, we exclude these kind of explicit checks.}
+\emquote{The shape of the list should not be neither circular nor pan-handle.}
+We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
+value of the specification variables.  This is because the way to encode the property is by checking, when using the list, that we reach some element we have seen before. 
 
 %The following TOPL properties test the shape of a linked list and
 %reports an error if it is cyclic or it has the pan-handle shape (i.e.,
