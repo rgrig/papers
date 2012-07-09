@@ -35,17 +35,19 @@
   pdfauthor={Radu Grigore and Dino Distefano and Rasmus Lechedahl Petersen}}
 
 \title{Runtime Verification Based on Register Automata}
-%\authorinfo{Authors info whitheld for double-blind submission}
 \authorinfo{Radu Grigore}
-           {Queen Mary University of London}
+           {Queen Mary, University of London}
            {rgrig@eecs.qmul.ac.uk}
 \authorinfo{Dino Distefano}
-           {Queen Mary University of London}
+           {Queen Mary, University of London}
            {ddino@eecs.qmul.ac.uk}
-
 \authorinfo{Rasmus Lerchedahl Petersen}
            {Microsoft Research}
            {a-rapete@microsoft.com}
+\authorinfo{Nikos Tzevelekos}
+           {Queen Mary, University of London}
+           {nikost@eecs.qmul.ac.uk}
+
 
 \renewcommand{\sectionautorefname}{Section}
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
@@ -289,12 +291,12 @@ value of the specification variables.
 
 \autoref{fig:concepts} shows the main concepts of concern.
 Register automata are well-studied devices, introduced decades ago.
-The gap between TOPL properties and register automata is filled by two semantic models, namely high-level  and low-level TOPL automata.
-The high-level model (also called  automata with rollback) is better suited for implementation;
-the low-level model (called without rollback) is easier to analyze.
+The gap between TOPL properties and register automata is filled by two semantic models, namely high-level and low-level TOPL automata.
+The high-level model (rollback TOPL automata) is better suited for implementation;
+the low-level model (simple TOPL automata) is easier to analyze.
 
 The target of an arrow is at least as expressive as its source.
-All three automata models have the same expressivity because they form a cycle.
+All three automata models have the same expressivity.
 In general, decision problems on automata (such as membership, emptiness, language inclusion), are either decidable for all three models, or undecidable for all three models.
 However, decidable problems do not necessarily have the same complexity for the three models.
 
@@ -319,34 +321,36 @@ We review here register automata and several results about them.
 Together with the reductions presented later, these results imply similar results about TOPL automata.
 
 We begin by defining a generic automaton, of which both TOPL and register automata are instances.
-A letter~$\ell$ is an $n$-tuple $(v_1,\ldots,v_n)$ of values from a possibly infinite set~$V$;
-we denote the alphabet by~$\Sigma=V^n$.
-A store $\sigma$ is an assignment of values to each of the $m$~registers;
+A \emph{letter} $\ell$ is an $n$-tuple $(v_1,\ldots,v_n)$ of \emph{values} from a possibly infinite set~$V$;
+we denote the \emph{alphabet} by~$\Sigma=V^n$.
+A \emph{store} $s$ is an $m$-tuple $(u_1,\ldots,u_m)$ of values;
 we denote the set of stores by $S=V^m$.
-A guard $g$ is a formula in some logic interpreted over pairs of letters and stores;
-we write $(\sigma,\ell)\models g$ to denote that store $\sigma\in S$ and the letter $\ell\in\Sigma$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
-An action $a$ is a small program acting on stores, which has relational semantics;
+A \emph{register} $i$ is an integer that identifies a component of the store;
+the set of registers is $[m]=\{1,2,\ldots,m\}$.
+A \emph{guard} $g$ is a formula in some logic interpreted over pairs of letters and stores;
+we write $(s,\ell)\models g$ to denote that store $s\in S$ and the letter $\ell\in\Sigma$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
+An \emph{action} $a$ is a small program acting on stores, which has relational semantics;
 we denote the set of actions by $A=\Sigma\to(S\times S)$.
 Thus, an action applied to a letter $a(\ell)$ is a relation on stores.
 We will later specialize to specific and simple logics (for guards) and programming languages (for actions).
-Labels are pairs $(g,a)$ of guards and actions;
-we denote the set of labels by $L=G\times A$.
+A \emph{label} $\lambda$ is a pair $(g,a)$ of a guard~$g$ and an action~$a$;
+we denote the set of labels by $\Lambda=G\times A$.
 
 \begin{definition}\label{def:automaton}
 An \emph{automaton}~${\cal A}$ with $m$~registers over $n$-tuples of values from the set~$V$ consists of
 \begin{itemize}
 \item a finite set~$Q$ of states
 \item an initial state $q_0\in Q$
-\item an initial store $\sigma_0\in S$
+\item an initial store $s_0\in S$
 \item a set $F\subseteq Q$ of final states
-\item a finite transition relation $\delta\subset Q\times L\times Q$
+\item a finite transition relation $\delta\subseteq Q\times\Lambda\times Q$
 \end{itemize}
 \end{definition}
 
-A configuration~$x$ is a pair~$(q,\sigma)$ of a state~$q$ and a store~$\sigma$;
+A \emph{configuration}~$x$ is a pair~$(q,s)$ of a state~$q$ and a store~$s$;
 we denote the set of configurations by $X=Q\times S$.
-The initial configuration is $(q_0,\sigma_0)$.
-A configuration is final when its state is final.
+The \emph{initial} configuration is $(q_0,s_0)$.
+A configuration is \emph{final} when its state is final.
 The configuration graph of the automaton is a subset of $X\times\Sigma\times X$.
 We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ is in the configuration graph of~${\cal A}$.
 If the automaton is clear from the context, we omit the subscript.
@@ -367,7 +371,7 @@ Being a walk rather than a path, the configurations $x_0$,~$x_1$, \dots,~$x_k$ n
 
 \smallskip
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a countable set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of possible actions is uncountable.
+Given a number~$m$ of registers, an arity~$n$ for letters, and a countable set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of actions is uncountable.
 Therefore we must focus on a subset of $A$ if we want our automata to be finitely representable.
 We will only consider actions that are sequences of assignments.
 The assignment $({\sf set}\,i:=j)$ is defined as follows:
@@ -382,7 +386,6 @@ In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
 The syntax of guards for register automata is the following:
 \begin{align*}
 G_{\rm RA} &\;::=\; {\sf fresh} \mid {\sf eq}\,i
-%G_{\rm RA} &\;::=\; {\sf eq}\,i
 \end{align*}
 They are interpreted as follows:
 \begin{align*}
@@ -392,13 +395,11 @@ They are interpreted as follows:
   &&\text{iff $u_i=v$}
 \end{align*}
 
-We write $[m]$ for the set $\{1,2,\ldots,m\}$.
 With these notations we can fix a definition for register automata.
 
 \begin{definition}
 A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels 
-are given by $L=\{({\sf fresh},\;{\sf set}\,i), ({\sf eq}\,i,\; {\sf nop})  \mid i\in[m] \}$.
-%have the shape $({\sf fresh},\;{\sf set}\,i)$ or the shape $({\sf eq}\,i,\; {\sf nop})$, where $i\in[m]$.
+are given by $\Lambda=\bigl\{\,({\sf fresh},{\sf set}\,i),\; ({\sf eq}\,i, {\sf nop})  \mid i\in[m] \,\bigr\}$.
 \label{def:ra}
 \end{definition}
 
