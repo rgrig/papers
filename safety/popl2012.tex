@@ -780,76 +780,85 @@ Register automata, simple TOPL automata, and rollback TOPL automata share the fo
 % >>>
 \section{TOPL Properties}\label{sec:topl} % <<<
 
-\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
-In this section, we describe the translation from TOPL properties to
-TOPL automata with rollback in \autoref{fig:concepts}.
+In this section, we describe the user level language of TOPL
+properties, as well as the translation from TOPL properties to
+rollback TOPL automata in \autoref{fig:concepts}.
+
+The language of TOPL properties provides a user-friendly way to write down certain
+rollback TOPL automata useful for object oriented programming
+languages. As such, TOPL properties form a subset of rollback TOPL
+automata, and the translation in \autoref{fig:concepts} is morally an
+injection. There is, however, in the interest of user-friendlyness,
+some encoding happening.
+
+Syntactically, a TOPL property has a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
+Each transition is a labelled arc (directed edge) with a source and a
+target vertex identified by their name.
+There must be a vertex named ``start'' and one named ``error''.\rlp{is
+this correct?}
+Labels look like method calls.
+
+In the following, we will describe TOPL labels and how they translate to guards
+and actions. But first we will describe the events that a TOPL
+property considers and hence the alphabet that the corresponding
+rollback TOPL automaton works over.
+
+\subsection{The Alphabet}
 
 We model the semantics of programs and properties as sets of event
 traces. We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-Given a TOPL Property $P$, we wish to construct a TOPL rollback
-automaton $A_P$,
-such that the language of the automaton is the set of event traces of $P$.
-Thus we choose the values of $A_P$ to be the observable events
-of $P$.
+The traces of events that a property $P$ deems lead to a bad execution is thus the language
+of the corresponding automaton $A_P$. Observable events for TOPL properties are method calls
+with parameter values and a time-tag. The time-tag is either $call$ or $ret$,
+corresponding to observing the method being called or returned
+from. If the time-tag is $ret$, the event also carries the return value.
 
-\subsection{The Alphabet}
-In \autoref{sec:syntax} we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
-Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
-Labels look like method calls.
-Each label has a method pattern that is used to identify the set of methods to which the label refers.
-In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
-(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
-
-Thus, for $A_P$, the values of interest come from three
-sources; event ids and Java values: The set $E$ of event ids is given by
-grammar
+Thus, for $A_P$, the values of interest come from two
+sources; event ids and parameter values: The set $E$ of event ids is given by
+the grammar
 \[
-call\ m \mid return\ m \mid m
+call\ m \mid return\ m
 \]
-where $m$ is one of the method names known to $P$, ie method
-names mentioned on guards of $P$ prefixed with strings mentioned in
-$P$'s prefix directive.
+where $m$ is one of the method names mentioned in $P$.
 
-The set $V_J$ of primitive values is the set of Java values
+The set $V_L$ of possible parameter values is the set of values from
+the programming language (Jave in our examples)
 plus a dummy value $\bot$.
 
-%The set $R$ of object references is the set of identifiers
-%mentioned on guards of the property prefixed with strings specified by
-%the prefix directive.
+The values are then $V = E + V_L$, and the alphabet is $V^{n+2}$,
+where $n$ is the maximal arity of a method mentioned in $P$.
+(We need one extra register for the return value and one for the event
+id.)
 
-The values are then $V = E + V_J $, and the alphabet is $V^{n+1}$,
-where $n$ is the maximal arity of a method mentioned in the property.
+We are only concerned with the subset $E \times V^{n+1}$, ie the tuples where the first component is an event
+id. If $P$ has a maximal arity of 5, the event $call\ m(a, b, c)$
+would be understood as $(call\ m,  a, b, c, \bot, \bot, \bot)$ by
+$A_P$. Here the first component is the event id, the next three are the parameter values and the rest are
+fillers which allows all tuples to have the same lenght. The first two
+fill for parameter values, while the last fills for the return
+value. The event $ret\ r = m(a, b, c)$
+would be understood as $(ret\ m,  a, b, c, \bot, \bot, r)$ by
+$A_P$.
 
-We are only concerned with the subset $E \times V^n$, ie the tuples where the first component is an event
-id. If $P$ has a maximal arity of
-5, the event $call\ m(a, b, c)$  would be understood as $(call\ m, a,
-b, c, \bot, \bot)$ by $A_P$.
-
-We now explain how the labels of $P$ are transformed into guards and
+We can now describe the labels of $P$ and explain how they are transformed into guards and
 actions of $A_P$.
-\rg{TODO: Explain that the alphabet $V^n$ actually has some extra structure.
-The values are partitioned into event ids, primitive values, and object references.
-For letter $(v_1,\ldots,v_n)$ the first component $v_1$ is always an event id.
-The event id is essentially a method name plus call\slash return info.
-The last few components may have a dummy $\bot$ value.
-The distinction between primitives and objects is drawn because the implementation uses different methods to compare for equality; actually, it might be better to mention this only in the implementation section.}
 
-\subsection{Guards and Actions from Patterns}
+\subsection{Guards and Actions from Labels}
 
-\rg{TODO: Explain how pattern become guards, actions, and stuff in the initial store.
-For example constants like {\tt true} put something in the initial store.}
-\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
+Labels refer to the registers via \emph{patterns}. To retain the
+flavour of a programming language, we call the registers of $P$
+\emph{property variables}.
 
-For each automaton variable \Verb@v@ there are three associated patterns.
-The uppercase pattern \Verb@V@ matches any value and writes it in the automaton variable \Verb@v@.
-The lowercase pattern \Verb@v@ reads the value of the automaton variable \Verb@v@ and only matches that value.
-The negated lowercase pattern \Verb@!v@ reads the value of the automaton variable \Verb@v@ and only matches different values.
-A Java literal acts as a pattern that matches only the value it denotes.
-A wildcard~* pattern matches any value.
+For each property variable \Verb@v@ there are three associated patterns.
+The uppercase pattern \Verb@V@ matches any value and writes it in the property variable \Verb@v@.
+The lowercase pattern \Verb@v@ reads the value of the property variable \Verb@v@ and only matches that value.
+The negated lowercase pattern \Verb@!v@ reads the value of the
+property variable \Verb@v@ and only matches different values.
+
+Further, every element of $V_L$ acts as a pattern that matches only the value it denotes,
+and a wildcard~* pattern matches any value.
 
 \smallskip
 A TOPL property is \emph{well-formed} when it satisfies the following two conditions:
@@ -857,57 +866,46 @@ A TOPL property is \emph{well-formed} when it satisfies the following two condit
 any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
 From now on we assume TOPL properties to be well-formed.
 
-A label is a list of pairs $(g,a)$ of guards and actions. A  {\em general guard} is a partial function of type:
+A label is of one of two forms:
 \[
-\set{GenGuard} = (\set{Pattern} \times \N \times \set{Pred}) \pmap (\set{Event}\times\set{Store}) \to \B
+  e ::=
+  call\;m(x_1, \ldots, x_n) \mid
+  ret\;x := m(x_1, \ldots, x_n)
 \]
-An {\em instantiated guard} is a general guard provided with instances of a pattern  name $\pattern v$,  its position $i$ in the label, and a predicate $p$ needed to test this pattern:
+where $x$ and $x_1, \ldots, x_n$ are all patterns.
+
+In order to match elements from $V_L$, there is an extra register in
+$A_P$ for each unique element mentioned by $P$. This register contains
+that value in the initial state of $A_P$ and is never overwritten. For
+each pattern $x$ which is not *, we define two functions $reg(x)$ and
+$pred(x)$. $reg(x)$ gives the associated register and $pred(x)$ gives
+the corresponding predicate, i.e.
 \[
-g_{\pattern{v},i,p} : \set{Event}\times\set{Store} \to \B
-\]
-Given an event and a store, an instantiated guard  evaluates whether the event satisfy the guard in the store. It is defined as:
-\newcommand{\sem}[1]{[ \! | #1 | \! ]}
-\[
-g_{\pattern{v},i,p}(e, \sigma) = p(e[i],\sigma(\pattern v))
-\] The guard is true if and only if the value of $\pattern{v}$ in the automaton store
-and the value of $i$-th parameter of  event $e$ (obtained from the program store) satisfy $p$.
-\begin{example}
-%\rlp{Notation for not-guard should be unified ($\sim$ here ! earlier).}
-Consider the label
- $ !\pattern {v} := \pattern {s}.gets(\pattern {k})$ to be matched with the statement
- {\tt t:=z.gets(h)}. Internally,  the label is compiled down to the
- following sequence of labels
-\[
-\pattern{call} \  \pattern{s}^0 .gets(\pattern {k}^1);  \ \pattern{ret} \ gets = ! \pattern {v}^0
-\] where the upper-script stands for the position of a pattern in an
-expression.
-The statement, on the other hand, generates the trace of events $e_1 \cdot e_2$ where
-\[
-\begin{array}{l l}
- & e_1=(call \ gets, [0: \sem{z}, \ 1: \sem{h}])  \\
- \mbox{ and }  &  e_2= (ret \ gets, [0: \sem{t}]) 
+\begin{array}{r c l}
+  pred(\mathtt{v})(j) &=& {\sf eq}\,reg(\mathtt{v})=j \\
+  pred(\mathtt{!v})(j) &=& {\sf neq}\,reg(\mathtt{v})=j \\
+  pred(l)(j) &=& {\sf eq}\,reg(l)=j \\
+  pred(*)(j) &=& {\sf true} \\
 \end{array}
 \]
-The instantiated guard for the label are:
- $g_{\pattern{s},0,=}$, $g_{\pattern{k},1,=}$, and  $g_{\pattern{v},0, \neq}$.
-Notice that the predicates we want to use to compare patterns and events' values are: equality for the element $\pattern{s}$ and $\pattern{k}$,
-but inequality for \pattern{v} (because of the negation $!$).
-The instantiated guards, can now be evaluated with the events by taking their conjunction:
+We can now interpret labels
+\newcommand{\den}[1]{[\![#1]\!]}
 \[
- (tag(e_1)= \ call \ gets) \wedge g_{\pattern{s},0,=}(\sigma,e_1) \wedge g_{\pattern{k},1,=}(\sigma, e_1)
-\] and
-\[
- (tag(e_2)= ret \ gets) \wedge g_{\pattern{v},0,\neq}(\sigma,e_2).
+\begin{array}{r c l}
+  \den{call\;m(x_1, \ldots, x_n)} &=& \den{m(x_1, \ldots, x_n)} \\
+  \den{ret\;x := m(x_1, \ldots, x_n)} &=& {\sf eq}\,r(x) = n+1 \land \den{m(x_1, \ldots, x_n)} \\
+  \den{m(x_1, \ldots, x_n)} &=& pred(x_1)(1) \land\ldots\land pred(x_n)(n) \\
+\end{array}
 \]
-\end{example}
 
+\subsection{Atomic call/return events}
+\rlp{This is why we need rollback}
+
+\subsection{Directives}
+\rlp{Describe the directives briefly}
 
 \subsection{Observable Events}
 \rg{TODO: Discuss how we pre-filter events base on the method names.}
-
-\subsection{Syntax}
-\rg{TODO: This might remain in the appendix.}
-\rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
 
 
 % >>>
