@@ -642,14 +642,15 @@ If a rollback automaton has only unit transitions, then it is also a (simple) au
 
 The semantics of a rollback automaton cannot be described by the configuration graph from \autoref{def:cgraph}, because that definition does not handle non-unit transitions.
 Instead, we define a rollback configuration graph.
-Perhaps surprisingly, in the case of simple automata, the rollback configuration graph does not coincide to the configuration graph.
-The discrepancy is explained by the different goals of the two models: automata without rollback are meant to be easy to analyze, while rollback automata are meant to be convenient for specifying properties of object-oriented programs.
+Perhaps surprisingly, in the case of simple automata, the rollback configuration graph does not coincide with the configuration graph.
+This discrepancy is explained by the different goals of the two models: automata without rollback are meant to be easy to analyze, while rollback automata are meant to be convenient for specifying properties of object-oriented programs.
 Often the desired behavior for a letter is to remain in the same configuration.
 Without rollback, this behavior is achieved by explicit loops in the automaton.
 The definition of the rollback configuration graph reduces the need to explicitly list such skip loops.
 
 A \emph{rollback configuration} is a pair~$(x,w)$ of a configuration~$x$ and a word~$w$;
 we denote the set of rollback configurations by $Y=X\times\Sigma^*$.
+We think of $w$ as ``yet to be processed''.
 A rollback configuration is \emph{initial} when its configuration is the initial configuration; that is, it has the shape $\bigl((q_0,\sigma_0),w\bigr)$, where $q_0$~is the initial state of the automaton, and $\sigma_0$~is the initial store of the automaton.
 A rollback configuration is \emph{final} when its state is final and its word is the empty word; that is, it has the shape $\bigl((q,\sigma),\epsilon\bigr)$, where $q$~is one of the final states~$F$ of the automaton, and $\epsilon$~is the empty word.
 
@@ -678,8 +679,9 @@ The \emph{rollback language}~${\cal L}_\rho({\cal A})$ of an automaton~${\cal A}
     $y_{i-1}\stackrel{w_i}\hookrightarrow y_i$ for $i\in[k]$,
     $y_k$~final}\,\}
 \end{multline*}
-A simple automaton~${\cal A}$ has both a simple language~${\cal L}({\cal A})$ and a rollback language~${\cal L}_\rho({\cal A})$.
-The languages ${\cal L}({\cal A})$ and ${\cal L}_\rho({\cal A})$ are usually distinct.
+Since a simple automaton~${\cal A}$ is also a roolback automaton, is has both a simple language~${\cal L}({\cal A})$ and a rollback language~${\cal L}_\rho({\cal A})$.
+The treatment of skip transitions implies the aforementioned
+discrepancy, that the languages ${\cal L}({\cal A})$ and ${\cal L}_\rho({\cal A})$ are usually distinct.
 
 \begin{example}
 Consider the automaton consisting of one transition labeled with the guard ${\sf eq}\,1$, from the initial state to the final state.
@@ -704,10 +706,10 @@ We obtain ${\cal A}'$ from~${\cal A}$ by adding unit transitions that do not cha
 First we add a special stuck state~$0$.
 Then, for each state~$q$, including~$0$, we list the guards $g_1$,~$g_2$, \dots,~$g_d$ of the outgoing transitions.
 The configuration $(q,\sigma)$ has no outgoing transition for some~$\ell$ when $(\sigma,\ell)\not\models g_i$ for $i\in[k]$.
-So, we synthesize a guard~$g$ that holds exactly in is situation.
+So, we synthesize a guard~$g$ that holds exactly in this situation.
 Informally, we want to add a loop on~$q$ with the guard $g=\lnot g_1\land\ldots\land\lnot g_d$ and the action ${\sf nop}$.
 There is one small complication: $G_{\rm TOPL}$ does not have a negation operator.
-However, we can negate the simple guard ${\sf eq}$ and ${\sf neq}$, we can use distributivity to put $g$ in disjunctive normal form, and we can simulate disjunction by parallel transitions.
+However, we can negate the simple guards ${\sf eq}$ and ${\sf neq}$, we can use distributivity to put $g$ in disjunctive normal form, and we can simulate disjunction by parallel transitions.
 Thus, if each $g_i$ contains up to $k$ simple conjuncts, we add at most $k^d$ loop transitions on state~$q$.
 \end{proof}
 
