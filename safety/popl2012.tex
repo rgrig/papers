@@ -303,15 +303,13 @@ However, decidable problems do not necessarily have the same complexity for the 
 \begin{figure}[th]\centering
 \begin{tikzpicture}[auto,node distance=5mm]
   \node (lang) {TOPL properties};
-  \node (rtopl) [below=of lang] {TOPL automata with rollback};
-  \node (x) [below=of rtopl] {};
-  \node (topl) [left=of x] {TOPL automata};
-  \node (ra) [right=of x] {register automata};
+  \node (rtopl) [below=of lang] {rollback TOPL automata};
+  \node (topl) [below=of rtopl] {simple TOPL automata};
+  \node (ra) [below=of topl] {register automata};
   \path[draw,->,>=latex]
     (lang) edge (rtopl)
     (rtopl) edge[<->] (topl)
-    (topl) edge (ra)
-    (ra) edge (rtopl);
+    (topl) edge[<->] (ra);
 \end{tikzpicture}
 \caption{Main concepts}
 \label{fig:concepts}
@@ -356,7 +354,7 @@ We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ i
 If the automaton is clear from the context, we omit the subscript.
 
 \begin{definition}\label{def:cgraph}
-The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,\sigma_1) \stackrel{\ell}{\to} (q_2,\sigma_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(\sigma_1,\ell)\models g$ and $(\sigma_1,\sigma_2)\in a(\ell)$.
+The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,s_1) \stackrel{\ell}{\to} (q_2,s_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(s_1,\ell)\models g$ and $(s_1,s_2)\in a(\ell)$.
 \end{definition}
 An automaton is \emph{nondeterministic} when its configuration graph contains two distinct transitions that have the same source~$x_1$ and are labeled by the same letter~$\ell$:
 \[ \text{$x_1\stackrel\ell\to x_2$ and $x_1\stackrel\ell\to x_3$,\quad with $x_2\ne x_3$} \]
@@ -379,7 +377,7 @@ The assignment $({\sf set}\,i:=j)$ is defined as follows:
   ({\sf set}\,i:=j)\bigl((u_1,\ldots,u_n)\bigr) \]
 if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=u_j$.
 The sequence operator~$;$ is defined by saying that the relation $(a_1;a_2)(\ell)$ is the composition of the relations $a_1(\ell)$ and $a_2(\ell)$, for all~$\ell$.
-The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(\sigma,\sigma)\mid\sigma\in S\,\}$ for all~$\ell$.
+The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(s,s)\mid s\in S\,\}$ for all~$\ell$.
 
 Register automata work with arity $n=1$, that is $\Sigma=V$.
 In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
@@ -398,8 +396,7 @@ They are interpreted as follows:
 With these notations we can fix a definition for register automata.
 
 \begin{definition}
-A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels 
-are given by $\Lambda=\bigl\{\,({\sf fresh},{\sf set}\,i),\; ({\sf eq}\,i, {\sf nop})  \mid i\in[m] \,\bigr\}$.
+A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels are given by $\Lambda=\{\,({\sf fresh},{\sf set}\,i)\mid i\in[m]\,\}\cup\{\, ({\sf eq}\,i, {\sf nop})  \mid i\in[m] \,\}$.
 \label{def:ra}
 \end{definition}
 
@@ -412,7 +409,7 @@ The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the 
 \begin{itemize}
 \item $Q=\{1,2,3,4\}$
   and $q_0=1$
-  and $\sigma_0=(\bot,\bot,\bot)$
+  and $s_0=(\bot,\bot,\bot)$
   and $F=\{4\}$
 \item the set of transitions is
 \begin{align*}\delta =\{ & \bigl(1,({\sf fresh},{\sf set}\,1),2\bigr), \ \bigl(2,({\sf fresh},{\sf set}\,2),3\bigr), \\
@@ -421,7 +418,7 @@ The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the 
 \end{itemize}
 Observe that:
 (1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
-(2)~Only values from~$\sigma_0$ may appear multiple times in a store; in this case, only~$\bot$.
+(2)~Only values from~$s_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
 (4)~The action of the last transition is superfluous, but required by the definition.
 \end{example}
@@ -474,7 +471,7 @@ G_{\rm TOPL} &\;::=\; {\sf true} \\
 G_{\rm TOPL} &\;::=\; G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
 \end{align*}
 If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
-These abbreviations are similar to the one used for assignments.
+Recall that $({\sf set}\,i)$ abbreviates $({\sf set}\,i:=1)$.
 The guards are interpreted as follows:
 \begin{align*}
 \bigl((u_1,\ldots,u_m),(v_1,\ldots,v_n)\bigr) &\models {\sf eq}\,i=j
@@ -484,10 +481,10 @@ The guards are interpreted as follows:
 \end{align*}
 and
 \begin{align*}
-(\sigma,\ell) &\models {\sf true}
+(s,\ell) &\models {\sf true}
   &&\text{always} \\
-(\sigma,\ell) &\models g_1\mathrel{\sf and} g_2
-  &&\text{iff $(\sigma,\ell)\models g_1$ and $(\sigma,\ell)\models g_2$}
+(s,\ell) &\models g_1\mathrel{\sf and} g_2
+  &&\text{iff $(s,\ell)\models g_1$ and $(s,\ell)\models g_2$}
 \end{align*}
 
 We can now define TOPL automata.
@@ -506,10 +503,29 @@ It is recognized by the following TOPL automaton with $2$~registers over the alp
   and $\bigl(2,({\sf true}, {\sf set}\,2),3\bigr)$
   and $\bigl(3,({\sf neq}\,1\mathrel{\sf and}{\sf neq}\,2, {\sf nop}),4\bigr)$.
 \end{itemize}
-Any initial store~$\sigma_0$ works.
+Any initial store~$s_0$ works.
 \end{example}
 
-Examples \ref{ex:ra1}~and~\ref{ex:topl1} hint that a general  transformation from TOPL automata to register automata is not very easy to find.
+It is not difficult to see that TOPL automata are at least as expressive as register automata.
+
+\begin{lemma}[RA to TOPL]\label{lemma:ra-to-topl}
+There exists an algorithm that, given a register automaton~${\cal A}$ over the alphabet~$V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a TOPL automaton~${\cal A}'$ over the alphabet $V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions such that
+\[w\in{\cal L}({\cal A}) \iff w\in{\cal L}({\cal A}') \]
+\end{lemma}
+\begin{proof}
+The guard ${\sf fresh}$ is encoded as the guard ${\sf neq}\,1 \mathrel{\sf and} \ldots \mathrel{\sf and}{\sf neq}\,m$.
+All other guards and actions remain unchanged.
+\end{proof}
+
+It is relatively harder to establish that TOPL automata are at most as expressive as register automata.
+
+\begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
+There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet $V'$, with $m+1$~registers, $O(n\,m^{m+1}|Q|)$~states, and $O(n\,m^{m+2}|\delta|)$~transitions such that
+\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
+  f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
+where $f\bigl((v_1,\ldots,v_n)\bigr)$ is $v_1\ldots v_n$ repeated $m+1$ times, and $V'$ is~$V$ with up to $m-1$ extra dummy values.
+\end{lemma}
+\begin{proof}
 We describe an encoding chain ${\cal A}_1\to{\cal A}_2\to{\cal A}_3\to{\cal A}_4$ that goes from a TOPL automaton~${\cal A}_1$ to a register automaton~${\cal A}_4$.
 The encoding ${\cal A}_2\to{\cal A}_3$ is more difficult than the other two.
 
@@ -594,35 +610,18 @@ Again, the transformation of letters is the identity.
 If the automaton~${\cal A}_3$ has $m$~registers and $|\delta|$~transitions, then ${\cal A}_4$~has $m+1$~registers and $O(|\delta|)$ transitions.
 
 \smallskip
-We have proved the following result.
-
-\begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
-There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet $V'$, with $m+1$~registers, $O(n\,m^{m+1}|Q|)$~states, and $O(n\,m^{m+2}|\delta|)$~transitions such that
-\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
-  f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
-where $f\bigl((v_1,\ldots,v_n)\bigr)$ is $v_1\ldots v_n$ repeated $m+1$ times, and $V'$ is~$V$ with up to $m-1$ extra dummy values.
-\end{lemma}
-
-Even with only $2$~registers the increase in size is significant.
-\rg{TODO: Put an example in the appendix.}
-
-\rg{Move RA-to-TOPL before TOPL-to-RA, because it's easier.}
-\begin{lemma}[RA to TOPL]\label{lemma:ra-to-topl}
-There exists an algorithm that, given a register automaton~${\cal A}$ over the alphabet~$V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a TOPL automaton~${\cal A}'$ over the alphabet $V$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions such that
-\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
-  \ell_1\ldots \ell_k\in{\cal L}({\cal A}') \]
-\end{lemma}
-\begin{proof}
-  As might be expected from the theorem, the encoding is quite
-  simple. A guard of the form $({\sf fresh},\;{\sf set}\,i)$ is
-  translated to $({\sf neq}\,1  \mathrel{\sf and} \ldots  \mathrel{\sf and} {\sf neq}\,m,\;{\sf set}\,i)$, while a label of the
-  form $({\sf eq}\,i,\; {\sf nop})$ is simply kept.
+This completes the proof.
 \end{proof}
+
+\begin{remark}
+It follows from \autoref{lemma:ra-to-topl} and \autoref{lemma:topl-to-ra} that simple TOPL automata and register automata are equally expressive.
+\end{remark}
 
 %>>>
 \subsection{Automata with Rollback and Skip} %<<<
 
 TOPL automata are almost convenient for runtime verification of Java.
+\rg{TODO: First explain that calls and returns are differeent moments in time.}
 But, consider the constraint that iterators should advance only if {\tt hasNext} returned {\tt true}.
 The event `{\tt hasNext} was called on the iterator that is being tracked' and the event `{\tt hasNext} returned {\tt true}' are distinct.
 Yet, it is convenient to pretend that two such consecutive events make one composed event.
@@ -631,13 +630,13 @@ This motivates rollback, a mechanism by which transitions consume multiple conse
 \begin{definition}\label{def:rollback}
 A \emph{rollback automaton}~${\cal A}$ consists of:
 \begin{itemize}
-\item a finite set~$Q$ of states; an initial state $q_0\in Q$; an initial store $\sigma_0\in S$; a set $F\subseteq Q$ of final states
-\item a finite transition relation $\delta\subset Q\times L^*\times Q$
+\item a finite set~$Q$ of states; an initial state $q_0\in Q$; an initial store $s_0\in S$; a set $F\subseteq Q$ of final states
+\item a finite transition relation $\delta\subseteq Q\times\Lambda^*\times Q$
 \end{itemize}
-where $L$ is a set of labels as defined in \autoref{sec:overview}.
+where $\Lambda$ is a set of labels as defined in \autoref{sec:overview}.
 \end{definition}
 
-The difference between rollback automata and (simple) automata, according to definitions \ref{def:automaton}~and~\ref{def:rollback}, is that rollback transitions have a list of labels ${\bf l}=[(g_1,a_1),\ldots,(g_d,a_d)]$, while simple transitions have exactly one label $(g,a)$.
+The difference between rollback automata and (simple) automata, according to definitions \ref{def:automaton}~and~\ref{def:rollback}, is that rollback transitions have a list of labels $\bar\lambda=\lambda_1\ldots\lambda_d$, while simple transitions have exactly one label~$\lambda$.
 A transition with exactly one label is said to be a \emph{unit transition}.
 If a rollback automaton has only unit transitions, then it is also a (simple) automaton.
 
@@ -652,20 +651,24 @@ The definition of the rollback configuration graph reduces the need to explicitl
 A \emph{rollback configuration} is a pair~$(x,w)$ of a configuration~$x$ and a word~$w$;
 we denote the set of rollback configurations by $Y=X\times\Sigma^*$.
 We think of $w$ as ``yet to be processed''.
-A rollback configuration is \emph{initial} when its configuration is the initial configuration; that is, it has the shape $\bigl((q_0,\sigma_0),w\bigr)$, where $q_0$~is the initial state of the automaton, and $\sigma_0$~is the initial store of the automaton.
-A rollback configuration is \emph{final} when its state is final and its word is the empty word; that is, it has the shape $\bigl((q,\sigma),\epsilon\bigr)$, where $q$~is one of the final states~$F$ of the automaton, and $\epsilon$~is the empty word.
+A rollback configuration is \emph{initial} when its configuration is the initial configuration; that is, it has the shape $\bigl((q_0,s_0),w\bigr)$, where $q_0$~is the initial state of the automaton, and $s_0$~is the initial store of the automaton.
+A rollback configuration is \emph{final} when its state is final and its word is the empty word; that is, it has the shape $\bigl((q,s),\epsilon\bigr)$, where $q$~is one of the final states~$F$ of the automaton, and $\epsilon$~is the empty word.
+The rollback configuration graph is a subset of $Y\times\Sigma^*\times Y$.
+We write \[ y_1 \stackrel w\hookrightarrow_{\cal A} y_2\] to mean that $(y_1,w,y_2)$ is in the rollback configuration graph of~${\cal A}$.
+If the automaton is clear from the context, we omit the subscript.
 
-The (simple) automaton ${\cal T}\bigl(\sigma_0;(g_1,a_1),\ldots,(g_d,a_d)\bigr)$ is defined to have states $0$,~$1$, \dots,~$d$, out of which $0$~is initial and $d$~is final, transitions $\bigl(i-1,(g_i,a_i),i\bigr)$ for all $i\in[d]$, and initial store~$\sigma_0$.
+The following concepts simplify the definition of the rollback configuration graph.
+The (simple) automaton \[{\cal T}\bigl(s_0;(g_1,a_1),\ldots,(g_d,a_d)\bigr)\] is defined to have states $0$,~$1$, \dots,~$d$, out of which $0$~is initial and $d$~is final, transitions $\bigl(i-1,(g_i,a_i),i\bigr)$ for all $i\in[d]$, and initial store~$s_0$.
 Recall that $\ell_1\ldots\ell_k\in{\cal L}({\cal A})$ when there exist (not necessarily distinct) configurations $x_0$,~$x_1$, \dots,~$x_k$ such that $x_0$~is the initial configuration, $x_k$~is a final configuration, and \[x_{i-1}\stackrel{\ell_i}\to_{\cal A}x_i\qquad\text{for $i\in[k]$}\]
-When the store of~$x_k$ is~$\sigma_k$ we say that \emph{${\cal A}$ can accept $\ell_1\ldots\ell_k$ with store~$\sigma_k$}.
+When the store of~$x_k$ is~$s_k$ we say that \emph{${\cal A}$ can accept $\ell_1\ldots\ell_k$ with store~$s_k$}.
 A word may be accepted with multiple stores.
 
 \begin{definition}\label{def:rcg}
 The \emph{rollback configuration graph} of an automaton consists of two types of transitions:
 \begin{enumerate}
 \item \emph{rollback transitions}
-  \[\bigl((q_1,\sigma_1),ww'\bigr)\stackrel w\hookrightarrow\bigl((q_2,\sigma_2),w'\bigr)\]
-when there exists a transition $(q_1,{\bf l},q_2)\in\delta$ such that ${\cal T}(\sigma_1;{\bf l})$ can accept $w$ with store~$\sigma_2$
+  \[\bigl((q_1,s_1),ww'\bigr)\stackrel w\hookrightarrow\bigl((q_2,s_2),w'\bigr)\]
+when there exists a transition $(q_1,{\bf l},q_2)\in\delta$ such that ${\cal T}(s_1;{\bf l})$ can accept $w$ with store~$s_2$
 \item \emph{skip transitions}
   \[(x,\ell w)\stackrel\ell\hookrightarrow(x,w)\]
 when no rollback transition starts from $(x,\ell w)$
@@ -694,21 +697,21 @@ The rollback language, on the other hand, consists of all words that contain the
 It is possible, however, to transform TOPL automata such that their rollback languages coincide with their simple languages.
 
 \begin{lemma}[TOPL to rTOPL]
-There exists an algorithm that, given a TOPL automaton~${\cal A}$ with $|Q|$~states, at most $d$~transitions outgoing of each state, and guards with at most $k$~conjuncts, builds a TOPL automaton~${\cal A}'$ with $|Q|+1$ states and at most $|Q|d+(|Q|+1)k^d$ transitions such that
+There exists an algorithm that, given a TOPL automaton~${\cal A}$ with $|Q|$~states, at most $d$~transitions outgoing of each state, and guards with at most $k$~conjuncts, builds a TOPL automaton~${\cal A}'$ with $|Q|+1$ states and at most $(d+k^d)|Q|$ transitions such that
 \[ w\in{\cal L}({\cal A}) \iff w\in{\cal L}_\rho({\cal A}')\]
 \end{lemma}
 \begin{proof}
 For the simple automaton~${\cal A}$ compare the simple configuration graph with the rollback configuration graph.
 Each simple transition $x_1\to^\ell x_2$ corresponds to several rollback transitions $ (x_1,\ell w)\hookrightarrow^\ell (x_2,w)$, for all $w$.
-The rollback graph, however, also has skip transitions $(x,\ell w)\hookrightarrow^\ell (x,w)$ for configurations~$x$ without outgoing rollback transitions.
-Thus, the simple language and the rollback language would agree if all configurations would have at least one outgoing simple transition.
+The rollback graph, however, also has skip transitions $(x,\ell w)\hookrightarrow^\ell (x,w)$ for configurations~$x$ that have no outgoing rollback transitions.
+Thus, the simple language and the rollback language would agree if all simple configurations would have at least one outgoing simple transition.
 
-We obtain ${\cal A}'$ from~${\cal A}$ by adding unit transitions that do not change the simple language.
-First we add a special stuck state~$0$.
-Then, for each state~$q$, including~$0$, we list the guards $g_1$,~$g_2$, \dots,~$g_d$ of the outgoing transitions.
-The configuration $(q,\sigma)$ has no outgoing transition for some~$\ell$ when $(\sigma,\ell)\not\models g_i$ for $i\in[k]$.
+We obtain ${\cal A}'$ from~${\cal A}$ by adding unit transitions that do not change the simple language, but ensure that all simple configurations have an outgoing transition.
+First we add a special stuck state~$q_{\rm stuck}$.
+Then, for each original state~$q$, we list the guards $g_1$,~$g_2$, \dots,~$g_d$ of the outgoing transitions.
+The configuration $(q,s)$ has no outgoing transition for some~$\ell$ when $(s,\ell)\not\models g_i$ for $i\in[k]$.
 So, we synthesize a guard~$g$ that holds exactly in this situation.
-Informally, we want to add a loop on~$q$ with the guard $g=\lnot g_1\land\ldots\land\lnot g_d$ and the action ${\sf nop}$.
+Informally, we want to add a transition from~$q$ to~$q_{\rm stuck}$ with the guard $g=\lnot g_1\land\ldots\land\lnot g_d$ and the action ${\sf nop}$.
 There is one small complication: $G_{\rm TOPL}$ does not have a negation operator.
 However, we can negate the simple guards ${\sf eq}$ and ${\sf neq}$, we can use distributivity to put $g$ in disjunctive normal form, and we can simulate disjunction by parallel transitions.
 Thus, if each $g_i$ contains up to $k$ simple conjuncts, we add at most $k^d$ loop transitions on state~$q$.
@@ -721,7 +724,7 @@ Rollback, which ensures that several letters occur atomically, and skip, which f
 \begin{example}
 Consider the following rollback TOPL automaton with $2$~registers over the alphabet $\Sigma=V=\{A,B\}$:
 \begin{itemize}
-\item $Q=\{1,2,3\}$ and $q_0=1$ and $\sigma_0=(A,B)$ and $F=\{3\}$
+\item $Q=\{1,2,3\}$ and $q_0=1$ and $s_0=(A,B)$ and $F=\{3\}$
 \item $\delta$ consists of $\bigl(1,\bigl[({\sf eq}\,2,{\sf nop}),({\sf eq}\,1,{\sf nop}),({\sf eq}\,2,{\sf nop})\bigr],2\bigr)$ and $\bigl(1,\bigl[({\sf eq}\,1, {\sf nop})\bigr],3\bigr)$
 \end{itemize}
 The rollback language of this is automaton consists of those words in which the first $A$ is not surrounded by two $B$s.
@@ -732,10 +735,10 @@ The key idea for encoding rollback TOPL automata into simple TOPL automata is th
 \emquote{It is sufficient to simulate rollback configurations with words shorter than the longest transition.}
 The length of a transition $(q_1,{\bf l},q_2)$ is the number~$|{\bf l}|$ of labels.
 Since the set~$\delta$ of transitions is finite, there is a maximum~$d$ of the transition lengths.
-The rollback configuration $((q,\sigma),w)$ is simulated by some configuration $((q,\sigma),w')$, where $w'$ is a prefix of~$w$, and $|w'|<d$.
-Because $|w'|$ is bounded, we can represent $((q,\sigma),w')$ by a simple configuration $(q',\sigma')$ as follows.
-The store~$\sigma'$ contains the values from~$\sigma$ and those from~$w'$.
-If $\sigma$~has $m$~registers, and letters are $n$-tuples, then $\sigma'$~has $m+(d-1)n$ registers.
+The rollback configuration $((q,s),w)$ is simulated by some configuration $((q,s),w')$, where $w'$ is a prefix of~$w$, and $|w'|<d$.
+Because $|w'|$ is bounded, we can represent $((q,s),w')$ by a simple configuration $(q',s')$ as follows.
+The store~$s'$ contains the values from~$s$ and those from~$w'$.
+If $s$~has $m$~registers, and letters are $n$-tuples, then $s'$~has $m+(d-1)n$ registers.
 The state~$q'$ encodes both the state~$q$ and which of the registers store~$w'$.
 
 
