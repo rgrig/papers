@@ -124,7 +124,7 @@
 \begin{abstract} % <<<
 We introduce a new formal framework aimed at checking temporal safety properties of object-oriented programs.
 The underpinning theoretical foundations of our framework is an extended class of {\em register automata}.
-As registers' value can be updated, our automata are able to express highly complex properties of systems involving multiple interacting objects.
+As registers' values can be updated, our automata are able to express highly complex properties of systems involving multiple interacting objects.
 Specifications are then used to instrument Java bytecode so that their violations can be automatically detected at runtime.
 The precision of the monitoring system is tunable by means of a parameter.
 We have validated our technique by checking several safety properties on large open source projects.
@@ -771,10 +771,11 @@ We model the semantics of programs and properties as sets of event
 traces. We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
-Given a TOPL Property, we wish to construct a TOPL rollback automaton,
-such that the language of the automaton is the set of event traces of the property.
-Thus we choose the values of the automaton to be the observable events
-of the property.
+Given a TOPL Property $P$, we wish to construct a TOPL rollback
+automaton $A_P$,
+such that the language of the automaton is the set of event traces of $P$.
+Thus we choose the values of $A_P$ to be the observable events
+of $P$.
 
 \subsection{The Alphabet}
 In \autoref{sec:syntax} we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
@@ -786,28 +787,33 @@ In the simple case, a method pattern consists of a string pattern for the name o
 The more interesting case is when there are value patterns for each argument and perhaps even for the result.
 Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
 
-Thus, the values of interest come from three sources: event ids, primitive
-values and object references: The set $E$ of event ids is given by
+Thus, for $A_P$, the values of interest come from three
+sources; event ids and Java values: The set $E$ of event ids is given by
 grammar
 \[
 call\ m \mid return\ m \mid m
 \]
-where $m$ is one of the method names known to the property.
+where $m$ is one of the method names known to $P$, ie method
+names mentioned on guards of $P$ prefixed with strings mentioned in
+$P$'s prefix directive.
 
-The set $V_p$ of primitive values is the set of primitive Java values
+The set $V_J$ of primitive values is the set of Java values
 plus a dummy value $\bot$.
 
-The set $R$ of object references is the set of identifiers
-mentioned on guards of the property prefixed with strings specified by
-the prefix directive.
+%The set $R$ of object references is the set of identifiers
+%mentioned on guards of the property prefixed with strings specified by
+%the prefix directive.
 
-The values are then $V = E + V_p + R$, and the alphabet is $V^{n+1}$,
+The values are then $V = E + V_J $, and the alphabet is $V^{n+1}$,
 where $n$ is the maximal arity of a method mentioned in the property.
 
-We are only concerned with the subset $E \times V^n$, ie the tuples where the first componen is an event
-id. An event $call\ m(a, b, c)$ in a property with a maximal arity of
-5 would be reprensted by $(call\ m, a, b, c, \bot, \bot)$.
+We are only concerned with the subset $E \times V^n$, ie the tuples where the first component is an event
+id. If $P$ has a maximal arity of
+5, the event $call\ m(a, b, c)$  would be understood as $(call\ m, a,
+b, c, \bot, \bot)$ by $A_P$.
 
+We now explain how the labels of $P$ are transformed into guards and
+actions of $A_P$.
 \rg{TODO: Explain that the alphabet $V^n$ actually has some extra structure.
 The values are partitioned into event ids, primitive values, and object references.
 For letter $(v_1,\ldots,v_n)$ the first component $v_1$ is always an event id.
