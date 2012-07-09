@@ -216,19 +216,24 @@ The formalization of the above constraint is non-trivial since it needs to keep 
 \end{figure}
 %The program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
 %There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-To understand the need for keeping track of variables updates, consider the following snippet of code
-\begin{verbatim}
- ....
- i=s.itr();
- .....
- while (ch.more_input()) {
-   CharArray c = ch.get_input();
-   s = Concat(s,c);
- }
-\end{verbatim}
-where strings are read  from an input channel and accumulated in the {\tt Concat} object {\tt s}.
-The number of concatenations is not known in advance. Consequently, in order to have a finite specification,
-it is necessary to be able to re-bound the value of the specification variables in different moment in time.
+%To understand the need for keeping track of variables updates, consider the following snippet of code
+%\begin{verbatim}
+% ....
+% i=s.itr();
+% .....
+% while (ch.more_input()) {
+%   CharArray c = ch.get_input();
+%   s = Concat(s,c);
+% }
+%\end{verbatim}
+%where strings are read  from an input channel and accumulated in the {\tt Concat} object {\tt s}.
+To understand the need for variable updates in the specification, consider the case where 
+{\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.} 
+Rope's operations like insert, concat, delete may update the shape of the tree and references to its root. 
+In a temporal specification we would then need either different logical variable for the different values of the root or
+the ability to re-bound variable in the temporal specification. 
+As  number of the operations on the rope is not known, and  in general can be unbounded, re-binding specification variables with
+different values during the computation allows to keep the specification finite. 
 
 % >>>
 % >>>
