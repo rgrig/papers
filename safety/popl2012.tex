@@ -235,6 +235,55 @@ the ability to re-bound variable in the temporal specification.
 As  number of the operations on the rope is not known, and  in general can be unbounded, re-binding specification variables with
 different values during the computation allows to keep the specification finite. 
 
+\paragraph{Data Structures Shapes.}
+One interesting kind of properties for object-oriented programs is the ability to reason about the evolving shape of the heap composed by the allocated objects.
+\eqquote{The shape of the list should not become neither circular nor pan-handle.}{q:concur-it}.
+This is useful for example when we traverse a loop like the following
+\begin{verbatim}
+  while (l.next()!=null) {
+     ......
+  }
+\end{verbatim}
+as a circular/pan-handle list would cause non-termination. Also for encoding properties of this kind it is necessary to be able to update the 
+value of the specification variables.
+
+%The following TOPL properties test the shape of a linked list and
+%reports an error if it is cyclic or it has the pan-handle shape (i.e.,
+%there is a lasso at some point). 
+%Directives are omitted.
+%%
+%\delimitVerbatim
+%\begin{Verbatim}[commandchars=\\\{\}]
+% property ListNotCyclic
+%   start -> start: *
+%   start -> a: \pattern{X} := *.getList()
+%   a -> a:     \pattern{X} := x.next()
+%   a -> b:     \pattern{Y} := x.next()
+%   b -> b:     \pattern{Y} := y.next()
+%   b -> error: x := y.next()
+%   a -> error: x := x.next()
+%\end{Verbatim}
+%\delimitVerbatim
+%The idea is that this property will bind the automaton variable $x$ with any possible object in the list, and the $y$ with any possible successors (via the next field) of the current binding of $x$.
+%Therefore, if there is a lasso, in the list, this will be detected when a new biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$.
+%The transition \texttt{a ->error} detect the case where there is an object pointing to itself.
+
+%
+%The following property detects when a dictionary overwrite one of its bindings.
+%\delimitVerbatim
+%\begin{Verbatim}[commandchars=\\\{\}]
+% property BadDictionary
+%   message "dictionary overwrites its bindings"
+%   observe <Dictionary.*>
+%   prefix <Dictionary>
+%   start -> start: *
+%   start -> written:   \pattern{D}.put(\pattern{K}, \pattern{V})
+%   written -> written: d.put(k, \pattern{V})
+%   written -> error:   !v := d.get(k)
+%\end{Verbatim}
+%\delimitVerbatim
+%The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
+
 % >>>
 % >>>
 \section{Overview and Background}\label{sec:overview} % <<<
