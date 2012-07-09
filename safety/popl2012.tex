@@ -1151,8 +1151,7 @@ Also, one could iterate over a subrope.}
 % >>>
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
-
-Our tool\footnote{\url{http://rgrig.github.com/topl}} checks whether a Java program violates a TOPL property.
+We have implemented the formal framework in a tool\footnote{\url{http://rgrig.github.com/topl}} for checking whether a Java program violates 
 The tool consists of two parts: a compiler and a checker.
 The TOPL compiler ({\tt toplc}) instruments Java bytecode;
 The TOPL checker (class {\tt topl.Checker}) monitors the execution and reports violations.
@@ -1193,134 +1192,183 @@ The configuration parameters of the checker include:
 \item \emph{Collect call stacks}.
   A {\tt true} value includes call stacks in violation reports.
   A {\tt false} value reduces the space and time overhead.
+  \item {\em Approximantion method.} The tool allow different ways in which the history informations are forgotten when we have reached the max amount of info we can keep.
 \end{itemize}
 
-\subsection{The TOPL Compiler} \label{sec:toplc} % <<<
-
-The compiler has six phases, which are described below.
-
-\paragraph{Parsing and Desugaring.}
-TOPL properties are read first, before the Java project.
-The parser desugars the TOPL properties into a simpler, intermediate form where
-\begin{itemize}
-\item Method-name patterns are prefixed according to the {\tt prefix} directive.
-\item Lowercase patterns and constant patterns are turned into guards.
-\item Uppercase patterns are turned into actions.
-\item Transitions of length 2 or of length 1 are built according to whether the guards and the actions refer to both call-time and return-time or not. (In particular, there are no transitions of length~$0$.)
-\end{itemize}
-The parser builds an AST that closely follows the language for which we gave formal operational semantics.
-
-\paragraph{Static Checks.}
-Next, the compiler checks that the property is well-formed:
-\begin{itemize}
-\item two parallel writes to automaton variables have distinct destinations;
-\item reads from automaton variables must be preceded by writes.
-\end{itemize}
-
-The compiler warns if some vertices are unused.
-Properties with unused vertices are still well-formed.
-We plan to also statically check whether the automaton can never fail.
-
-\paragraph{Generate Event Identifiers.}
-
-In this phase, each observable method is assigned two identifiers, one for the call event and one for the return event.
-A method is \emph{observable} when its full name or the full name of a method it overrides matches the {\tt observe} directive.
-The bytecode is read to collect all method names and to build the inheritance tree.
-
-\paragraph{Construct the Automaton.}
-
-In this phase, all properties are merged into one automaton.
-From now on vertices are integers, rather than strings.
-All vertices that had the name \start are now in the set of start vertices;
-all vertices that had the name \error now have an error message attached.
-Each TOPL property has its own {\tt observe} directive.
-This information must be encoded in the automaton:
-Each vertex is given a set of event identifiers.
-
-The guards of the automaton are of two kinds.
-Those that test program values are essentially left unchanged in this phase.
-Those that check the event type, the method name, and the method arity are all transformed into one guard that is represented by a set of event identifiers.
-The evaluation of the guard at runtime is a set containment test.
-
-The automaton is dumped into the file {\tt Property.text}.
-The TOPL compiler does not interpret Java expressions.
-If a guard compares a program value with a literal, then the literal is saved in an array in {\tt Property.java}, and {\tt Property.text} points to it.
-
-\paragraph{Generate Checker Configurations.}
-
-In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java}.
-This file serves three purposes:
-\begin{itemize}
-\item
-It contains an array with all the constants used in the TOPL property.
-For example, if a guard requires that a certain argument equals the expression~$21/7$, then $21/7$ is stored in this array.
-\item
-It activates the checker.
-The checker is inactive by default so that the Java standard library may be instrumented.
-The JVM uses certain parts of the standard library during its own startup.
-If those parts happen to be instrumented then they call into the checker.
-If the checker is inactive it immediately returns and the execution continues.
-If the checker would be active then it will call back into the standard library and the JVM will crash.
-\item
-For convenience, it contains code that configures the checker.
-To change the parameters of the checker the user changes this code and recompiles {\tt Property.java}.
-\end{itemize}
-
-\paragraph{Instrumentation.}
-
-In this phase, the bytecode of observable methods is instrumented.
+\paragraph{The TOPL Compiler.} \label{sec:toplc} % <<<
+The compiler has the following five phases.
+\begin{enumerate}
+\item {\em Parsing and Desugaring.}
+TOPL properties are read first, before the Java project, and desugared into a simpler, intermediate format. 
+\item {\em Static Checks.} The compiler checks that the property is well-formed. For example, reads from automaton variables must be preceded by writes. We plan to also statically check whether the automaton can never fail.
+%
+\item {\em Construct the Automaton.} All properties are merged into one automaton that is  dumped into the file {\tt Property.text}.
+%
+\item {\em Generate Checker Configurations.}
+In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java} containing 
+info used by the TOPL property. Moreover it contains code that configures the checker.
+%
+\item {\em Instrumentation.}
+The bytecode of observable methods is instrumented.\footnote{To instrument Java bytecode we use a fork of the library 
+Barista~\cite{barista}.}
 The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
 This method takes an event as an argument.
 Each event carries an identifier and an array of {\tt Object}.
 The array holds either the arguments, or the return value.
+\end{enumerate}
 
-To instrument Java bytecode we use a fork of the library Barista~\cite{barista}.
-The high-level bytecode representation of the original library is rather low-level.
-For example, it still represents jumps as byte counts.
-We changed Barista's high-level representation to make it easy to use for instrumentation.
-Hence, we had to rewrite the code that transformed between the low-level and the high-level representation.
-These changes amount to more than half our implementation effort.
-(For example, adding the number of lines changed by each commit gives $48\rm\,K$.)
+
+%\paragraph{Parsing and Desugaring.}
+%TOPL properties are read first, before the Java project.
+%The parser desugars the TOPL properties into a simpler, intermediate form where
+%\begin{itemize}
+%\item Method-name patterns are prefixed according to the {\tt prefix} directive.
+%\item Lowercase patterns and constant patterns are turned into guards.
+%\item Uppercase patterns are turned into actions.
+%\item Transitions of length 2 or of length 1 are built according to whether the guards and the actions refer to both call-time and return-time or not. (In particular, there are no transitions of length~$0$.)
+%\end{itemize}
+%The parser builds an AST that closely follows the language for which we gave formal operational semantics.
+
+%\paragraph{Static Checks.}
+%Next, the compiler checks that the property is well-formed:
+%\begin{itemize}
+%\item two parallel writes to automaton variables have distinct destinations;
+%\item reads from automaton variables must be preceded by writes.
+%\end{itemize}
+%
+%The compiler warns if some vertices are unused.
+%Properties with unused vertices are still well-formed.
+%We plan to also statically check whether the automaton can never fail.
+
+%\paragraph{Generate Event Identifiers.}
+
+%In this phase, each observable method is assigned two identifiers, one for the call event and one for the return event.
+%A method is \emph{observable} when its full name or the full name of a method it overrides matches the {\tt observe} directive.
+%The bytecode is read to collect all method names and to build the inheritance tree.
+
+%\paragraph{Construct the Automaton.}
+
+%In this phase, all properties are merged into one automaton.
+%From now on vertices are integers, rather than strings.
+%All vertices that had the name \start are now in the set of start vertices;
+%all vertices that had the name \error now have an error message attached.
+%Each TOPL property has its own {\tt observe} directive.
+%This information must be encoded in the automaton:
+%Each vertex is given a set of event identifiers.
+
+%The guards of the automaton are of two kinds.
+%Those that test program values are essentially left unchanged in this phase.
+%Those that check the event type, the method name, and the method arity are all transformed into one guard that is represented by a set of event identifiers.
+%The evaluation of the guard at runtime is a set containment test.
+
+%The automaton is dumped into the file {\tt Property.text}.
+%The TOPL compiler does not interpret Java expressions.
+%If a guard compares a program value with a literal, then the literal is saved in an array in {\tt Property.java}, and {\tt Property.text} points to it.
+%
+%\paragraph{Generate Checker Configurations.}
+
+%In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java}.
+%This file serves three purposes:
+%\begin{itemize}
+%\item
+%It contains an array with all the constants used in the TOPL property.
+%For example, if a guard requires that a certain argument equals the expression~$21/7$, then $21/7$ is stored in this array.
+%\item
+%It activates the checker.
+%The checker is inactive by default so that the Java standard library may be instrumented.
+%The JVM uses certain parts of the standard library during its own startup.
+%If those parts happen to be instrumented then they call into the checker.
+%If the checker is inactive it immediately returns and the execution continues.
+%If the checker would be active then it will call back into the standard library and the JVM will crash.
+%\item
+%For convenience, it contains code that configures the checker.
+%To change the parameters of the checker the user changes this code and recompiles {\tt Property.java}.
+%\end{itemize}
+%
+%\paragraph{Instrumentation.}
+
+%In this phase, the bytecode of observable methods is instrumented.
+%The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
+%This method takes an event as an argument.
+%Each event carries an identifier and an array of {\tt Object}.
+%The array holds either the arguments, or the return value.
+
+%To instrument Java bytecode we use a fork of the library Barista~\cite{barista}.
+%The high-level bytecode representation of the original library is rather low-level.
+%For example, it still represents jumps as byte counts.
+%We changed Barista's high-level representation to make it easy to use for instrumentation.
+%Hence, we had to rewrite the code that transformed between the low-level and the high-level representation.
+%These changes amount to more than half our implementation effort.
+%(For example, adding the number of lines changed by each commit gives $48\rm\,K$.)
 
 % >>>
 \subsection{The TOPL Checker} % <<<
-
-The checker logs the property violations that it detects.
-Its components are:
-\begin{itemize}
-\item the data structures used to represent the automaton, and a parser that instantiates them while processing {\tt Property.text};
-\item the data structures used to represent the current state of the checker;
-\item the code that handles one incoming event;
-\item the code that garbage collects old states; and
-\item the code that chooses which of the active states to forget.
-\end{itemize}
-
-\paragraph{States.}
-The checker maintains a set of active states.
-A state consists of vertex, a store, and a queue of events yet to be processed.
-The vertex is simply an integer.
-The store maps automaton variables ({\tt in}) to values ({\tt Object}).
-A maximum size of~$2$ for the queue of events suffices because transitions have depth $1$~or~$2$.
-(If all transitions would have the same depth, then one global queue of events would suffice.
-Since the transition depth is bounded the checker could still use a couple of global queues, but we chose for now an implementation that is easy to generalize.)
-
-States are created produced by applying an action to another state (called the parent).
+The checker logs the property violations that it detects. 
+Internally it  maintains a set of active states.
+New states are  produced by applying an action to another state (called the parent).
 For error reporting, each state keeps track of its parent.
-An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
-The new active states and their parent are likely to have similar stores.
 The implementation takes advantage of this fact by using persistent (functional) sets for bindings to represent stores; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
-
-\paragraph{Step.}
-
+%
 The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
-It corresponds to the operational semantics (\autoref{def:rcg}), but is written in an imperative style.
-For each transition outgoing from a vertex, lines~\hbox{11--17} follow the step transitions from \autoref{def:rcg}.
-Line~17 is reached if the rule (Step) does not apply, and execution continues with the next outgoing transition.
-Line~18 is reached if the rule (Step) does apply.
-Its effect is recorded by adding a new state to set~$A$
-If rule (Step) did not apply for any outgoing transition, then rule (Silent) is applied by lines~22--23.
+It implements the execution of transition in  TOPL automata with rollback.
+\dd{Radu please can explain the procedure?}
 
-\begin{figure*}[t]
+
+As states point to their parent, we need some mean to control overhead.  This is done by configurable parameter for 
+the history length~$h$ in {\tt Property.java}.
+We should then allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
+After each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
+However, if there are $n$~active states, the traversal would take $O(nh)$~time.
+The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
+So, the checker would become much slower if $h>d$, which usually is the case.
+%
+One solution could be to perform the BFS once in every $h/d$~steps.
+The solution we implemented tries to better address the average case.
+We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
+
+The set of active states of a nondeterministic automaton can be unbounded.
+Therefore, like in the case of trace lengths, we impose a bound on the cardinality of set of active states. 
+The bound can be configured by the user that needs also to decide 
+the  strategy for forgetting states. We implemented three strategies: random, newest, and oldest.
+Newest\slash oldest refer to a time attached to states.
+The time of a state is the number of times a transition (i.e., {\sc STEP}) was taken in order to produce the state.
+
+
+%Its components are:
+%\begin{itemize}
+%\item the data structures used to represent the automaton, and a parser that instantiates them while processing {\tt Property.text};
+%\item the data structures used to represent the current state of the checker;
+%\item the code that handles one incoming event;
+%\item the code that garbage collects old states; and
+%\item the code that chooses which of the active states to forget.
+%\end{itemize}
+
+%\paragraph{States.}
+%The checker maintains a set of active states.
+%A state consists of vertex, a store, and a queue of events yet to be processed.
+%The vertex is simply an integer.
+%The store maps automaton variables ({\tt in}) to values ({\tt Object}).
+%A maximum size of~$2$ for the queue of events suffices because transitions have depth $1$~or~$2$.
+%(If all transitions would have the same depth, then one global queue of events would suffice.
+%Since the transition depth is bounded the checker could still use a couple of global queues, but we chose for now an implementation that is easy to generalize.)
+
+%States are created produced by applying an action to another state (called the parent).
+%For error reporting, each state keeps track of its parent.
+%An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
+%The new active states and their parent are likely to have similar stores.
+%The implementation takes advantage of this fact by using persistent (functional) sets for bindings to represent stores; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
+%
+%\paragraph{Step.}
+
+%The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
+%It corresponds to the operational semantics (\autoref{def:rcg}), but is written in an imperative style.
+%For each transition outgoing from a vertex, lines~\hbox{11--17} follow the step transitions from \autoref{def:rcg}.
+%Line~17 is reached if the rule (Step) does not apply, and execution continues with the next outgoing transition.
+%Line~18 is reached if the rule (Step) does apply.
+%Its effect is recorded by adding a new state to set~$A$
+%If rule (Step) did not apply for any outgoing transition, then rule (Silent) is applied by lines~22--23.
+
+\begin{figure}[t]
 \begin{center}
 \begin{alg}
 \^  $\proc{Step}(e)$
@@ -1355,48 +1403,48 @@ If rule (Step) did not apply for any outgoing transition, then rule (Silent) is 
 }
 \label{fig:checker.step}
 \end{center}
-\end{figure*}
-
-\paragraph{Garbage Collection.}
-
-States point to their parent when they are created.
-But, if they continue to do so forever, then the memory footprint of the states would be proportional to the number of events received by the checker.
-The space overhead would be too big for long running programs.
-Usually, most of the states are not needed.
-The typical property has a $*$-loop on the \start vertex.
-An error trace going all the way back to the beginning would mention that this loop is taken many times before something interesting happens.
-In general it is very unlikely that the user needs a trace with more than about $10$~states.
-The history length~$h$ is one of the parameters configurable from {\tt Property.java}.
-
-We should allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
-After each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
-However, if there are $n$~active states, the traversal would take $O(nh)$~time.
-The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
-So, the checker would become much slower if $h>d$, which usually is the case.
-
-One solution could be to perform the BFS once in every $h/d$~steps.
-The solution we implemented tries to better address the average case.
-We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
-
-\paragraph{Approximation.}
-
-\autoref{fig:completeness} illustrates why the checker needs unbounded memory if it must not miss bugs exhibited by an execution.
-The problem is essentially that the set of active states of a nondeterministic automaton is unbounded.
-Of course, an arbitrary amount of space overhead is unacceptable.
-
-\begin{figure}[t]
-\begin{center}
-\include{Completeness}
-\caption{Counterexample to runtime completeness.}
-\label{fig:completeness}
-\end{center}
 \end{figure}
 
-Like in the case of trace lengths, we impose a limit that is fixed but configurable by the user.
-In this case, however, we must also pick which active states to forget.
-We implemented three strategies: random, newest, and oldest.
-The words newest\slash oldest refer to a time that is attached to states, and is one more than the time of the parent state.
-The time of a state is the number of times the (Step) transition of the operational semantics was taken in order to produce the state.
+%\paragraph{Garbage Collection.}
+
+%States point to their parent when they are created.
+%But, if they continue to do so forever, then the memory footprint of the states would be proportional to the number of events received by the checker.
+%The space overhead would be too big for long running programs.
+%Usually, most of the states are not needed.
+%The typical property has a $*$-loop on the \start vertex.
+%An error trace going all the way back to the beginning would mention that this loop is taken many times before something interesting happens.
+%In general it is very unlikely that the user needs a trace with more than about $10$~states.
+%The history length~$h$ is one of the parameters configurable from {\tt Property.java}.
+
+%We should allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
+%After each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
+%However, if there are $n$~active states, the traversal would take $O(nh)$~time.
+%The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
+%So, the checker would become much slower if $h>d$, which usually is the case.
+
+%One solution could be to perform the BFS once in every $h/d$~steps.
+%The solution we implemented tries to better address the average case.
+%We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
+
+%\paragraph{Approximation.}
+
+%\autoref{fig:completeness} illustrates why the checker needs unbounded memory if it must not miss bugs exhibited by an execution.
+%The problem is essentially that the set of active states of a nondeterministic automaton is unbounded.
+%Of course, an arbitrary amount of space overhead is unacceptable.
+
+%\begin{figure}[t]
+%\begin{center}
+%\include{Completeness}
+%\caption{Counterexample to runtime completeness.}
+%\label{fig:completeness}
+%\end{center}
+%\end{figure}
+
+%Like in the case of trace lengths, we impose a limit that is fixed but configurable by the user.
+%In this case, however, we must also pick which active states to forget.
+%We implemented three strategies: random, newest, and oldest.
+%The words newest\slash oldest refer to a time that is attached to states, and is one more than the time of the parent state.
+%The time of a state is the number of times the (Step) transition of the operational semantics was taken in order to produce the state.
 
 %\dinocomment{discuss about: conservative and transparent properties of an inliner}
 %\dinocomment{talk about our strategy}
