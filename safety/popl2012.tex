@@ -764,11 +764,50 @@ TOPL automata have the following properties:
 \section{TOPL Properties}\label{sec:topl} % <<<
 
 \rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
-We model the semantics of programs and automata as sets of event traces.
-We say that a program \emph{violates} a property when their sets of traces intersect.
+In this section, we describe the translation from TOPL properties to
+TOPL automata with rollback in \autoref{fig:concepts}.
+
+We model the semantics of programs and properties as sets of event
+traces. We say that a program \emph{violates} a property when their sets of traces intersect.
 In other words, properties encode bad executions, rather than good executions.
 
+Given a TOPL Property, we wish to construct a TOPL rollback automaton,
+such that the language of the automaton is the set of event traces of the property.
+Thus we choose the values of the automaton to be the observable events
+of the property.
+
 \subsection{The Alphabet}
+In \autoref{sec:syntax} we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
+Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
+Labels look like method calls.
+Each label has a method pattern that is used to identify the set of methods to which the label refers.
+In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
+(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
+The more interesting case is when there are value patterns for each argument and perhaps even for the result.
+Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
+
+Thus, the values of interest come from three sources: event ids, primitive
+values and object references: The set $E$ of event ids is given by
+grammar
+\[
+call\ m \mid return\ m \mid m
+\]
+where $m$ is one of the method names known to the property.
+
+The set $V_p$ of primitive values is the set of primitive Java values
+plus a dummy value $\bot$.
+
+The set $R$ of object references is the set of identifiers
+mentioned on guards of the property prefixed with strings specified by
+the prefix directive.
+
+The values are then $V = E + V_p + R$, and the alphabet is $V^{n+1}$,
+where $n$ is the maximal arity of a method mentioned in the property.
+
+We are only concerned with the subset $E \times V^n$, ie the tuples where the first componen is an event
+id. An event $call\ m(a, b, c)$ in a property with a maximal arity of
+5 would be reprensted by $(call\ m, a, b, c, \bot, \bot)$.
+
 \rg{TODO: Explain that the alphabet $V^n$ actually has some extra structure.
 The values are partitioned into event ids, primitive values, and object references.
 For letter $(v_1,\ldots,v_n)$ the first component $v_1$ is always an event id.
@@ -846,14 +885,6 @@ The instantiated guards, can now be evaluated with the events by taking their co
 \rg{TODO: This might remain in the appendix.}
 \rg{TODO: What follows is material that we should try to reuse, but it's not yet made to fit.}
 
-In the previous section we have seen that syntactically, a TOPL property has a name, a set of {\tt prefix} and {\tt observe} directives, and a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
-Each transition is a labelled arc (directed edge) with a source and a target vertex identified by their name.
-Labels look like method calls.
-Each label has a method pattern that is used to identify the set of methods to which the label refers.
-In the simple case, a method pattern consists of a string pattern for the name of the method and an integer that specifies the method arity.
-(For simplicity, TOPL does not use the static types of arguments to distinguish between overloaded methods.)
-The more interesting case is when there are value patterns for each argument and perhaps even for the result.
-Transitions should typically be tagged with \texttt{call} or \texttt{return} to specify exactly at what time they should be performed.
 
 % >>>
 \section{Examples} \label{sec:examples} % <<<
