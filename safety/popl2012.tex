@@ -743,12 +743,12 @@ But, we can ensure that the stores are injective (as in the translation from TOP
 Actions simply translate to substitutions into latter guards on the same transition.
 
 \begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
-There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+(d-1)n$ registers, $O(d^2 (m+1)^m|Q_\rho|)$ states, and $O(d^2 (m+1)^{(m+n)}|\delta_\rho|)$ transitions such that
-\[ w\in{\cal L}_\rho({\cal A}_\rho) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d$~times}}\in{\cal L}({\cal A})\]
+There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+dn$ registers, $O(d(d+1) (m+1)^m|Q_\rho|)$ states, and $O(d(d+1) (m+1)^{(m+n)}|\delta_\rho|)$ transitions such that
+\[ w\in{\cal L}_\rho({\cal A}_\rho) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d+1$~times}}\in{\cal L}({\cal A})\]
 where $\ell_\bot$ is an extra dummy letter.
 \end{lemma}
 \begin{proof}
-The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d-1\}\times\{0,\ldots,d-2\}\times\bigl([m]\pmap[m]\bigr)\]
+The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d\}\times\{0,\ldots,d-1\}\times\bigl([m]\pmap[m]\bigr)\]
 When the rollback configuration
 \[ \bigl(q_\rho,(v_1,\ldots,v_{m_\rho})\bigr),\ell_0\ldots\ell_{h-1}\]
 of~${\cal A}_\rho$ is reached, one of the simple configurations
@@ -758,16 +758,16 @@ Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~
 \begin{itemize}
 \item the stores of~${\cal A}$ are injective: $u_i \ne u_j$ if $i\ne j$
 \item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in register $r(i)$ of~${\cal A}$; that is, $ u_{r(i)} = v_i $
-\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r(\iota(k+k',i'))$ of~${\cal A}$, where $\iota(k'',i')=m_\rho+(k''\bmod(d-1))n+i'$; that is,
+\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r(\iota(k+k',i'))$ of~${\cal A}$, where $\iota(k'',i')=m_\rho+(k''\bmod d)n+i'$; that is,
   \[u_{r(\iota(k+k',i'))}=v'_{i'}\]
-\item $r$ is otherwise undefined; namely, $r(\iota(k+k',i'))$ is undefined for all $i'$~and~$k'$ such that $i'> n$ or $h\le k'<d-1$
+\item $r$ is undefined for register slots that are reserved for storing letters but are currently unused; namely, $r(\iota(k+k',i'))$ is undefined for all $i'$~and~$k'$ such that $1\le i'\le n$ and $h\le k'<d$
 \end{itemize}
 
 \smallskip
 We consider in turn each state $q=(q_\rho,h,k,r)$.
 Its outgoing transitions are determined by the outgoing transitions of~$q_\rho$.
 
-{\it Case $h+1<d$}.
+{\it Case $h<d$}.
 In this case all outgoing transitions of~$q$ simply record the current letter $\ell=(v_1,\ldots,v_n)$.
 To maintain the injectivity of stores, only those components of~$\ell$ that are not already in some register must be stored.
 We consider $(m+1)^n$ distinct situations: each of the $n$~components may be in one the $m$~registers, or it may be fresh.
@@ -791,10 +791,36 @@ Also
 \end{cases}\]
 
 
-{\it Case $h+1=d$}.
-\smallskip
+{\it Case $h=d$}.
+At this point the values in the $m$~registers of~${\cal A}$ are enough to decide whether to simulate a rollback or a skip transition of~${\cal A}_\rho$.
+(Note that we could use the current letter and decide one step earlier, when $h=d-1$, which transitions to take.
+But, that alternative is slightly more complex.)
+First we encode the transitions outgoing from~$q_\rho$,
+\[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
+  \qquad\text{with $d'<d$} \]
+and later we will encode the skip configuration transition.
 
-TODO\null.
+Consider an assignment $({\sf set}\,i:=j)$ that appears in~$a_{k'}$.
+Suppose that the distribution of values just before this assignment is given by~$r'$.
+This means that the register~$i$ of~${\cal A}_\rho$ is simulated by $r'(i)$, and that the $j$th component of letter~$\ell_{k'}$ is simulated by $r'(\iota(k+k',j))$.
+After the assignment is executed, the distribution of values is given by
+\[r''(i') = \begin{cases}
+  r'(\iota(k+k',j)) & \text{if $i'=i$} \\
+  r'(i') & \text{otherwise}
+\end{cases}\]
+Thus, it is possible to find the register distribution function after each of the $d'$~steps.
+Let us write $r_{k'}$ for the distribution function just before step~$k'$; in particular, $r_0=r$, where $r$~is given by the state~$q$ of~${\cal A}$.
+Suppose now that $g_{k'}$ contains the conjunct $({\sf eq}\,i=j)$.
+We can evaluate this conjunct statically by checking whether $r_{k'}(i)=r_{k'}(\iota(k+k',j))$.
+Similarly, we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-1}$.
+If some guard does not hold, then the encoding is nothing.
+If all guards hold, then we add outgoing transitions.
+These transitions must also save the current letter, so the whole process from {\it Case $h<d$} is repeated.
+However, that process is applied as if the starting state has the value distribution function $r_{d'}$, rather than~$r$; as if the history is $h-d'$, rather than~$h$; and as if the reference point is $(k+d')\bmod d$, rather than~$k$.
+
+\smallskip
+Finally, we add one final state, and transitions to it from the states with $h=d$.
+These transitions have a guard that requires all $d$ saved letters to be~$\ell_\bot$.
 \end{proof}
 
 \begin{remark}
