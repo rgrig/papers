@@ -985,34 +985,31 @@ observing directive for pre-filtering events.
 % >>>
 \section{Examples} \label{sec:examples} % <<<
 
-In this section, which is based on our previous article~\cite{our-fool2011},  we demonstrate TOPL's expressivity.
+In this section, we formalize some temporal properties in TOPL. We refer the reader to ~\cite{our-fool2011} for a more comprehensive
+exemplification of properties.
 
-\subsection{Iterators Step by Step} \label{sec:examples.steps} % <<<
-
-Consider the program in \autoref{fig:first.java}. The last statement violates the property of the introduction, therefore throwing an exception.
-There are two iterators on the same collection, one of them modifies the collection, and this invalidates the other iterator.
-Such properties are often explained using diagrams that are sometimes precise, but not expressive enough~\cite{dblp:journals/scp/FieldGRY05,dblp:conf/issta/FinkYDRG06} or sometimes expressive, but imprecise~\cite{dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,dblp:conf/sigsoft/boddenlh08,dblp:conf/ecoop/bierhoffba09}.
-\autoref{fig:first.topl} (top)  captures precisely a temporal property involving three interacting objects.
+\paragraph{Iterators.} 
+\autoref{fig:first.topl} (top)  formalise the temporal property~\eqref{eq:} from Section~\ref{sec:}
+by describing the interaction of three objects.
 Below the same property is described in the textual form of TOPL, isomorphic to the diagram.
 The first line is an observe directive that declares that we are
 interested in all method calls (denoted by the wild card *) on
 instances of \Verb@java.util.Collection@ and \Verb@java.util.Iterator@ \emph{and} all those that override them.
-
+%
 In a TOPL property, vertices have identifiers (\texttt{start}, \texttt{one}, \texttt{two}, \dots);
 transitions have labels ($\pattern I:=\pattern C.\mathtt{iterator}()$, \dots).
 There are two special vertices: \start, from where the execution begins; and \error, where the execution ends.
-Labels resemble the shape of statements that enable the corresponding transition.
+Labels resemble the shape of program statements enabling the corresponding transition.
+For example the outgoing transition of vertex \start labeled by $\pattern X:=\pattern{C}.\mathtt{iterator}()$ 
+will fire when a statement like \verbline[.]{i = c.\PY{n+na}{iterator}()} is executed.
+In that case the values of \Verb@i@~and~\Verb@c@ will match the patterns \pattern X~and~\pattern C, respectively.
+The matched values for \pattern X~and~\pattern C are then written in the automaton variables $x$~and~$c$.
+For concreteness, let us assume   \Verb@i@~has value $v_1$ and~\Verb@c@ have value $v_2$. 
+Assuming that the only active state in the automaton is $(\start,[])$, then 
+after the transition is performed, the state $(\mathtt{one},[c:v_1,x:v_2])$ becomes active.
+The state $(\start,[])$ remains active because the transition \verbline{start -> start: *} is also enabled and performed.
 
-We understand a TOPL property as an automaton that monitors the
-program, by making transitions when the program executes corresponding
-statements. If the program drives the automaton to the error state in
-this manner, then the program violates the property.
 
-%\begin{figure}[t] % first example <<<
-%\include{IncorrectIteratorUse}
-%\caption{A first example: Java code}
-%\label{fig:first.java}
-%\end{figure}
 %
 \begin{figure}[t]
 \begin{tikzpicture}
@@ -1055,179 +1052,143 @@ property InvalidateOtherIterators
 \label{fig:first.topl}
 \end{figure}
 %
-\begin{figure}[t]
-{\def\s#1{\text{\Verb@#1@}}
- \def\m#1{\PY{n+na}{#1}}
- \def\t#1{\mathtt{#1}}
- \def\cmt#1{\textcolor{gray}{\text{// #1}}}
-\begin{align*}
-&\{\;(\start,[])\;\} \\
-&\s{Iterator<Integer> i = c.\m{iterator}();}  \quad \cmt{\bf \it Step 1} \\
-&\cmt{Assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
-& \begin{aligned}
-  \{\;&(\start,[]),\
-      &(\t{one},[c:1,x:2])\;\}
-  \end{aligned}\\
-&\s{Iterator<Integer> j = c.\m{iterator}();}  \quad \cmt{\bf \it Step 2} \\
-&\cmt{Assume {\tt j} holds $3$} \\
-& \begin{aligned}
-  \{\;&(\start,[]),\
-      &(\t{one},[c:1,x:2]),\
-      &(\t{one},[c:1,x:3]),\
-   \end{aligned}\\
-& \begin{aligned}   
-      & \quad (\t{two},[c:1,x:2,y:3])\;\}
-  \end{aligned}\\
-&\s{i.\m{next}();} \quad \cmt{\bf \it Step 3} \\
-& \begin{aligned}
-  \{\;&(\start,[]),\
-      &(\t{one},[c:1,x:2]),\
-      &(\t{one},[c:1,x:3]),\
-   \end{aligned}\\
-& \begin{aligned}   
-      & \quad (\t{two},[c:1,x:2,y:3])\;\}
-  \end{aligned}\\
-&\s{i.\m{remove}();} \quad \cmt{\bf \it Step 4}  \\
-& \begin{aligned}
-  \{\;&(\start,[]),\
-      &(\t{one},[c:1,x:2]),\
-      &(\t{one},[c:1,x:3]),\
-   \end{aligned}\\
-& \begin{aligned}   
-      & \quad (\t{yBad},[c:1,x:2,y:3])\;\}
-  \end{aligned}\\
-&\s{j.\m{next}()} \quad \cmt{\bf \it Step 5}  \\
-& \begin{aligned}
-  \{\;&(\start,[]),\
-      &(\t{one},[c:1,x:2]),\
-      &(\t{one},[c:1,x:3]),\
-   \end{aligned}\\
-& \begin{aligned}   
-      & \quad (\error,[c:1,x:2,y:3])\;\}
-  \end{aligned}\\
-\end{align*}}
-\caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
-lines in \texttt{monotype} show executing statements;
-// are comments.}
-\label{fig:first.steps}
-\end{figure} % >>>
-\autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and an automaton for \texttt{InvalidateOtherIterators}.
-At a given moment, the automaton has a set of active states.
-A state is a pair of a vertex and a store.
-The store is a memory that holds (automaton) variables.
-Technically, it is a finite partial map from variables to values.
-We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
-The empty map is denoted by~$[]$.
+%\begin{figure}[t]
+%{\def\s#1{\text{\Verb@#1@}}
+% \def\m#1{\PY{n+na}{#1}}
+% \def\t#1{\mathtt{#1}}
+% \def\cmt#1{\textcolor{gray}{\text{// #1}}}
+%\begin{align*}
+%&\{\;(\start,[])\;\} \\
+%&\s{Iterator<Integer> i = c.\m{iterator}();}  \quad \cmt{\bf \it Step 1} \\
+%&\cmt{Assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
+%& \begin{aligned}
+%  \{\;&(\start,[]),\
+%      &(\t{one},[c:1,x:2])\;\}
+%  \end{aligned}\\
+%&\s{Iterator<Integer> j = c.\m{iterator}();}  \quad \cmt{\bf \it Step 2} \\
+%&\cmt{Assume {\tt j} holds $3$} \\
+%& \begin{aligned}
+%  \{\;&(\start,[]),\
+%      &(\t{one},[c:1,x:2]),\
+%      &(\t{one},[c:1,x:3]),\
+%   \end{aligned}\\
+%& \begin{aligned}   
+%      & \quad (\t{two},[c:1,x:2,y:3])\;\}
+%  \end{aligned}\\
+%&\s{i.\m{next}();} \quad \cmt{\bf \it Step 3} \\
+%& \begin{aligned}
+%  \{\;&(\start,[]),\
+%      &(\t{one},[c:1,x:2]),\
+%      &(\t{one},[c:1,x:3]),\
+%   \end{aligned}\\
+%& \begin{aligned}   
+%      & \quad (\t{two},[c:1,x:2,y:3])\;\}
+%  \end{aligned}\\
+%&\s{i.\m{remove}();} \quad \cmt{\bf \it Step 4}  \\
+%& \begin{aligned}
+%  \{\;&(\start,[]),\
+%      &(\t{one},[c:1,x:2]),\
+%      &(\t{one},[c:1,x:3]),\
+%   \end{aligned}\\
+%& \begin{aligned}   
+%      & \quad (\t{yBad},[c:1,x:2,y:3])\;\}
+%  \end{aligned}\\
+%&\s{j.\m{next}()} \quad \cmt{\bf \it Step 5}  \\
+%& \begin{aligned}
+%  \{\;&(\start,[]),\
+%      &(\t{one},[c:1,x:2]),\
+%      &(\t{one},[c:1,x:3]),\
+%   \end{aligned}\\
+%& \begin{aligned}   
+%      & \quad (\error,[c:1,x:2,y:3])\;\}
+%  \end{aligned}\\
+%\end{align*}}
+%\caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
+%lines in \texttt{monotype} show executing statements;
+%// are comments.}
+%\label{fig:first.steps}
+%\end{figure} % >>>
+%\autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and an automaton for \texttt{InvalidateOtherIterators}.
+%At a given moment, the automaton has a set of active states.
+%A state is a pair of a vertex and a store.
+%The store is a memory that holds (automaton) variables.
+%Technically, it is a finite partial map from variables to values.
+%We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
+%The empty map is denoted by~$[]$.
+%
+%The automaton has variables $x$,~$y$, and~$c$.
+%At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
+%at \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
+%At vertex \texttt{one} $x$~is an iterator for a collection~$c$, and
+%at \texttt{two}, $x$~and~$y$ are both two iterators for the same collection~$c$.
+%Notice that~\Verb@c@ is a program variable whereas~$c$ is an automaton variable.
+%The same name was chosen because the two variables always hold the same value in this example.
+%In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
+%
+%To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
+%Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and do \emph{not} appear in the property.
+%Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
+%The interaction between patterns and the automaton's memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+%
+%We now illustrate all this by going through the execution step by
+%step.
 
-The automaton has variables $x$,~$y$, and~$c$.
-At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
-at \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
-At vertex \texttt{one} $x$~is an iterator for a collection~$c$, and
-at \texttt{two}, $x$~and~$y$ are both two iterators for the same collection~$c$.
-Notice that~\Verb@c@ is a program variable whereas~$c$ is an automaton variable.
-The same name was chosen because the two variables always hold the same value in this example.
-In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
+%\paragraph{Step~2.}
+%For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
+%Now we need to consider, in turn, the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\]
+%For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
+%Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
+%For $(\texttt{one},[c:1,x:2])$ we look at the outgoing transitions from vertex {\tt one}.
+%\begin{align*}
+%\text{\Verb@one -> one@} &: * \quad \mbox{ and } \quad \\
+%\text{\Verb@one -> two@} &: \text{\Verb@\pattern Y := \pattern c.iterator()@}
+%\end{align*}
+%The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
+%The second transitions has two patterns, \pattern Y~and~\pattern c.
+%The uppercase pattern~\pattern Y always matches, whereas
+%pattern \pattern c matches only the value held by the automaton variable~$c$.
+%In this case, $c$ was set in the previous step to the value of the program variable~\texttt{c}.
+%Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
 
-To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
-Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and do \emph{not} appear in the property.
-Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
-The interaction between patterns and the automaton's memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
+%\paragraph{Step~3.}
 
-We now illustrate all this by going through the execution step by
-step.
+%The third step involves the statement
+%\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
+%which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
+%Therefore, although the program proceeds, the set of active states of the automaton remains unchanged.
+%
+%\paragraph{Step~4.}
 
-\paragraph{Step~1.}
+%In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
+%Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
+%The states corresponding to vertices \start and {\tt one} remain unchanged, because their outgoing transitions are disabled.
+%However,  the outgoing transition of state {\tt two} is enabled, and therefore {\tt yBad} becomes active.
 
-Initially, only the state $(\start,[])$ is active.
-The outgoing transition of vertex \start is labeled by $\pattern X:=\pattern{C}.\mathtt{iterator}()$ and the first executed statement is \verbline[.]{i = c.\PY{n+na}{iterator}()}
-A method call matches a label when
-\begin{itemize}
-\item[(a)] the called method matches the method pattern, and
-\item[(b)] the program values match their corresponding patterns.
-\end{itemize}
-By definition, any value matches an Uppercase pattern.
-So here, the values of \Verb@i@~and~\Verb@c@ match the patterns \pattern X~and~\pattern C.
-The method itself also matches the method pattern.
-For simplicity, we ignore argument types and identify Java methods only by their fully qualified name and their arity.
-The called method \texttt{iterator} is in the class \texttt{ArrayList} and has arity~$1$.
-We identify it as follows.
-\verbline{java.lang.ArrayList.iterator[1]}
-The \texttt{prefix} directives, allows us to write the method pattern \Verb@iterator[1]@
-and have it expanded to the following:
-\begin{align*}
-&\text{\Verb@java.util.Collection.iterator[1]@} \\
-&\text{\Verb@java.util.Iterator.iterator[1]@}
-\end{align*}
-Similar to the \texttt{observe} directives, it means that these two methods \emph{and} all those that override them match.
-Here, \texttt{ArrayList} implements \texttt{Collection} and so\\
-\texttt{ArrayList.iterator} matches.
+%\paragraph{Step~5.}
 
-Thus, all conditions are met to enable the transition from \start to \texttt{one}.
-When the transition is performed, the values that matched \pattern X~and~\pattern C are written in the automaton variables $x$~and~$c$.
-For concreteness, let us assume these values are $1$~and~$2$. When the
-program runs, these values will be the memory addresses of the objects
-\Verb@c@ and \Verb@i@, so $1$ and $2$ are unlikely values, but for the
-example they suffice.
-After the transition is performed, the state $(\mathtt{one},[c:1,x:2])$ is active.
-The state $(\start,[])$ remains active because the transition \verbline{start -> start: *} is also enabled and performed.
+%For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
+%The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3])$
+%has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
+%As before, in order to match the method name, the prefixes
+%\Verb@java.util.Collection.*[*]@ as well as \Verb@java.util.Iterator.*[*]@
+%are prepended.
+%Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
+%One expansion, \Verb@java.util.Iterator.next@, is indeed
+%overridden by the method that is actually called and therefore 
+%we have a match.
 
-\paragraph{Step~2.}
-For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-Now we need to consider, in turn, the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\]
-For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
-Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-For $(\texttt{one},[c:1,x:2])$ we look at the outgoing transitions from vertex {\tt one}.
-\begin{align*}
-\text{\Verb@one -> one@} &: * \quad \mbox{ and } \quad \\
-\text{\Verb@one -> two@} &: \text{\Verb@\pattern Y := \pattern c.iterator()@}
-\end{align*}
-The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
-The second transitions has two patterns, \pattern Y~and~\pattern c.
-The uppercase pattern~\pattern Y always matches, whereas
-pattern \pattern c matches only the value held by the automaton variable~$c$.
-In this case, $c$ was set in the previous step to the value of the program variable~\texttt{c}.
-Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
+%The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
+%The automaton expresses that a call to one of {\tt j}'s methods while vertex \texttt{yBad} is active constitutes an error.
+%Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{iterator}()$ which may match only after the return value is known.
 
-\paragraph{Step~3.}
-
-The third step involves the statement
-\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
-Therefore, although the program proceeds, the set of active states of the automaton remains unchanged.
-
-\paragraph{Step~4.}
-
-In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
-Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
-The states corresponding to vertices \start and {\tt one} remain unchanged, because their outgoing transitions are disabled.
-However,  the outgoing transition of state {\tt two} is enabled, and therefore {\tt yBad} becomes active.
-
-\paragraph{Step~5.}
-
-For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3])$
-has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-As before, in order to match the method name, the prefixes
-\Verb@java.util.Collection.*[*]@ as well as \Verb@java.util.Iterator.*[*]@
-are prepended.
-Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
-One expansion, \Verb@java.util.Iterator.next@, is indeed
-overridden by the method that is actually called and therefore 
-we have a match.
-
-The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
-The automaton expresses that a call to one of {\tt j}'s methods while vertex \texttt{yBad} is active constitutes an error.
-Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{iterator}()$ which may match only after the return value is known.
-
-\medskip
-The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
-Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
+%\medskip
+%The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
+%Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
 
 % >>>
-\subsection{Heap Shape and Values Sensitive Properties}  % <<<
-One interesting kind of properties for object-oriented programs is the ability to reason about the shape of the heap composed by the allocated objects.
-The following TOPL properties test the shape of a linked list and
-reports an error if it is cyclic or it has the pan-handle shape (i.e.,
+\paragraph{Heap Shape and Values Sensitive Properties}  % <<<
+The following is a TOPL encoding of the property~\eqref{} in Section~\ref{sec:}.
+It reports an error if a list is cyclic or it has the pan-handle shape (i.e.,
 there is a lasso at some point). Directives are omitted.
 %
 \delimitVerbatim
@@ -1244,10 +1205,7 @@ there is a lasso at some point). Directives are omitted.
 \delimitVerbatim
 The idea is that this property will bind the automaton variable $x$ with any possible object in the list, and the $y$ with any possible successors (via the next field) of the current binding of $x$.
 Therefore, if there is a lasso, in the list, this will be detected when a new biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$.
-The transition \texttt{a ->error} detect the case where there is an object pointing to itself.
-
-
-The following property detects when a dictionary overwrite one of its bindings.
+The transition \texttt{a ->error} detect the case where there is an object pointing to itself. This property shows the importance of re-binding for specification variables. This phenomenon is also shown by  the following property which detects when a dictionary overwrite one of its bindings.
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
