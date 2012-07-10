@@ -1,0 +1,31 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kd}{interface} \PY{n+nc}{Str} \PY{o}{\PYZob{}}
+  \PY{k+kt}{void} \PY{n+nf}{set}\PY{o}{(}\PY{k+kt}{int} \PY{n}{i}\PY{o}{,} \PY{k+kt}{char} \PY{n}{c}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{char} \PY{n+nf}{get}\PY{o}{(}\PY{k+kt}{int} \PY{n}{i}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{int} \PY{n+nf}{len}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+  \PY{n}{Itr} \PY{n+nf}{itr}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{interface} \PY{n+nc}{Itr} \PY{o}{\PYZob{}}
+  \PY{k+kt}{char} \PY{n+nf}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{void} \PY{n+nf}{set}\PY{o}{(}\PY{k+kt}{char} \PY{n}{c}\PY{o}{)}\PY{o}{;} 
+  \PY{k+kt}{boolean} \PY{n+nf}{hasNext}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{class} \PY{n+nc}{CharArray} \PY{k+kd}{implements} \PY{n}{Str} \PY{o}{\PYZob{}}
+  \PY{k+kt}{char} \PY{o}{[}\PY{o}{]} \PY{n}{data}\PY{o}{;}
+       
+    \PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}
+    \PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}      
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{class} \PY{n+nc}{Concat} \PY{k+kd}{implements} \PY{n}{Str} \PY{o}{\PYZob{}}
+  \PY{n}{Str} \PY{n}{one}\PY{o}{,} \PY{n}{two}\PY{o}{;}
+  \PY{k+kt}{int} \PY{n}{len}\PY{o}{;}
+
+   \PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}
+   \PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}\PY{o}{.}
+
+  \PY{k+kd}{public} \PY{k+kd}{static} \PY{n}{Concat} \PY{n+nf}{make}\PY{o}{(}\PY{n}{Str} \PY{n}{one}\PY{o}{,} \PY{n}{Str} \PY{n}{two}\PY{o}{)} \PY{o}{\PYZob{}} \PY{k}{return} \PY{k}{new} \PY{n}{Concat}\PY{o}{(}\PY{n}{one}\PY{o}{,} \PY{n}{two}\PY{o}{)}\PY{o}{;}\PY{o}{\PYZcb{}}
+\PY{o}{\PYZcb{}}
+\end{Verbatim}
