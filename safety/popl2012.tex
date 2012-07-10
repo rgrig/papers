@@ -871,7 +871,8 @@ automata, and the translation in \autoref{fig:concepts} is morally an
 injection. There is, however, in the interest of user-friendliness,
 some encoding happening.
 
-Syntactically, a TOPL property has a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
+Syntactically, a TOPL property has a set of transitions.\footnote{For
+  the complete BNF grammar for TOPL we refer to~\cite{our-fool2011}.}
 Each transition is a labelled arc (directed edge) with a source and a
 target vertex identified by their name.
 There must be a vertex named \start and one named \error.\rlp{is
@@ -1491,13 +1492,14 @@ In this case the comments on the interface {\tt ServletResponse} are arguably wr
 This brings out another advantage of TOPL:
 Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
 \begin{figure}[t]\label{fig:tomcat-prop}
-{\small \begin{verbatim}
+{\small
+ \begin{verbatim}
 property InterleavedResponse2
   message "Incompatible methods  were used."
   observe <javax.servlet.ServletOutputStream.*>
   observe <java.io.PrintWriter.*>
   observe <javax.servlet.ServletResponse.getOutputStream>
-    observe <javax.servlet.ServletResponse.getWriter>
+  observe <javax.servlet.ServletResponse.getWriter>
   prefix <javax.servlet.ServletResponse>
   start -> start: *
   start -> got_wri: W := R.getWriter()
@@ -1790,30 +1792,30 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 \bibliographystyle{abbrv} % and appendix <<<
 \bibliography{safety}
 
-\appendix
-\section{TOPL Syntax}
-\label{app:syntax}
-\begin{tabular}{l}
-\grammar{
-  Property& \b{property} Identifier Item\* \cr
-  Item& Prefix \| Observe \| Transition \cr
-  Prefix& \b{prefix} \b< StringPattern \b> \cr
-  Observe& \b{observe} \b< StringPattern \b> \cr
-  Transition& Arc \b: Label \(\b, Label\)\* \cr
-  StringPattern& \(Letter \| \b. \| \b* \| \b{\{} \| \b{\}} \| \b, \)\+ \cr
-  Arc& Vertex \b{->} Vertex \cr
-  Label& Tag\? MethodPattern \cr
-  Vertex& Identifier \cr
-  Tag& \b{call} \| \b{return} \cr
-  MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
-  ResultPattern& ValuePattern \b{:=} \cr
-  NamePattern& StringPattern \cr
-  ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
-  ArgumentsPattern& \b[ IntegerPattern \b] \cr
-  ValuePattern& \b* \| \b< Literal \b> \| UppercaseId \| LowercaseId \cr
-  IntegerPattern& \b* \| IntegerLiteral \cr
-}
-\end{tabular}
+% \appendix
+% \section{TOPL Syntax}
+% \label{app:syntax}
+% \begin{tabular}{l}
+% \grammar{
+%   Property& \b{property} Identifier Item\* \cr
+%   Item& Prefix \| Observe \| Transition \cr
+%   Prefix& \b{prefix} \b< StringPattern \b> \cr
+%   Observe& \b{observe} \b< StringPattern \b> \cr
+%   Transition& Arc \b: Label \(\b, Label\)\* \cr
+%   StringPattern& \(Letter \| \b. \| \b* \| \b{\{} \| \b{\}} \| \b, \)\+ \cr
+%   Arc& Vertex \b{->} Vertex \cr
+%   Label& Tag\? MethodPattern \cr
+%   Vertex& Identifier \cr
+%   Tag& \b{call} \| \b{return} \cr
+%   MethodPattern& ResultPattern\? NamePattern ArgumentsPattern \cr
+%   ResultPattern& ValuePattern \b{:=} \cr
+%   NamePattern& StringPattern \cr
+%   ArgumentsPattern& \b( \(ValuePattern \(\b, ValuePattern\)\*\)\? \b) \cr
+%   ArgumentsPattern& \b[ IntegerPattern \b] \cr
+%   ValuePattern& \b* \| \b< Literal \b> \| UppercaseId \| LowercaseId \cr
+%   IntegerPattern& \b* \| IntegerLiteral \cr
+% }
+% \end{tabular}
 
 %
 %\begin{figure*}[h]\label{fig:tomcat-prop}
