@@ -243,6 +243,7 @@ Consider the following loop using a list:
 \end{verbatim}
 If the list {\tt l} is circular or pan-handle shaped the loop will diverge.
 At run time, it would be impossible even to observe the problem.  
+<<<<<<< HEAD
  If we have obtained the list by calling a third party library, we
  would want to check the following property:\footnote{Of course, one
    can write a method (to call before entering the loop) which
@@ -250,6 +251,11 @@ At run time, it would be impossible even to observe the problem.
 when the scope of the list is not clearly defined, these kind of
 explicit checks become cumbersome and error prone.}
 \eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it3}
+=======
+ If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
+in the context of this discussion, we exclude these kind of explicit checks.}
+\eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it4}
+>>>>>>> added taint property
 We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
 value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach some element we have seen before. 
 
@@ -1085,7 +1091,7 @@ property InvalidateOtherIterators
 \label{fig:first.topl}
 \end{figure}
 \paragraph{Heap Shape and Values Sensitive Properties}  % <<<
-The following is a TOPL encoding of the property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples}.
+The following is a TOPL encoding of the property~\eqref{q:concur-it4} in Section~\ref{sec:motivating-examples}.
 It reports an error if a list is cyclic or it has the pan-handle shape (i.e.,
 there is a lasso at some point). Directives are omitted.
 %
@@ -1123,7 +1129,15 @@ The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can
 %
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property IterateTaint  observe <{Itr.next,Concat.make,Str.itr}>  prefix <{Itr,Concat,Str}>  start -> start: *  start -> a:  \pattern{I} := \pattern{S}.itr()  a -> a: *, \pattern{S} := make(\pattern{s}, *), \pattern{S} := make(*, \pattern{s})  a -> b: \pattern{J} := \pattern{s}.itr()  b -> c: \pattern{i}.set(*)  c -> error: \pattern{j}.next()
+property IterateDirtyRopes
+  observe <{Itr.next,Concat.make,Str.itr}>
+  prefix <{Itr,Concat,Str}>
+  start -> start: *
+  start -> a:  \pattern{I} := \pattern{S}.itr()
+  a -> a: *, \pattern{S} := make(\pattern{s}, *), \pattern{S} := make(*, \pattern{s})
+  a -> b: \pattern{J} := \pattern{s}.itr()
+  b -> c: \pattern{i}.set(*)
+  c -> error: \pattern{j}.next()
   b -> d: \pattern{j}.set(*)
   d -> error: \pattern{i}.next()
 \end{Verbatim}
@@ -1133,7 +1147,21 @@ of two different iterators of two collections sharing some object invalidating e
 \\dd{are there other permutation missed by the property?}
 
 \paragraph{Taint Properties.} % <<<
-
+To check taint information as described by property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples} we can use the following
+TOPL specification:
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+property Taint
+  observe <{Itr.next,Concat.make,Str.itr}>
+  prefix <{Itr,Concat,Str}>
+  start -> start: *
+  start -> a:  \pattern{X} := \pattern{*}.input()
+  a -> a: \pattern{X} := x.make(\pattern{x}, *), \pattern{X} := make(*, \pattern{x}), !*.sani(*)
+  a -> b: *.sani(\pattern{x})
+  a -> error: \pattern{*}.sink(\pattern{x})
+\end{Verbatim}
+\delimitVerbatim
+The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 
 
 % >>>
