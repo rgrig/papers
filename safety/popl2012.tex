@@ -997,7 +997,7 @@ transition of depth two:
 [\den{call\;m^k(x_1, \ldots, x_k)}, \den{ret\;x := m^k}]
 \]
 
-\subsection{Initial State}
+\paragraph{Initial State.}
 All that remains is to describe the initial state of $\A_P$.
 As mentioned, the registers which corresponds to values in $V$
 contain those values in the initial state. Note that the generated
@@ -1005,7 +1005,7 @@ actions never overwrite these registers. Registers which correspond
 to automaton variables contain $\bot$. If $P$ is well-formed, $\bot$
 will never be read from those registers.
 
-\subsection{Directives}
+\paragraph{Directives.}
 To ease the task of writing TOPL properties and to increase their
 usefulness, two directives were added to the language. A \texttt{prefix}
 directive for convenience when specifying method names and an
