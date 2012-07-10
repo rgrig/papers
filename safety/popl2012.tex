@@ -1194,6 +1194,18 @@ property Taint
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 \dd{is this correct?}
 
+\paragraph{Singleton Pattern.} 
+The last property we present concerns 
+the singleton pattern where the instantiation of a class is restricted to one object. It is used when exactly one object is needed to coordinate actions across the system. It can be enforced by the following.
+{\small
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+property SingletonPattern
+  start -> a:  \pattern{I} := \pattern{*}.getInstance()
+  a -> error: \pattern{i}:=! \pattern{*}.getInstance()
+\end{Verbatim}
+\delimitVerbatim}
+The property produce an error is the object obtained by the method {\tt getInstance()} is not the same as the one already bound to the automata variable $i$.
 
 % >>>
 % >>>
