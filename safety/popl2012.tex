@@ -1379,21 +1379,21 @@ The time  of a state is the number of transitions (i.e., {\sc STEP}) taken to re
 % >>>
 % >>>
 \section{Experimental Results}\label{sec:results} % <<<
+%
+%Our interest in temporal properties of object-oriented programs was initially purely theoretical.
+%But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
+%In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
 
-Our interest in temporal properties of object-oriented programs was initially purely theoretical.
-But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
-In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
-
-\subsection{Methodology} % <<<
+%\subsection{Methodology} % <<<
 
 We expect our technique to be most useful during development.
 Library writers will document temporal constraints in TOPL, not just in English.
 Each library will have a testing version, obtained by instrumenting the bytecode with the TOPL properties.
 Users will use the testing version of the library to ensure they use it correctly.
 By the time end-users see the application, most temporal bugs are gone.
-Back in the real world, we too would like to know if such a scenario is likely.
-Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
-We have to settle for less.
+%Back in the real world, we too would like to know if such a scenario is likely.
+%Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
+%We have to settle for less.
 
 We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
@@ -1414,7 +1414,7 @@ The processor is Intel i5 with $4$~cores at $3.33\rm\,GHz$.
 The total system memory is $4\rm\,GiB$.
 
 % >>>
-\subsection{A Bug's Death} % <<<
+\paragraph{A Bug's Death.} % <<<
 
 The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
 The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
@@ -1443,22 +1443,47 @@ This is why the {\tt null}-dereference was not noticed before.
 The TOPL checker tried to report an unrelated issue to {\tt System.err}.
 DaCapo had redirected the standard error stream to its own class, which faulted.
 TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
-This is why we noticed the {\tt null}-dereference.
+%This is why we noticed the {\tt null}-dereference.
 Second, TOPL helped us identify the data race.
-It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
-However, it would have been more difficult to figure out which threads exactly used the stream simultaneously.
+%It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
+It would have been more difficult to figure out which threads exactly used the stream simultaneously.
 
 We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
 \eqquote{The stream and the writer of a response cannot both be used.}
 {eq:prop-ws-weak}
 This property involves three related objects.
-The full TOPL property appears in~\autoref{fig:tomcat-prop}.
+The full TOPL property is reported in Figure~\ref{fig:tomcat-prop}.
 It turns out this property is also violated.
 After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
 They say that the stream and the response cannot be used without an intervening {\tt reset}.
 In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
 This brings out another advantage of TOPL:
 Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
+\begin{figure}[t]\label{fig:tomcat-prop}
+{\small \begin{verbatim}
+property InterleavedResponse2
+  message "Incompatible methods  were used."
+  observe <javax.servlet.ServletOutputStream.*>
+  observe <java.io.PrintWriter.*>
+  observe <javax.servlet.ServletResponse.getOutputStream>
+    observe <javax.servlet.ServletResponse.getWriter>
+  prefix <javax.servlet.ServletResponse>
+  start -> start: *
+  start -> got_wri: W := R.getWriter()
+  start -> got_str: S := R.getOutputStream()
+  got_wri -> got_str-got_wr: S := r.getOutputStream()
+  got_str -> got_str-got_wri: W := r.getWriter()
+  got_wri -> used_wri : w.*
+  got_str-got_wr -> got_str-used_wr: w.*
+  got_str -> used_wri: s.*
+  got_str-got_wri -> used_str-got_wri: s.*
+  used_wri -> used_str-got_wri: S := r.getOutputStream()
+  used_str -> used_str-got_wri: W := r.getWriter()
+  got_str-used_wri -> error: s.*
+  used_str-got_wri -> error: w.*
+\end{verbatim}}
+\caption{Example Tomcat Propery}
+\end{figure}
 
 % >>>
 \subsection{Benchmarks} % <<<
@@ -1721,32 +1746,32 @@ Finally, we intend to develop a tailored bi-abduction inference technology~\cite
 }
 \end{tabular}
 
-
-\begin{figure*}[h]\label{fig:tomcat-prop}
-\begin{Verbatim}
-property InterleavedResponse2
-  // vertex names: w = got writer; W = used writer; similarly for s, S
-  message "Incompatible methods for putting data into a response were used."
-  observe <javax.servlet.ServletOutputStream.*>
-  observe <java.io.PrintWriter.*>
-  observe <javax.servlet.ServletResponse.{getOutputStream,getWriter}>
-  prefix <javax.servlet.ServletResponse>
-  start -> start: *
-  start -> w: W := R.getWriter()
-  start -> s: S := R.getOutputStream()
-  w -> sw: S := r.getOutputStream()
-  s -> sw: W := r.getWriter()
-  w -> W: w.*
-  sw -> sW: w.*
-  s -> S: s.*
-  sw -> Sw: s.*
-  W -> sW: S := r.getOutputStream()
-  S -> Sw: W := r.getWriter()
-  sW -> error: s.*
-  Sw -> error: w.*
-\end{Verbatim}
-\caption{Example Tomcat Propery}
-\end{figure*}
+%
+%\begin{figure*}[h]\label{fig:tomcat-prop}
+%\begin{Verbatim}
+%property InterleavedResponse2
+%  // vertex names: w = got writer; W = used writer; similarly for s, S
+%  message "Incompatible methods for putting data into a response were used."
+%  observe <javax.servlet.ServletOutputStream.*>
+%  observe <java.io.PrintWriter.*>
+%  observe <javax.servlet.ServletResponse.{getOutputStream,getWriter}>
+%  prefix <javax.servlet.ServletResponse>
+%  start -> start: *
+%  start -> w: W := R.getWriter()
+%  start -> s: S := R.getOutputStream()
+%  w -> sw: S := r.getOutputStream()
+%  s -> sw: W := r.getWriter()
+%  w -> W: w.*
+%  sw -> sW: w.*
+%  s -> S: s.*
+%  sw -> Sw: s.*
+%  W -> sW: S := r.getOutputStream()
+%  S -> Sw: W := r.getWriter()
+%  sW -> error: s.*
+%  Sw -> error: w.*
+%\end{Verbatim}
+%\caption{Example Tomcat Propery}
+%\end{figure*}
 
 % >>>
 \end{document}
