@@ -940,6 +940,9 @@ and $\denA-$ is given by
   ret\;x := m^k & act(x)(n+2) \\
 \end{array}
 \]
+If $P$ is well-formed all the writes will be to different registers
+and thus commute.
+
 Let us now consider the third label
 \[
 x := m^k(x_1, \ldots, x_k)
@@ -959,6 +962,14 @@ transition of depth two:
 =
 [\den{call\;m^k(x_1, \ldots, x_k)}, \den{ret\;x := m^k}]
 \]
+
+\subsection{Initial State}
+All that remains is to describe the initial state of $\A_P$.
+As mentioned, the registers which corresponds to values in $V$
+contain those values in the initial state. Note that the generated
+actions never overwrite these registers. Registers which correspond
+to automaton variables contain $\bot$. If $P$ is well-formed, $\bot$
+will never be read from those registers.
 
 \subsection{Directives}
 \rlp{Describe the directives briefly}
