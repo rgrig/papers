@@ -794,16 +794,17 @@ The language of TOPL properties provides a user-friendly way to write down certa
 rollback TOPL automata useful for object oriented programming
 languages. As such, TOPL properties form a subset of rollback TOPL
 automata, and the translation in \autoref{fig:concepts} is morally an
-injection. There is, however, in the interest of user-friendlyness,
+injection. There is, however, in the interest of user-friendliness,
 some encoding happening.
 
 Syntactically, a TOPL property has a set of transitions.\footnote{The complete BNF grammar for TOPL is reported in Appendix~\ref{app:syntax}.}
 Each transition is a labelled arc (directed edge) with a source and a
 target vertex identified by their name.
-There must be a vertex named ``start'' and one named ``error''.\rlp{is
-this correct?}
+There must be a vertex named \start and one named \error.\rlp{is
+this correct? \rg{technically, there are such vertices, no matter what the user writes}}
 Labels look like method calls.
 
+\rg{Maybe make explicit event$\leftrightarrow$letter and trace$\leftrightarrow$word terminology.}
 In the following, we will describe TOPL labels and how they translate to guards
 and actions. But first we will describe the events that a TOPL
 property considers and hence the alphabet that the corresponding
@@ -840,6 +841,7 @@ The values are then $V = E + V_L$, and the alphabet is $V^{n+2}$,
 where $n$ is the maximal arity of a method mentioned in $P$.
 (We need one extra register for the return value and one for the event
 id.)
+\rg{I'd say that the implementation corresponds more to sending the return value in position~$2$, rather than in the last position. But, whatever is easier to present.}
 
 We are only concerned with the subset $E \times V_L^{n+1}$, ie the
 tuples where exactly the first component is an event
@@ -884,22 +886,23 @@ A label is of one of three forms:
   x := m^k(x_1, \ldots, x_k)
 \]
 where $x$ and $x_1, \ldots, x_k$ are all patterns.
-The first two forms describe observable events and will be ranslated
+The first two forms describe observable events and will be translated
 into unit transitions. We describe that translation first and treat
 the last form at the end.
 
 In order to match elements from $V$, there is an extra register in
 $\A_P$ for each unique element mentioned by $P$ (note that this
 includes all the method names). This register contains
-that value in the initial state of $\A_P$ and is never overwritten. For
-each pattern $x$ which is not *, we define three functions $reg(x) : \N$,
+that value in the initial state of $\A_P$ and is never overwritten.
+\rg{I'd prefer $\N$ to be $N$, because the former makes me think of natural numbers more than the latter.}
+For each pattern $x$ which is not *, we define three functions $reg(x) : \N$,
 $pred(x) : \N\to G$ and $act(x) : \N\to A$. $reg(x)$ gives the associated register and $pred(x)$ gives
 the corresponding predicate, while $act(x)$ gives the action, i.e.
 \[
 \begin{array}{l l l}
   x & pred(x)(j) & act(x)(j) \\
   \hline
-  \mathtt{V} & {\sf true} & {\sf set} \\
+  \mathtt{V} & {\sf true} & {\sf set}\,{\it reg}({\tt v}):=j \\
   \mathtt{v} & {\sf eq}\,reg(\mathtt{v})=j & {\sf nop} \\
   \mathtt{!v} & {\sf neq}\,reg(\mathtt{v})=j  & {\sf nop}  \\
   a\in V & {\sf eq}\,reg(a)=j  & {\sf nop}  \\
