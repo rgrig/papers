@@ -821,6 +821,8 @@ If all guards hold, then we add outgoing transitions.
 These transitions must also save the current letter, so the whole process from {\it Case $h<d$} is repeated.
 However, that process is applied as if the starting state has the value distribution function $r_{d'}$, rather than~$r$; as if the history is $h-d'$, rather than~$h$; and as if the reference point is $(k+d')\bmod d$, rather than~$k$.
 
+\rg{TODO: Encode skips.}
+
 \smallskip
 Finally, we add one final state, and transitions to it from the states with $h=d$.
 These transitions have a guard that requires all $d$ saved letters to be~$\ell_\bot$.
