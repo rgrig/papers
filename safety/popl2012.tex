@@ -914,7 +914,8 @@ where $\denG-$ is given by
 \begin{array}{l l}
   l & \denG l \\
   \hline
-  call\;m^k(x_1, \ldots, x_k) & pred(m^k)(1) \land pred(x_1)(2) \land\ldots\land pred(x_k)(k+1) \\
+  call\;m^k(x_1, \ldots, x_k) & pred(m^k)(1) \\
+                                           & \land\,pred(x_1)(2) \land\ldots\land pred(x_k)(k+1) \\
   ret\;x := m^k & pred(m^k)(1) \land {\sf eq}\,reg(x) = n+1 \\
 \end{array}
 \]
