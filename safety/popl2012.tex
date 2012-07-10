@@ -1448,7 +1448,7 @@ Second, TOPL helped us identify the data race.
 It would have been more difficult to figure out which threads exactly used the stream simultaneously.
 
 We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
-\eqquote{The stream and the writer of a response cannot both be used.}
+\eqquote{Stream and writer of a response cannot both be used.}
 {eq:prop-ws-weak}
 This property involves three related objects.
 The full TOPL property is reported in Figure~\ref{fig:tomcat-prop}.
@@ -1494,14 +1494,13 @@ All three benchmarks are large open-source projects with many users and active d
 The versions were current in 2009 when DaCapo-9.12 was released.
 
 \paragraph{Tomcat 6.0.20.}
-Tomcat is a servlet server; so, highly concurrent.
-Servlets are Java programs that run in a webserver, extract data from {\tt ServletRequest}s , and send data into {\tt ServletResponse}s.
-A response has two associated incoming channels: a stream and a writer.
-The stream and the writer should not both be used.
-Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
-property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
+Tomcat is a highly concurrent servlet server. 
+Servlets are Java programs running in a webserver, extracting data from {\tt ServletRequest}s , and sending data to {\tt ServletResponse}s.
+A response has two associated incoming channels: a stream and a writer. Both should not be used concurrently.
+%Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
+%property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
 A response could be forwarded once the servlet sent data to it.
-But, the servlet must commit a response before forwarding it, by calling {\tt fulsh} on the stream, on ther writer, or on the response itself.
+But the servlet, before forwarding the response, must call {\tt flush} on the stream, on ther writer, or on the response itself.
 This is the other property we checked.
 
 \paragraph{H2 1.2.121.}
@@ -1524,9 +1523,9 @@ A scope should be asked what is the definition of a name only if it already repl
 % >>>
 \subsection{Overhead} % <<<
 
-Instrumenting DaCapo, which has $160\rm\,MiB$, takes $7$~minutes.
-One needs to instrument once for a given set of properties, because instrumentation is property-directed.
-A change of a runtime parameter, such as the maximum number of tracked active states, requires recompiling the TOPL checker, but does not require re-instrumenting.
+Instrumenting DaCapo, which has $160\rm\,MiB$, f or a given set of properties takes $7$~minutes.
+A change of a runtime parameter, such as the maximum number of tracked active states
+does not require re-instrumenting (only recompilation of the TOPL checker).
 
 \paragraph{Space.}
 Estimates of heap size showed no significant increase in memory use.
@@ -1544,16 +1543,15 @@ We also run the estimate for various other counts of tracked active states.
 The reference column shows the running time without any instrumentation.
 A timeout signifies a time greater than the reference time~$\times100$.
 All reported times are averaged over $10$~runs, and are accompanied by the unbiased estimate of standard deviation.
-The TOPL checker essentially simulates a nondeterministic register automaton.
 In theory the set of active states is unbounded, but we impose a size limit on it.
-The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$, $10^3$, and~$10^4$.
-
-For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
-This indicates that $\le10^3$ active states already exhaustively check the given properties.
+The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$.
+%
+%For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
+%This indicates that $\le10^3$ active states already exhaustively check the given properties.
 For h2 the running time is more than $\times1.4$ the reference time even when the TOPL checker is not tracking any active state.
 This indicates that we instrumented a simple method that runs often.
 
-\begin{table*}[t]\centering
+\begin{table}[t]\centering
 \begin{tabular}{@{}rr@{}lr@{}lr@{}lr@{}lr@{}lr@{}l}
   &&
   & \multicolumn{10}{c}{Number of tracked active states} \\ \cmidrule{4-13}
@@ -1561,37 +1559,39 @@ This indicates that we instrumented a simple method that runs often.
   &\multicolumn{2}{c}{$\le0$}
   &\multicolumn{2}{c}{$\le10^1$}
   &\multicolumn{2}{c}{$\le10^2$}
-  &\multicolumn{2}{c}{$\le10^3$}
-  &\multicolumn{2}{c}{$\le10^4$} \\ \midrule
+%  &\multicolumn{2}{c}{$\le10^3$}
+%  &\multicolumn{2}{c}{$\le10^4$} 
+\\ \midrule
 tomcat
   & $5.3$ & $\pm0.1$
   & $5.4$ & $\pm0.1$
   & $5.6$ & $\pm0.2$
   & $9.0$ & $\pm0.3$
-  & $43.5$ & $\pm1.2$
-  & $43.9$ & $\pm1.0$ \\
+%  & $43.5$ & $\pm1.2$
+%  & $43.9$ & $\pm1.0$ 
+\\
 pmd
   & $5.2$ & $\pm0.4$
   & $5.4$ & $\pm0.2$
   & $12.2$ & $\pm0.3$
   & $47.7$ & $\pm10.7$
-  & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
+%  & \multicolumn{2}{c}{timeout}
+%  & \multicolumn{2}{c}{timeout}
   \\
 h2
   & $6.6$ & $\pm0.2$
   & $9.5$ & $\pm0.2$
   & $130.1$ & $\pm12.2$
   & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
-  & \multicolumn{2}{c}{timeout}
+%  & \multicolumn{2}{c}{timeout}
+%  & \multicolumn{2}{c}{timeout}
   \\
 \end{tabular}
 \caption{
   Experimental Results.
   Times are in seconds, averaged over $10$~runs.
 }\label{table:overhead}
-\end{table*}
+\end{table}
 
 % >>>
 % >>>
