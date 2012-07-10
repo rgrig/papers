@@ -974,11 +974,17 @@ will never be read from those registers.
 \subsection{Directives}
 \rlp{Describe the directives briefly}
 To ease the task of writing TOPL properties and to increase their
-usefulness, two directives were added to the language. A prefix
+usefulness, two directives were added to the language. A \texttt{prefix}
 directive for convenience when specifying method names and an
-observing directive for pre-filtering events.
+\texttt{observe} directive for pre-filtering events.
 
-\subsection{Observable Events}
+The prefix directive $\mathtt{prefix}\; p$ produces from every
+method name pattern $m^k$, an extra method pattern $pm^k$. It further
+produces, from any transition involving $m^k$, a similar transition
+involving $pm^k$.
+
+The prefix directive $\mathtt{observe}\; p$ has the effect that only
+method calls which matches $p$ are considered part of the event trace.
 \rg{TODO: Discuss how we pre-filter events base on the method names.}
 
 
