@@ -1150,13 +1150,13 @@ The transition \texttt{a ->error} detects the case where there is an object poin
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the property variable $v$.
 
 %>>>
-\paragraph{Iterating Dirty Ropes.} % <<<
+\paragraph{Iterating Ropes Data Structures.} % <<<
 The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can be encoded in TOPL as follows:
 %
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property IterateDirtyRopes
+property IterateRopes
   observe <{Itr.next,Concat.make,Str.itr}>
   prefix <{Itr,Concat,Str}>
   start -> start: *
@@ -1174,13 +1174,13 @@ of two different iterators of two collections sharing some object invalidating e
 \\dd{are there other permutation missed by the property?}
 
 %>>>
-\paragraph{Taint Properties.} % <<<
+\paragraph{Property for Taint Info.} % <<<
 To check taint information as described by property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples} we can use the following
 TOPL specification:
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property Taint
+property TaintCheck
   observe <{Itr.next,Concat.make,Str.itr}>
   prefix <{Itr,Concat,Str}>
   start -> start: *
@@ -1787,7 +1787,7 @@ This will require investigating suitable abstraction for obtaining meaningful an
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
 
 %>>>
-\bibliographystyle{plain} % and appendix <<<
+\bibliographystyle{abbrv} % and appendix <<<
 \bibliography{safety}
 
 \appendix
