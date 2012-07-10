@@ -1767,19 +1767,17 @@ Because ConSpec automatons are deterministic and have only a countable number of
 %\dd{cite grigore rosu's work}
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
-
-\paragraph{Conclusions.}
-We introduced TOPL---a language for expressing temporal safety properties for object-oriented programs via an extension of register automata.
-TOPL can express constraints involving the relation of many objects at the same time.
-Furthermore, we introduced a technique for checking at runtime the violation of the properties on Java program.
-We have applied our technique to a variety of programs including large open source Java projects.
+In this paper we have introduced TOPL a new runtime verification system aimed at checking temporal safety properties of object-oriented programs. 
+For TOPL we have defined solid formal foundations based on register automata. Moreover we have studied the formal correspondence between TOPL automata and register automata proving that they are equally expressive.
+TOPL has been implemented in a practical tool that we have applied  to a variety of programs including large open source Java projects.
 %
-\paragraph{Future work.}
+
+%\paragraph{Future work.}
 In the future, we intend to combine TOPL with  separation logic~\cite{reynolds2002} in order to deal with the heavy use of the heap and aliasing in object-oriented software.
 Moreover, we aim at developing static analysis techniques for TOPL properties using the jStar framework~\cite{DBLP:conf/oopsla/DistefanoP08}.
 This will require investigating suitable abstraction for obtaining meaningful and precise over-approximations of the state space of the programs.
 Finally, we intend to develop a tailored bi-abduction inference technology~\cite{dblp:conf/popl/CalcagnoDOY09} which would help with scalability of the analysis.
-\rlp{What about abstraction even for dynamic analysis?}
+
 %>>>
 \bibliographystyle{plain} % and appendix <<<
 \bibliography{safety}
