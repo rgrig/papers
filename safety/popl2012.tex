@@ -1512,6 +1512,46 @@ property InterleavedResponse2
 
 % >>>
 \subsection{Benchmarks} % <<<
+\begin{table*}[t]
+\begin{center}
+\begin{tabular}{|l|c||c|c||c|c||c|c||c|c|} \hline
+  & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
+  \\ \hline
+  & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 
+  \\ \hline \hline
+ avrora  & 8130 & 27781 & 60546 & 163325 & 323074 & 194497  & 179875 & 8341 & 5939 
+ \\ \hline
+ batik     &  1216  & 1805 &    2960 & 3788 &  3796  & 3101 &  3266 & 1283            &  1227 
+ \\ \hline
+eclipse   &  15611  &  22441 &  12206X & 27009 &  14988X & 27554 &  12847X & 21568 &  23384 
+\\ \hline
+fop    &   312   &  904 &  1941 & 3468  &  3598   & 2735 &   2653 & 315 &   314
+\\ \hline
+h2     &    6182  &  5899 &  6829   & 8258    & 19968  & 13466 & 11151   & 6394 &          5989  
+\\ \hline
+jython    &  1895  & 19809 &  46085 &  81536   & 83042  &  62801 &       62725    & 1918 &         1815 
+\\ \hline
+luindex     &  829   & 830 &   823    & 826 & 874  & 997  &   871      & 819 &         852 
+\\ \hline
+lusearch    &  1547  &  1507 &   1533 & 14973 &  16030    & 13816  &  12842    & 1471 & 1670 
+\\ \hline
+pmd        &   3087    & 19911 &42563  &  93453 &240283   & 102593 &       105605  & 3224 &           3265 
+\\ \hline
+sunflow    &  3905   & 3773 &  3921   &  3978 & 3838    & 3889 &        3912     & 3934 &         4256 
+\\ \hline
+tomcat     &   2489    & 4192 & 8294    & 22882 & 50856   & 30008 &        31035   & 2629 &          2706 
+\\ \hline
+%tradebeans  &  5475  &  XX &     XX  & XX &    XX     & XX &          XX    & XX &           XX 
+%\\ \hline
+%tradesoap   & 6937   &  XX &    XX    & XX &  XX       & XX &       XX       & XX &        XX   
+%\\ \hline
+xalan      &    1455   &  14466      & 7065 & 424982  & 360868 &  272032   & 276512 &  1462 & 1230 
+\\ \hline  
+\end{tabular}
+\end{center}
+\caption{Experiment on small properties run on the DaCapo benchmarks (run in convergence mode).}
+\label{tab:javamop-experiments}
+\end{table*}%
 
 \rg{TODO: Add the JDK properties from JavaMOP people.}
 \rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
