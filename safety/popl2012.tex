@@ -1389,7 +1389,7 @@ The time  of a state is the number of transitions (i.e., {\sc STEP}) taken to re
 
 We expect our technique to be most useful during development.
 Library writers will document temporal constraints in TOPL, not just in English.
-Each library will have a testing version, obtained by instrumenting the bytecode with the TOPL properties.
+Each library will have a testing version, obtained by instrumenting the bytecode with TOPL properties.
 Users will use the testing version of the library to ensure they use it correctly.
 By the time end-users see the application, most temporal bugs are gone.
 %Back in the real world, we too would like to know if such a scenario is likely.
@@ -1402,17 +1402,15 @@ We focus on $3$~projects that are still widely developed and used: Tomcat, H2, a
 These are all mature projects with many users.
 DaCapo itself was used for many experiments by the research community.
 Hence, we do not expect to find any bugs, but aim to measure the overhead.
-For each project we write a few TOPL properties that encode information that exists in the code comments.
-In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
+For each project we write a few TOPL properties that encode informal temporal information that exists in the code comments.
+%In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
 
-We measure both the time overhead and the space overhead.
-The time overhead is reported measured for various configurations of the checker, and also for the original bytecode, with no instrumentation whatsoever.
+We measure both time and space overhead.
+Time overhead is reported  for various configurations of the checker, and  for the original bytecode, with no instrumentation.
+%
+All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
+running Linux~2.6.32 and Java VM~1.6.0\_20.
 
-All experiments are performed on the same machine.
-The operating system kernel is Linux~2.6.32.
-The Java VM has version~1.6.0\_20.
-The processor is Intel i5 with $4$~cores at $3.33\rm\,GHz$.
-The total system memory is $4\rm\,GiB$.
 
 % >>>
 \paragraph{A Bug's Death.} % <<<
