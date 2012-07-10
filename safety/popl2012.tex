@@ -430,12 +430,15 @@ For automata ${\cal A_1}$ and ${\cal A_2}$, the  language inclusion problem asks
 The following properties of register automata are known:
 \begin{enumerate}
 \item The emptiness problem is coNP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
-\item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01}.
-\item The containment, equivalence, and universality problems are decidable for $2$~registers.~\cite{dblp:conf/focs/kaminskif90}
+\item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01} and NP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
+\item The containment, equivalence, and universality problems are decidable for $2$~registers.~\cite{dblp:conf/focs/kaminskif90}~\cite{dblp:conf/mfcs/nevensv01}.
 \item The universality, containment, and equivalence problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
 \item Register automata are closed under union, intersection, concatenation, and Kleene star.~\cite{dblp:conf/focs/kaminskif90}
+\rlp{Not completely sure if we are talking about the full class}
 \item Register automata are \emph{not} closed under complementation~\cite{dblp:conf/focs/kaminskif90}.
+\rlp{ditto}
 \item Nondeterministic register automata are strictly more expressive than deterministic register automata~\cite{dblp:conf/focs/kaminskif90}.
+\rlp{ditto\ldots}
 \item The language ${\cal L}({\cal A})\cap C^*$ is regular for any register automaton~${\cal A}$ and any finite subset $C\subset V$ of values~\cite{dblp:conf/focs/kaminskif90}.
 \end{enumerate}
 \end{theorem}
@@ -903,17 +906,15 @@ The values are then $V = E + V_L$, and the alphabet is $V^{n+2}$,
 where $n$ is the maximal arity of a method mentioned in $P$.
 (We need one extra register for the return value and one for the event
 id.)
-\rg{I'd say that the implementation corresponds more to sending the return value in position~$2$, rather than in the last position. But, whatever is easier to present.}
 
 We are only concerned with the subset $E \times V_L^{n+1}$, ie the
 tuples where exactly the first component is an event
 id. If $P$ has a maximal arity of 5, the event $call\ m^3(a, b, c)$
-would be understood as $(call\ m^3,  a, b, c, \bot, \bot, \bot)$ by
-$\A_P$. Here the first component is the event id, the next three are the parameter values and the rest are
-fillers which allows all tuples to have the same lenght. The first two
-fill for parameter values, while the last fills for the return
-value. The event $ret\ r = m^3$
-would be understood as $(ret\ m^3,  \bot, \bot, \bot, \bot, \bot, r)$ by
+would be understood as $(call\ m^3, \bot,  a, b, c, \bot, \bot)$ by
+$\A_P$. Here the first component is the event id, the second is a
+filler for the return value, the next three are the parameter values and the rest are
+fillers which allows all tuples to have the same lenght. The event $ret\ r = m^3$
+would be understood as $(ret\ m^3, r, \bot, \bot, \bot, \bot, \bot)$ by
 $\A_P$.
 
 We can now describe the labels of $P$ and explain how they are transformed into guards and
@@ -985,8 +986,8 @@ where $\denG-$ is given by
   l & \denG l \\
   \hline
   call\;m^k(x_1, \ldots, x_k) & pred(m^k)(1) \\
-                                           & \land\,pred(x_1)(2) \land\ldots\land pred(x_k)(k+1) \\
-  ret\;x := m^k & pred(m^k)(1) \land {\sf eq}\,reg(x) = n+1 \\
+                                           & \land\,pred(x_1)(3) \land\ldots\land pred(x_k)(k+2) \\
+  ret\;x := m^k & pred(m^k)(1) \land {\sf eq}\,reg(x) = 2 \\
 \end{array}
 \]
 and $\denA-$ is given by
@@ -994,8 +995,8 @@ and $\denA-$ is given by
 \begin{array}{l l l}
   l & \denA l \\
   \hline
-  call\;m^k(x_1, \ldots, x_k) & act(x_1)(2); \dots; act(x_k)(k+1) \\
-  ret\;x := m^k & act(x)(n+2) \\
+  call\;m^k(x_1, \ldots, x_k) & act(x_1)(3); \dots; act(x_k)(k+2) \\
+  ret\;x := m^k & act(x)(2) \\
 \end{array}
 \]
 If $P$ is well-formed all the writes will be to different registers
