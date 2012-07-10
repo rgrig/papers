@@ -243,19 +243,9 @@ Consider the following loop using a list:
 \end{verbatim}
 If the list {\tt l} is circular or pan-handle shaped the loop will diverge.
 At run time, it would be impossible even to observe the problem.  
-<<<<<<< HEAD
- If we have obtained the list by calling a third party library, we
- would want to check the following property:\footnote{Of course, one
-   can write a method (to call before entering the loop) which
-   traverses the list and check whether it is circular or pan-handle. However,
-when the scope of the list is not clearly defined, these kind of
-explicit checks become cumbersome and error prone.}
-\eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it3}
-=======
  If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
 in the context of this discussion, we exclude these kind of explicit checks.}
 \eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it4}
->>>>>>> added taint property
 We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
 value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach some element we have seen before. 
 
@@ -756,12 +746,12 @@ But, we can ensure that the stores are injective (as in the translation from TOP
 Actions simply translate to substitutions into latter guards on the same transition.
 
 \begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
-There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+(d-1)n$ registers, $O(d^2m^m|Q_\rho|)$ states, and $O(d^2 m^m 2^n|\delta_\rho|)$ transitions such that
+There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+(d-1)n$ registers, $O(d^2 (m+1)^m|Q_\rho|)$ states, and $O(d^2 (m+1)^{(m+n)}|\delta_\rho|)$ transitions such that
 \[ w\in{\cal L}_\rho({\cal A}_\rho) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d$~times}}\in{\cal L}({\cal A})\]
 where $\ell_\bot$ is an extra dummy letter.
 \end{lemma}
 \begin{proof}
-The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d-1\}\times\{0,\ldots,d-2\}\times\bigl([m]\to[m]\bigr)\]
+The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d-1\}\times\{0,\ldots,d-2\}\times\bigl([m]\pmap[m]\bigr)\]
 When the rollback configuration
 \[ \bigl(q_\rho,(v_1,\ldots,v_{m_\rho})\bigr),\ell_0\ldots\ell_{h-1}\]
 of~${\cal A}_\rho$ is reached, one of the simple configurations
@@ -771,8 +761,9 @@ Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~
 \begin{itemize}
 \item the stores of~${\cal A}$ are injective: $u_i \ne u_j$ if $i\ne j$
 \item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in register $r(i)$ of~${\cal A}$; that is, $ u_{r(i)} = v_i $
-\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r\bigl(m_\rho+((k+k')\bmod(d-1))n+i'\bigr)$ of~${\cal A}$; that is,
-  \[u_{r(m_\rho+((k+k')\bmod(d-1))n+i')}=v'_{i'}\]
+\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r(\iota(k+k',i'))$ of~${\cal A}$, where $\iota(k,i')=m_\rho+(k\bmod(d-1))n+i'$; that is,
+  \[u_{r(\iota(k+k',i'))}=v'_{i'}\]
+\item $r$ is otherwise undefined; namely, $r(\iota(k+k',i'))$ is undefined for all $i'$~and~$k'$ such that $1\le i'\le n$ and $h\le k'<d-1$
 \end{itemize}
 
 \smallskip
@@ -783,15 +774,25 @@ Its outgoing transitions are determined by the outgoing transitions of~$q_\rho$.
 In this case all outgoing transitions of~$q$ simply record the current letter $\ell=(v_1,\ldots,v_n)$.
 To maintain the injectivity of stores, only those components of~$\ell$ that are not already in some register must be stored.
 We consider $(m+1)^n$ distinct situations: each of the $n$~components may be in one the $m$~registers, or it may be fresh.
-Such a situation is described by a function $p\in[n]\to[m+1]$.
+Such a situation is described by a function $p\in[n]\pmap[m]$.
 We add to~${\cal A}$ a transition
 \[ (q_\rho,h,k,r),\;(g_p,a_p),\;(q_\rho,h+1,k,r_p)\]
 The guard~$g_p$ is constructed such that it ensures we are indeed in a situation described by~$p$; the action~$a_p$ stores the fresh values of~$\ell$ somewhere outside of $r([m])$; the function~$r_p$ records where the fresh values were stored and where the existing values already were.
 
 The guard $g_p$ is constructed as follows.
-If $p(j)=m+1$, which means that $v_j$ should be fresh, then $g_p$ contains conjuncts $({\sf neq}\,i\ne j)$ for $i\in[m]$.
-If $p(j)\in[m]$, which means that $u_{p(j)}=v_j$, then $g_p$ contains the conjunct $({\sf eq}\,p(j)=j)$.
+If $p(j)$ is undefined, which means that $v_j$ should be fresh, then $g_p$ contains conjuncts $({\sf neq}\,i\ne j)$ for $i\in[m]$.
+If $p(j)$ is defined, which means that $u_{p(j)}=v_j$, then $g_p$ contains the conjunct $({\sf eq}\,p(j)=j)$.
 These are all the conjuncts of~$g_p$.
+
+We now fix some injection $\sigma$ from the set $\{v_j\mid\text{$p(j)$ undefined}\}$ of fresh values to the set $[m]-r([m])$ of unused registers.
+The action $a_p$ contains an assignment $({\sf set}\,\sigma(v_j):=j)$ for each $j$ where $p(j)$~is undefined.
+Also
+\[ r_p(\iota(k',i')) = \begin{cases}
+  p(i')  & \text{if $k'=k+h$ and $p(i')$ defined} \\
+  \sigma(v_{i'}) & \text{if $k'=k+h$ and $p(i')$ undefined} \\
+  r(\iota(k',i')) &\text{otherwise}
+\end{cases}\]
+
 
 {\it Case $h+1=d$}.
 \smallskip
@@ -1124,6 +1125,7 @@ The transition \texttt{a ->error} detect the case where there is an object point
 \delimitVerbatim
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
+%>>>
 \paragraph{Iterating Dirty Ropes.} % <<<
 The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can be encoded in TOPL as follows:
 %
@@ -1146,6 +1148,7 @@ The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure 
 of two different iterators of two collections sharing some object invalidating each other will reach the error state. 
 \\dd{are there other permutation missed by the property?}
 
+%>>>
 \paragraph{Taint Properties.} % <<<
 To check taint information as described by property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples} we can use the following
 TOPL specification:
@@ -1164,6 +1167,8 @@ property Taint
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 \dd{is this correct?}
 
+
+% >>>
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
 We have implemented the formal framework in a tool\footnote{\url{http://rgrig.github.com/topl}} for checking whether a Java program violates 
