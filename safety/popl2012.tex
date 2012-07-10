@@ -683,7 +683,7 @@ The \emph{rollback language}~${\cal L}_\rho({\cal A})$ of an automaton~${\cal A}
     $y_{i-1}\stackrel{w_i}\hookrightarrow y_i$ for $i\in[k]$,
     $y_k$~final}\,\}
 \end{multline*}
-Since a simple automaton~${\cal A}$ is also a roolback automaton, is has both a simple language~${\cal L}({\cal A})$ and a rollback language~${\cal L}_\rho({\cal A})$.
+Since a simple automaton~${\cal A}$ is also a rollback automaton, is has both a simple language~${\cal L}({\cal A})$ and a rollback language~${\cal L}_\rho({\cal A})$.
 The treatment of skip transitions implies the aforementioned
 discrepancy, that the languages ${\cal L}({\cal A})$ and ${\cal L}_\rho({\cal A})$ are usually distinct.
 
@@ -755,17 +755,36 @@ When the rollback configuration
 of~${\cal A}_\rho$ is reached, one of the simple configurations
 \[ (q_\rho,h,k,r),\;(u_1,\ldots,u_m) \]
 of~${\cal A}$ is reached.
-Here $k$,~$r$, $u_1$, \dots,~$u_m$ vary subject to the following constraining invariants:
+Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~$u_m$ vary subject to the following constraining invariants:
 \begin{itemize}
 \item the stores of~${\cal A}$ are injective: $u_i \ne u_j$ if $i\ne j$
-\item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in ${\cal A}$'s registers: $ u_{r(i)} = v_i $
-\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in ${\cal A}$'s registers: $u_{r(m_\rho+((k+k')\bmod(d-1))n+i')}=v'_{i'}$
+\item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in register $r(i)$ of~${\cal A}$; that is, $ u_{r(i)} = v_i $
+\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r\bigl(m_\rho+((k+k')\bmod(d-1))n+i'\bigr)$ of~${\cal A}$; that is,
+  \[u_{r(m_\rho+((k+k')\bmod(d-1))n+i')}=v'_{i'}\]
 \end{itemize}
-All transitions of~${\cal A}$ have the form
-\[\bigl((q_\rho,h,k,r),\;(g,a),\;(q'_\rho,h',k',r')\bigr)\]
-Some correspond to transitions $(q_\rho,\bar\lambda,q'_\rho)$ of~${\cal A}_\rho$, and some have $q_\rho=q'_\rho$ and encode the skip behavior.
-In all cases, $a$,~$k'$, and~$r'$ do not depend at all on the transitions of~${\cal A}_\rho$.
 
+\smallskip
+We consider in turn each state $q=(q_\rho,h,k,r)$.
+Its outgoing transitions are determined by the outgoing transitions of~$q_\rho$.
+
+{\it Case $h+1<d$}.
+In this case all outgoing transitions of~$q$ simply record the current letter $\ell=(v_1,\ldots,v_n)$.
+To maintain the injectivity of stores, only those components of~$\ell$ that are not already in some register must be stored.
+We consider $(m+1)^n$ distinct situations: each of the $n$~components may be in one the $m$~registers, or it may be fresh.
+Such a situation is described by a function $p\in[n]\to[m+1]$.
+We add to~${\cal A}$ a transition
+\[ (q_\rho,h,k,r),\;(g_p,a_p),\;(q_\rho,h+1,k,r_p)\]
+The guard~$g_p$ is constructed such that it ensures we are indeed in a situation described by~$p$; the action~$a_p$ stores the fresh values of~$\ell$ somewhere outside of $r([m])$; the function~$r_p$ records where the fresh values were stored and where the existing values already were.
+
+The guard $g_p$ is constructed as follows.
+If $p(j)=m+1$, which means that $v_j$ should be fresh, then $g_p$ contains conjuncts $({\sf neq}\,i\ne j)$ for $i\in[m]$.
+If $p(j)\in[m]$, which means that $u_{p(j)}=v_j$, then $g_p$ contains the conjunct $({\sf eq}\,p(j)=j)$.
+These are all the conjuncts of~$g_p$.
+
+{\it Case $h+1=d$}.
+\smallskip
+
+TODO\null.
 \end{proof}
 
 \begin{remark}
