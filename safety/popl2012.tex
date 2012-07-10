@@ -751,21 +751,28 @@ But, we can ensure that the stores are injective (as in the translation from TOP
 Actions simply translate to substitutions into latter guards on the same transition.
 
 \begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
-There exists an algorithm that, given a rollback TOPL automaton~${\cal A}$ over the alphabet~$V^n$ with $m$~registers, $|Q|$~states, and $|\delta|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}'$ with $m'=m+(d-1)n$ registers, $O(d^2m'^{m'}|Q|)$ states, and $x$~transitions such that
-\[ w\in{\cal L}_\rho({\cal A}) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d$~times}}\in{\cal L}({\cal A}')\]
+There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+(d-1)n$ registers, $O(d^2m^m|Q_\rho|)$ states, and $O(d^2 m^m 2^n|\delta_\rho|)$ transitions such that
+\[ w\in{\cal L}_\rho({\cal A}_\rho) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d$~times}}\in{\cal L}({\cal A})\]
 where $\ell_\bot$ is an extra dummy letter.
 \end{lemma}
 \begin{proof}
-The length of a transition is the number of labels it has.
-Since the set~$\delta$ of transitions is finite, there is a maximum~$d$ of the transition lengths.
-The rollback configuration $((q,s),w)$ is simulated by some configuration $((q,s),w')$, where $w'$ is a prefix of~$w$, and $|w'|<d$.
-Because $|w'|$ is bounded, we can represent $((q,s),w')$ by a simple configuration $(q',s')$ as follows.
-The store~$s'$ contains the values from~$s$ and those from~$w'$.
-If $s$~has $m$~registers, and letters are $n$-tuples, then $s'$~has $m+(d-1)n$ registers.
-The state~$q'$ encodes both the state~$q$ and which of the registers store~$w'$.
-\rg{TODO:Make the above more informal.}
+The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d-1\}\times\{0,\ldots,d-2\}\times\bigl([m]\to[m]\bigr)\]
+When the rollback configuration
+\[ \bigl(q_\rho,(v_1,\ldots,v_{m_\rho})\bigr),\ell_0\ldots\ell_{h-1}\]
+of~${\cal A}_\rho$ is reached, one of the simple configurations
+\[ (q_\rho,h,k,r),\;(u_1,\ldots,u_m) \]
+of~${\cal A}$ is reached.
+Here $k$,~$r$, $u_1$, \dots,~$u_m$ vary subject to the following constraining invariants:
+\begin{itemize}
+\item the stores of~${\cal A}$ are injective: $u_i \ne u_j$ if $i\ne j$
+\item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in ${\cal A}$'s registers: $ u_{r(i)} = v_i $
+\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in ${\cal A}$'s registers: $u_{r(m_\rho+((k+k')\bmod(d-1))n+i')}=v'_{i'}$
+\end{itemize}
+All transitions of~${\cal A}$ have the form
+\[\bigl((q_\rho,h,k,r),\;(g,a),\;(q'_\rho,h',k',r')\bigr)\]
+Some correspond to transitions $(q_\rho,\bar\lambda,q'_\rho)$ of~${\cal A}_\rho$, and some have $q_\rho=q'_\rho$ and encode the skip behavior.
+In all cases, $a$,~$k'$, and~$r'$ do not depend at all on the transitions of~${\cal A}_\rho$.
 
-\rg{TODO: The formal version of the proof.}
 \end{proof}
 
 \begin{remark}
