@@ -812,17 +812,20 @@ In other words, properties encode bad executions, rather than good executions.
 
 The traces of events that a property $P$ deems lead to a bad execution is thus the language
 of the corresponding automaton $\A_P$. Observable events for TOPL properties are method calls
-with parameter values and a time-tag. The time-tag is either $call$ or $ret$,
+with parameter values and a time-tag. The method name is taken to be a
+string literal and an arity (for simplicity we do not distinguish
+overloaded methods with the same arity). The time-tag is either $call$ or $ret$,
 corresponding to observing the method being called or returned
-from. If the time-tag is $ret$, the event also carries the return value.
+from. If the time-tag is $ret$, the event carries the return value
+rather than any parameter values.
 
 Thus, for $\A_P$, the values of interest come from two
 sources; event ids and parameter values: The set $E$ of event ids is given by
 the grammar
 \[
-call\ m \mid return\ m
+call\ m^k \mid return\ m^k
 \]
-where $m$ is one of the method names mentioned in $P$.
+where $m^k$ is one of the method names mentioned in $P$ (with arity $k$).
 
 The set $V_L$ of possible parameter values is the set of values from
 the programming language (Jave in our examples)
@@ -833,14 +836,15 @@ where $n$ is the maximal arity of a method mentioned in $P$.
 (We need one extra register for the return value and one for the event
 id.)
 
-We are only concerned with the subset $E \times V^{n+1}$, ie the tuples where the first component is an event
-id. If $P$ has a maximal arity of 5, the event $call\ m(a, b, c)$
-would be understood as $(call\ m,  a, b, c, \bot, \bot, \bot)$ by
+We are only concerned with the subset $E \times V_L^{n+1}$, ie the
+tuples where exactly the first component is an event
+id. If $P$ has a maximal arity of 5, the event $call\ m^3(a, b, c)$
+would be understood as $(call\ m^3,  a, b, c, \bot, \bot, \bot)$ by
 $\A_P$. Here the first component is the event id, the next three are the parameter values and the rest are
 fillers which allows all tuples to have the same lenght. The first two
 fill for parameter values, while the last fills for the return
-value. The event $ret\ r = m(a, b, c)$
-would be understood as $(ret\ m,  a, b, c, \bot, \bot, r)$ by
+value. The event $ret\ r = m^3$
+would be understood as $(ret\ m^3,  \bot, \bot, \bot, \bot, \bot, r)$ by
 $\A_P$.
 
 We can now describe the labels of $P$ and explain how they are transformed into guards and
@@ -858,7 +862,7 @@ The lowercase pattern \Verb@v@ reads the value of the property variable \Verb@v@
 The negated lowercase pattern \Verb@!v@ reads the value of the
 property variable \Verb@v@ and only matches different values.
 
-Further, every element of $V_L$ acts as a pattern that matches only the value it denotes,
+Further, every element of $V$ acts as a pattern that matches only the value it denotes,
 and a wildcard~* pattern matches any value.
 
 \smallskip
@@ -870,13 +874,14 @@ From now on we assume TOPL properties to be well-formed.
 A label is of one of two forms:
 \[
   e ::=
-  call\;m(x_1, \ldots, x_n) \mid
-  ret\;x := m(x_1, \ldots, x_n)
+  call\;m^k(x_1, \ldots, x_k) \mid
+  ret\;x := m^k
 \]
-where $x$ and $x_1, \ldots, x_n$ are all patterns.
+where $x$ and $x_1, \ldots, x_k$ are all patterns.
 
-In order to match elements from $V_L$, there is an extra register in
-$\A_P$ for each unique element mentioned by $P$. This register contains
+In order to match elements from $V$, there is an extra register in
+$\A_P$ for each unique element mentioned by $P$ (note that this
+includes all the method names). This register contains
 that value in the initial state of $\A_P$ and is never overwritten. For
 each pattern $x$ which is not *, we define three functions $reg(x) : \N$,
 $pred(x) : \N\to G$ and $act(x) : \N\to A$. $reg(x)$ gives the associated register and $pred(x)$ gives
@@ -888,7 +893,7 @@ the corresponding predicate, while $act(x)$ gives the action, i.e.
   \mathtt{V} & {\sf true} & {\sf set} \\
   \mathtt{v} & {\sf eq}\,reg(\mathtt{v})=j & {\sf nop} \\
   \mathtt{!v} & {\sf neq}\,reg(\mathtt{v})=j  & {\sf nop}  \\
-  a\in V_L & {\sf eq}\,reg(a)=j  & {\sf nop}  \\
+  a\in V & {\sf eq}\,reg(a)=j  & {\sf nop}  \\
   * & {\sf true} & {\sf nop}  \\
 \end{array}
 \]
@@ -905,23 +910,39 @@ where $\denG-$ is given by
 \begin{array}{l l}
   l & \denG l \\
   \hline
-  call\;m(x_1, \ldots, x_n) & \denG{m(x_1, \ldots, x_n)} \\
-  ret\;x := m(x_1, \ldots, x_n) & {\sf eq}\,reg(x) = n+1 \land \denG{m(x_1, \ldots, x_n)} \\
+  call\;m^k(x_1, \ldots, x_k) & pred(m^k)(1) \land pred(x_1)(2) \land\ldots\land pred(x_k)(k+1) \\
+  ret\;x := m^k & pred(m^k)(1) \land {\sf eq}\,reg(x) = n+1 \\
 \end{array}
 \]
-with $\denG{m(x_1, \ldots, x_n)} = pred(x_1)(2) \land\ldots\land pred(x_n)(n+1)$,
 and $\denA-$ is given by
 \[
 \begin{array}{l l l}
   l & \denA l \\
   \hline
-  call\;m(x_1, \ldots, x_n) & act(x_1)(2); \dots; act(x_n)(n+1) \\
-  ret\;x := m(x_1, \ldots, x_n) & act(x_1)(2); \dots; act(x_n)(n); act(x)(n+2) \\
+  call\;m^k(x_1, \ldots, x_k) & act(x_1)(2); \dots; act(x_k)(k+1) \\
+  ret\;x := m^k & act(x)(n+2) \\
 \end{array}
 \]
 
 \subsection{Atomic call/return events}
 \rlp{This is why we need rollback}
+There is in fact one more label in TOPL properties, namely
+\[
+x := m^k(x_1, \ldots, x_k)
+\]
+Notice how the right hand side refers to call time, while the left
+hand side refers to return time. We decided that this label should
+mean that $m^k$ was called with parameters matching $x_1, \ldots, x_k$
+and returned a value matching $x$, \emph{and no event was observed in
+  the meantime}.
+
+This label makes use of the rollback feature and translates to a
+transition of depth two:
+\[
+\den{x := m^k(x_1, \ldots, x_k)}
+=
+[\den{call\;m^k(x_1, \ldots, x_k)}, \den{ret\;x := m^k}]
+\]
 
 \subsection{Directives}
 \rlp{Describe the directives briefly}
