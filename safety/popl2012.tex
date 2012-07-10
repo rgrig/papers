@@ -871,13 +871,17 @@ A TOPL property is \emph{well-formed} when it satisfies the following two condit
 any use of a lowercase patterns must be preceded by a use of the corresponding uppercase pattern on all paths from \start  (i.e., automaton variables must be written before being read).
 From now on we assume TOPL properties to be well-formed.
 
-A label is of one of two forms:
+A label is of one of three forms:
 \[
-  e ::=
+  l ::=
   call\;m^k(x_1, \ldots, x_k) \mid
-  ret\;x := m^k
+  ret\;x := m^k \mid
+  x := m^k(x_1, \ldots, x_k)
 \]
 where $x$ and $x_1, \ldots, x_k$ are all patterns.
+The first two forms describe observable events and will be ranslated
+into unit transitions. We describe that translation first and treat
+the last form at the end.
 
 In order to match elements from $V$, there is an extra register in
 $\A_P$ for each unique element mentioned by $P$ (note that this
@@ -903,7 +907,7 @@ We can now interpret labels.
 \newcommand{\denA}[1]{\den{#1}_A}
 For a label $l$, we define
 \[
-\den{l} = (\denG{l}, \denA{l})
+\den{l} = [(\denG{l}, \denA{l})]
 \]
 where $\denG-$ is given by
 \[
@@ -923,10 +927,7 @@ and $\denA-$ is given by
   ret\;x := m^k & act(x)(n+2) \\
 \end{array}
 \]
-
-\subsection{Atomic call/return events}
-\rlp{This is why we need rollback}
-There is in fact one more label in TOPL properties, namely
+Let us now consider the third label
 \[
 x := m^k(x_1, \ldots, x_k)
 \]
@@ -934,7 +935,9 @@ Notice how the right hand side refers to call time, while the left
 hand side refers to return time. We decided that this label should
 mean that $m^k$ was called with parameters matching $x_1, \ldots, x_k$
 and returned a value matching $x$, \emph{and no event was observed in
-  the meantime}.
+  the meantime}. This is because an intermediate call, for instance a
+recursive call, could disconnect the value guards with unexpected
+consequences. \rlp{Explain this better, perhaps give an example.}
 
 This label makes use of the rollback feature and translates to a
 transition of depth two:
@@ -946,6 +949,10 @@ transition of depth two:
 
 \subsection{Directives}
 \rlp{Describe the directives briefly}
+To ease the task of writing TOPL properties and to increase their
+usefulness, two directives were added to the language. A prefix
+directive for convenience when specifying method names and an
+observing directive for pre-filtering events.
 
 \subsection{Observable Events}
 \rg{TODO: Discuss how we pre-filter events base on the method names.}
