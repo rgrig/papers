@@ -193,6 +193,7 @@ Finally, \autoref{sec:conclusions} concludes the paper and describes our plans f
 
 %>>>
 \section{Motivating Examples} %<<<
+\label{sec:motivating-examples}
 Interaction among objects is at the core of the object-oriented paradigm.
 Consider for example  Java collections. A typical property one would want to state  is:
 \eqquote{If one iterator modifies its collection, then other existing iterators of the same collection become invalid, which means they cannot be used further.}{q:concur-it}
@@ -210,7 +211,7 @@ In this case we may have two (or more) collections {\em sharing} some elements. 
 \paragraph{Re-binding of specification variables.}
 Now let's consider the case where we want to perform taint checking for input coming from a web form.  What we want to check is the following
 property:
-\eqquote{Any value introduced by the {\tt input()} method should not reach the  {\tt sink()} method without passing first from the {\tt sanitizer()} method.}{q:concur-it2}
+\eqquote{Any value introduced by the {\tt input()} method should not reach the  {\tt sink()} method without passing first from the {\tt sanitizer()} method.}{q:concur-it3}
 This property is at first sight simple. However, it's difficulty can vary depending from the context. Consider in fact the case where
 the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}. 
 The number of user inputs, and therefore of concatenations, it is not known a priori and in general unbounded.
@@ -242,7 +243,7 @@ If the list {\tt l} is circular or pan-handle shape the loop will diverge.
 At run time, it would be impossible even to observe the problem.  
  If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
 in the context of this discussion, we exclude these kind of explicit checks.}
-\emquote{The shape of the list should not be neither circular nor pan-handle.}
+\eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it3}
 We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
 value of the specification variables.  This is because the way to encode the property is by checking, when using the list, that we reach some element we have seen before. 
 
@@ -996,7 +997,7 @@ In this section, we formalize some temporal properties in TOPL. We refer the rea
 exemplification of properties.
 
 \paragraph{Iterators.} 
-\autoref{fig:first.topl} (top)  formalise the temporal property~\eqref{eq:} from Section~\ref{sec:}
+\autoref{fig:first.topl} (top)  formalise the temporal property~\eqref{q:concur-it} from Section~\ref{sec:motivating-examples}
 by describing the interaction of three objects.
 Below the same property is described in the textual form of TOPL, isomorphic to the diagram.
 The first line is an observe directive that declares that we are
@@ -1059,7 +1060,7 @@ property InvalidateOtherIterators
 \label{fig:first.topl}
 \end{figure}
 \paragraph{Heap Shape and Values Sensitive Properties}  % <<<
-The following is a TOPL encoding of the property~\eqref{} in Section~\ref{sec:}.
+The following is a TOPL encoding of the property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples}.
 It reports an error if a list is cyclic or it has the pan-handle shape (i.e.,
 there is a lasso at some point). Directives are omitted.
 %
@@ -1092,20 +1093,24 @@ The transition \texttt{a ->error} detect the case where there is an object point
 \delimitVerbatim
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
-% >>>
+\paragraph{Iterating Dirty Ropes.} % <<<
+The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can be encoded in TOPL as follows:
+%
+\delimitVerbatim
+\begin{Verbatim}[commandchars=\\\{\}]
+property IterateTaint  observe <{Itr.next,Concat.make,Str.itr}>  prefix <{Itr,Concat,Str}>  start -> start: *  start -> a:  \pattern{I} := \pattern{S}.itr()  a -> a: *, \pattern{S} := make(\pattern{s}, *), \pattern{S} := make(*, \pattern{s})  a -> b: \pattern{J} := \pattern{s}.itr()  b -> c: \pattern{i}.set(*)  c -> error: \pattern{j}.next()
+  b -> d: \pattern{j}.set(*)
+  d -> error: \pattern{i}.next()
+\end{Verbatim}
+\delimitVerbatim
+The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
+of two different iterators of two collections sharing some object invalidating each other will reach the error state. 
+\\dd{are there other permutation missed by the property?}
+
 \paragraph{Taint Properties.} % <<<
 
-\rg{TODO: Explain how to express the generic taint property.}
 
-% >>>
-\paragraph{Iterating Dirty Ropes.} % <<<
 
-\rg{TODO: Revisit the motivating example.
-Ropes may represent strings.
-So, ropes may be tainted or not.
-Also, one could iterate over a subrope.}
-
-% >>>
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
 We have implemented the formal framework in a tool\footnote{\url{http://rgrig.github.com/topl}} for checking whether a Java program violates 
