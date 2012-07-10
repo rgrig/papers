@@ -240,9 +240,14 @@ Consider the following loop using a list:
 \end{verbatim}
 If the list {\tt l} is circular or pan-handle shaped, one of the problem could be that the loop will diverge.
 Being a violation of a liveness property (termination), divergence cannot be observed at runtime in finite time and therefore it is harder to debug.
- If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
-in the context of this discussion, we exclude these kind of explicit checks.}
-\eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it4}
+If we have obtained the list by calling a third party library, we
+would want to check the following property:\footnote{Of course, one
+  can write a method (to call before entering the loop) which
+  traverses the list and check whether it is circular or
+  pan-handle. However, when the scope of the list is not clearly
+  defined, these kind of explicit checks become cumbersome and error
+  prone.}
+\eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it4}
 We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
 value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach some element we have seen before. 
 
