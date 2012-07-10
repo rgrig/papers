@@ -828,7 +828,10 @@ If all guards hold, then we add outgoing transitions.
 These transitions must also save the current letter, so the whole process from {\it Case $h<d$} is repeated.
 However, that process is applied as if the starting state has the value distribution function $r_{d'}$, rather than~$r$; as if the history is $h-d'$, rather than~$h$; and as if the reference point is $(k+d')\bmod d$, rather than~$k$.
 
-\rg{TODO: Encode skips.}
+If the state $q=(q_\rho,d,k,r)$ still has no outgoing transitions at this point, it is because none of the outgoing transitions of~$q_\rho$ have guards that all hold.
+In this case, we must simulate a skip transition.
+This is done as in {\it Case $h<d$}, except we first simulate removing the letter to which $k$ points.
+We do so by replacing the distribution function~$r$ by one that is undefined at $\iota(k,i')$ for $i'\in[n]$, by decrementing~$h$, and by incrementing~$k$.
 
 \smallskip
 Finally, we add one final state, and transitions to it from the states with $h=d$.
