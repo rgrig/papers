@@ -726,6 +726,7 @@ Thus, if each $g_i$ contains up to $k$ simple conjuncts, we add at most $k^d$ tr
 
 The converse transformation is more difficult.
 There are many obvious ways to simulate a rollback TOPL automaton with a simple TOPL automaton, and many of them are wrong.
+Note, for example, that when the set~$V$ of values is countable, the simple configurations are countable, but the rollback configurations are uncountable.
 Rollback, which ensures that several letters occur atomically, and skip, which filters irrelevant letters, usually lead to intuitive behaviors, but not always, as the following example illustrates.
 
 \begin{example}
@@ -739,7 +740,22 @@ For example it contains $A$, $BA$, $BAA$, and $BAAB$, but not $BAB$ or~$BBAB$.
 \end{example}
 
 The key idea for encoding rollback TOPL automata into simple TOPL automata is the following:
-\emquote{It is sufficient to simulate rollback configurations with words shorter than the longest transition.}
+\emquote{It is sufficient to simulate rollback configurations with words shorter than the length~$d$ of the longest transition, because both rollback and skip transitions depend on $\le d$~letters.}
+If $|w|<d$, it should be possible to encode a rollback configuration $((q,s),w)$ using the finite memory of a simple TOPL automaton.
+To decide which transitions to take we have $|w|+1$ letters, the ones stored in the current configuration plus the current letter, and $m$~registers to consider.
+If $|w|+1<d$, then the current letter~$\ell$ is simply stored in the current configuration, and we move to (the encoding of) $((q,s),w\ell)$.
+Eventually, $d$~letters are available and all transitions outgoing from~$q$ can be evaluated.
+The original guards involve comparing letter components with register values.
+Now some of the letter components are themselves in registers, and TOPL automata do not have guards that compare registers.
+But, we can ensure that the stores are injective (as in the translation from TOPL automata to register automata) and then the information about which registers equal which registers is statically available.
+Actions simply translate to substitutions into latter guards on the same transition.
+
+\begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
+There exists an algorithm that, given a rollback TOPL automaton~${\cal A}$ over the alphabet~$V^n$ with $m$~registers, $|Q|$~states, and $|\delta|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}'$ with $m'=m+(d-1)n$ registers, $O(d^2m'^{m'}|Q|)$ states, and $x$~transitions such that
+\[ w\in{\cal L}_\rho({\cal A}) \iff w\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d$~times}}\in{\cal L}({\cal A}')\]
+where $\ell_\bot$ is an extra dummy letter.
+\end{lemma}
+\begin{proof}
 The length of a transition is the number of labels it has.
 Since the set~$\delta$ of transitions is finite, there is a maximum~$d$ of the transition lengths.
 The rollback configuration $((q,s),w)$ is simulated by some configuration $((q,s),w')$, where $w'$ is a prefix of~$w$, and $|w'|<d$.
@@ -749,10 +765,6 @@ If $s$~has $m$~registers, and letters are $n$-tuples, then $s'$~has $m+(d-1)n$ r
 The state~$q'$ encodes both the state~$q$ and which of the registers store~$w'$.
 \rg{TODO:Make the above more informal.}
 
-\begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
-There exists bla
-\end{lemma}
-\begin{proof}
 \rg{TODO: The formal version of the proof.}
 \end{proof}
 
