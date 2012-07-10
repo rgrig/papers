@@ -1065,7 +1065,7 @@ In this section, we formalize some temporal properties in TOPL. We refer the rea
 exemplification of properties.
 
 \paragraph{Iterators.}
-The temporal property~\eqref{q:concur-it} from
+Property~\eqref{q:concur-it} in
 Section~\ref{sec:motivating-examples} can be formalized as follows:
 {\small
 \delimitVerbatim
@@ -1084,7 +1084,7 @@ property InvalidateOtherIterators
 \end{Verbatim}
 \delimitVerbatim}%
 This property describes the interaction of three objects.
-The first line is an \texttt{observe} directive that declares that we are
+The first line is an \texttt{observe} directive declaring that we are
 interested in all method calls (denoted by the wild card *) on
 instances of \Verb@java.util.Collection@ and \Verb@java.util.Iterator@ \emph{and} all those that override them.
 \autoref{fig:first.topl} shows a graphical representation of the
@@ -1092,8 +1092,8 @@ property.
 %
 \begin{figure}[t]
 \begin{tikzpicture}
-  \def\x{2.5}
-  \def\y{1.5}
+  \def\x{2.3}
+  \def\y{1.2}
   \tikzset{vertex/.style={draw,circle,inner sep=1pt}}
   \tikzset{transition/.style={->,>=latex}}
   \tikzset{every label/.style={gray}}
@@ -1173,7 +1173,7 @@ property IterateRopes
 \end{Verbatim}
 \delimitVerbatim}%
 The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
-of two different iterators of two collections sharing some object invalidating each other will reach the error state. 
+of two different iterators of two collections sharing some object invalidating `h the error state. 
 \\dd{are there other permutation missed by the property?}
 
 %>>>
