@@ -60,6 +60,7 @@
 
 \newcommand{\B}{\ensuremath{\mathbb{B}}}
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\A}{\ensuremath{\mathcal{A}}}
 \newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
@@ -810,12 +811,12 @@ traces. We say that a program \emph{violates} a property when their sets of trac
 In other words, properties encode bad executions, rather than good executions.
 
 The traces of events that a property $P$ deems lead to a bad execution is thus the language
-of the corresponding automaton $A_P$. Observable events for TOPL properties are method calls
+of the corresponding automaton $\A_P$. Observable events for TOPL properties are method calls
 with parameter values and a time-tag. The time-tag is either $call$ or $ret$,
 corresponding to observing the method being called or returned
 from. If the time-tag is $ret$, the event also carries the return value.
 
-Thus, for $A_P$, the values of interest come from two
+Thus, for $\A_P$, the values of interest come from two
 sources; event ids and parameter values: The set $E$ of event ids is given by
 the grammar
 \[
@@ -835,15 +836,15 @@ id.)
 We are only concerned with the subset $E \times V^{n+1}$, ie the tuples where the first component is an event
 id. If $P$ has a maximal arity of 5, the event $call\ m(a, b, c)$
 would be understood as $(call\ m,  a, b, c, \bot, \bot, \bot)$ by
-$A_P$. Here the first component is the event id, the next three are the parameter values and the rest are
+$\A_P$. Here the first component is the event id, the next three are the parameter values and the rest are
 fillers which allows all tuples to have the same lenght. The first two
 fill for parameter values, while the last fills for the return
 value. The event $ret\ r = m(a, b, c)$
 would be understood as $(ret\ m,  a, b, c, \bot, \bot, r)$ by
-$A_P$.
+$\A_P$.
 
 We can now describe the labels of $P$ and explain how they are transformed into guards and
-actions of $A_P$.
+actions of $\A_P$.
 
 \subsection{Guards and Actions from Labels}
 
@@ -875,26 +876,47 @@ A label is of one of two forms:
 where $x$ and $x_1, \ldots, x_n$ are all patterns.
 
 In order to match elements from $V_L$, there is an extra register in
-$A_P$ for each unique element mentioned by $P$. This register contains
-that value in the initial state of $A_P$ and is never overwritten. For
-each pattern $x$ which is not *, we define two functions $reg(x)$ and
-$pred(x)$. $reg(x)$ gives the associated register and $pred(x)$ gives
-the corresponding predicate, i.e.
+$\A_P$ for each unique element mentioned by $P$. This register contains
+that value in the initial state of $\A_P$ and is never overwritten. For
+each pattern $x$ which is not *, we define three functions $reg(x) : \N$,
+$pred(x) : \N\to G$ and $act(x) : \N\to A$. $reg(x)$ gives the associated register and $pred(x)$ gives
+the corresponding predicate, while $act(x)$ gives the action, i.e.
 \[
-\begin{array}{r c l}
-  pred(\mathtt{v})(j) &=& {\sf eq}\,reg(\mathtt{v})=j \\
-  pred(\mathtt{!v})(j) &=& {\sf neq}\,reg(\mathtt{v})=j \\
-  pred(l)(j) &=& {\sf eq}\,reg(l)=j \\
-  pred(*)(j) &=& {\sf true} \\
+\begin{array}{l l l}
+  x & pred(x)(j) & act(x)(j) \\
+  \hline
+  \mathtt{V} & {\sf true} & {\sf set} \\
+  \mathtt{v} & {\sf eq}\,reg(\mathtt{v})=j & {\sf nop} \\
+  \mathtt{!v} & {\sf neq}\,reg(\mathtt{v})=j  & {\sf nop}  \\
+  a\in V_L & {\sf eq}\,reg(a)=j  & {\sf nop}  \\
+  * & {\sf true} & {\sf nop}  \\
 \end{array}
 \]
-We can now interpret labels
+We can now interpret labels.
 \newcommand{\den}[1]{[\![#1]\!]}
+\newcommand{\denG}[1]{\den{#1}_G}
+\newcommand{\denA}[1]{\den{#1}_A}
+For a label $l$, we define
 \[
-\begin{array}{r c l}
-  \den{call\;m(x_1, \ldots, x_n)} &=& \den{m(x_1, \ldots, x_n)} \\
-  \den{ret\;x := m(x_1, \ldots, x_n)} &=& {\sf eq}\,r(x) = n+1 \land \den{m(x_1, \ldots, x_n)} \\
-  \den{m(x_1, \ldots, x_n)} &=& pred(x_1)(1) \land\ldots\land pred(x_n)(n) \\
+\den{l} = (\denG{l}, \denA{l})
+\]
+where $\denG-$ is given by
+\[
+\begin{array}{l l}
+  l & \denG l \\
+  \hline
+  call\;m(x_1, \ldots, x_n) & \denG{m(x_1, \ldots, x_n)} \\
+  ret\;x := m(x_1, \ldots, x_n) & {\sf eq}\,reg(x) = n+1 \land \denG{m(x_1, \ldots, x_n)} \\
+\end{array}
+\]
+with $\denG{m(x_1, \ldots, x_n)} = pred(x_1)(2) \land\ldots\land pred(x_n)(n+1)$,
+and $\denA-$ is given by
+\[
+\begin{array}{l l l}
+  l & \denA l \\
+  \hline
+  call\;m(x_1, \ldots, x_n) & act(x_1)(2); \dots; act(x_n)(n+1) \\
+  ret\;x := m(x_1, \ldots, x_n) & act(x_1)(2); \dots; act(x_n)(n); act(x)(n+2) \\
 \end{array}
 \]
 
