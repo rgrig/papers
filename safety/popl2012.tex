@@ -420,22 +420,16 @@ Observe that:
 (4)~The action of the last transition is superfluous, but required by the definition.
 \end{example}
 
-Let's consider the following  standard decision problems for automata. For an automaton ${\cal A}$,
-the membership problem asks whether $w\in {\cal L}({\cal A})$ for a given word~$w$.
-The emptiness problem asks whether ${\cal L}({\cal A}) = \emptyset$.
-The  universality problem asks whether $w\in{\cal L}({\cal A})$ for all words~$w$.
-For automata ${\cal A_1}$ and ${\cal A_2}$, the  language inclusion problem asks whether ${\cal L}({\cal A}_1) \subseteq {\cal L}({\cal A}_2)$.
-
 \begin{theorem}\label{th:ra}
 The following properties of register automata are known:
 \begin{enumerate}
 \item The emptiness problem is coNP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
 \item The membership problem is NL-complete~\cite{dblp:conf/mfcs/nevensv01} and NP-complete~\cite{dblp:journals/tcs/sakamotoi00}.
-\item The containment, equivalence, and universality problems are decidable for $2$~registers.~\cite{dblp:conf/focs/kaminskif90}~\cite{dblp:conf/mfcs/nevensv01}.
-\item The universality, containment, and equivalence problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
-\item Register automata are closed under union, intersection, concatenation, and Kleene star.~\cite{dblp:conf/focs/kaminskif90}
-\rlp{Not completely sure if we are talking about the full class}
-\item Register automata are \emph{not} closed under complementation~\cite{dblp:conf/focs/kaminskif90}.
+\item The inclusion, equivalence, and universality problems are decidable for $2$~registers~\cite{dblp:conf/focs/kaminskif90,dblp:conf/mfcs/nevensv01}.
+\item The inclusion, equivalence, and universality problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
+\item Register automata are closed under union, intersection, concatenation, and Kleene star~\cite{dblp:conf/focs/kaminskif90}.
+\rlp{Not completely sure if we are talking about the full class.}
+\item Register automata are \emph{not} closed under complementation and reversal~\cite{dblp:conf/focs/kaminskif90}.
 \rlp{ditto}
 \item Nondeterministic register automata are strictly more expressive than deterministic register automata~\cite{dblp:conf/focs/kaminskif90}.
 \rlp{ditto\ldots}
@@ -443,7 +437,9 @@ The following properties of register automata are known:
 \end{enumerate}
 \end{theorem}
 
-\rg{TODO: DIscuss the relevance of the last two points.}
+Some of these properties contrast with analogues for finite alphabets, which are better known.
+For example with finite alphabets automata are closed under complementation and reversal, and nondeterminism does not increase expressivity.
+These results differ for infinite alphabets because registers can be re-bound to different values an unbounded number of times.
 
 These results have analogues for TOPL automata.
 The details depend on what exactly the arrows from \autoref{fig:concepts} are.
