@@ -168,16 +168,16 @@ the programmer.
 Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a number of parameters. 
 
 \paragraph{Contributions.}
-In summary, the contributions of this paper are:\dd{add the rtopl-->topl}
+In summary, the contributions of this paper are:
 \begin{itemize}
 \item We define TOPL, a formal specification language tailored to express properties involving object interactions over time in a way that is familiar to object-oriented programmers.
 \item We define a precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
-\item We define a precise formal correspondence between TOPL automata and register automata. This allows us to check several characteristic of TOPL specifications (e.g., the non-emptiness of their language).
+\item We define a precise formal correspondence between TOPL automata and register automata. 
+In particular we prove that they are equally expressive. As our proof is constructive, this implies that the decidability results for register automata hold also for TOPL automata. Consequently we can decide several features of TOPL specifications (e.g., language emptiness).
 \item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A numerical parameter is used to tune the precision of the system.
 
-\item We report the experimental results of running our tool on large open-source projects. The results are encouraging: we have found
-violations of properties, and we have observed an acceptable runtime
-overhead. \rlp{Is this a contribution of the paper?}
+\item We report on experiments of running our tool on large open-source projects. The results are encouraging (e.g., we have found
+an interesting and previously unknown  concurrency bug in the DaCapo suite). 
 \end{itemize}
 
 
@@ -238,8 +238,8 @@ Consider the following loop using a list:
      ......
   }
 \end{verbatim}
-If the list {\tt l} is circular or pan-handle shaped the loop will diverge.
-At run time, it would be impossible even to observe the problem.  
+If the list {\tt l} is circular or pan-handle shaped, one of the problem could be that the loop will diverge.
+Being a violation of a liveness property (termination), divergence cannot be observed at runtime in finite time and therefore it is harder to debug.
  If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
 in the context of this discussion, we exclude these kind of explicit checks.}
 \eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it4}
@@ -1187,14 +1187,13 @@ property Taint
   observe <{Itr.next,Concat.make,Str.itr}>
   prefix <{Itr,Concat,Str}>
   start -> start: *
-  start -> a:  \pattern{X} := \pattern{*}.input()
-  a -> a: \pattern{X} := x.make(\pattern{x}, *), \pattern{X} := make(*, \pattern{x}), !*.sani(*)
-  a -> b: *.sani(\pattern{x})
-  a -> error: \pattern{*}.sink(\pattern{x})
+  start -> a:  \pattern{X} := input()
+  a -> a: \pattern{X} := make(\pattern{x}, *), \pattern{X} := make(*, \pattern{x}), (!sani)(*)
+  a -> b: sani(\pattern{x})
+  a -> error: sink(\pattern{x})
 \end{Verbatim}
 \delimitVerbatim}
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
-\dd{is this correct?}
 
 \paragraph{Singleton Pattern.} 
 The last property we present concerns 
@@ -1203,8 +1202,8 @@ the singleton pattern where the instantiation of a class is restricted to one ob
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property SingletonPattern
-  start -> a:  \pattern{I} := \pattern{*}.getInstance()
-  a -> error: \pattern{i}:=! \pattern{*}.getInstance()
+  start -> a:  \pattern{I} := getInstance()
+  a -> error: ! \pattern{i}:= getInstance()
 \end{Verbatim}
 \delimitVerbatim}
 The property produce an error is the object obtained by the method {\tt getInstance()} is not the same as the one already bound to the automata variable $i$.
@@ -1227,6 +1226,35 @@ The TOPL checker (class {\tt topl.Checker}) monitors the execution and reports v
 \end{center}
 \end{figure}
 
+% >>>
+\paragraph{The TOPL Checker.} % <<<
+The checker logs the property violations it detects. 
+Internally it  maintains a set of active states.
+New states are  produced by applying an action to an existing state (called the parent).
+For error reporting, each state keeps track of its parent.
+The implementation takes advantage of this fact by representing stores
+using persistent sets for bindings;  more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
+
+As states point to their parent, we need some mean to control overhead.  This is done by configurable parameter for 
+the history length~$h$ in {\tt Property.java}.
+We should then allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
+To do that, after each execution of a transition we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
+However, for $n$~active states, the traversal would take $O(nh)$~time.
+The procedure for executing transitions takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
+So, the checker would become much slower if $h>d$, which usually is the case.
+%
+One solution could be to perform the BFS once in every $h/d$~steps.
+The solution we implemented tries to better address the average case.
+We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
+
+The set of active states in nondeterministic automata can be unbounded.
+Therefore, as for the case of trace lengths, we impose a bound on number of active states. 
+The bound can be configured by the user  in the {\tt Property.java}  file.  
+The  strategy for forgetting states can also be chosen among: {\em random}, {\em newest}, and {\em oldest}.
+Newest\slash oldest refer to a time attached to states.
+The time  of a state is the number of transitions  taken to reach that state.
+
+
 \paragraph{The TOPL Compiler.} \label{sec:toplc} % <<<
 The compiler takes as input a Java project and a set of TOPL properties.
 The Java project is defined to be all files in a given directory, recursively descending into jar and zip files as well as  subdirectories.
@@ -1236,9 +1264,7 @@ This is because only the Java methods relevant to the given TOPL properties are 
  the construction of the  automaton relies on the inheritance tree of the Java project.
 For example, suppose that a TOPL property mentions the method {\tt next} from the interface {\tt Iterator}.
 Then, on one hand, all the methods that implement {\tt Iterator.next} are instrumented and, on the other hand, the corresponding guard in the automaton will match all these methods.
-
-
-
+%
 More precisely the compiler has the following five phases.
 \begin{enumerate}
 \item {\em Parsing and Desugaring.}
@@ -1269,37 +1295,6 @@ Barista~\cite{barista}.}
 The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
 \end{enumerate}
 
-% >>>
-\paragraph{The TOPL Checker.} % <<<
-The checker logs the property violations that it detects. 
-Internally it  maintains a set of active states.
-New states are  produced by applying an action to another state (called the parent).
-For error reporting, each state keeps track of its parent.
-The implementation takes advantage of this fact by using persistent (functional) sets for bindings to represent stores; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
-%
-%The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
-%It implements the execution of  transitions in  TOPL automata with rollback.
-%\dd{Radu please can explain the procedure?}
-
-
-As states point to their parent, we need some mean to control overhead.  This is done by configurable parameter for 
-the history length~$h$ in {\tt Property.java}.
-We should then allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
-To do that, after each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
-However, for $n$~active states, the traversal would take $O(nh)$~time.
-The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
-So, the checker would become much slower if $h>d$, which usually is the case.
-%
-One solution could be to perform the BFS once in every $h/d$~steps.
-The solution we implemented tries to better address the average case.
-We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
-
-The set of active states in nondeterministic automata can be unbounded.
-Therefore, as for the case of trace lengths, we impose a bound on number of active states. 
-The bound can be configured by the user  in the {\tt Property.java}  file.  
-The  strategy for forgetting states can also be chosen among: {\em random}, {\em newest}, and {\em oldest}.
-Newest\slash oldest refer to a time attached to states.
-The time  of a state is the number of transitions (i.e., {\sc STEP}) taken to reach that state.
 
 
 %Its components are:
