@@ -163,20 +163,7 @@ properties about their programs. These properties will be then automatically che
 The formal correspondence between the properties and register automata defined in this paper gives rigorous mathematical foundation to
 the approach and allow us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can decide whether its language is empty.  The formal development is completely hidden from 
 the programmer.  
-%Thus TOPL provides developers with a flexible methodology for enforcing safety constraints on their code.
 Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of  four parameters. 
-
-
-%For example, every iterator and every collection in \texttt{java.util} contains checks concerning the example property~\eqref{q:concur-it}.
-%It is impossible to turn off these checks, even if one has a proof that a certain program correctly uses the library.
-%Because these checks are always active, their overhead must be very low.
-%As a result, when a check fails, the user is not provided with an error trace.
-%Also, such checks are difficult to write and to maintain. Other libraries document such temporal constraints only in (informal) comments.
-%With TOPL, the programmer (formally) describes the properties in one place, which is separate from the code. 
-%This description serves as a rigorous documentation (because of the formal semantics) of which safety properties are enforced on the program.
-%Then it is the job of the TOPL compiler to insert the appropriate checks into the Java bytecode of the program.
-%The execution is monitored and violations are reported as traces of events.
-%The programmer has the ability to tune the overhead by choosing how many objects to track, for how long to remember past events, and a few other parameters. For example, during testing they could allow for a very high overhead, whereas they could choose to deploy the bytecode without any inserted check.
 
 \paragraph{Contributions.}
 In summary, the contributions of this paper are:\dd{add the rtopl-->topl}
@@ -225,7 +212,7 @@ Consequently we will have a possibly an unbounded number of tainted objects.
 In a temporal specification we would then need either different logical variables for each different tainted objects or
 the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in such a way that at the semantic level we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
 different values during the computation allows to keep the specification finite. 
-%
+
 \begin{figure}[t] % first example <<<
 %\include{IncorrectIteratorUse}
 \begin{tiny}
@@ -406,7 +393,6 @@ A \emph{register automaton} with $m$~registers is an automaton over the alphabet
 \end{definition}
 
 There are several variants of definitions for register automata in the literature.
-%It is even the case that several published results hold only for certain variants of the definition.
 Our variant corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
 
 \begin{example}\label{ex:ra1}
@@ -1058,141 +1044,6 @@ property InvalidateOtherIterators
 }
 \label{fig:first.topl}
 \end{figure}
-%
-%\begin{figure}[t]
-%{\def\s#1{\text{\Verb@#1@}}
-% \def\m#1{\PY{n+na}{#1}}
-% \def\t#1{\mathtt{#1}}
-% \def\cmt#1{\textcolor{gray}{\text{// #1}}}
-%\begin{align*}
-%&\{\;(\start,[])\;\} \\
-%&\s{Iterator<Integer> i = c.\m{iterator}();}  \quad \cmt{\bf \it Step 1} \\
-%&\cmt{Assume {\tt c} holds $1$, and {\tt i} holds $2$ } \\
-%& \begin{aligned}
-%  \{\;&(\start,[]),\
-%      &(\t{one},[c:1,x:2])\;\}
-%  \end{aligned}\\
-%&\s{Iterator<Integer> j = c.\m{iterator}();}  \quad \cmt{\bf \it Step 2} \\
-%&\cmt{Assume {\tt j} holds $3$} \\
-%& \begin{aligned}
-%  \{\;&(\start,[]),\
-%      &(\t{one},[c:1,x:2]),\
-%      &(\t{one},[c:1,x:3]),\
-%   \end{aligned}\\
-%& \begin{aligned}   
-%      & \quad (\t{two},[c:1,x:2,y:3])\;\}
-%  \end{aligned}\\
-%&\s{i.\m{next}();} \quad \cmt{\bf \it Step 3} \\
-%& \begin{aligned}
-%  \{\;&(\start,[]),\
-%      &(\t{one},[c:1,x:2]),\
-%      &(\t{one},[c:1,x:3]),\
-%   \end{aligned}\\
-%& \begin{aligned}   
-%      & \quad (\t{two},[c:1,x:2,y:3])\;\}
-%  \end{aligned}\\
-%&\s{i.\m{remove}();} \quad \cmt{\bf \it Step 4}  \\
-%& \begin{aligned}
-%  \{\;&(\start,[]),\
-%      &(\t{one},[c:1,x:2]),\
-%      &(\t{one},[c:1,x:3]),\
-%   \end{aligned}\\
-%& \begin{aligned}   
-%      & \quad (\t{yBad},[c:1,x:2,y:3])\;\}
-%  \end{aligned}\\
-%&\s{j.\m{next}()} \quad \cmt{\bf \it Step 5}  \\
-%& \begin{aligned}
-%  \{\;&(\start,[]),\
-%      &(\t{one},[c:1,x:2]),\
-%      &(\t{one},[c:1,x:3]),\
-%   \end{aligned}\\
-%& \begin{aligned}   
-%      & \quad (\error,[c:1,x:2,y:3])\;\}
-%  \end{aligned}\\
-%\end{align*}}
-%\caption{Running trace of {\tt InvalidateOtherIterators}. Lines \{in curly brackets\} describe automaton's states;
-%lines in \texttt{monotype} show executing statements;
-%// are comments.}
-%\label{fig:first.steps}
-%\end{figure} % >>>
-%\autoref{fig:first.steps} shows an execution of the program in \autoref{fig:first.java} and an automaton for \texttt{InvalidateOtherIterators}.
-%At a given moment, the automaton has a set of active states.
-%A state is a pair of a vertex and a store.
-%The store is a memory that holds (automaton) variables.
-%Technically, it is a finite partial map from variables to values.
-%We write $[k_1:v_1,k_2:v_2]$ for the finite partial map that maps key~$k_1$ to value~$v_1$, and key~$k_2$ to value~$v_2$.
-%The empty map is denoted by~$[]$.
-%
-%The automaton has variables $x$,~$y$, and~$c$.
-%At vertex \texttt{one} the variables $x$~and~$c$ are initialized;
-%at \texttt{two} the variables $x$,~$y$, and~$c$ are initialized.
-%At vertex \texttt{one} $x$~is an iterator for a collection~$c$, and
-%at \texttt{two}, $x$~and~$y$ are both two iterators for the same collection~$c$.
-%Notice that~\Verb@c@ is a program variable whereas~$c$ is an automaton variable.
-%The same name was chosen because the two variables always hold the same value in this example.
-%In general, however, program variables and automaton variables live in different name-spaces, and may hold different values.
-%
-%To avoid confusion, program variables are typeset in \Verb@monotype@ (\Verb@c@,~\Verb@i@,~\Verb@j@).
-%Automaton variables are typeset in \textit{italics} ($c$,~$x$,~$y$) and do \emph{not} appear in the property.
-%Instead, automaton variable \emph{patterns} appear in the property, and they are typeset in \texttt{\underline{underlined monotype}} (\pattern c,~\pattern C, \pattern x, \pattern X, \pattern y,~\pattern Y).
-%The interaction between patterns and the automaton's memory is as follows: uppercase patterns write to the automaton memory, and lowercase patterns read from the automaton memory and act as a guard on the transition.
-%
-%We now illustrate all this by going through the execution step by
-%step.
-
-%\paragraph{Step~2.}
-%For the second step, the statement to be executed is \verbline[.]{j = c.\PY{n+na}{iterator}()}
-%Now we need to consider, in turn, the two active states \[\{(\start,[])\quad\text{and}\quad(\texttt{one},[c:1,x:2])\}\]
-%For $(\start,[])$ the same reasoning as for step 1 holds, so the states $(\start,[])$ and $(\mathtt{one},[c:1,x:3])$ are active after step~2.
-%Note that now the automaton variable~$x$ remembers the value of the program variable~{\tt j}.
-%For $(\texttt{one},[c:1,x:2])$ we look at the outgoing transitions from vertex {\tt one}.
-%\begin{align*}
-%\text{\Verb@one -> one@} &: * \quad \mbox{ and } \quad \\
-%\text{\Verb@one -> two@} &: \text{\Verb@\pattern Y := \pattern c.iterator()@}
-%\end{align*}
-%The first transitions is always enabled, and performing it keeps states with vertex \texttt{one} active.
-%The second transitions has two patterns, \pattern Y~and~\pattern c.
-%The uppercase pattern~\pattern Y always matches, whereas
-%pattern \pattern c matches only the value held by the automaton variable~$c$.
-%In this case, $c$ was set in the previous step to the value of the program variable~\texttt{c}.
-%Therefore, the transition from~\Verb@one@ to~\Verb@two@ is performed and the state $(\mathtt{two},[c:1,x:2,y:3])$ is activated.
-
-%\paragraph{Step~3.}
-
-%The third step involves the statement
-%\[\text{\Verb+\PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}+}\]
-%which matches no label of outgoing transitions of the currently active vertices (that is, \start, {\tt one}, and {\tt  two}).
-%Therefore, although the program proceeds, the set of active states of the automaton remains unchanged.
-%
-%\paragraph{Step~4.}
-
-%In the fourth step, the transition $\texttt{two}\to\texttt{yBad}$ is performed.
-%Notice that the pattern $\pattern{x}.\mathtt{remove}()$ does not have a left-hand side, which simply means that the returned value is irrelevant for this transition.
-%The states corresponding to vertices \start and {\tt one} remain unchanged, because their outgoing transitions are disabled.
-%However,  the outgoing transition of state {\tt two} is enabled, and therefore {\tt yBad} becomes active.
-
-%\paragraph{Step~5.}
-
-%For the fifth and final step, the statement to be executed is \verbline[.]{j.\PY{n+na}{next}()}
-%The label of the outgoing transition  \[\mathtt{call}\;\pattern{y}.{*}[*]\] of the active state $(\texttt{yBad},[c:1,x:2,y:3])$
-%has two distinguishing features: the~$*$ as a method name and the tag \texttt{call}.
-%As before, in order to match the method name, the prefixes
-%\Verb@java.util.Collection.*[*]@ as well as \Verb@java.util.Iterator.*[*]@
-%are prepended.
-%Then the $*$s are expanded, taking into account the \texttt{CLASSPATH}.
-%One expansion, \Verb@java.util.Iterator.next@, is indeed
-%overridden by the method that is actually called and therefore 
-%we have a match.
-
-%The tag {\tt call} is used when we want the automaton to take a transition precisely at call-time of a method invocation.
-%The automaton expresses that a call to one of {\tt j}'s methods while vertex \texttt{yBad} is active constitutes an error.
-%Notice that this is different from a label like $\pattern X:=\pattern C.\mathtt{iterator}()$ which may match only after the return value is known.
-
-%\medskip
-%The execution we stepped through reaches the \error vertex, so we conclude that the property is violated.
-%Notice that in order to find a counterexample we need to keep track of the relation between several objects, in particular that iterators {\tt i} and {\tt j} are for the same collection {\tt c}.
-
-% >>>
 \paragraph{Heap Shape and Values Sensitive Properties}  % <<<
 The following is a TOPL encoding of the property~\eqref{} in Section~\ref{sec:}.
 It reports an error if a list is cyclic or it has the pan-handle shape (i.e.,
@@ -1281,7 +1132,6 @@ TOPL properties are read first, before the Java project, and desugared into a si
 \item {\em Generate Checker Configurations.}
 In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java} containing 
 info used by the TOPL property and code that configures the checker.
-%It is this file that must be recompiled if one wishes to change the parameters of the checker. 
 The configuration parameters include:
 \begin{itemize}
 \item \emph{History length}---how many events to remember.
@@ -1299,94 +1149,7 @@ The configuration parameters include:
 The bytecode of observable methods is instrumented.\footnote{To instrument Java bytecode we use a fork of the library 
 Barista~\cite{barista}.}
 The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
-%This method takes an event as an argument.
-%Each event carries an identifier and an array of {\tt Object}.
-%The array holds either the arguments, or the return value.
 \end{enumerate}
-
-
-%\paragraph{Parsing and Desugaring.}
-%TOPL properties are read first, before the Java project.
-%The parser desugars the TOPL properties into a simpler, intermediate form where
-%\begin{itemize}
-%\item Method-name patterns are prefixed according to the {\tt prefix} directive.
-%\item Lowercase patterns and constant patterns are turned into guards.
-%\item Uppercase patterns are turned into actions.
-%\item Transitions of length 2 or of length 1 are built according to whether the guards and the actions refer to both call-time and return-time or not. (In particular, there are no transitions of length~$0$.)
-%\end{itemize}
-%The parser builds an AST that closely follows the language for which we gave formal operational semantics.
-
-%\paragraph{Static Checks.}
-%Next, the compiler checks that the property is well-formed:
-%\begin{itemize}
-%\item two parallel writes to automaton variables have distinct destinations;
-%\item reads from automaton variables must be preceded by writes.
-%\end{itemize}
-%
-%The compiler warns if some vertices are unused.
-%Properties with unused vertices are still well-formed.
-%We plan to also statically check whether the automaton can never fail.
-
-%\paragraph{Generate Event Identifiers.}
-
-%In this phase, each observable method is assigned two identifiers, one for the call event and one for the return event.
-%A method is \emph{observable} when its full name or the full name of a method it overrides matches the {\tt observe} directive.
-%The bytecode is read to collect all method names and to build the inheritance tree.
-
-%\paragraph{Construct the Automaton.}
-
-%In this phase, all properties are merged into one automaton.
-%From now on vertices are integers, rather than strings.
-%All vertices that had the name \start are now in the set of start vertices;
-%all vertices that had the name \error now have an error message attached.
-%Each TOPL property has its own {\tt observe} directive.
-%This information must be encoded in the automaton:
-%Each vertex is given a set of event identifiers.
-
-%The guards of the automaton are of two kinds.
-%Those that test program values are essentially left unchanged in this phase.
-%Those that check the event type, the method name, and the method arity are all transformed into one guard that is represented by a set of event identifiers.
-%The evaluation of the guard at runtime is a set containment test.
-
-%The automaton is dumped into the file {\tt Property.text}.
-%The TOPL compiler does not interpret Java expressions.
-%If a guard compares a program value with a literal, then the literal is saved in an array in {\tt Property.java}, and {\tt Property.text} points to it.
-%
-%\paragraph{Generate Checker Configurations.}
-
-%In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java}.
-%This file serves three purposes:
-%\begin{itemize}
-%\item
-%It contains an array with all the constants used in the TOPL property.
-%For example, if a guard requires that a certain argument equals the expression~$21/7$, then $21/7$ is stored in this array.
-%\item
-%It activates the checker.
-%The checker is inactive by default so that the Java standard library may be instrumented.
-%The JVM uses certain parts of the standard library during its own startup.
-%If those parts happen to be instrumented then they call into the checker.
-%If the checker is inactive it immediately returns and the execution continues.
-%If the checker would be active then it will call back into the standard library and the JVM will crash.
-%\item
-%For convenience, it contains code that configures the checker.
-%To change the parameters of the checker the user changes this code and recompiles {\tt Property.java}.
-%\end{itemize}
-%
-%\paragraph{Instrumentation.}
-
-%In this phase, the bytecode of observable methods is instrumented.
-%The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
-%This method takes an event as an argument.
-%Each event carries an identifier and an array of {\tt Object}.
-%The array holds either the arguments, or the return value.
-
-%To instrument Java bytecode we use a fork of the library Barista~\cite{barista}.
-%The high-level bytecode representation of the original library is rather low-level.
-%For example, it still represents jumps as byte counts.
-%We changed Barista's high-level representation to make it easy to use for instrumentation.
-%Hence, we had to rewrite the code that transformed between the low-level and the high-level representation.
-%These changes amount to more than half our implementation effort.
-%(For example, adding the number of lines changed by each commit gives $48\rm\,K$.)
 
 % >>>
 \paragraph{The TOPL Checker.} % <<<
@@ -1815,8 +1578,6 @@ sampling. To ensure that the timing overhead of the monitoring is below a given 
 automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
 To improve performance,  the implementation of the QVM monitor is in the virtual machine,which, as a consequence makes it less portable for
 different virtual machines. 
-%\dd{how do we defend ourselves for the fact that we cannot predict
-%  overhead?}\rlp{by experiments?}
 An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} .
 This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external methods.
 In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
