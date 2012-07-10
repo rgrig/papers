@@ -1093,6 +1093,7 @@ The following is a TOPL encoding of the property~\eqref{q:concur-it4} in Section
 It reports an error if a list is cyclic or it has the pan-handle shape (i.e.,
 there is a lasso at some point). Directives are omitted.
 %
+{\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property ListNotCyclic
@@ -1104,10 +1105,11 @@ there is a lasso at some point). Directives are omitted.
    b -> error: x := y.next()
    a -> error: x := x.next()
 \end{Verbatim}
-\delimitVerbatim
+\delimitVerbatim}
 The idea is that this property will bind the automaton variable $x$ with any possible object in the list, and the $y$ with any possible successors (via the next field) of the current binding of $x$.
 Therefore, if there is a lasso, in the list, this will be detected when a new biding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$.
 The transition \texttt{a ->error} detect the case where there is an object pointing to itself. This property shows the importance of re-binding for specification variables. This phenomenon is also shown by  the following property which detects when a dictionary overwrite one of its bindings.
+{\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
  property BadDictionary
@@ -1119,13 +1121,14 @@ The transition \texttt{a ->error} detect the case where there is an object point
    written -> written: d.put(k, \pattern{V})
    written -> error:   !v := d.get(k)
 \end{Verbatim}
-\delimitVerbatim
+\delimitVerbatim}
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the automaton variable $v$.
 
 %>>>
 \paragraph{Iterating Dirty Ropes.} % <<<
 The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can be encoded in TOPL as follows:
 %
+{\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property IterateDirtyRopes
@@ -1140,7 +1143,7 @@ property IterateDirtyRopes
   b -> d: \pattern{j}.set(*)
   d -> error: \pattern{i}.next()
 \end{Verbatim}
-\delimitVerbatim
+\delimitVerbatim}
 The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
 of two different iterators of two collections sharing some object invalidating each other will reach the error state. 
 \\dd{are there other permutation missed by the property?}
@@ -1149,6 +1152,7 @@ of two different iterators of two collections sharing some object invalidating e
 \paragraph{Taint Properties.} % <<<
 To check taint information as described by property~\eqref{q:concur-it3} in Section~\ref{sec:motivating-examples} we can use the following
 TOPL specification:
+{\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
 property Taint
@@ -1160,7 +1164,7 @@ property Taint
   a -> b: *.sani(\pattern{x})
   a -> error: \pattern{*}.sink(\pattern{x})
 \end{Verbatim}
-\delimitVerbatim
+\delimitVerbatim}
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 \dd{is this correct?}
 
