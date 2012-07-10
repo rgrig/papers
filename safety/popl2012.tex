@@ -211,14 +211,16 @@ In this case we may have two (or more) collections {\em sharing} some elements. 
 \paragraph{Re-binding of specification variables.}
 Now let's consider the case where we want to perform taint checking for input coming from a web form.  What we want to check is the following
 property:
-\eqquote{Any value introduced by the {\tt input()} method should not reach the  {\tt sink()} method without passing first from the {\tt sanitizer()} method.}{q:concur-it3}
-This property is at first sight simple. However, it's difficulty can vary depending from the context. Consider in fact the case where
+\eqquote{Any value introduced by the {\tt input()} method should not
+  reach the  {\tt sink()} method without first passing through the {\tt sanitizer()} method.}{q:concur-it3}
+This property is at first sight simple. However, it's difficulty can vary depending on the context. Consider in fact the case where
 the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}. 
-The number of user inputs, and therefore of concatenations, it is not known a priori and in general unbounded.
-Consequently we will have a possibly an unbounded number of tainted objects. 
+The number of user inputs, and therefore of concatenations, is not known a priori and in general unbounded.
+Consequently we will have a possibly unbounded number of tainted objects. 
 In a temporal specification we would then need either different logical variables for each different tainted objects or
 the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in such a way that at the semantic level we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
-different values during the computation allows to keep the specification finite. 
+different values during the computation allows the specification to be
+kept finite. 
 
 \begin{figure}[t] % first example <<<
 %\include{IncorrectIteratorUse}
@@ -230,8 +232,8 @@ different values during the computation allows to keep the specification finite.
 \end{figure}
 %
 
-The problem of rebinding of variable in the specification arises also in other contexts. For example, 
-when  reasoning about the evolving shape of dynamic allocated data-structures. 
+The need for rebinding of variables in the specification arises also in other contexts. For example, 
+when  reasoning about the evolving shape of dynamically allocated data-structures. 
 Consider the following loop using a list:
  \begin{verbatim}
   while (l.next()!=null) {
@@ -239,13 +241,17 @@ Consider the following loop using a list:
      ......
   }
 \end{verbatim}
-If the list {\tt l} is circular or pan-handle shape the loop will diverge.
+If the list {\tt l} is circular or pan-handle shaped the loop will diverge.
 At run time, it would be impossible even to observe the problem.  
- If we have obtained the list by calling a third party library, we would want to check the following property:\footnote{Of course, one can also write a method (to call before entering the loop) which traverses the list and check whether is circular or pan-handle. However,
-in the context of this discussion, we exclude these kind of explicit checks.}
-\eqquote{The shape of the list should not be neither circular nor pan-handle.}{q:concur-it3}
+ If we have obtained the list by calling a third party library, we
+ would want to check the following property:\footnote{Of course, one
+   can write a method (to call before entering the loop) which
+   traverses the list and check whether it is circular or pan-handle. However,
+when the scope of the list is not clearly defined, these kind of
+explicit checks become cumbersome and error prone.}
+\eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it3}
 We will see in Section~\ref{sec:properties} that also the encoding of properties of this kind requires the ability to update the 
-value of the specification variables.  This is because the way to encode the property is by checking, when using the list, that we reach some element we have seen before. 
+value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach some element we have seen before. 
 
 %The following TOPL properties test the shape of a linked list and
 %reports an error if it is cyclic or it has the pan-handle shape (i.e.,
