@@ -1,0 +1,54 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kd}{interface} \PY{n+nc}{Str} \PY{o}{\PYZob{}}
+  \PY{k+kt}{void} \PY{n+nf}{set}\PY{o}{(}\PY{k+kt}{int} \PY{n}{i}\PY{o}{,} \PY{k+kt}{char} \PY{n}{c}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{char} \PY{n+nf}{get}\PY{o}{(}\PY{k+kt}{int} \PY{n}{i}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{int} \PY{n+nf}{len}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+  \PY{n}{Itr} \PY{n+nf}{itr}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{interface} \PY{n+nc}{Itr} \PY{o}{\PYZob{}}
+  \PY{k+kt}{char} \PY{n+nf}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+  \PY{k+kt}{void} \PY{n+nf}{set}\PY{o}{(}\PY{k+kt}{char} \PY{n}{c}\PY{o}{)}\PY{o}{;} 
+  \PY{k+kt}{boolean} \PY{n+nf}{hasNext}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{class} \PY{n+nc}{CharArray} \PY{k+kd}{implements} \PY{n}{Str} \PY{o}{\PYZob{}}
+  \PY{k+kt}{char} \PY{o}{[}\PY{o}{]} \PY{n}{data}\PY{o}{;}
+  \PY{k+kd}{public} \PY{n+nf}{CharArray}\PY{o}{(}\PY{k+kt}{int} \PY{n}{len}\PY{o}{)}                 \PY{o}{\PYZob{}} \PY{n}{data} \PY{o}{=} \PY{k}{new} \PY{k+kt}{char}\PY{o}{[}\PY{n}{len}\PY{o}{]}\PY{o}{;} \PY{o}{\PYZcb{}}
+    ....
+  \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{n}{CaItr} \PY{n}{itr}\PY{o}{(}\PY{o}{)}              \PY{o}{\PYZob{}} \PY{k}{return} \PY{k}{new} \PY{n}{CaItr}\PY{o}{(}\PY{o}{)}\PY{o}{;} \PY{o}{\PYZcb{}}
+
+  \PY{k+kd}{class} \PY{n+nc}{CaItr} \PY{k+kd}{implements} \PY{n}{Itr} \PY{o}{\PYZob{}}
+    \PY{k+kt}{int} \PY{n}{i}\PY{o}{;}
+    \PY{k+kd}{public} \PY{n+nf}{CaItr}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}} \PY{n}{i} \PY{o}{=} \PY{o}{-}\PY{l+m+mi}{1}\PY{o}{;} \PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{char} \PY{n}{next}\PY{o}{(}\PY{o}{)}        \PY{o}{\PYZob{}} \PY{k}{return} \PY{n}{data}\PY{o}{[}\PY{o}{+}\PY{o}{+}\PY{n}{i}\PY{o}{]}\PY{o}{;} \PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{void} \PY{n}{set}\PY{o}{(}\PY{k+kt}{char} \PY{n}{c}\PY{o}{)}   \PY{o}{\PYZob{}} \PY{n}{data}\PY{o}{[}\PY{n}{i}\PY{o}{]} \PY{o}{=} \PY{n}{c}\PY{o}{;} \PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{boolean} \PY{n}{hasNext}\PY{o}{(}\PY{o}{)}  \PY{o}{\PYZob{}} \PY{k}{return} \PY{n}{i} \PY{o}{+} \PY{l+m+mi}{1} \PY{o}{<} \PY{n}{data}\PY{o}{.}\PY{n+na}{length}\PY{o}{;} \PY{o}{\PYZcb{}}
+  \PY{o}{\PYZcb{}}
+\PY{o}{\PYZcb{}}
+
+\PY{k+kd}{class} \PY{n+nc}{Concat} \PY{k+kd}{implements} \PY{n}{Str} \PY{o}{\PYZob{}}
+  \PY{n}{Str} \PY{n}{one}\PY{o}{,} \PY{n}{two}\PY{o}{;}
+  \PY{k+kt}{int} \PY{n}{len}\PY{o}{;}
+  \PY{k+kd}{private} \PY{n+nf}{Concat}\PY{o}{(}\PY{n}{Str} \PY{n}{one}\PY{o}{,} \PY{n}{Str} \PY{n}{two}\PY{o}{)} \PY{o}{\PYZob{}}
+    \PY{k}{this}\PY{o}{.}\PY{n+na}{one} \PY{o}{=} \PY{n}{one}\PY{o}{;} \PY{k}{this}\PY{o}{.}\PY{n+na}{two} \PY{o}{=} \PY{n}{two}\PY{o}{;}
+    \PY{n}{len} \PY{o}{=} \PY{n}{one}\PY{o}{.}\PY{n+na}{len}\PY{o}{(}\PY{o}{)} \PY{o}{+} \PY{n}{two}\PY{o}{.}\PY{n+na}{len}\PY{o}{(}\PY{o}{)}\PY{o}{;}
+  \PY{o}{\PYZcb{}}
+     ....
+  \PY{k+kd}{public} \PY{k+kd}{static} \PY{n}{Concat} \PY{n+nf}{make}\PY{o}{(}\PY{n}{Str} \PY{n}{one}\PY{o}{,} \PY{n}{Str} \PY{n}{two}\PY{o}{)}\PY{o}{\PYZob{}} \PY{k}{return} \PY{k}{new} \PY{n+nf}{Concat}\PY{o}{(}\PY{n}{one}\PY{o}{,} \PY{n}{two}\PY{o}{)}\PY{o}{;}\PY{o}{\PYZcb{}}
+
+  \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{n}{CoItr} \PY{n}{itr}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}}\PY{k}{return} \PY{k}{new} \PY{n+nf}{CoItr}\PY{o}{(}\PY{o}{)}\PY{o}{;}\PY{o}{\PYZcb{}}
+
+  \PY{k+kd}{class} \PY{n+nc}{CoItr} \PY{k+kd}{implements} \PY{n}{Itr} \PY{o}{\PYZob{}}
+    \PY{k+kt}{boolean} \PY{n}{first}\PY{o}{;}
+    \PY{n}{Itr} \PY{n}{i}\PY{o}{;}
+    \PY{k+kd}{public} \PY{n+nf}{CoItr}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}} \PY{n}{i} \PY{o}{=} \PY{n}{one}\PY{o}{.}\PY{n+na}{itr}\PY{o}{(}\PY{o}{)}\PY{o}{;} \PY{n}{first} \PY{o}{=} \PY{k+kc}{true}\PY{o}{;} \PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{char} \PY{n}{next}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}}\PY{n}{maybeSwap}\PY{o}{(}\PY{o}{)}\PY{o}{;} \PY{k}{return} \PY{n}{i}\PY{o}{.}\PY{n+na}{next}\PY{o}{(}\PY{o}{)}\PY{o}{;}\PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{void} \PY{n}{set}\PY{o}{(}\PY{k+kt}{char} \PY{n}{c}\PY{o}{)} \PY{o}{\PYZob{}}\PY{n}{i}\PY{o}{.}\PY{n+na}{set}\PY{o}{(}\PY{n}{c}\PY{o}{)}\PY{o}{;} \PY{o}{\PYZcb{}}
+    \PY{n+nd}{@Override} \PY{k+kd}{public} \PY{k+kt}{boolean} \PY{n}{hasNext}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}}\PY{n}{maybeSwap}\PY{o}{(}\PY{o}{)}\PY{o}{;}\PY{k}{return} \PY{n}{i}\PY{o}{.}\PY{n+na}{hasNext}\PY{o}{(}\PY{o}{)}\PY{o}{;} \PY{o}{\PYZcb{}} 
+      \PY{k+kd}{private} \PY{k+kt}{void} \PY{n+nf}{maybeSwap}\PY{o}{(}\PY{o}{)} \PY{o}{\PYZob{}} 
+      \PY{k}{if} \PY{o}{(}\PY{n}{first} \PY{o}{&}\PY{o}{&} \PY{o}{!}\PY{n}{i}\PY{o}{.}\PY{n+na}{hasNext}\PY{o}{(}\PY{o}{)}\PY{o}{)} \PY{o}{\PYZob{}}\PY{n}{i} \PY{o}{=} \PY{n}{two}\PY{o}{.}\PY{n+na}{itr}\PY{o}{(}\PY{o}{)}\PY{o}{;}\PY{n}{first} \PY{o}{=} \PY{k+kc}{false}\PY{o}{;}\PY{o}{\PYZcb{}}
+    \PY{o}{\PYZcb{}}
+  \PY{o}{\PYZcb{}}
+\PY{o}{\PYZcb{}}
+\end{Verbatim}
