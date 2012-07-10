@@ -8,6 +8,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{booktabs}
+\usepackage{fancyvrb}
 \usepackage{graphics}
 \usepackage{microtype}  % do not remove
 \usepackage{multirow}
@@ -22,6 +23,8 @@
 \usetikzlibrary{arrows,positioning,fit,backgrounds,shadows,calc}
 
 \usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
+
+%\g@addto@macro\verbatim{\microtypesetup{activate=false}}
 
 \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
 \definecolor{darkred}{rgb}{0.4,0,0}
@@ -58,7 +61,7 @@
 \newcommand{\B}{\ensuremath{\mathbb{B}}}
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\A}{\ensuremath{\mathcal{A}}}
-\newcommand{\delimitVerbatim}{\par\nobreak\smallskip\noindent}
+\newcommand{\delimitVerbatim}{\par\nobreak\medskip\noindent}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
 \newcommand{\limp}{\Rightarrow}
@@ -858,7 +861,6 @@ Register automata, simple TOPL automata, and rollback TOPL automata share the fo
 \item The languages of these automata are not closed under complementation.
 \end{enumerate}
 \end{theorem}
-\rg{TODO: More specific complexity classes for the problems above.}
 
 % >>>
 % >>>
@@ -879,11 +881,9 @@ Syntactically, a TOPL property has a set of transitions.\footnote{For
   the complete BNF grammar for TOPL we refer to~\cite{our-fool2011}.}
 Each transition is a labelled arc (directed edge) with a source and a
 target vertex identified by their name.
-There must be a vertex named \start and one named \error.\rlp{is
-this correct? \rg{technically, there are such vertices, no matter what the user writes}}
+There must be a vertex named \start and one named \error.
 Labels look like method calls.
 
-\rg{Maybe make explicit event$\leftrightarrow$letter and trace$\leftrightarrow$word terminology.}
 In the following, we will describe TOPL labels and how they translate to guards
 and actions. But first we will describe the events that a TOPL
 property considers and hence the alphabet that the corresponding
@@ -910,10 +910,10 @@ the grammar
 \[
 call\ m^k \mid return\ m^k
 \]
-where $m^k$ is one of the method names mentioned in $P$ (with arity $k$).
+where $m^k$ is one of the method names mentioned in $P$ (with arity~$k$).
 
 The set $V_L$ of possible parameter values is the set of values from
-the programming language (Jave in our examples)
+the programming language (Java in our examples)
 plus a dummy value $\bot$.
 
 The values are then $V = E + V_L$, and the alphabet is $V^{n+2}$,
@@ -1057,8 +1057,6 @@ involving $pm^k$.
 
 The prefix directive $\mathtt{observe}\; p$ has the effect that only
 method calls which matches $p$ are considered part of the event trace.
-\rg{TODO: Discuss how we pre-filter events base on the method names.}
-
 
 % >>>
 \section{Examples} \label{sec:examples} % <<<
@@ -1084,7 +1082,7 @@ property InvalidateOtherIterators
   yBad -> error: call \pattern{y}.*[*]
   xBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 This property describes the interaction of three objects.
 The first line is an \texttt{observe} directive that declares that we are
 interested in all method calls (denoted by the wild card *) on
@@ -1135,7 +1133,7 @@ there is a lasso at some point). Directives are omitted.
    b -> error: x := y.next()
    a -> error: x := x.next()
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 The idea is that this property will bind the property variable $x$ with any possible object in the list, and the $y$ with any possible successors (via the next field) of the current binding of $x$.
 Therefore, if there is a lasso, in the list, this will be detected when a new binding of $y$ via a \texttt{b -> b} becomes equal to the binding of $x$.
 The transition \texttt{a ->error} detects the case where there is an object pointing to itself. This property shows the importance of re-binding for specification variables. This phenomenon is also shown by  the following property which detects when a dictionary overwrite one of its bindings.
@@ -1151,7 +1149,7 @@ The transition \texttt{a ->error} detects the case where there is an object poin
    written -> written: d.put(k, \pattern{V})
    written -> error:   !v := d.get(k)
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 The overwrite is detected by the guard which checks if the value associated with a key $k$ is the same as the original binding recorded in the property variable $v$.
 
 %>>>
@@ -1173,7 +1171,7 @@ property IterateRopes
   b -> d: \pattern{j}.set(*)
   d -> error: \pattern{i}.next()
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
 of two different iterators of two collections sharing some object invalidating each other will reach the error state. 
 \\dd{are there other permutation missed by the property?}
@@ -1194,7 +1192,7 @@ property TaintCheck
   a -> b: sani(\pattern{x})
   a -> error: sink(\pattern{x})
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 
 \paragraph{Singleton Pattern.} 
@@ -1205,9 +1203,9 @@ the singleton pattern where the instantiation of a class is restricted to one ob
 \begin{Verbatim}[commandchars=\\\{\}]
 property SingletonPattern
   start -> a:  \pattern{I} := getInstance()
-  a -> error: ! \pattern{i}:= getInstance()
+  a -> error:  !\pattern{i}:= getInstance()
 \end{Verbatim}
-\delimitVerbatim}
+\delimitVerbatim}%
 The property produce an error is the object obtained by the method {\tt getInstance()} is not the same as the one already bound to the automata variable $i$.
 
 % >>>
@@ -1486,40 +1484,13 @@ It would have been more difficult to figure out which threads exactly used the s
 We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
 \eqquote{Stream and writer of a response cannot both be used.}
 {eq:prop-ws-weak}
-This property involves three related objects.
-The full TOPL property is reported in Figure~\ref{fig:tomcat-prop}.
+This property\footnote{\url{http://goo.gl/V008y}} involves three related objects.
 It turns out this property is also violated.
 After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
 They say that the stream and the response cannot be used without an intervening {\tt reset}.
 In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
 This brings out another advantage of TOPL:
 Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
-\begin{figure}[t]\label{fig:tomcat-prop}
-{\small
- \begin{verbatim}
-property InterleavedResponse2
-  message "Incompatible methods  were used."
-  observe <javax.servlet.ServletOutputStream.*>
-  observe <java.io.PrintWriter.*>
-  observe <javax.servlet.ServletResponse.getOutputStream>
-  observe <javax.servlet.ServletResponse.getWriter>
-  prefix <javax.servlet.ServletResponse>
-  start -> start: *
-  start -> got_wri: W := R.getWriter()
-  start -> got_str: S := R.getOutputStream()
-  got_wri -> got_str-got_wr: S := r.getOutputStream()
-  got_str -> got_str-got_wri: W := r.getWriter()
-  got_wri -> used_wri : w.*
-  got_str-got_wr -> got_str-used_wr: w.*
-  got_str -> used_wri: s.*
-  got_str-got_wri -> used_str-got_wri: s.*
-  used_wri -> used_str-got_wri: S := r.getOutputStream()
-  used_str -> used_str-got_wri: W := r.getWriter()
-  got_str-used_wri -> error: s.*
-  used_str-got_wri -> error: w.*
-\end{verbatim}}
-\caption{Example Tomcat Propery}
-\end{figure}
 
 % >>>
 \subsection{Benchmarks} % <<<
