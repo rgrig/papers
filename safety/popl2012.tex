@@ -955,10 +955,10 @@ In order to match elements from $V$, there is an extra register in
 $\A_P$ for each unique element mentioned by $P$ (note that this
 includes all the method names). This register contains
 that value in the initial state of $\A_P$ and is never overwritten.
-\rg{I'd prefer $\N$ to be $N$, because the former makes me think of natural numbers more than the latter.}
-For each pattern $x$ which is not *, we define three functions $reg(x) : \N$,
-$pred(x) : \N\to G$ and $act(x) : \N\to A$. $reg(x)$ gives the associated register and $pred(x)$ gives
-the corresponding predicate, while $act(x)$ gives the action, i.e.
+
+For each pattern $x$ which is not *, we define three functions:
+$reg(x) : \N$ gives the associated register, $pred(x) : \N\to G$ gives
+the corresponding predicate and $act(x) : \N\to A$ gives the action, i.e.
 \[
 \begin{array}{l l l}
   x & pred(x)(j) & act(x)(j) \\
