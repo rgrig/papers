@@ -758,9 +758,9 @@ Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~
 \begin{itemize}
 \item the stores of~${\cal A}$ are injective: $u_i \ne u_j$ if $i\ne j$
 \item for $i\in[m_\rho]$, the value of register~$i$ of~${\cal A}_\rho$ is stored in register $r(i)$ of~${\cal A}$; that is, $ u_{r(i)} = v_i $
-\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r(\iota(k+k',i'))$ of~${\cal A}$, where $\iota(k,i')=m_\rho+(k\bmod(d-1))n+i'$; that is,
+\item for $0\le k'<h$ and $\ell_{k'}=(v'_1,\ldots,v'_n)$ and $1\le i'\le n$, the $i'$th component~$v'_{i'}$ of letter~$\ell_{k'}$ is stored in register $r(\iota(k+k',i'))$ of~${\cal A}$, where $\iota(k'',i')=m_\rho+(k''\bmod(d-1))n+i'$; that is,
   \[u_{r(\iota(k+k',i'))}=v'_{i'}\]
-\item $r$ is otherwise undefined; namely, $r(\iota(k+k',i'))$ is undefined for all $i'$~and~$k'$ such that $1\le i'\le n$ and $h\le k'<d-1$
+\item $r$ is otherwise undefined; namely, $r(\iota(k+k',i'))$ is undefined for all $i'$~and~$k'$ such that $i'> n$ or $h\le k'<d-1$
 \end{itemize}
 
 \smallskip
