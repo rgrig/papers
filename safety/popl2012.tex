@@ -1261,24 +1261,23 @@ The time  of a state is the number of transitions  taken to reach that state.
 The compiler takes as input a Java project and a set of TOPL properties.
 The Java project is defined to be all files in a given directory, recursively descending into jar and zip files as well as  subdirectories.
 The compiler produces (1)~a copy of the Java project with the class files instrumented, and (2)~a TOPL automaton.
-The bytecode instrumentation and the construction of the TOPL automaton are intertwined.
-This is because only the Java methods relevant to the given TOPL properties are instrumented, and moreover,
- the construction of the  automaton relies on the inheritance tree of the Java project.
+%The bytecode instrumentation and the construction of the TOPL automaton are intertwined.
+Only the Java methods relevant to the given TOPL properties are instrumented, but taking into consideration 
+ the inheritance tree of  project.
 For example, suppose that a TOPL property mentions the method {\tt next} from the interface {\tt Iterator}.
-Then, on one hand, all the methods that implement {\tt Iterator.next} are instrumented and, on the other hand, the corresponding guard in the automaton will match all these methods.
+Then all the methods that implement {\tt Iterator.next} are instrumented and  matched by the automaton.
 %
-More precisely the compiler has the following five phases.
-\begin{enumerate}
-\item {\em Parsing and Desugaring.}
-TOPL properties are read first, before the Java project, and desugared into a simpler, intermediate format. 
-\item {\em Static Checks.} The compiler checks that the property is well-formed. For example, reads from property variables must be preceded by writes. We plan to also statically check whether the automaton can never fail.
+More in details the compiler execute  five phases.
+%\begin{enumerate}
+First, TOPL properties are converted into a simpler, intermediate format. 
+Second, the compiler  {\em staticically checks}  that the property is well-formed (e.g., variables writes must precede reads). We plan to also statically check whether the automaton can never fail.
 %
-\item {\em Construct the Automaton.} All properties are merged into one automaton that is  dumped into the file {\tt Property.text}.
+Third,  all properties are merged into one automaton that is  dumped into the file {\tt Property.text}.
 %
-\item {\em Generate Checker Configurations.}
-In this phase, which is intertwined with the previous one, the compiler generates a file {\tt Property.java} containing 
-info used by the TOPL property and code that configures the checker.
-The configuration parameters include:
+Fourth, the compiler generates the checker configurations in 
+the file {\tt Property.java}. This file contains 
+info used by the TOPL property and code configuring the checker.
+Configuration parameters include:
 \begin{itemize}
 \item \emph{History length}---how many events to remember.
   A high value reports more events that led to \error.
@@ -1288,14 +1287,14 @@ The configuration parameters include:
 
 \item \emph{Collect call stacks} is a flag for including/excluding  call stacks in violation reports.
 %
-\item {\em Approximantion method.} The tool allow different ways in which the history informations are forgotten when it reaches the max amount of info it can keep.
+\item {\em Approximantion method} gives different ways in which the history informations are forgotten when  the max amount of info 
+allowed is reached.
 \end{itemize}
 %
-\item {\em Instrumentation.}
-The bytecode of observable methods is instrumented.\footnote{To instrument Java bytecode we use a fork of the library 
+Fifth, the compiler instruments methods' bytecode.\footnote{To instrument Java bytecode we use a fork of the library 
 Barista~\cite{barista}.}
-The first and last actions performed by the instrumented version are calls to the method {\tt check} of the checker.
-\end{enumerate}
+
+
 
 
 
