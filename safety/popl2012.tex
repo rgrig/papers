@@ -440,6 +440,7 @@ The following properties of register automata are known:
 Some of these properties contrast with analogues for finite alphabets, which are better known.
 For example with finite alphabets automata are closed under complementation and reversal, and nondeterminism does not increase expressivity.
 These results differ for infinite alphabets because registers can be re-bound to different values an unbounded number of times.
+On the other hand, once the alphabet is `sliced' to a finite subset, the resulting language is regular in the standard sense.
 
 These results have analogues for TOPL automata.
 The details depend on what exactly the arrows from \autoref{fig:concepts} are.
@@ -619,7 +620,9 @@ It follows from \autoref{lemma:ra-to-topl} and \autoref{lemma:topl-to-ra} that s
 \subsection{Automata with Rollback and Skip} %<<<
 
 TOPL automata are almost convenient for runtime verification of Java.
-\rg{TODO: First explain that calls and returns are differeent moments in time.}
+The letters will be events like method calls and returns.
+Calls and returns happen, strictly speaking, at different moments.
+Moreover, some properties might explicitly mention other events that must happen between a call and its corresponding return.
 But, consider the constraint that iterators should advance only if {\tt hasNext} returned {\tt true}.
 The event `{\tt hasNext} was called on the iterator that is being tracked' and the event `{\tt hasNext} returned {\tt true}' are distinct.
 Yet, it is convenient to pretend that two such consecutive events make one composed event.
