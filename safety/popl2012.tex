@@ -1305,20 +1305,16 @@ Hence, we do not expect to find any bugs, but aim to measure the overhead.
 
 We checked two types of properties with TOPL\null.
 First, properties that express correct usage of the standard Java libraries.
-Second, properties that express temporal constraints that appear in code comments.
+Second, properties that express temporal constraints which we extracted from the code comments of three open-source projects, all of which are included in DaCapo.
 The latter properties are more complex and interesting.
 
 We measured both time and space overhead. It turns out that space
-overhead is negligible, so we only report time overhead. For the standard library
-properties, the time can be
-found in~\autoref{table:experiments}, for various configurations of the
-checker, and  for the original bytecode, with no instrumentation.
-For the individual project properties, the time can be found in~\autoref{table:overhead}.
+overhead is negligible, below the variance caused by the randomness of garbage collection.
+So, we only report time overhead, in Tables~\ref{table:experiments}~and~\ref{table:overhead}.
 %
 All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
 running Linux~2.6.32 and Java VM~1.6.0\_20.
 
-% >>>
 \subsection{JDK Properties} % <<<
 
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
@@ -1383,7 +1379,8 @@ xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  
 \caption{Experiment on small properties run on the DaCapo benchmarks
   (run in convergence mode). Times are in seconds.}
 \label{table:experiments}%\label{tab:javamop-experiments}
-\end{table}%
+\end{table}
+
 % >>>
 \subsection{DaCapo Properties} % <<<
 We focus on $3$~projects that are still widely developed and used:
@@ -1475,7 +1472,6 @@ h2
 \end{table}
 
 % >>>
-% >>>
 \paragraph{A Bug's Death.} % <<<
 
 The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
@@ -1518,12 +1514,11 @@ In this case the comments on the interface {\tt ServletResponse} are arguably wr
 This brings out another advantage of TOPL:
 Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
 
+%>>>
+%>>>
 \section{Related Work}\label{sec:related} %<<<
 
-%TOPL is an application of automata theory to program verification.
-%Consequently, there is related work in the area of automata theory and  in  program verification.
-
-TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, introduced in~1990.
+TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}.
 We proved that several decidability results known for register automata also hold for TOPL automata.
 Register automata work with infinite alphabets, as do a few other types of automata~\cite{dblp:conf/csl/segoufin06}.
 Until now, such automata found applications mostly related to databases and XML\null.
@@ -1531,14 +1526,17 @@ Intuitively, however, such models are a good fit for expressing properties of pr
 For example objects could be instantiated inside non-terminating loops.
 Our paper exhibits a working runtime verification system based on register automata, thus validating the intuition.
 
-Related work from the area of program verification splits by time of checking (runtime or static) and by programming paradigm (object-oriented or functional).
-
-
-{\it QVM\/}~\cite{arnold:2008} is a very efficient runtime monitoring system tracking a subset of objects, chosen by sampling.
-To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is automatically adapted on the fly.
-For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of information to be tracked.
-To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
-different virtual machines. 
+{\it QVM\/}~\cite{arnold:2008} is a system for runtime monitoring of applications that are deployed.
+As such, QVM's main goal is efficiency, and it achieves it because
+(1)~it is carefully implemented inside a Java virtual machine,
+(2)~it checks properties involving a single object,
+(3)~it adapts on-the-fly the rate of sampling objects to monitor, such that the overhead remains within a given budget.
+On the other hand, TOPL aims to help during development and testing.
+Thus, having a precise and expressive language for specifying temporal properties takes precedence over efficiency.
+For example TOPL can express properties involving many objects, even if monitoring such properties typically imposes a bigger overhead.
+Both QVM and TOPL let the programmer tune the overhead\slash coverage balance.
+In QVM's case the programmer directly chooses the percentage of time spent monitoring, which is intuitive;
+in TOPL's case the programmer chooses a more abstract parameter, the number of active configurations, which correlates with the overhead.
 
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
 They differ in many details, but the essential ideas fit a common intuition.
