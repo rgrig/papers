@@ -1360,42 +1360,44 @@ Since TOPL properties are processed by tools, they are less likely to become out
 \subsection{Benchmarks} % <<<
 \begin{table*}[t]
 \begin{center}
-\begin{tabular}{|l|c||c|c||c|c||c|c||c|c|} \hline
+\begin{tabular}{|l|r||r|r||r|r||r|r||r|r|} \hline
   & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
+%  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
   \\ \hline
   & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 
   \\ \hline \hline
- avrora  & 8130 & 27781 & 60546 & 163325 & 323074 & 194497  & 179875 & 8341 & 5939 
+ avrora  & 8.1 & 27.8 & 60.5 & 163.3 & 323.1 & 194.5  & 179.9 & 8.3 & 5.9 
  \\ \hline
- batik     &  1216  & 1805 &    2960 & 3788 &  3796  & 3101 &  3266 & 1283            &  1227 
+ batik     &  1.2  & 18.1 &    3.0 & 3.8 &  3.8  & 3.1 &  3.3 & 1.3  &  1.2 
  \\ \hline
-eclipse   &  15611  &  22441 &  12206X & 27009 &  14988X & 27554 &  12847X & 21568 &  23384 
+eclipse   &  15.6  &  22.4 &  12.2X & 27.0 &  149.9X & 27.56 &  12.8X & 21.6 &  23.4 
 \\ \hline
-fop    &   312   &  904 &  1941 & 3468  &  3598   & 2735 &   2653 & 315 &   314
+fop    &   0.3   &  0.9 &  1.9 & 3.5  &  3.6   & 2.7 &   2.7 & 0.3 &   0.3
 \\ \hline
-h2     &    6182  &  5899 &  6829   & 8258    & 19968  & 13466 & 11151   & 6394 &          5989  
+h2     &    6.2  &  5.9 &  6.8   & 8.3    & 20.0  & 13.5 & 11.2   & 6.4 & 6.0  
 \\ \hline
-jython    &  1895  & 19809 &  46085 &  81536   & 83042  &  62801 &       62725    & 1918 &         1815 
+jython    &  1.9  & 19.8 &  46.1 &  81.5   & 83.0  &  62.8 &       62.7    & 1.9 & 1.8 
 \\ \hline
-luindex     &  829   & 830 &   823    & 826 & 874  & 997  &   871      & 819 &         852 
+luindex     &  0.8   & 0.8 &   0.8    & 0.8 & 0.9  & 1.0  &   0.9 & 0.8 & 0.9 
 \\ \hline
-lusearch    &  1547  &  1507 &   1533 & 14973 &  16030    & 13816  &  12842    & 1471 & 1670 
+lusearch    &  1.5  &  1.5 &   1.5 & 15.0 &  16.0    & 13.8  &  12.8    & 1.5 & 1.7 
 \\ \hline
-pmd        &   3087    & 19911 &42563  &  93453 &240283   & 102593 &       105605  & 3224 &           3265 
+pmd        &   3.1    & 19.9 & 42.6  &  93.5 & 240.3   & 102.6 &       105.6  & 3.2 &           3.3 
 \\ \hline
-sunflow    &  3905   & 3773 &  3921   &  3978 & 3838    & 3889 &        3912     & 3934 &         4256 
+sunflow    &  3.9   & 3.8 &  3.9  &  4.0 & 3.8    & 3.9 &        3.9     & 3.9 &         4.3 
 \\ \hline
-tomcat     &   2489    & 4192 & 8294    & 22882 & 50856   & 30008 &        31035   & 2629 &          2706 
+tomcat     &   2.5    & 4.2 & 8.3   & 22.9 & 50.9   & 30.0 &        31.0   & 2.6 &          2.7 
 \\ \hline
 %tradebeans  &  5475  &  XX &     XX  & XX &    XX     & XX &          XX    & XX &           XX 
 %\\ \hline
 %tradesoap   & 6937   &  XX &    XX    & XX &  XX       & XX &       XX       & XX &        XX   
 %\\ \hline
-xalan      &    1455   &  14466      & 7065 & 424982  & 360868 &  272032   & 276512 &  1462 & 1230 
+xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  1.5 & 1.2 
 \\ \hline  
 \end{tabular}
 \end{center}
-\caption{Experiment on small properties run on the DaCapo benchmarks (run in convergence mode).}
+\caption{Experiment on small properties run on the DaCapo benchmarks
+  (run in convergence mode). Times are in seconds.}
 \label{tab:javamop-experiments}
 \end{table*}%
 
