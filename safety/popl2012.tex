@@ -1226,7 +1226,6 @@ The TOPL checker (class {\tt topl.Checker}) monitors the execution and reports v
 \end{center}
 \end{figure}
 
-% >>>
 \paragraph{The TOPL Checker.} % <<<
 The checker logs the property violations it detects. 
 Internally it  maintains a set of active states.
@@ -1254,7 +1253,7 @@ The  strategy for forgetting states can also be chosen among: {\em random}, {\em
 Newest\slash oldest refer to a time attached to states.
 The time  of a state is the number of transitions  taken to reach that state.
 
-
+% >>>
 \paragraph{The TOPL Compiler.} \label{sec:toplc} % <<<
 The compiler takes as input a Java project and a set of TOPL properties.
 The Java project is defined to be all files in a given directory, recursively descending into jar and zip files as well as  subdirectories.
@@ -1292,143 +1291,12 @@ allowed is reached.
 Fifth, the compiler instruments methods' bytecode.\footnote{To instrument Java bytecode we use a fork of the library 
 Barista~\cite{barista}.}
 
-
-
-
-
-%Its components are:
-%\begin{itemize}
-%\item the data structures used to represent the automaton, and a parser that instantiates them while processing {\tt Property.text};
-%\item the data structures used to represent the current state of the checker;
-%\item the code that handles one incoming event;
-%\item the code that garbage collects old states; and
-%\item the code that chooses which of the active states to forget.
-%\end{itemize}
-
-%\paragraph{States.}
-%The checker maintains a set of active states.
-%A state consists of vertex, a store, and a queue of events yet to be processed.
-%The vertex is simply an integer.
-%The store maps property variables ({\tt in}) to values ({\tt Object}).
-%A maximum size of~$2$ for the queue of events suffices because transitions have depth $1$~or~$2$.
-%(If all transitions would have the same depth, then one global queue of events would suffice.
-%Since the transition depth is bounded the checker could still use a couple of global queues, but we chose for now an implementation that is easy to generalize.)
-
-%States are created produced by applying an action to another state (called the parent).
-%For error reporting, each state keeps track of its parent.
-%An active state with $\ge2$~outgoing transitions produces $\ge2$~active states for the next time step.
-%The new active states and their parent are likely to have similar stores.
-%The implementation takes advantage of this fact by using persistent (functional) sets for bindings to represent stores; more precisely, we use treaps~\cite{DBLP:conf/focs/AragonS89}.
-%
-%\paragraph{Step.}
-
-%The procedure from \autoref{fig:checker.step} builds the set~$A$ of states that are active after processing one event.
-%It corresponds to the operational semantics (\autoref{def:rcg}), but is written in an imperative style.
-%For each transition outgoing from a vertex, lines~\hbox{11--17} follow the step transitions from \autoref{def:rcg}.
-%Line~17 is reached if the rule (Step) does not apply, and execution continues with the next outgoing transition.
-%Line~18 is reached if the rule (Step) does apply.
-%Its effect is recorded by adding a new state to set~$A$
-%If rule (Step) did not apply for any outgoing transition, then rule (Silent) is applied by lines~22--23.
-%
-%\begin{figure}[t]
-%\begin{center}
-%\begin{alg}
-%\^  $\proc{Step}(e)$
-%\=  $A := \emptyset$
-%\=  for each active state $s$
-%\+    if $\mathit{vertex}(s)$ does not observe $\mathit{id}(e)$
-%\+      insert $s$ into $A$
-%\=      continue from $3$
-%\-    push $e$ to the queue $\mathit{events}(s)$
-%\=    if $\mathit{events}(s)$ is shorter than the longest transition from $\mathit{vertex}(s)$
-%\+      continue from $3$
-%\1    $\mathit{skip}:=\mathsf{true}$
-%\=    for each transition $t$ outgoing from $\mathit{vertex}(s)$
-%\+      $\sigma := \mathit{store}(s)$,\quad $E := \mathit{events}(s)$
-%\=      for each step $\tau$ of $t$
-%\+        pop $\varepsilon$ from the queue $E$
-%\+        if $\proc{Guard}(\tau, \varepsilon, \sigma)$
-%\+          $\sigma := \proc{Action}(\tau, \varepsilon, \sigma)$
-%\-        else
-%\+          continue from 11
-%\2      $\mathit{skip}:=\mathsf{false}$
-%\=      insert state $(\mathit{target}(t), \sigma, E)$ into $A$
-%\=      if $\mathit{target}(t)$ is an error vertex, report the error
-%\=      if \textit{skip}
-%\+        $s' := s$
-%\=        insert state $s'$ with one event popped into $A$
-%\end{alg}
-%\bigskip
-%\caption{
-%  Executing one step.
-%  The code builds the set~$A$ of states that are active after processing one event.
-%}
-%\label{fig:checker.step}
-%\end{center}
-%\end{figure}
-
-%\paragraph{Garbage Collection.}
-
-%States point to their parent when they are created.
-%But, if they continue to do so forever, then the memory footprint of the states would be proportional to the number of events received by the checker.
-%The space overhead would be too big for long running programs.
-%Usually, most of the states are not needed.
-%The typical property has a $*$-loop on the \start vertex.
-%An error trace going all the way back to the beginning would mention that this loop is taken many times before something interesting happens.
-%In general it is very unlikely that the user needs a trace with more than about $10$~states.
-%The history length~$h$ is one of the parameters configurable from {\tt Property.java}.
-
-%We should allow the Java~VM to garbage collect states that are not reachable in $h$~steps from some active state.
-%After each {\sc Step} we could do a BFS traversal with $h$~steps and set to {\tt null} the parent pointer of fringe states.
-%However, if there are $n$~active states, the traversal would take $O(nh)$~time.
-%The procedure {\sc Step} takes $O(nd)$~time, where $d$ is the maximum out-degree of the property.
-%So, the checker would become much slower if $h>d$, which usually is the case.
-
-%One solution could be to perform the BFS once in every $h/d$~steps.
-%The solution we implemented tries to better address the average case.
-%We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
-
-%\paragraph{Approximation.}
-
-%\autoref{fig:completeness} illustrates why the checker needs unbounded memory if it must not miss bugs exhibited by an execution.
-%The problem is essentially that the set of active states of a nondeterministic automaton is unbounded.
-%Of course, an arbitrary amount of space overhead is unacceptable.
-
-%\begin{figure}[t]
-%\begin{center}
-%\include{Completeness}
-%\caption{Counterexample to runtime completeness.}
-%\label{fig:completeness}
-%\end{center}
-%\end{figure}
-
-%Like in the case of trace lengths, we impose a limit that is fixed but configurable by the user.
-%In this case, however, we must also pick which active states to forget.
-%We implemented three strategies: random, newest, and oldest.
-%The words newest\slash oldest refer to a time that is attached to states, and is one more than the time of the parent state.
-%The time of a state is the number of times the (Step) transition of the operational semantics was taken in order to produce the state.
-
-%\dinocomment{discuss about: conservative and transparent properties of an inliner}
-%\dinocomment{talk about our strategy}
-
 % >>>
 % >>>
 \section{Experimental Results}\label{sec:results} % <<<
-%
-%Our interest in temporal properties of object-oriented programs was initially purely theoretical.
-%But we implemented our technique to ensure we are not dismissing an important issue as merely engineering.
-%In particular, without an implementation it is hard to judge if the performance penalty is acceptable.
-
-%\subsection{Methodology} % <<<
 
 We expect our technique to be most useful during development.
 Library writers will document temporal constraints in TOPL, not just in English.
-%Each library will have a testing version, obtained by instrumenting the bytecode with TOPL properties.
-%Users will use the testing version of the library to ensure they use it correctly.
-%By the time end-users see the application, most temporal bugs are gone.
-%Back in the real world, we too would like to know if such a scenario is likely.
-%Alas, observing the effect of using TOPL during the life-time of a real project is rather time consuming.
-%We have to settle for less.
 
 We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
@@ -1437,7 +1305,6 @@ These are all mature projects with many users.
 DaCapo itself was used for many experiments by the research community.
 Hence, we do not expect to find any bugs, but aim to measure the overhead.
 For each project we write a few TOPL properties that encode informal temporal information that exists in the code comments.
-%In fact, we identify these properties by searching the code for words with temporal connotations, such as `before' and `after'.
 
 We measure both time and space overhead.
 Time overhead is reported  for various configurations of the checker, and  for the original bytecode, with no instrumentation.
@@ -1466,7 +1333,6 @@ The statement is located in the method {\tt write} of the class {\tt TeeOutputSt
 The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
 So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
 Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
-%XXX\rg{Put here a trace for the error.}
 
 TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
 First, the bytecode instrumented by TOPL helped us notice the problem.
@@ -1476,9 +1342,7 @@ This is why the {\tt null}-dereference was not noticed before.
 The TOPL checker tried to report an unrelated issue to {\tt System.err}.
 DaCapo had redirected the standard error stream to its own class, which faulted.
 TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
-%This is why we noticed the {\tt null}-dereference.
 Second, TOPL helped us identify the data race.
-%It was easy to notice that statement~\eqref{eq:npe-src} should be atomic.
 It would have been more difficult to figure out which threads exactly used the stream simultaneously.
 
 We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
@@ -1649,17 +1513,14 @@ TOPL is an application of automata theory to program verification.
 Consequently, there is related work in the area of automata theory and there is related work in the area of program verification.
 
 TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, which were introduced in~1990.
+We proved that several decidability results known for register automata also hold for TOPL automata.
 Register automata work with infinite alphabets, as do a few other types of automata~\cite{dblp:conf/csl/segoufin06}.
-Intuitively, such models are a good fit for expressing properties of programs because the set of program values is infinite.
+Until now, such automata found applications mostly related to databases and XML\null.
+Intuitively, however, such models are a good fit for expressing properties of programs because the set of program values is infinite.
 For example objects could be instantiated inside non-terminating loops.
 Our paper exhibits a working runtime verification system based on register automata, thus validating the intuition.
 
-\rg{Add a section that imports results from RAs, and then summarize here:
-closure under various operations, projection on~$C^*, $emptiness, language inclusion, universality, nondeterminism.}
-\rg{TODO: Discuss rollback, once it's settled in the body of the article.}
-\rg{TODO: In future work, discuss other RA news that may be relevant.}
-
-Related work from the area of program verification splits by programming paradigm (object-oriented or functional) and by time of checking (runtime or static).
+Related work from the area of program verification splits by time of checking (runtime or static) and by programming paradigm (object-oriented or functional).
 The work on runtime verification of object-oriented programs is closest to TOPL\null.
 
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
@@ -1672,47 +1533,30 @@ Tracematches specify this recognizer by regular expressions, while JavaMOP suppo
 Both approaches make further assumptions on the structure of~$V$, and then define a way to specify a family $P\subset\Sigma\to\B$ of predicates over letters.
 Each such predicate~$p\in P$ determines a slice $\tau_p\in C^*$ of the trace $\tau\in\Sigma^*$ by retaining exactly those constants from letters satisfying~$p$.
 The trace~$\tau$ is recognized when any of its slices satisfy the basic recognizer.
-
-The implementation of JavaMOP is more efficient than that of tracematches~\cite{dblp:journals/corr/abs-1112-5761}.
-\rg{TODO: Comment on the efficiency of JavaMOP compared to TOPL after I do the experiments.}
-
-There exist properties expressible in TOPL that cannot be expressed as JavaMOP properties or as tracematches.
-Consider the language of traces
-${\rm s}(v_1) {\rm d}(v_1,v_2){\rm d}(v_2,v_3)\ldots{\rm d}(v_{n-1},v_n){\rm t}(v_n)$
-with $v_i=v_j$ if and only if $i=1$ and $j=n$.
-This is a taint property: the dirty value~$v_1$ is produced, then comes a chain in which new dirty values are derived from old dirty values, and finally the dirty value~$v_n$ is misused.
-It cannot be recognized in the framework used by JavaMOP and by tracemaches because slicing is pointwise.
-\rg{Add this property as an example and then just refer to its name.}
-\rg{TODO: Email Grigore Rosu to make sure this is true.}
-\rg{TODO: Add the Singleton pattern as another example of what they can't handle, because they do not have negation.}
+Within such a framework, it seems difficult to express some of our examples, which naturally use an unbounded number of assignments to registers.
 
 Any algorithm that analyzes or transforms JavaMOP properties must be specific to a certain plugin because the formalization of the framework~\cite{dblp:journals/corr/abs-1112-5761} imposes no constraint on recognizers $C^*\to\B$.
 In contrast, any algorithmic result discovered for register automata implies one for TOPL properties.
 For example we know that the emptiness problem is decidable, and we know that it is impossible to compute the negation of a property.
 
-{\it Tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are likely to have the exact same expressivity as JavaMOP with the plugin for regular expressions.
+{\it Tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are likely to have the same expressivity as JavaMOP with the plugin for regular expressions.
 But, we are unaware of a fully formal comparison.
 Tracematches evolved from the work on aspect-oriented programming.
 Unsurprisingly, the user may specify arbitrary code to run when a match is found.
 The formal semantics ignore this arbitrary code and how it could influence further matches.
 
+{\it QVM\/}~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
+sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
+automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
+To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
+different virtual machines. 
 
-TOPL takes inspiration from several existing  languages for type-state~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}, but  it allows articulating  relationships and interactions among several objects.
-Existing techniques for type-state aim at decomposing properties involving several objects into specifications reflecting the point of view of {\em one} single object.
-TOPL, in contrast,  intentionally avoids such decomposition.
-Parkinson~\cite{parkinson-iwaco2007} argues that invariants involving several objects are often better than one-object invariants.
-Similarly, we believe that temporal properties that naturally involve a plurality of objects are easier to express and reason about if they are \emph{not} decomposed.
-One language in the literature sharing this point of view is tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}.
-The ability of TOPL automata to store,  update, and compare values of their (infinite alphabet) registers combined with nondeterminism makes TOPL strictly more expressive than tracematches.
+{\it ConSpec\/}~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
+Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{sec:examples.steps}).
 
-Our work 
-extends the fundamental concept 
-of typestate~\cite{strom1986} originally developed for imperative programs
-by integrating notions typical of object-oriented programs.
- We are certainly not the first in doing this: there are several extensions of typestate to object-oriented programming in the literature.
+From the techniques used mostly for static verification of object-oriented programs, {\it typestates\/}~\cite{strom1986} are probably most similar to TOPL\null.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
 The specification method is based on linear logic and relations among objects in the protocol are monitored by a tailored system of permissions.
-The method is highly modular and presumably efficient.
 The specification of the interactions among objects by means of permissions adds an extra level of machinery which increases the gap between the intuitive protocol description and its formalization.
 Similarly~\cite{deline2004,dblp:conf/sigsoft/BierhoffA05} provide a mean to specify typestate properties that belong to a single object.
 The specified properties are reminiscent of contracts or pre/post-conditions for methods and can deal with inheritance.
@@ -1722,14 +1566,6 @@ In the early stages efficient but imprecise analyses are employed whereas more e
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 It is likely that  TOPL could be fruitfully combined with their analysis technique.
 
-QVM~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
-sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
-automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
-To improve performance,  the implementation of the QVM monitor is in the virtual machine,which, as a consequence makes it less portable for
-different virtual machines. 
-An automata-based formalism for specifying properties of software interfaces was introduced in~\cite{dblp:conf/sigsoft/AlfaroH01} .
-This language aims at capturing assumptions about the order in which the methods of a component are called and the order in which the component calls external methods.
-In contrast to TOPL, this formalism is mainly used to check the compatibility of the interfaces of two components and it is designed to be applied at  model level rather than code level.
 A specification language for interface checking aimed at C programs (called SLIC) is introduced in~\cite{ball2002}.
 Differences between SLIC and TOPL include: the use (in SLIC) of non-determinism to encode universal quantification of dynamically allocated data, and the  ability to have complex code in the automaton transitions.
 TOPL specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed during automaton transitions.
@@ -1737,18 +1573,11 @@ Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/ca
 While SLAM specialises on device drivers and checks client conformance rather than full protocols,
 very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
+Finally, there are similar investigations going on in the functional programming community.
 In~\cite{disney2011} contracts are used to express legal traces of programs in a functional language with references.
 The contracts specify traces as regular expressions over calls and returns, and hence, they resemble our automata, in a quite different setting.
 Here, the specifications are function-centered, though, and again, capturing inter-object relations seems somewhat tricky.
 
-ConSpec~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
-Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{sec:examples}).
-
-
-%\rg{I think the paper~\cite{dblp:journals/tocl/demril09} adds an operator to LTL to make it more expressive than register automata.
-%We should discuss here, but I moved the citation out of the introduction.}
-%\dinocomment{Add more on dynamic checks and byte code instrumentation}
-%\dd{cite grigore rosu's work}
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
 In this paper we have introduced TOPL a new runtime verification system aimed at checking temporal safety properties of object-oriented programs. 
