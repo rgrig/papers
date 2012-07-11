@@ -202,15 +202,15 @@ The formalization of the above constraint is non-trivial since it needs to keep 
 
 A slightly more complex scenario is described by classes in Figure~\ref{fig:first.java}.
 Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface. 
-Class {\tt Concat} is used to concatenate two object of type {\tt Str}. The concatenation implements also the
- {\tt Str} interface. 
+Class {\tt Concat} is used to concatenate two object of type {\tt Str}. Also {\tt Concat} implements  
+ {\tt Str}. 
 Consider the case where {\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.} 
 Rope's operations like insert, concat, delete may update the shape of the tree and references to its root. 
 In this case we may have two (or more) collections {\em sharing} some elements. Consequently iterators operating on these different collections may invalidate each other. We need to modify~\eqref{q:concur-it} increasing its complexity: 
 \eqquote{If one iterator modifies its collection, then other existing iterators of collections sharing some elements become invalid, which means they cannot be used further.}{q:concur-it2}
 
 \paragraph{Re-binding of specification variables.}
-Now let's consider the case where we want to perform taint checking for input coming from a web form.  What we want to check is the following
+Now let's consider the case where we want to perform {\em taint checking} for input coming from a web form.  What we want to check is the following
 property:
 \eqquote{Any value introduced by the {\tt input()} method should not
   reach the  {\tt sink()} method without first passing through the {\tt sanitizer()} method.}{q:concur-it3}
@@ -218,8 +218,8 @@ This property is at first sight simple. However, it's difficulty can vary depend
 the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}. 
 The number of user inputs, and therefore of concatenations, is not known a priori and in general unbounded.
 Consequently we will have a possibly unbounded number of tainted objects. 
-In a temporal specification we would then need either different logical variables for each different tainted objects or
-the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in such a way that at the semantic level we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
+In a temporal specification, we would then need either different logical variables for each different tainted objects or
+the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in a way that, at the semantic level, we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
 different values during the computation allows the specification to be
 kept finite. 
 
@@ -253,7 +253,7 @@ would want to check the following property:\footnote{Of course, one
   prone.}
 \eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it4}
 We will see in Section~\ref{sec:examples} that also the encoding of properties of this kind requires the ability to update the 
-value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach some element we have seen before. 
+value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach an element we have seen before. 
 
 %The following TOPL properties test the shape of a linked list and
 %reports an error if it is cyclic or it has the pan-handle shape (i.e.,
@@ -310,7 +310,7 @@ However, decidable problems do not necessarily have the same complexity for the 
 \begin{figure}[th]\centering\small
 \begin{tikzpicture}[auto,node distance=4mm]
   \node (lang) {TOPL properties};
-  \node (rtopl) [below=of lang] {rollback TOPL automata};
+  \node (rtopl) [right=of lang] {rollback TOPL automata};
   \node (topl) [below=of rtopl] {simple TOPL automata};
   \node (ra) [below=of topl] {register automata};
   \path[draw,->,>=latex]
@@ -473,10 +473,13 @@ TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike regi
 It is then natural to consider different guards and actions, which handle specific components of the letters.
 TOPL guards are the following:
 \begin{align*}
-G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j
-            \mid {\sf neq}\,i\ne j
-            \mid {\sf true} \\
-G_{\rm TOPL} &\;::=\; G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
+G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \mid 
+%G_{\rm TOPL} &\;::=\; 
+{\sf neq}\,i\ne j \mid
+%G_{\rm TOPL} &\;::=\;
+ {\sf true} \mid 
+%G_{\rm TOPL} &\;::=\; 
+G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
 \end{align*}
 If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
 Recall that $({\sf set}\,i)$ abbreviates $({\sf set}\,i:=1)$.
@@ -1489,10 +1492,10 @@ h2
 % >>>
 \section{Related Work}\label{sec:related} %<<<
 
-TOPL is an application of automata theory to program verification.
-Consequently, there is related work in the area of automata theory and  in  program verification.
+%TOPL is an application of automata theory to program verification.
+%Consequently, there is related work in the area of automata theory and  in  program verification.
 
-TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, which were introduced in~1990.
+TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, introduced in~1990.
 We proved that several decidability results known for register automata also hold for TOPL automata.
 Register automata work with infinite alphabets, as do a few other types of automata~\cite{dblp:conf/csl/segoufin06}.
 Until now, such automata found applications mostly related to databases and XML\null.
@@ -1501,7 +1504,7 @@ For example objects could be instantiated inside non-terminating loops.
 Our paper exhibits a working runtime verification system based on register automata, thus validating the intuition.
 
 Related work from the area of program verification splits by time of checking (runtime or static) and by programming paradigm (object-oriented or functional).
-The work on runtime verification of object-oriented programs is closest to TOPL\null.
+%The work on runtime verification of object-oriented programs is closest to TOPL\null.
 
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
 They differ in many details, but the essential ideas fit a common intuition.
@@ -1532,7 +1535,7 @@ To improve performance,  the implementation of the QVM monitor is in the virtual
 different virtual machines. 
 
 {\it ConSpec\/}~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
-Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{fig:first.topl}).
+Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (see Figure~\ref{fig:first.topl}).
 
 From the techniques used mostly for static verification of object-oriented programs, {\it typestates\/}~\cite{strom1986} are probably most similar to TOPL\null.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
