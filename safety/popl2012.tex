@@ -24,8 +24,6 @@
 
 \usepackage[colorlinks]{hyperref} % keep it last to avoid some warnings
 
-%\g@addto@macro\verbatim{\microtypesetup{activate=false}}
-
 \RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
 \definecolor{darkred}{rgb}{0.4,0,0}
 \definecolor{darkblue}{rgb}{0,0,0.4}
@@ -158,7 +156,7 @@ The extension has been careful crafted to be able to define the precise mathemat
 make it easy for programmers to express properties of their code. This process has resulted in the definition of two new classes of 
 automata: a high-level and a low-level one. In the high-level automata, temporal properties about programs are naturally expressed. Low-level automata, 
 on the other hand, simplify the formal correspondence with  register automata. 
-Finally we defined a formal language --- called TOPL (Temporal Object Property Language) --- mapping directly on the 
+Finally we defined a formal language -- called TOPL (Temporal Object Property Language) -- mapping directly on the 
 high-level automata.
 
 We complement the theoretical construction with a practical tool.
@@ -309,8 +307,8 @@ All three automata models have the same expressivity.
 In general, decision problems on automata (such as membership, emptiness, language inclusion), are either decidable for all three models, or undecidable for all three models.
 However, decidable problems do not necessarily have the same complexity for the three models.
 
-\begin{figure}[th]\centering
-\begin{tikzpicture}[auto,node distance=5mm]
+\begin{figure}[th]\centering\small
+\begin{tikzpicture}[auto,node distance=4mm]
   \node (lang) {TOPL properties};
   \node (rtopl) [below=of lang] {rollback TOPL automata};
   \node (topl) [below=of rtopl] {simple TOPL automata};
@@ -475,9 +473,9 @@ TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike regi
 It is then natural to consider different guards and actions, which handle specific components of the letters.
 TOPL guards are the following:
 \begin{align*}
-G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \\
-G_{\rm TOPL} &\;::=\; {\sf neq}\,i\ne j \\
-G_{\rm TOPL} &\;::=\; {\sf true} \\
+G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j
+            \mid {\sf neq}\,i\ne j
+            \mid {\sf true} \\
 G_{\rm TOPL} &\;::=\; G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
 \end{align*}
 If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
@@ -688,13 +686,13 @@ when no rollback transition starts from $(x,\ell w)$
 \end{definition}
 
 The \emph{rollback language}~${\cal L}_\rho({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from some initial rollback configuration to some final rollback configuration:
-\begin{multline*}
-{\cal L}_\rho({\cal A})=\\ 
+\[
+{\cal L}_\rho({\cal A})=
   \{\,w_1\ldots w_k\mid
     \text{$y_0$~initial,
     $y_{i-1}\stackrel{w_i}\hookrightarrow y_i$ for $i\in[k]$,
     $y_k$~final}\,\}
-\end{multline*}
+\]
 Since a simple automaton~${\cal A}$ is also a rollback automaton, is has both a simple language~${\cal L}({\cal A})$ and a rollback language~${\cal L}_\rho({\cal A})$.
 The treatment of skip transitions implies the aforementioned
 discrepancy, that the languages ${\cal L}({\cal A})$ and ${\cal L}_\rho({\cal A})$ are usually distinct.
@@ -1090,7 +1088,7 @@ instances of \Verb@java.util.Collection@ and \Verb@java.util.Iterator@ \emph{and
 \autoref{fig:first.topl} shows a graphical representation of the
 property.
 %
-\begin{figure}[t]
+\begin{figure}[t]\centering
 \begin{tikzpicture}
   \def\x{2.3}
   \def\y{1.2}
@@ -1105,6 +1103,7 @@ property.
   \node[vertex,fill=darkred] (error) at (0,-3*\y) [label=below:\textcolor{darkred}{\texttt{error}}] {};
   \draw[transition] (0,0.5)--(start);
   \draw[transition] (start)--node[right]{$\pattern X:=\pattern C.\mathtt{iterator}()$} (one);
+  \draw[transition] (start) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (start);
   \draw[transition] (one) .. controls +(30:1cm) and +(-30:1cm) .. node[right]{$*$} (one);
   \draw[transition] (one)--node[right]{$\pattern Y:=\pattern c.\mathtt{iterator}()$} (two);
   \draw[transition] (two) -- node[sloped,above]{$\pattern y.\mathtt{remove}()$} (xBad);
@@ -1112,8 +1111,7 @@ property.
   \draw[transition] (xBad)--node[sloped,below]{$\mathtt{call}\;\pattern x.{*}[*]$} (error);
   \draw[transition] (yBad)--node[sloped,below]{$\mathtt{call}\;\pattern y.{*}[*]$} (error);
 \end{tikzpicture}
-\caption{Property {\tt InvalidateOtherIterators} in diagram form.
-}
+\caption{Property {\tt InvalidateOtherIterators}}
 \label{fig:first.topl}
 \end{figure}
 \paragraph{Heap Shape and Values Sensitive Properties}  % <<<
@@ -1276,7 +1274,7 @@ the file {\tt Property.java}. This file contains
 info used by the TOPL property and code configuring the checker.
 Configuration parameters include:
 \begin{itemize}
-\item \emph{History length}---how many events to remember.
+\item \emph{History length} -- how many events to remember.
   A high value reports more events that led to \error.
   A low value reduces the space and time overhead.
 \item \emph{Maximum number of active states}.
@@ -1437,22 +1435,8 @@ A scope should be asked what is the definition of a name only if it already repl
 % >>>
 \subsection{Overhead} % <<<
 
-Instrumenting DaCapo, which has $160\rm\,MiB$, f or a given set of properties takes $7$~minutes.
-A change of a runtime parameter, such as the maximum number of tracked active states
-does not require re-instrumenting (only recompilation of the TOPL checker).
+Instrumenting DaCapo, which has $160\rm\,MiB$, for the given set of properties takes $7$~minutes.
 
-\paragraph{Space.}
-Estimates of heap size showed no significant increase in memory use.
-We used a simple method.
-The heap of a Java program has three parts: used, garbage, and free.
-The class {\tt Runtime} from the package {\tt java.lang} provides an estimate of the total size and of the free size.
-The difference is an estimate of the used size, provided the garbage was collected immediately before.
-We put this code, which estimates memory use, in the TOPL checker.
-So, strictly speaking we did not estimate the memory use without the checker.
-However, we used as a baseline a run that tracked no active state.
-We also run the estimate for various other counts of tracked active states.
-
-\paragraph{Time.}
 \autoref{table:overhead} summarizes the experimental results.
 The reference column shows the running time without any instrumentation.
 A timeout signifies a time greater than the reference time~$\times100$.
@@ -1554,7 +1538,7 @@ To improve performance,  the implementation of the QVM monitor is in the virtual
 different virtual machines. 
 
 {\it ConSpec\/}~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
-Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{sec:examples.steps}).
+Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{fig:first.topl}).
 
 From the techniques used mostly for static verification of object-oriented programs, {\it typestates\/}~\cite{strom1986} are probably most similar to TOPL\null.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
@@ -1568,12 +1552,12 @@ In the early stages efficient but imprecise analyses are employed whereas more e
 Every stage focuses on verifying only the parts of the code that previous stages failed to verify.
 It is likely that  TOPL could be fruitfully combined with their analysis technique.
 
-A specification language for interface checking aimed at C programs (called SLIC) is introduced in~\cite{ball2002}.
+A specification language for interface checking aimed at C programs (called {\it SLIC\/}) is introduced in~\cite{ball2002}.
 Differences between SLIC and TOPL include: the use (in SLIC) of non-determinism to encode universal quantification of dynamically allocated data, and the  ability to have complex code in the automaton transitions.
 TOPL specifications naturally express universally quantified properties over data structures and for computability reasons,  we have chosen to limit the  actions performed during automaton transitions.
 Simple SLIC specifications are verified by  the SLAM verifier~\cite{dblp:conf/cav/ballr01}.
 While SLAM specialises on device drivers and checks client conformance rather than full protocols,
-very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
+very general specifications of object-oriented program behaviour can be given in JML~\cite{jml} and Spec$^\sharp$~\cite{DBLP:journals/jot/BarnettDFLS04}. However the latter two languages focus on class specifications and do not have temporal features.
 
 Finally, there are similar investigations going on in the functional programming community.
 In~\cite{disney2011} contracts are used to express legal traces of programs in a functional language with references.
