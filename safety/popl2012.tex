@@ -185,9 +185,9 @@ an interesting and previously unknown  concurrency bug in the DaCapo suite).
 The paper is organized as follows.
 \autoref{sec:motivating-examples} gives some example properties motivating TOPL.
 \autoref{sec:overview} provides background of register automata and defines the basis of our formalism.
-\autoref{sec:topl_automata} introduced TOPL automata and proves the equivalence with register automata. 
+\autoref{sec:topl_automata} introduces TOPL automata and proves the equivalence with register automata. 
 \autoref{sec:topl} defines the TOPL property language and its semantics.
-\autoref{sec:examples} describes several example properties using TOPL.
+\autoref{sec:examples} describes several example properties using TOPL\null.
 \autoref{sec:implementation} describes  the implementation of the runtime  verification system.
 \autoref{sec:results} discusses the experimental results and \autoref{sec:related}  related work.
 Finally, \autoref{sec:conclusions} concludes the paper and describes our plans for future work.
@@ -426,7 +426,8 @@ Observe that:
 (1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
 (2)~Only values from~$s_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
-(4)~The action of the last transition is superfluous, but required by the definition.
+(4)~The action of the last transition is superfluous, but required by the definition.%\hskip2mm plus 1fill
+\vrule height1ex width1ex
 \end{example}
 
 \begin{theorem}\label{th:ra}
@@ -663,7 +664,7 @@ The definition of the rollback configuration graph reduces the need to explicitl
 
 A \emph{rollback configuration} is a pair~$(x,w)$ of a configuration~$x$ and a word~$w$;
 we denote the set of rollback configurations by $Y=X\times\Sigma^*$.
-We think of $w$ as ``yet to be processed''.
+We think of $w$ as yet to be processed.
 A rollback configuration is \emph{initial} when its configuration is the initial configuration; that is, it has the shape $\bigl((q_0,s_0),w\bigr)$, where $q_0$~is the initial state of the automaton, and $s_0$~is the initial store of the automaton.
 A rollback configuration is \emph{final} when its state is final and its word is the empty word; that is, it has the shape $\bigl((q,s),\epsilon\bigr)$, where $q$~is one of the final states~$F$ of the automaton, and $\epsilon$~is the empty word.
 The rollback configuration graph is a subset of $Y\times\Sigma^*\times Y$.
@@ -1293,29 +1294,25 @@ Barista~\cite{barista}.}
 % >>>
 \section{Experimental Results}\label{sec:results} % <<<
 
-We expect our technique to be most useful during development.
-Library writers will document temporal constraints in TOPL, not just in English.
-
 We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
-DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
-
+DaCapo is a collection of automated tests that exercise large portions of code from open-source projects and from the Java standard libraries.
 DaCapo itself was used for many experiments by the research community.
 Hence, we do not expect to find any bugs, but aim to measure the overhead.
 
-We write a number of properties expressing correct use of the
-JDK. The entire DaCapo suite is instrumented with these. Further,
-for three selected projects we write a few TOPL properties that encode informal temporal information that exists in the code comments.
+We checked two types of properties with TOPL\null.
+First, properties that express correct usage of the standard Java libraries.
+Second, properties that express temporal constraints that appear in code comments.
+The latter properties are more complex and interesting.
 
-We measure both time and space overhead. It turns out that space
-overhead is negligible, so we only report time overhead. For the JDK
-properties, it can be
-found in~\autoref{table:experiments} for various configurations of the
-checker, and  for the original bytecode, with no instrumentation. For
-the individual project properties it can be found in~\autoref{table:overhead}.
+We measured both time and space overhead. It turns out that space
+overhead is negligible, so we only report time overhead. For the standard library
+properties, the time can be
+found in~\autoref{table:experiments}, for various configurations of the
+checker, and  for the original bytecode, with no instrumentation.
+For the individual project properties, the time can be found in~\autoref{table:overhead}.
 %
 All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
 running Linux~2.6.32 and Java VM~1.6.0\_20.
-
 
 % >>>
 \subsection{JDK Properties} % <<<
@@ -1539,9 +1536,9 @@ Tracematches evolved from the work on aspect-oriented programming.
 Unsurprisingly, the user may specify arbitrary code to run when a match is found.
 The formal semantics ignore this arbitrary code and how it could influence further matches.
 
-{\it QVM\/}~\cite{arnold:2008} is a runtime monitoring system tracking a subset of objects, chosen by
-sampling. To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is 
-automatically adapted on the fly. For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
+{\it QVM\/}~\cite{arnold:2008} is a very efficient runtime monitoring system tracking a subset of objects, chosen by sampling.
+To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is automatically adapted on the fly.
+For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
 To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
 different virtual machines. 
 
