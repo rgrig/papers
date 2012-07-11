@@ -177,7 +177,7 @@ In summary, the contributions of this paper are:
 \item We define a precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
 \item We define a precise formal correspondence between TOPL automata and register automata. 
 In particular we prove that they are equally expressive. As our proof is constructive, this implies that the decidability results for register automata hold also for TOPL automata. Consequently we can decide several features of TOPL specifications (e.g., language emptiness).
-\item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A numerical parameter is used to tune the precision of the system.
+\item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A number of parameters are used to tune the precision of the system.
 
 \item We report on experiments of running our tool on large open-source projects. The results are encouraging (e.g., we have found
 an interesting and previously unknown  concurrency bug in the DaCapo suite). 
@@ -1512,7 +1512,7 @@ h2
 \section{Related Work}\label{sec:related} %<<<
 
 TOPL is an application of automata theory to program verification.
-Consequently, there is related work in the area of automata theory and there is related work in the area of program verification.
+Consequently, there is related work in the area of automata theory and  in  program verification.
 
 TOPL automata are a variant of {\it register automata\/}~\cite{dblp:conf/focs/kaminskif90}, which were introduced in~1990.
 We proved that several decidability results known for register automata also hold for TOPL automata.
@@ -1527,7 +1527,7 @@ The work on runtime verification of object-oriented programs is closest to TOPL\
 
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
 They differ in many details, but the essential ideas fit a common intuition.
-To communicate this intuition we depart from the terminologies of \cite{dblp:journals/sttt/meredithjgcr12}~and~\cite{dblp:conf/oopsla/allanachklmsst05}, which are themselves different from each other.
+To communicate this intuition we depart from the terminologies of \cite{dblp:journals/sttt/meredithjgcr12}~and~\cite{dblp:conf/oopsla/allanachklmsst05}.
 The alphabet is~$\Sigma=C\times V$, where $C$~is a finite set of constants and $V$~is an infinite set of values.
 The task is to build a recognizer $\Sigma^*\to\B$.
 Both approaches build upon a basic recognizer $C^*\to\B$ over finite alphabets.
