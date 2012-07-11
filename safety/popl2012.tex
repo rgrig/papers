@@ -473,12 +473,6 @@ TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike regi
 It is then natural to consider different guards and actions, which handle specific components of the letters.
 TOPL guards are the following:
 \begin{align*}
-<<<<<<< HEAD
-G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j
-            \mid {\sf neq}\,i\ne j
-            \mid {\sf true} \\
-G_{\rm TOPL} &\;::=\; G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
-=======
 G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \mid 
 %G_{\rm TOPL} &\;::=\; 
 {\sf neq}\,i\ne j \mid
@@ -486,7 +480,6 @@ G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \mid
  {\sf true} \mid 
 %G_{\rm TOPL} &\;::=\; 
 G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
->>>>>>> more stuff
 \end{align*}
 If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
 Recall that $({\sf set}\,i)$ abbreviates $({\sf set}\,i:=1)$.
@@ -1544,11 +1537,7 @@ To improve performance,  the implementation of the QVM monitor is in the virtual
 different virtual machines. 
 
 {\it ConSpec\/}~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
-<<<<<<< HEAD
-Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (\autoref{fig:first.topl}).
-=======
 Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (see Figure~\ref{fig:first.topl}).
->>>>>>> more stuff
 
 From the techniques used mostly for static verification of object-oriented programs, {\it typestates\/}~\cite{strom1986} are probably most similar to TOPL\null.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
