@@ -869,10 +869,10 @@ Register automata, simple TOPL automata, and rollback TOPL automata share the fo
 In this section, we describe the user level language of TOPL
 properties, as well as the translation from TOPL properties to
 rollback TOPL automata in \autoref{fig:concepts}.
-
-The language of TOPL properties provides a user-friendly way to write down certain
-rollback TOPL automata useful for object oriented programming
-languages. As such, TOPL properties form a subset of rollback TOPL
+%
+This language provides a user-friendly way to write down certain
+rollback TOPL automata.
+As such, TOPL properties form a subset of rollback TOPL
 automata, and the translation in \autoref{fig:concepts} is morally an
 injection. There is, however, in the interest of user-friendliness,
 some encoding happening.
@@ -913,7 +913,7 @@ call\ m^k \mid return\ m^k
 where $m^k$ is one of the method names mentioned in $P$ (with arity~$k$).
 
 The set $V_L$ of possible parameter values is the set of values from
-the programming language (Java in our examples)
+the programming language (e.g., Java)
 plus a dummy value $\bot$.
 
 The values are then $V = E + V_L$, and the alphabet is $V^{n+2}$,
@@ -939,7 +939,7 @@ actions of $\A_P$.
 Labels refer to the registers via \emph{patterns}. To retain the
 flavour of a programming language, we call the registers of $P$
 \emph{property variables}.
-
+%
 For each property variable \Verb@v@ there are three associated patterns.
 The uppercase pattern \Verb@V@ matches any value and writes it in the property variable \Verb@v@.
 The lowercase pattern \Verb@v@ reads the value of the property variable \Verb@v@ and only matches that value.
@@ -974,7 +974,7 @@ that value in the initial state of $\A_P$ and is never overwritten.
 
 For each pattern $x$ which is not *, we define three functions:
 $reg(x) : \N$ gives the associated register, $pred(x) : \N\to G$ gives
-the corresponding predicate and $act(x) : \N\to A$ gives the action, i.e.
+the corresponding predicate and, $act(x) : \N\to A$ gives the action, i.e.
 \[
 \begin{array}{l l l}
   x & pred(x)(j) & act(x)(j) \\
@@ -1049,12 +1049,12 @@ To ease the task of writing TOPL properties and to increase their
 usefulness, two directives were added to the language. A \texttt{prefix}
 directive for convenience when specifying method names and an
 \texttt{observe} directive for pre-filtering events.
-
+%
 The prefix directive $\mathtt{prefix}\; p$ produces from every
 method name pattern $m^k$, an extra method pattern $pm^k$. It further
 produces, from any transition involving $m^k$, a similar transition
 involving $pm^k$.
-
+%
 The prefix directive $\mathtt{observe}\; p$ has the effect that only
 method calls which matches $p$ are considered part of the event trace.
 
