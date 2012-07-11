@@ -1321,8 +1321,6 @@ running Linux~2.6.32 and Java VM~1.6.0\_20.
 % >>>
 \subsection{JDK Properties} % <<<
 
-\rg{TODO: Add the JDK properties from JavaMOP people.}
-\rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
 
 \paragraph{HasNext.}
@@ -1341,6 +1339,12 @@ is advanced after the map has been updated.
 
 \paragraph{UnsafeFileWriter.}
 This property checks that no file is written to after it has been closed.
+
+\medskip
+\autoref{table:experiments} presents the running times for DaCapo's projects with and without instrumentation of Java's standard library.
+For each project there are two instrumented runs, one with a maximum of $3$~active configurations and one with a maximum of $10$ active configurations.
+For properties involving only one object, such as {\tt HasNext}, a limit of $10$ means that at most that many objects are tracked \emph{at the same time}.
+
 
 \begin{table}[t]\tiny
 \begin{center}
