@@ -1298,65 +1298,32 @@ Library writers will document temporal constraints in TOPL, not just in English.
 
 We measure the overhead on the test suite DaCapo~\cite{dblp:conf/oopsla/dacapo}, version~9.12.
 DaCapo is a collection of automated tests that exercise large portions of code from open-source projects.
-We focus on $3$~projects that are still widely developed and used: Tomcat, H2, and PMD\null.
-These are all mature projects with many users.
+
 DaCapo itself was used for many experiments by the research community.
 Hence, we do not expect to find any bugs, but aim to measure the overhead.
-For each project we write a few TOPL properties that encode informal temporal information that exists in the code comments.
 
-We measure both time and space overhead.
-Time overhead is reported in~\autoref{table:experiments} for various configurations of the checker, and  for the original bytecode, with no instrumentation.
+We write a number of properties expressing correct use of the
+JDK. The entire DaCapo suite is instrumented with these. Further,
+for three selected projects we write a few TOPL properties that encode informal temporal information that exists in the code comments.
+
+We measure both time and space overhead. It turns out that space
+overhead is negligible, so we only report time overhead. For the JDK
+properties, it can be
+found in~\autoref{table:experiments} for various configurations of the
+checker, and  for the original bytecode, with no instrumentation. For
+the individual project properties it can be found in~\autoref{table:overhead}.
 %
 All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
 running Linux~2.6.32 and Java VM~1.6.0\_20.
 
-\paragraph{A Bug's Death.} % <<<
-
-The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
-The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
-We initially interpreted this comment as follows.
-\eqquote{It is illegal to call both the method {\tt getWriter} and the method {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
-The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
-We were not too surprised because we were unsure of the intended meaning of the comment.
-We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
-We investigated.
-The statement that threw a {\tt null}-pointer exception was the following:
-\begin{align}\label{eq:npe-src}
-\text{\Verb@if (log != null) log.write(b);@}
-\end{align}
-It must be that a concurrent thread sets {\tt log} to~{\tt null}.
-The statement is located in the method {\tt write} of the class {\tt TeeOutputStream}.
-The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
-So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
-Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
-
-TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
-First, the bytecode instrumented by TOPL helped us notice the problem.
-The reason is \emph{not} that a certain interleaving became more likely.
-Bug~2934521 of DaCapo mentions that exceptions of the Tomcat benchmark are silently ignored.
-This is why the {\tt null}-dereference was not noticed before.
-The TOPL checker tried to report an unrelated issue to {\tt System.err}.
-DaCapo had redirected the standard error stream to its own class, which faulted.
-TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
-Second, TOPL helped us identify the data race.
-It would have been more difficult to figure out which threads exactly used the stream simultaneously.
-
-We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
-\eqquote{Stream and writer of a response cannot both be used.}
-{eq:prop-ws-weak}
-This property\footnote{\url{http://goo.gl/V008y}} involves three related objects.
-It turns out this property is also violated.
-After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
-They say that the stream and the response cannot be used without an intervening {\tt reset}.
-In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
-This brings out another advantage of TOPL:
-Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
 
 % >>>
 \subsection{JDK Properties} % <<<
 
 \rg{TODO: Add the JDK properties from JavaMOP people.}
 \rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
+These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
+
 
 \begin{table}[t]\tiny
 \begin{center}
@@ -1402,6 +1369,8 @@ xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  
 \end{table}%
 % >>>
 \subsection{DaCapo Properties} % <<<
+We focus on $3$~projects that are still widely developed and used:
+Tomcat, H2, and PMD\null.
 
 All three benchmarks are large open-source projects with many users and active developers.
 The versions were current in 2009 when DaCapo-9.12 was released.
@@ -1413,8 +1382,11 @@ A response has two associated incoming channels: a stream and a writer. Both sho
 %Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
 %property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
 A response could be forwarded once the servlet sent data to it.
-But {\em ``the servlet, before forwarding the response, must call {\tt flush} on the stream, on the writer, or on the response itself''}.
-This is the other property we checked.
+
+But the servlet, before forwarding the response, must call {\tt flush} on the stream, on ther writer, or on the response itself.
+This is one of two properties we checked. The other is given an
+anecdotal description at the end of the section.
+
 
 \paragraph{H2 1.2.121.}
 H2 is a database server.
@@ -1487,6 +1459,48 @@ h2
 
 % >>>
 % >>>
+\paragraph{A Bug's Death.} % <<<
+
+The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
+The documentation of \texttt{getWriter} states that ``either this method or \texttt{getOutputStream} may be called to write the body, not both''.
+We initially interpreted this comment as follows.
+\eqquote{It is illegal to call both the method {\tt getWriter} and the method {\tt getOutputStream} on the same instance of {\tt ServletResponse}.}{eq:prop-ws-strong}
+The TOPL checker reported many violations of~\eqref{eq:prop-ws-strong}.
+We were not too surprised because we were unsure of the intended meaning of the comment.
+We were surprised, however, that sometimes a {\tt null} dereference occurred in DaCapo itself.
+We investigated.
+The statement that threw a {\tt null}-pointer exception was the following:
+\begin{align}\label{eq:npe-src}
+\text{\Verb@if (log != null) log.write(b);@}
+\end{align}
+It must be that a concurrent thread sets {\tt log} to~{\tt null}.
+The statement is located in the method {\tt write} of the class {\tt TeeOutputStream}.
+The only method that sets {\tt log} to~{\tt null} is {\tt closeLog}, from the same class.
+So, we wrote a TOPL property saying that \textit{executions of {\tt write} and {\tt closeLog} must not overlap in time}, and we asked for error reports that include call stacks.
+Indeed, DaCapo's main loop sometimes calls {\tt closeLog} while the Tomcat server is printing.
+
+TOPL helped us find a concurrency bug in the infrastructure of DaCapo.
+First, the bytecode instrumented by TOPL helped us notice the problem.
+The reason is \emph{not} that a certain interleaving became more likely.
+Bug~2934521 of DaCapo mentions that exceptions of the Tomcat benchmark are silently ignored.
+This is why the {\tt null}-dereference was not noticed before.
+The TOPL checker tried to report an unrelated issue to {\tt System.err}.
+DaCapo had redirected the standard error stream to its own class, which faulted.
+TOPL caught the error and reported it as an internal issue, because no exceptions should be thrown while running the TOPL checker.
+Second, TOPL helped us identify the data race.
+It would have been more difficult to figure out which threads exactly used the stream simultaneously.
+
+We then tried a weaker version of property~\eqref{eq:prop-ws-strong}:
+\eqquote{Stream and writer of a response cannot both be used.}
+{eq:prop-ws-weak}
+This property\footnote{\url{http://goo.gl/V008y}} involves three related objects.
+It turns out this property is also violated.
+After reading the code to which the error traces pointed at, we noticed that the comments of some implementing classes weaken the contract:
+They say that the stream and the response cannot be used without an intervening {\tt reset}.
+In this case the comments on the interface {\tt ServletResponse} are arguably wrong, rather than the code.
+This brings out another advantage of TOPL:
+Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
+
 \section{Related Work}\label{sec:related} %<<<
 
 %TOPL is an application of automata theory to program verification.
