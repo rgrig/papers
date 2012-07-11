@@ -112,8 +112,8 @@
 \newtheorem{remark}{Remark}
 
 % For the final version, switch then comment-status of the following lines.
-\overfullrule=5pt
-%\renewcommand{\noterg}[2]{}
+%\overfullrule=5pt
+\renewcommand{\noterg}[2]{}
 
 \showboxdepth=10
 \showboxbreadth=30
@@ -1309,8 +1309,6 @@ Time overhead is reported in~\autoref{table:experiments} for various configurati
 All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
 running Linux~2.6.32 and Java VM~1.6.0\_20.
 
-
-% >>>
 \paragraph{A Bug's Death.} % <<<
 
 The interface \texttt{ServletResponse} from Tomcat contains methods \texttt{getWriter} and \texttt{getOutputStream}.
@@ -1355,11 +1353,11 @@ Since TOPL properties are processed by tools, they are less likely to become out
 
 % >>>
 \subsection{Benchmarks} % <<<
-\begin{table*}[t]
+\begin{table}[t]\tiny
 \begin{center}
 \begin{tabular}{|l|r||r|r||r|r||r|r||r|r|} \hline
-  & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
-%  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
+%  & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
+  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
   \\ \hline
   & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 
   \\ \hline \hline
@@ -1396,7 +1394,7 @@ xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  
 \caption{Experiment on small properties run on the DaCapo benchmarks
   (run in convergence mode). Times are in seconds.}
 \label{table:experiments}%\label{tab:javamop-experiments}
-\end{table*}%
+\end{table}%
 \rg{TODO: Add the JDK properties from JavaMOP people.}
 \rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
 
