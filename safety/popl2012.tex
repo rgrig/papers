@@ -1325,15 +1325,22 @@ running Linux~2.6.32 and Java VM~1.6.0\_20.
 \rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
 
-\paragraph{HasNext}
+\paragraph{HasNext.}
 This property was briefly mentioned in \autoref{sec:topl_automata}. It
-checks that o iterator is advanced without first calling {\tt hasNext}
+checks that no iterator is advanced without first calling {\tt hasNext}
 and have it return {\tt true}.
 
-\paragraph{UnsafeFileWriter}
-This property 
-\paragraph{UnsafeIterator}
-\paragraph{UnsafeMapIterator}
+\paragraph{UnsafeIterator.}
+This property checks that no iterator is advanced after the iterated
+collection has been modified. \rlp{Does this work? Would i.remove not
+  call c.remove?}
+
+\paragraph{UnsafeMapIterator.}
+This property checks that no iterator on the keys or values of a map
+is advanced after the map has been updated.
+
+\paragraph{UnsafeFileWriter.}
+This property checks that no file is written to after it has been closed.
 
 \begin{table}[t]\tiny
 \begin{center}
