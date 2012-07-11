@@ -1069,17 +1069,17 @@ Section~\ref{sec:motivating-examples} can be formalized as follows:
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property InvalidateOtherIterators
-  observe <java.util.\{Collection,Iterator\}.*>
-  prefix <java.util.\{Collection,Iterator\}>
-  start -> start: *
-  start -> one:  \pattern{X} := \pattern{C}.iterator()
-  one -> one:    *
-  one -> two:    \pattern{Y} := \pattern{c}.iterator()
-  two -> yBad:   \pattern{x}.remove()
-  two -> xBad:   \pattern{y}.remove()
-  yBad -> error: call \pattern{y}.*[*]
-  xBad -> error: call \pattern{x}.*[*]
+ property InvalidateOtherIterators
+   observe <java.util.\{Collection,Iterator\}.*>
+   prefix <java.util.\{Collection,Iterator\}>
+   start -> start: *
+   start -> one:  \pattern{X} := \pattern{C}.iterator()
+   one -> one:    *
+   one -> two:    \pattern{Y} := \pattern{c}.iterator()
+   two -> yBad:   \pattern{x}.remove()
+   two -> xBad:   \pattern{y}.remove()
+   yBad -> error: call \pattern{y}.*[*]
+   xBad -> error: call \pattern{x}.*[*]
 \end{Verbatim}
 \delimitVerbatim}%
 This property describes the interaction of three objects.
@@ -1158,17 +1158,17 @@ The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property IterateRopes
-  observe <{Itr.next,Concat.make,Str.itr}>
-  prefix <{Itr,Concat,Str}>
-  start -> start: *
-  start -> a:  \pattern{I} := \pattern{S}.itr()
-  a -> a: *, \pattern{S} := make(\pattern{s}, *), \pattern{S} := make(*, \pattern{s})
-  a -> b: \pattern{J} := \pattern{s}.itr()
-  b -> c: \pattern{i}.set(*)
-  c -> error: \pattern{j}.next()
-  b -> d: \pattern{j}.set(*)
-  d -> error: \pattern{i}.next()
+ property IterateRopes
+   observe <{Itr.next,Concat.make,Str.itr}>
+   prefix <{Itr,Concat,Str}>
+   start -> start: *
+   start -> a:  \pattern{I} := \pattern{S}.itr()
+   a -> a: *, \pattern{S} := make(\pattern{s}, *), \pattern{S} := make(*, \pattern{s})
+   a -> b: \pattern{J} := \pattern{s}.itr()
+   b -> c: \pattern{i}.set(*)
+   c -> error: \pattern{j}.next()
+   b -> d: \pattern{j}.set(*)
+   d -> error: \pattern{i}.next()
 \end{Verbatim}
 \delimitVerbatim}%
 The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
@@ -1182,14 +1182,14 @@ TOPL specification:
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property TaintCheck
-  observe <{Itr.next,Concat.make,Str.itr}>
-  prefix <{Itr,Concat,Str}>
-  start -> start: *
-  start -> a:  \pattern{X} := input()
-  a -> a: \pattern{X} := make(\pattern{x}, *), \pattern{X} := make(*, \pattern{x}), (!sani)(*)
-  a -> b: sani(\pattern{x})
-  a -> error: sink(\pattern{x})
+ property TaintCheck
+   observe <{Itr.next,Concat.make,Str.itr}>
+   prefix <{Itr,Concat,Str}>
+   start -> start: *
+   start -> a:  \pattern{X} := input()
+   a -> a: \pattern{X} := make(\pattern{x}, *), \pattern{X} := make(*, \pattern{x}), (!sani)(*)
+   a -> b: sani(\pattern{x})
+   a -> error: sink(\pattern{x})
 \end{Verbatim}
 \delimitVerbatim}%
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
@@ -1200,9 +1200,9 @@ the singleton pattern where the instantiation of a class is restricted to one ob
 {\small
 \delimitVerbatim
 \begin{Verbatim}[commandchars=\\\{\}]
-property SingletonPattern
-  start -> a:  \pattern{I} := getInstance()
-  a -> error:  !\pattern{i}:= getInstance()
+ property SingletonPattern
+   start -> a:  \pattern{I} := getInstance()
+   a -> error:  !\pattern{i}:= getInstance()
 \end{Verbatim}
 \delimitVerbatim}%
 The property produce an error is the object obtained by the method {\tt getInstance()} is not the same as the one already bound to the automata variable $i$.
