@@ -1413,7 +1413,7 @@ A response has two associated incoming channels: a stream and a writer. Both sho
 %Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
 %property~\eqref{eq:prop-ws-weak} is a weak interpretation of this constraint.
 A response could be forwarded once the servlet sent data to it.
-But the servlet, before forwarding the response, must call {\tt flush} on the stream, on ther writer, or on the response itself.
+But {\em ``the servlet, before forwarding the response, must call {\tt flush} on the stream, on the writer, or on the response itself''}.
 This is the other property we checked.
 
 \paragraph{H2 1.2.121.}
@@ -1421,17 +1421,17 @@ H2 is a database server.
 We checked four properties for it.
 Three properties express constraints on the order in which the methods of an interface may be called.
 For example, a client should not attempt to ask for a row from a cursor that did not advance;
-that is, for the interface {\tt Cursor}, the method {\tt next} must be called before calling method {\tt getSearchRow}.
+that is, ``{\em for the interface {\tt Cursor}, the method {\tt next} must be called before calling method {\tt getSearchRow}}''.
 The fourth property describes the contract of the class {\tt SysConstants}.
 This class reads environment variables when it is loaded.
-Its comments say that it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}.
+Its comments say that {\em ``it is legal for a program to set these environment variables using the method {\tt System.setProperty}, provided that this is done before the Java VM loads the class {\tt SysConstants}''}.
 It is easy to specify this property because TOPL intentionally treats the special methods {\tt <init>} and {\tt <clinit>} as if they are normal methods.
 
 \paragraph{PMD 4.2.5.}
 PMD looks for bugs, dead code, and a few other problems in Java code.
 We checked five properties for it.
 One of the five involves two objects:
-A scope should be asked what is the definition of a name only if it already replied that it knows the name.
+{\em ``A scope should be asked what is the definition of a name only if it already replied that it knows the name''}.
 
 \bigskip
 \autoref{table:overhead} summarizes the experimental results.
