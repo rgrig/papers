@@ -60,6 +60,7 @@
 \newcommand{\N}{\ensuremath{\mathbb{N}}}
 \newcommand{\A}{\ensuremath{\mathcal{A}}}
 \newcommand{\delimitVerbatim}{\par\nobreak\medskip\noindent}
+\newcommand{\eoe}{\hskip5mm\null\nobreak\hfill\vrule height1ex width1ex}
 \newcommand{\error}{\ensuremath{\textcolor{darkred}{\mathtt{error}}}\xspace}
 \newcommand{\eval}[1]{[[#1]]}
 \newcommand{\limp}{\Rightarrow}
@@ -426,8 +427,8 @@ Observe that:
 (1)~The two parallel transitions from 2~to~3 are needed because labels cannot have the shape $({\sf true},{\sf set}\,i)$; in fact, we have not even defined yet the guard {\sf true}.
 (2)~Only values from~$s_0$ may appear multiple times in a store; in this case, only~$\bot$.
 (3)~Register~3 ensures that $\bot$ will not appear in the third position of words, which is a risk because we extended the alphabet.
-(4)~The action of the last transition is superfluous, but required by the definition.%\hskip2mm plus 1fill
-\vrule height1ex width1ex
+(4)~The action of the last transition is superfluous, but required by the definition.
+\eoe
 \end{example}
 
 \begin{theorem}\label{th:ra}
@@ -516,6 +517,7 @@ It is recognized by the following TOPL automaton with $2$~registers over the alp
   and $\bigl(3,({\sf neq}\,1\mathrel{\sf and}{\sf neq}\,2, {\sf nop}),4\bigr)$.
 \end{itemize}
 Any initial store~$s_0$ works.
+\eoe
 \end{example}
 
 It is not difficult to see that TOPL automata are at least as expressive as register automata.
@@ -706,6 +708,7 @@ Consider the automaton consisting of one transition labeled with the guard ${\sf
 The alphabet is $\Sigma=V$ and the initial store has one register containing value~$v$.
 The simple language of this automaton consists of one word made of one letter, namely~$v$.
 The rollback language, on the other hand, consists of all words that contain the letter~$v$.
+\eoe
 \end{example}
 
 It is possible, however, to transform TOPL automata such that their rollback languages coincide with their simple languages.
@@ -744,6 +747,7 @@ Consider the following rollback TOPL automaton with $2$~registers over the alpha
 \end{itemize}
 The rollback language of this is automaton consists of those words in which the first $A$ is not surrounded by two $B$s.
 For example it contains $A$, $BA$, $BAA$, and $BAAB$, but not $BAB$ or~$BBAB$.
+\eoe
 \end{example}
 
 The key idea for encoding rollback TOPL automata into simple TOPL automata is the following:
