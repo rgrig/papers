@@ -1533,6 +1533,13 @@ Our paper exhibits a working runtime verification system based on register autom
 
 Related work from the area of program verification splits by time of checking (runtime or static) and by programming paradigm (object-oriented or functional).
 
+
+{\it QVM\/}~\cite{arnold:2008} is a very efficient runtime monitoring system tracking a subset of objects, chosen by sampling.
+To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is automatically adapted on the fly.
+For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of information to be tracked.
+To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
+different virtual machines. 
+
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
 They differ in many details, but the essential ideas fit a common intuition.
 To communicate this intuition we depart from the terminologies of \cite{dblp:journals/sttt/meredithjgcr12}~and~\cite{dblp:conf/oopsla/allanachklmsst05}.
@@ -1555,14 +1562,10 @@ Tracematches evolved from the work on aspect-oriented programming.
 Unsurprisingly, the user may specify arbitrary code to run when a match is found.
 The formal semantics ignore this arbitrary code and how it could influence further matches.
 
-{\it QVM\/}~\cite{arnold:2008} is a very efficient runtime monitoring system tracking a subset of objects, chosen by sampling.
-To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is automatically adapted on the fly.
-For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of information to be tracked.
-To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
-different virtual machines. 
-
 {\it ConSpec\/}~\cite{DBLP:journals/entcs/AktugN08} is a language used to describe security policies.
 Because ConSpec automatons are deterministic and have only a countable number of states, they cannot in principle express the property \texttt{InvalidateOtherIterators} (see Figure~\ref{fig:first.topl}).
+
+
 
 From the techniques used mostly for static verification of object-oriented programs, {\it typestates\/}~\cite{strom1986} are probably most similar to TOPL\null.
 A modular static verification method for typestate protocols is introduced in~\cite{dblp:conf/oopsla/bierhoffa07}.
