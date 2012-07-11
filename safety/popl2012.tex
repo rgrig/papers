@@ -1323,21 +1323,18 @@ running Linux~2.6.32 and Java VM~1.6.0\_20.
 
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
 
-\paragraph{HasNext.}
+\emph{HasNext:}
 This property was briefly mentioned in \autoref{sec:topl_automata}. It
 checks that no iterator is advanced without first calling {\tt hasNext}
 and have it return {\tt true}.
-
-\paragraph{UnsafeIterator.}
+\emph{UnsafeIterator:}
 This property checks that no iterator is advanced after the iterated
 collection has been modified. \rlp{Does this work? Would i.remove not
   call c.remove?}
-
-\paragraph{UnsafeMapIterator.}
+\emph{UnsafeMapIterator:}
 This property checks that no iterator on the keys or values of a map
 is advanced after the map has been updated.
-
-\paragraph{UnsafeFileWriter.}
+\emph{UnsafeFileWriter:}
 This property checks that no file is written to after it has been closed.
 
 \medskip
