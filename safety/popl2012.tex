@@ -1322,20 +1322,19 @@ running Linux~2.6.32 and Java VM~1.6.0\_20.
 \subsection{JDK Properties} % <<<
 
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
-
-\emph{HasNext:}
-This property was briefly mentioned in \autoref{sec:topl_automata}. It
+\emph{HasNext}
+ was briefly mentioned in \autoref{sec:topl_automata}. It
 checks that no iterator is advanced without first calling {\tt hasNext}
 and have it return {\tt true}.
-\emph{UnsafeIterator:}
-This property checks that no iterator is advanced after the iterated
+\emph{UnsafeIterator}
+ checks that no iterator is advanced after the iterated
 collection has been modified. \rlp{Does this work? Would i.remove not
   call c.remove?}
-\emph{UnsafeMapIterator:}
-This property checks that no iterator on the keys or values of a map
+\emph{UnsafeMapIterator}
+ checks that no iterator on the keys or values of a map
 is advanced after the map has been updated.
-\emph{UnsafeFileWriter:}
-This property checks that no file is written to after it has been closed.
+\emph{UnsafeFileWriter}
+ checks that no file is written to after it has been closed.
 
 \medskip
 \autoref{table:experiments} presents the running times for DaCapo's projects with and without instrumentation of Java's standard library.
@@ -1423,7 +1422,7 @@ We checked five properties for it.
 One of the five involves two objects:
 {\em ``A scope should be asked what is the definition of a name only if it already replied that it knows the name''}.
 
-\bigskip
+\medskip
 \autoref{table:overhead} summarizes the experimental results.
 The reference column shows the running time without any instrumentation.
 A timeout signifies a time greater than the reference time~$\times100$.
