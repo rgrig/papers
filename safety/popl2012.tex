@@ -1023,9 +1023,7 @@ hand side refers to return time. We decided that this label should
 mean that $m^k$ was called with parameters matching $x_1, \ldots, x_k$
 and returned a value matching $x$, \emph{and no event was observed in
   the meantime}. This is because an intermediate call, for instance a
-recursive call, could disconnect the value guards with unexpected
-consequences. \rlp{Explain this better, perhaps give an example.}
-
+recursive call, could disconnect the method call and the return value.
 This label makes use of the rollback feature and translates to a
 transition of depth two:
 \[
