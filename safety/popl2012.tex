@@ -1321,7 +1321,6 @@ running Linux~2.6.32 and Java VM~1.6.0\_20.
 \rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
 These properties are taken from the JavaMOP project~\cite{dblp:journals/sttt/meredithjgcr12}.
 
-
 \begin{table}[t]\tiny
 \begin{center}
 \begin{tabular}{|l|r||r|r||r|r||r|r||r|r|} \hline
@@ -1512,7 +1511,6 @@ For example objects could be instantiated inside non-terminating loops.
 Our paper exhibits a working runtime verification system based on register automata, thus validating the intuition.
 
 Related work from the area of program verification splits by time of checking (runtime or static) and by programming paradigm (object-oriented or functional).
-%The work on runtime verification of object-oriented programs is closest to TOPL\null.
 
 {\it JavaMOP\/}~\cite{dblp:journals/sttt/meredithjgcr12} and {\it tracematches\/}~\cite{dblp:conf/oopsla/allanachklmsst05} are the main runtime verification systems that handle multiple objects.
 They differ in many details, but the essential ideas fit a common intuition.
@@ -1538,7 +1536,7 @@ The formal semantics ignore this arbitrary code and how it could influence furth
 
 {\it QVM\/}~\cite{arnold:2008} is a very efficient runtime monitoring system tracking a subset of objects, chosen by sampling.
 To ensure that the timing overhead of the monitoring is below a given target, the sampling rate is automatically adapted on the fly.
-For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of info to be tracked.
+For TOPL the control of the overhead is done manually by  the programmer who can tune the quantity of information to be tracked.
 To improve performance,  the implementation of the QVM monitor is in the virtual machine, which, as a consequence makes it less portable for
 different virtual machines. 
 
