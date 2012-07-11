@@ -1355,12 +1355,16 @@ This brings out another advantage of TOPL:
 Since TOPL properties are processed by tools, they are less likely to become out-of-sync with the code.
 
 % >>>
-\subsection{Benchmarks} % <<<
+\subsection{JDK Properties} % <<<
+
+\rg{TODO: Add the JDK properties from JavaMOP people.}
+\rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
+
 \begin{table}[t]\tiny
 \begin{center}
 \begin{tabular}{|l|r||r|r||r|r||r|r||r|r|} \hline
-%  & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
-  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
+  & original  & \multicolumn{2}{|c|}{HasNext} & \multicolumn{2}{c|}{UnsafeIterator} &\multicolumn{2}{|c|}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
+%  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
   \\ \hline
   & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 
   \\ \hline \hline
@@ -1398,8 +1402,8 @@ xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  
   (run in convergence mode). Times are in seconds.}
 \label{table:experiments}%\label{tab:javamop-experiments}
 \end{table}%
-\rg{TODO: Add the JDK properties from JavaMOP people.}
-\rg{TODO: Clearly explain that our active configurations (not states, BTW) are \emph{not} the same at all with the number of monitors reported by the other runtime verification people.}
+% >>>
+\subsection{DaCapo Properties} % <<<
 
 All three benchmarks are large open-source projects with many users and active developers.
 The versions were current in 2009 when DaCapo-9.12 was released.
@@ -1431,20 +1435,13 @@ We checked five properties for it.
 One of the five involves two objects:
 A scope should be asked what is the definition of a name only if it already replied that it knows the name.
 
-% >>>
-\subsection{Overhead} % <<<
-
-Instrumenting DaCapo, which has $160\rm\,MiB$, for the given set of properties takes $7$~minutes.
-
+\bigskip
 \autoref{table:overhead} summarizes the experimental results.
 The reference column shows the running time without any instrumentation.
 A timeout signifies a time greater than the reference time~$\times100$.
 All reported times are averaged over $10$~runs, and are accompanied by the unbiased estimate of standard deviation.
 In theory the set of active states is unbounded, but we impose a size limit on it.
 The table reports the running times for the instrumented bytecode when the size limit is $0$, $10^1$, $10^2$.
-%
-%For tomcat the running time is essentially the same when tracking $\le10^4$ active states as it is when tracking $\le10^3$ active states.
-%This indicates that $\le10^3$ active states already exhaustively check the given properties.
 For h2 the running time is more than $\times1.4$ the reference time even when the TOPL checker is not tracking any active state.
 This indicates that we instrumented a simple method that runs often.
 
