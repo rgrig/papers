@@ -91,6 +91,28 @@ Each event $E_i$ contains a bounded number of values~$E_{i,j}$, and has an ident
 Thus, the queue is represented by a set of primitive global variables.
 In this example the variables are $E_{\rm sz}$,~$E_{0,{\rm id}}$, $E_{0,0}$, $E_{1,{\rm id}}$, and~$E_{1,0}$.
 
+Let $g$ be a guard and $a$ be an action.
+Guards are formulas interpreted over a pair~$(\sigma,\ell)$ of a store~$\sigma$ and a letter~$\ell$.
+The store $\sigma$ consists of a few global variables ($c$,~$i$, and~$j$ in this example).
+The letter $\ell$ is the oldest unprocessed event~$E_0$.
+Actions are sequences of simple assignments
+\[ x_1:=y_1;\;\ldots;\;x_n:=y_n\]
+and are seen as substitutions.
+Within postconditions of Hoare triples we may use the special unary function~${\sf old}$.
+Occurrences within occurrences of ${\sf old}(\ldots)$ are said to be \emph{old occurrences}; the other are \emph{new occurrences}.
+For example, in $x={\sf old}(x)$, the variable~$x$ has one new occurrence and one old occurrence.
+Actions are seen as substitutions.
+\begin{align*}
+&(x:=y)\circ g &&\text{is obtained from $g$ by substituting $y$ for the new occurences of $x$} \\
+&(x:=y)\bullet g &&\text{is obtained from $g$ by substituting $y$ for the old occurrences of $x$}
+\end{align*}
+Substitutions are applied starting with the last assignment.
+\begin{align*}
+(a_1;a_2)\circ g &= a_1\circ(a_2\circ g) \\
+(a_1;a_2)\bullet g &= a_1\bullet(a_2\bullet g)
+\end{align*}
+When parentheses are omitted, they are assumed to be as above.
+
 Each state~$q$ has an associated formula which means `state $q$ is active and we know enough events to simulate one step of the automaton'
 \[ P_q \quad=\quad ({\it state}=q) \land (E_{\rm sz}\ge d_q) \]
 where $d_q$~is the maximum length of a transition outgoing from~$q$.
@@ -98,25 +120,21 @@ Each transition~$t$ has two associated formulas.
 Its \emph{precondition} identifies the configurations in which $t$~is enabled.
 \begin{multline*}
 P_t \quad=\quad
-    \bigl(g_0\circ(E_0:=E_0)\bigr)
-    \land\bigl(g_1\circ(E_0:=E_1)\circ a_0\bigr)
+    g_0
+    \land\bigl(a_0;(E_0:=E_1)\circ g_1\bigr)
     \land\ldots\\\ldots
-    \land\bigl(g_{n-1}\circ (E_0:=E_{n-1})\circ a_{n-2} \circ\cdots\circ a_1\circ a_0\bigr)
+    \land\bigl(a_0;(E_0:=E_1);a_1;(E_0:=E_2);\ldots;a_{n-1};(E_0:=E_{n-1})\circ g_{n-1}\bigr)
 \end{multline*}
 Here $g_0,\ldots,g_{n-1}$ are the guards of~$t$, and $a_0,\ldots,a_{n-1}$ are its actions.
-The guards are formulas to begin with, interpreted over a store~$\sigma$ and a letter~$\ell$.
-In our case the store~$\sigma$ consists of a few global variables ({\tt c}, {\tt i}, {\tt j}), and the letter~$\ell$ is the oldest unprocessed event~$E_0$.
-Assignments and actions are seen as substitutions, and $g\circ a$ is the formula obtained by applying the substitution~$a$ to~$g$, which can also be seen as a form of function composition.
 Its \emph{postcondition} encodes the action of the transition.
 \[ Q_t \quad=\quad
   ({\it state}=q')
   \land D(n)
-  \land (I\circ a_{n-1}\circ\cdots\circ a_0)
+  \land \bigl(a_0;(E_0:=E_1);a_1;\ldots;(E_0:=E_{n-1});a_{n-1}\bullet I\bigr)
   \]
 The state $q'$ is the destination of~$t$.
 The formula~$D(n)$ encodes dropping $n$~events from~$E$.
 The formula~$I$ states that the variables $x_1$,~$x_2$, $\ldots$~that make up the store remain unchanged.
-(Of course, substitutions leave ${\sf old}(\ldots)$ unchanged.)
 \begin{align*}
 D(n) \quad&=\quad
   \bigl(E_{\rm sz}={\sf old}(E_{\rm sz})-n\bigr)
@@ -191,85 +209,38 @@ There are four no-op contracts with satisfiable preconditions:
 The most complicated state is probably $1$:
 It has two outgoing transitions of different lengths, and the longer one uses both (nontrivial) guards and actions.
 The loop on~$1$ has the precondition ${\it true}$ and the postcondition
-\[ ({\it state}=1) \land D(1) \land I \]
+\[ Q_{1\to1} \quad=\quad ({\it state}=1) \land D(1) \land I \]
 The transition from~$1$ to~$2$ has the precondition
 \[ (E_{0,{\rm id}}=1)\land(c=E_{0,0}) \]
 which is essentially the guard of the first step, and the postcondition
-\[ ({\it state}=2)\land D(2)\land E\]
-TODO: Oops, the substitutions I have don't work as I wanted.
-
-
-
-OLD:
-
-
+\[ Q_{1\to2} \quad=\quad
+({\it state}=2)\land D(2)\land (c={\sf old}(c))\land (i={\sf old}(i))
+  \land (j={\sf old}(E_{1,0}))\]
+For two transitions, there are $2^2-1$ contracts that encode rollback configuration transitions.
 \begin{align*}
-P_1&:\left\{\begin{aligned}
-    &{\it state}=0 \land E_{\rm sz}\ge2 \\
-    &E_{0,{\rm id}}=1 \land E_{1,{\rm id}}=2
-    \end{aligned}\right\}
-  &Q_1&:\left\{\begin{aligned}
-    {\it state}&=1\\
-    E_{\rm sz}&=0\\
-    i&={\sf old}(E_{0,0})\\
-    c&={\sf old}(E_{1,0})
-    \end{aligned}\right\}\\
-P'_1&:\left\{\begin{aligned}
-    {\it state}=0 \land E_{\rm sz}\ge2
-    \end{aligned}\right\}
-  &Q'_1&:\left\{\begin{aligned}
-  E_{\rm sz}&=1\\
-  E_0&={\sf old}(E_1)
-  \end{aligned}\right\} \\
-P_2&:\left\{\begin{aligned}
-    &{\it state}=1 \land E_{\rm sz}\ge2\\
-    &E_{0,{\rm id}}=1 \land E_{0,0}=c \land E_{1,{\rm id}}=2
-    \end{aligned}\right\}
-  &Q_2&:\left\{\begin{aligned}
-    {\it state}&=2\\
-    E_{\rm sz}&=0\\
-    j&={\sf old}(E_{1,0})
-    \end{aligned}\right\}\\
-P_3&:\left\{\begin{aligned}
-    &{\it state}=2 \land E_{\rm sz}\ge1 \\
-    &E_{0,{\rm id}}=3 \land E_{0,0}=i
-    \end{aligned}\right\}
-  &Q_3&:\left\{\begin{aligned}
-    {\it state}&=3\\
-    E_{\rm sz}&={\sf old}(E_{\rm sz})-1\\
-    E_0&={\sf old}(E_1)
-    \end{aligned}\right\}\\
-P_4&:\left\{\begin{aligned}
-    &{\it state}=3 \land E_{\rm sz}\ge1\\
-    &E_{0,{\rm id}}=4 \land E_{0,0}=j
-    \end{aligned}\right\}
-  &Q_4&:\left\{\begin{aligned}
-    {\it state}&=4\\
-    E_{\rm sz}&={\sf old}(E_{\rm sz})-1\\
-    E_0&={\sf old}(E_1)
-    \end{aligned}\right\}
+&\bigl\{({\it state}=1)\land(E_{\rm sz}\ge2)\land
+  \lnot\bigl((E_{0,{\rm id}=1})\land(c=E_{0,0})\bigr)\bigr\}
+  \quad\text{\tt step}\quad
+  \bigl\{Q_{1\to1}\bigr\} \\
+&\bigl\{({\it state}=1)\land(E_{\rm sz}\ge2)\land
+  (E_{0,{\rm id}=1})\land(c=E_{0,0})\bigr\}
+  \quad\text{\tt step}\quad
+  \bigl\{Q_{1\to1}\lor Q_{1\to2}\bigr\} \\
+&\bigl\{{\it false}\bigr\}\quad\text{\tt step}\quad\bigl\{Q_{1\to2}\bigr\}
 \end{align*}
-All global variables~$x$ that do not appear in the postcondition written above are understood to contribute the equality $x={\sf old}(x)$.
-Each state of the automaton could contribute a (precondition, postcondition) pair to the specification of {\tt step}, to simulate skip configuration transitions.
-\begin{align*}
-P_5&:\left\{\begin{aligned}
-    &{\it state}=0 \land E_{\rm sz}=2 \\
-    &E_{0,{\rm id}}\ne1\lor E_{1,{\rm id}}\ne2
-    \end{aligned}\right\}
-  &Q_5&:\left\{\begin{aligned}
-    E_{\rm sz}&=1\\
-    E_0&={\sf old}(E_1)
-    \end{aligned}\right\} \\
-P_6&:\left\{\begin{aligned}
-    &{\it state}=1 \land E_{\rm sz}=2 \\
-    &E_{0,{\rm id}}\ne1\lor E_{0,0}\ne c \lor E_{1,{\rm id}}\ne2
-    \end{aligned}\right\}
-  &Q_6&:\left\{\begin{aligned}
-    E_{\rm sz}&=1\\
-    E_0&={\sf old}(E_1)
-    \end{aligned}\right\}
-\end{align*}
-TODO: Do nothing when not enough events; Don't go to error, so proof gets stuck.
+The contract that encodes the skip rollback transitions is
+\[ \bigl\{{\it false}\bigr\}\quad\text{\tt step}\quad
+  \bigl\{({\it state}=1)\land D(0)\land I\bigr\} \]
+The ${\it false}$ preconditions in the contract appear whenever the precondition of the loop $1\to1$ is negated.
+
+In summary, each state with $n$ outgoing transitions contributes three types of triples for {\tt step}:
+\begin{itemize}
+\item $2^n-1$ triples that simulate rollback configuration transitions
+\item $1$ triple that simulates skip configuration transitions
+\item $1$ no-op triple
+\end{itemize}
+
+TODO: Assert ${\it state}\ne4$.
 
 \end{document} %>>>
 % vim:fmr=<<<,>>>:
