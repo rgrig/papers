@@ -21,8 +21,11 @@
   \and Rasmus Lerchedahl Petersen
   \and Nikos Tzevelekos}
 
+\newcommand{\infer}[2]{\frac{\displaystyle\;#1\;}{\displaystyle\;#2\;}}
+\newcommand{\3}[3]{\{\,#1\,\}\;#2\;\{\,#3\,\}}
+
 %>>>
-\begin{document} %>>>
+\begin{document} %<<<
 \maketitle
 
 We want to prove that a given program does not violate a given topl property.
@@ -76,6 +79,7 @@ The method {\tt emit} uses another global variable, the queue~$E$ of events.
   void emit(Event e) {
     E.enque(e);
     step();
+    assert state != 4;
   }
 \end{Verbatim}
 The method {\tt step} advances the configuration of the r-topl automaton, which is represented by the integer {\tt state} and the queue {\tt events}.
@@ -240,7 +244,58 @@ In summary, each state with $n$ outgoing transitions contributes three types of 
 \item $1$ no-op triple
 \end{itemize}
 
-TODO: Assert ${\it state}\ne4$.
+\medskip
+
+So far we have a method to synthesize the specification of {\tt step}.
+What we need is a way to change a given specification for {\tt iterator}, {\tt next}, and in general all methods that are mentioned in the topl property.
+As an intermediate step towards that goal we should synthesize the specification of {\tt emit}.
+
+The starting point is an abductive version of the sequencing rule.
+\[
+\infer
+  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}\quad Q_1*F\models Q_2*A}
+  {\3{P*({\sf old}(x):=x;x:=x'\circ F)}{C_1;C_2}{({\sf old}(x):=x'\circ R)*(x:=x'\circ A)}}
+\]
+The auxiliary variable~$x'$ must be fresh;
+it represents the value of~$x$ in-between $C_1$~and~$C_2$.
+It is assumed that $x$ is the only variable to which $C_1;C_2$ assigns.
+It is also assumed that the special function ${\sf old}$ is applied only to variables.
+A warning: The substitutions are easy to get wrong.
+Several special cases of the rule, which are simpler, are used later.
+Often the formulas are pure, in which case $F=Q_2$ and $A=Q_1$ is a solution of the bi-abduction equation.
+\[
+\infer
+  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
+  {\3{P*(x:=x'\circ Q_2)}{C_1;C_2}{({\sf old}(x):=x'\circ R)*(x:=x'\circ Q_1)}}
+\]
+One substitution on~$Q_2$ was dropped because $Q_2$ does not use ${\sf old}$, being a precondition.
+When $x$ is modified only by $C_1$ the rule becomes
+\[
+\infer
+  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
+  {\3{P*(x:=x'\circ Q_2)}{C_1;C_2}{({\sf old}(x):=x\circ R)*Q_1*(x=x')}}
+\]
+Note that in general the special symbol ${\sf old}$ reduces the need to remember a value of~$x$ in an auxiliary~$x'$; that is, it reduces the need to have triples with the form $\3{P*(x=x')}{C}{Q}$.
+The conclusion of the last rule has the form $\3{P}{C}{Q*(x=x')}$.
+So, it could be written using a symmetric special symbol ${\sf new}$.
+Finally, the last special case applies when $x$~is modified only by~$C_2$.
+\[
+\infer
+  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
+  {\3{P*Q_2}{C_1;C_2}{R*(x:={\sf old}(x)\circ Q_1)}}
+\]
+
+Now we go back to the method {\tt emit}.
+\begin{align*}
+\{\,\,\}\quad&E:={\it enque}(E,e)\quad
+  \{\,(E_{\rm sz}={\sf old}(E_{\rm sz})+1)*(E_{{\sf old}(E_{\rm sz})}=e)\,\}\\
+\{\,P_{\rm step}\,\}\quad&E,\sigma,{\it state}:={\it step}()\quad
+  \{\,Q_{\rm step}\,\} \\
+\{\,{\it state}\ne4\,\}\quad&{\sf assert}\;{\it state}\ne4\quad\{\,\,\}
+\end{align*}
+This time the variables that are modified are listed explicitely.
+The fresh variables will be $x_1$ (for the value of~$x$ after enqueing an event) and $x_2$ (for the value of $x$ after executing one step).
+More precisely, we will need $E_1$, $E_2$, $\sigma_2$, and~${\it state}_2$.
 
 \end{document} %>>>
 % vim:fmr=<<<,>>>:
