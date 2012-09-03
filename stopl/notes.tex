@@ -166,7 +166,7 @@ Suppose $S$ implies both $P_{t_1}$~and~$P_{t_2}$.
 Intuitively this means that $t_1$~and~$t_2$ are both enabled.
 After the call to {\tt step} the concrete state should satisfy $Q_{t_1}\lor Q_{t_2}$.
 Nondeterminism is represented by disjunction.
-(Conjunction cannot work because $({\it state}=0)\land({\it state}=1)$ is equivalent to false.)
+(Conjunction cannot work because $({\it state}=0)\land({\it state}=1)$ is inconsistent.)
 In general, let $t_1$,~$t_2$, \dots,~$t_n$ be all the transitions outgoing from state~$q$.
 Then the following are $2^{n-1}$ good contracts for {\tt step}:
 \[
@@ -250,40 +250,22 @@ So far we have a method to synthesize the specification of {\tt step}.
 What we need is a way to change a given specification for {\tt iterator}, {\tt next}, and in general all methods that are mentioned in the topl property.
 As an intermediate step towards that goal we should synthesize the specification of {\tt emit}.
 
-The starting point is an abductive version of the sequencing rule.
-\[
-\infer
-  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}\quad Q_1*F\models Q_2*A}
-  {\3{P*({\sf old}(x):=x;x:=x'\circ F)}{C_1;C_2}{({\sf old}(x):=x'\circ R)*(x:=x'\circ A)}}
+Recall the rule of composition of Hoare logic.
+\[\infer
+  {\3{P}{C}{Q}\quad\3{Q}{D}{R}}
+  {\3{P}{C;D}{R}}
 \]
-The auxiliary variable~$x'$ must be fresh;
-it represents the value of~$x$ in-between $C_1$~and~$C_2$.
-It is assumed that $x$ is the only variable to which $C_1;C_2$ assigns.
-It is also assumed that the special function ${\sf old}$ is applied only to variables.
-A warning: The substitutions are easy to get wrong.
-Several special cases of the rule, which are simpler, are used later.
-Often the formulas are pure, in which case $F=Q_2$ and $A=Q_1$ is a solution of the bi-abduction equation.
+The postconditions we synthesized earlier use a special function {\sf old}, which may not appear in preconditions.
+The rule of composition, however, demands that the same formula~$Q$ is both a postcondition and a precondition.
+It seems difficult to synthesize a sound and simple rule of composition that interacts well with the special function {\sf old}.
+It is easier to remove {\sf old} from triples before composing them.
+By definition, ${\sf old}(f(t_1,\ldots,t_n))$ is the same as $f({\sf old}(t_1),\ldots,{\sf old}(t_n))$, and
 \[
-\infer
-  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
-  {\3{P*(x:=x'\circ Q_2)}{C_1;C_2}{({\sf old}(x):=x'\circ R)*(x:=x'\circ Q_1)}}
+  \3{P}{C}{Q} \quad\text{if and only if}\quad
+  \3{P*(x'=x)}{C}{({\sf old}(x):=x')\circ Q}
 \]
-One substitution on~$Q_2$ was dropped because $Q_2$ does not use ${\sf old}$, being a precondition.
-When $x$ is modified only by $C_1$ the rule becomes
-\[
-\infer
-  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
-  {\3{P*(x:=x'\circ Q_2)}{C_1;C_2}{({\sf old}(x):=x\circ R)*Q_1*(x=x')}}
-\]
-Note that in general the special symbol ${\sf old}$ reduces the need to remember a value of~$x$ in an auxiliary~$x'$; that is, it reduces the need to have triples with the form $\3{P*(x=x')}{C}{Q}$.
-The conclusion of the last rule has the form $\3{P}{C}{Q*(x=x')}$.
-So, it could be written using a symmetric special symbol ${\sf new}$.
-Finally, the last special case applies when $x$~is modified only by~$C_2$.
-\[
-\infer
-  {\3{P}{C_1}{Q_1}\quad\3{Q_2}{C_2}{R}}
-  {\3{P*Q_2}{C_1;C_2}{R*(x:={\sf old}(x)\circ Q_1)}}
-\]
+when $x'$~does not occur in~$P,Q$.
+In general we handle a program $C_1;\ldots;C_n$ whose steps modify a variable~$x$ by introducing versions $x^{(1)}$, \dots,~$x^{(n)}$.
 
 Now we go back to the method {\tt emit}.
 \begin{align*}
@@ -293,9 +275,19 @@ Now we go back to the method {\tt emit}.
   \{\,Q_{\rm step}\,\} \\
 \{\,{\it state}\ne4\,\}\quad&{\sf assert}\;{\it state}\ne4\quad\{\,\,\}
 \end{align*}
-This time the variables that are modified are listed explicitely.
-The fresh variables will be $x_1$ (for the value of~$x$ after enqueing an event) and $x_2$ (for the value of $x$ after executing one step).
-More precisely, we will need $E_1$, $E_2$, $\sigma_2$, and~${\it state}_2$.
+This time the variables that are modified are listed explicitly.
+Let us write $X$ for the entire configuration made of $E$,~$\sigma$, and~${\it state}$, just as $E$ stands for the entire queue.
+We rewrite {\tt emit} without {\sf old}.
+\begin{align*}
+\{\,X^{(1)}=X\,\}
+  \quad&E:={\it enque}(E,e)
+  \quad\{\,(E_{\rm sz}=E^{(1)}_{\rm sz}+1)*(E_{E^{(1)}_{\rm sz}}=e)\,\} \\
+\{\,P_{\rm step}*(X^{(2)}=X)\,\}
+  \quad&X:={\it step}()
+  \quad\{\,({\sf old}(X):=X^{(2)})\circ Q_{\rm step}\,\} \\
+\{\,{\it state}\ne4\,\}\quad&{\sf assert}\;{\it state}\ne4\quad\{\,\,\}
+\end{align*}
+
 
 \end{document} %>>>
 % vim:fmr=<<<,>>>:
