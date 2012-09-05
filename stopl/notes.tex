@@ -4,6 +4,7 @@
 \usepackage{mathpazo}
 \usepackage{microtype}
 \usepackage{tikz}
+\usepackage{xcolor}
 
 \usepackage{hyperref}
 
@@ -23,6 +24,9 @@
 
 \newcommand{\infer}[2]{\frac{\displaystyle\;#1\;}{\displaystyle\;#2\;}}
 \newcommand{\3}[3]{\{\,#1\,\}\;#2\;\{\,#3\,\}}
+
+\newcommand{\noterg}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
+\newcommand{\rg}[1]{\noterg{rg}{#1}}
 
 %>>>
 \begin{document} %<<<
@@ -268,26 +272,94 @@ when $x'$~does not occur in~$P,Q$.
 In general we handle a program $C_1;\ldots;C_n$ whose steps modify a variable~$x$ by introducing versions $x^{(1)}$, \dots,~$x^{(n)}$.
 
 Now we go back to the method {\tt emit}.
+The implementation of {\it enque\/} is inlined.
 \begin{align*}
-\{\,\,\}\quad&E:={\it enque}(E,e)\quad
-  \{\,(E_{\rm sz}={\sf old}(E_{\rm sz})+1)*(E_{{\sf old}(E_{\rm sz})}=e)\,\}\\
+\{\,\,\}
+  \quad&E[E_{\rm sz}]:=e
+  \quad\{\,E_{\rm sz}\stackrel E\mapsto e\,\} \\
+\{\,\,\}
+  \quad&E_{\rm sz}:=E_{\rm sz}+1
+  \quad\{\,E_{\rm sz}:={\sf old}(E_{\rm sz})+1\,\} \\
 \{\,P_{\rm step}\,\}\quad&E,\sigma,{\it state}:={\it step}()\quad
   \{\,Q_{\rm step}\,\} \\
 \{\,{\it state}\ne4\,\}\quad&{\sf assert}\;{\it state}\ne4\quad\{\,\,\}
 \end{align*}
 This time the variables that are modified are listed explicitly.
-Let us write $X$ for the entire configuration made of $E$,~$\sigma$, and~${\it state}$, just as $E$ stands for the entire queue.
-We rewrite {\tt emit} without {\sf old}.
-\begin{align*}
-\{\,X^{(1)}=X\,\}
-  \quad&E:={\it enque}(E,e)
-  \quad\{\,(E_{\rm sz}=E^{(1)}_{\rm sz}+1)*(E_{E^{(1)}_{\rm sz}}=e)\,\} \\
-\{\,P_{\rm step}*(X^{(2)}=X)\,\}
-  \quad&X:={\it step}()
-  \quad\{\,({\sf old}(X):=X^{(2)})\circ Q_{\rm step}\,\} \\
-\{\,{\it state}\ne4\,\}\quad&{\sf assert}\;{\it state}\ne4\quad\{\,\,\}
-\end{align*}
+The first two statements modify a few of the variables of the queue~$E$.
+Remember that $E$~stands for a group of variables.
+The other variables are unchanged.
+Recall now the frame rule.
+\[\infer
+  {\3{P}{C}{Q}}
+  {\3{P*F}{C}{Q*F}}
+  \quad\text{if ${\it free}(F)$ and ${\it assignable}(C)$ are disjoint}
+\]
+As warmup, we compose the two assignments that implement {\it enque}.
+First, we rewrite the second triple in a form without {\sf old}, by introducing a fresh logical variable~$E^{(2)}_{\rm sz}$.
+(The subscript is~$2$ because it is the second statement of {\it emit}.)
+\[\infer
+  {\3{}{E_{\rm sz}:=E_{\rm sz}+1}{E_{\rm sz}={\sf old}(E_{\rm sz})+1}}
+  {\3
+    {E^{(2)}_{\rm sz}=E_{\rm sz}}
+    {E_{\rm sz}:=E_{\rm sz}+1}
+    {E_{\rm sz}=E^{(2)}_{\rm sz}+1}}
+  \]
+Second, the frame rule gives us
+\[\infer
+  {\3{}{E[E_{\rm sz}]:=e}{E_{\rm sz}\stackrel E\mapsto e}}
+  {\3
+    {E^{(2)}_{\rm sz}=E_{\rm sz}}
+    {E[E_{\rm sz}]:=e}
+    {(E_{\rm sz}\stackrel E\mapsto e)*(E^{(2)}_{\rm sz}=E_{\rm sz})}} \]
+and
+\[\infer
+  {\3
+    {E^{(2)}_{\rm sz}=E_{\rm sz}}
+    {E_{\rm sz}:=E_{\rm sz}+1}
+    {E_{\rm sz}=E^{(2)}_{\rm sz}+1}}
+  {\3
+    {(E^{(2)}_{\rm sz}=E_{\rm sz})*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)}
+    {E_{\rm sz}:=E_{\rm sz}+1}
+    {(E_{\rm sz}=E^{(2)}_{\rm sz}+1)*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)}}
+\]
+The postcondition of the first statement is now equivalent (but not identical) to the precondition of the the second statement.
+The rule of composition gives us a triple for {\it enque}.
+\[\3
+  {E^{(2)}_{\rm sz}=E_{\rm sz}}
+  {E[E_{\rm sz}]:=e; E_{\rm sz}:=E_{\rm sz}+1}
+  {(E_{\rm sz}=E^{(2)}_{\rm sz}+1)*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)} \]
 
+\medskip
+
+The next step would be to find a triple for the last two statements of {\it emit}, and then to find a triple for {\it emit}.
+Before that, let us clarify whether $E$~is an array or simply a group of variables.
+The two are, of course, inter-changable, so the question is only which is more convenient for our purposes.
+For example, the assignment $E[E_{\rm sz}]:=e$ is easily handled if $E$ is regarded to be an array, and the frame rule is used to infer that the other cells remain unchanged.
+If $E$~was a group of variables, then that assignment would have to be considered as syntactic sugar for
+\begin{align*}
+      &{\bf if}\;E_{\rm sz}=0\;{\bf then}\;E_0:=e \\
+  ;\; &{\bf if}\;E_{\rm sz}=1\;{\bf then}\;E_1:=e \\
+      &\vdots
+\end{align*}
+which would lead to considerably uglier formulas.
+\rg{Continue here.}
+
+\medskip
+
+
+Let us now compose the last two statements of {\it emit}, a {\it step\/} followed by the assertion that the error state was not reached.
+First, we need to get rid of {\sf old}.
+
+\rg{Update:}
+We cannot frame the triple of {\it step\/} with ${\it state}\ne4$, because {\it state\/} is assignable by {\it step}.
+But, we can frame the triple of the assertion with $Q_{\rm step}$.
+The precondition $Q_{\rm step}*({\it state}\ne4)$ is in some cases equivalent to $Q_{\rm step}$, in some cases equivalent to {\it false\/}, and no other case is possible, because of the special form of~$Q_{\rm step}$, as synthesized above.
+Thus, we simply avoid synthesizing the postconditions of {\it step\/} that contain ${\it state}=4$.
+For all other cases the rule of composition gives the following triple.
+\[\3
+  {P_{\rm step}}
+  {E,\sigma,{\it state}:={\it step}(); {\sf assert}\;{\it state}\ne4}
+  {Q_{\rm step}} \]
 
 \end{document} %>>>
 % vim:fmr=<<<,>>>:
