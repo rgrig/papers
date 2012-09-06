@@ -22,12 +22,18 @@
   \and Rasmus Lerchedahl Petersen
   \and Nikos Tzevelekos}
 
-\newcommand{\infer}[2]{\frac{\displaystyle\;#1\;}{\displaystyle\;#2\;}}
 \newcommand{\3}[3]{\{\,#1\,\}\;#2\;\{\,#3\,\}}
+\newcommand{\eto}{\stackrel E\mapsto}
+\newcommand{\infer}[2]{\frac{\displaystyle\;#1\;}{\displaystyle\;#2\;}}
+\renewcommand{\*}{\,*\,}
 
 \newcommand{\noterg}[2]{\textcolor{gray}{[\textcolor{red}{#1}: #2]}}
 \newcommand{\rg}[1]{\noterg{rg}{#1}}
 
+\overfullrule=5pt
+
+\showboxdepth=5
+\showboxbreadth=20
 %>>>
 \begin{document} %<<<
 \maketitle
@@ -227,11 +233,11 @@ which is essentially the guard of the first step, and the postcondition
 For two transitions, there are $2^2-1$ contracts that encode rollback configuration transitions.
 \begin{align*}
 &\bigl\{({\it state}=1)\land(E_{\rm sz}\ge2)\land
-  \lnot\bigl((E_{0,{\rm id}=1})\land(c=E_{0,0})\bigr)\bigr\}
+  \lnot\bigl((E_{0,{\rm id}}=1)\land(c=E_{0,0})\bigr)\bigr\}
   \quad\text{\tt step}\quad
   \bigl\{Q_{1\to1}\bigr\} \\
 &\bigl\{({\it state}=1)\land(E_{\rm sz}\ge2)\land
-  (E_{0,{\rm id}=1})\land(c=E_{0,0})\bigr\}
+  (E_{0,{\rm id}}=1)\land(c=E_{0,0})\bigr\}
   \quad\text{\tt step}\quad
   \bigl\{Q_{1\to1}\lor Q_{1\to2}\bigr\} \\
 &\bigl\{{\it false}\bigr\}\quad\text{\tt step}\quad\bigl\{Q_{1\to2}\bigr\}
@@ -266,7 +272,7 @@ It is easier to remove {\sf old} from triples before composing them.
 By definition, ${\sf old}(f(t_1,\ldots,t_n))$ is the same as $f({\sf old}(t_1),\ldots,{\sf old}(t_n))$, and
 \[
   \3{P}{C}{Q} \quad\text{if and only if}\quad
-  \3{P*(x'=x)}{C}{({\sf old}(x):=x')\circ Q}
+  \3{P\* x'=x}{C}{({\sf old}(x):=x')\circ Q}
 \]
 when $x'$~does not occur in~$P,Q$.
 In general we handle a program $C_1;\ldots;C_n$ whose steps modify a variable~$x$ by introducing versions $x^{(1)}$, \dots,~$x^{(n)}$.
@@ -274,9 +280,9 @@ In general we handle a program $C_1;\ldots;C_n$ whose steps modify a variable~$x
 Now we go back to the method {\tt emit}.
 The implementation of {\it enque\/} is inlined.
 \begin{align*}
-\{\,\,\}
+  \{\,E_{\rm sz}\eto-\,\}
   \quad&E[E_{\rm sz}]:=e
-  \quad\{\,E_{\rm sz}\stackrel E\mapsto e\,\} \\
+  \quad\{\,E_{\rm sz}\eto e\,\} \\
 \{\,\,\}
   \quad&E_{\rm sz}:=E_{\rm sz}+1
   \quad\{\,E_{\rm sz}:={\sf old}(E_{\rm sz})+1\,\} \\
@@ -291,7 +297,7 @@ The other variables are unchanged.
 Recall now the frame rule.
 \[\infer
   {\3{P}{C}{Q}}
-  {\3{P*F}{C}{Q*F}}
+  {\3{P\*F}{C}{Q\*F}}
   \quad\text{if ${\it free}(F)$ and ${\it assignable}(C)$ are disjoint}
 \]
 As warmup, we compose the two assignments that implement {\it enque}.
@@ -306,11 +312,14 @@ First, we rewrite the second triple in a form without {\sf old}, by introducing 
   \]
 Second, the frame rule gives us
 \[\infer
-  {\3{}{E[E_{\rm sz}]:=e}{E_{\rm sz}\stackrel E\mapsto e}}
   {\3
-    {E^{(2)}_{\rm sz}=E_{\rm sz}}
+    {E_{\rm sz}\eto-}
     {E[E_{\rm sz}]:=e}
-    {(E_{\rm sz}\stackrel E\mapsto e)*(E^{(2)}_{\rm sz}=E_{\rm sz})}} \]
+    {E_{\rm sz}\eto e}}
+  {\3
+    {E_{\rm sz}\eto-\*E^{(2)}_{\rm sz}=E_{\rm sz}}
+    {E[E_{\rm sz}]:=e}
+  {E_{\rm sz}\eto e\*E^{(2)}_{\rm sz}=E_{\rm sz}}} \]
 and
 \[\infer
   {\3
@@ -318,16 +327,16 @@ and
     {E_{\rm sz}:=E_{\rm sz}+1}
     {E_{\rm sz}=E^{(2)}_{\rm sz}+1}}
   {\3
-    {(E^{(2)}_{\rm sz}=E_{\rm sz})*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)}
+    {E^{(2)}_{\rm sz}=E_{\rm sz}\*E^{(2)}_{\rm sz}\eto e}
     {E_{\rm sz}:=E_{\rm sz}+1}
-    {(E_{\rm sz}=E^{(2)}_{\rm sz}+1)*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)}}
+    {E_{\rm sz}=E^{(2)}_{\rm sz}+1\*E^{(2)}_{\rm sz}\eto e}}
 \]
 The postcondition of the first statement is now equivalent (but not identical) to the precondition of the the second statement.
 The rule of composition gives us a triple for {\it enque}.
 \[\3
-  {E^{(2)}_{\rm sz}=E_{\rm sz}}
-  {E[E_{\rm sz}]:=e; E_{\rm sz}:=E_{\rm sz}+1}
-  {(E_{\rm sz}=E^{(2)}_{\rm sz}+1)*(E^{(2)}_{\rm sz}\stackrel E\mapsto e)} \]
+  {E_{\rm sz}\eto-\*E^{(2)}_{\rm sz}=E_{\rm sz}}
+  {{\it enque}}
+  {E^{(2)}_{\rm sz}\eto e\*E_{\rm sz}=E^{(2)}_{\rm sz}+1} \]
 
 \medskip
 
@@ -342,6 +351,59 @@ If $E$~was a group of variables, then that assignment would have to be considere
       &\vdots
 \end{align*}
 which would lead to considerably uglier formulas.
+On the other hand, $P_{\rm step}$ and~$Q_{\rm step}$ were synthesized assuming that $E$~is a group of variables.
+For example, the specification for dequeing an event from a queue of maximum size~$2$ was given, essentially, as
+\[ \3
+  {}
+  {E_{\rm sz},E_0:={\it deque(1)}}
+  {E_{\rm sz}={\sf old}(E_{\rm sz})-1\*E_0={\sf old}(E_1)} \]
+There is a way to transform such triples so they consistently treat $E$ as an array.
+In this case the translation yields
+\begin{align*}
+  \{\,&0\eto E_0 \* 1\eto E_1 \* E'_{\rm sz}=E_{\rm sz} \,\} \\
+  &E_{\rm sz}:={\it deque}(1) \\
+  \{\,&0\eto E_1 \* 1\eto E_2 \* E_{\rm sz}=E'_{\rm sz}-1\,\}
+\end{align*}
+Now $E_0$~is no longer an assignable of {\it deque}, because it is not a variable anymore.
+Instead, $E_0$,~$E_1$, and~$E_2$ are logical variables.
+
+We have to synthesize $P_{\it step}$ and~$Q_{\it step}$ without using {\sf old} and such that $E$~is treated as an array.
+First consider an example, seen earlier.
+\begin{align*}
+  &\left\{\,\begin{aligned}
+  {\it state}=1 \* E_{\rm sz}\ge2 \* E_{0,{\rm id}}=1 \* c=E_{0,0}
+  \end{aligned}\,\right\}\\
+  &\qquad{\it step}() \\
+  &\left\{\,\begin{aligned}
+  &\bigl(
+    {\it state}=1 \* E_{\rm sz}={\sf old}(E_{\rm sz})-1 \* E_0={\sf old}(E_1) \\
+  &\qquad\* c={\sf old}(c) \* i={\sf old}(i) \* j={\sf old}(j) \bigr) \\
+  &\quad\lor\bigl(
+    {\it state}=2 \* E_{\rm sz}={\sf old}(E_{\rm sz})-2 \\
+  &\qquad\* c={\sf old}(c) \* i={\sf old}(i) \* j={\sf old}(E_{1,0}) \bigr)
+  \end{aligned}\,\right\}
+\end{align*}
+becomes
+\begin{align*}
+  &\left\{\,\begin{aligned}
+  &{\it state}=1 \* E_{\rm sz}\ge2 \* E_{0,{\rm id}}=1 \* c=E_{0,0} \\
+  &\quad\* 0\eto E_0 \* 1\eto E_1 \\
+  &\quad\* E'_{\rm sz}=E_{\rm sz}\* i'=i \* j'=j \* c'=c
+  \end{aligned}\,\right\} \\
+  &\qquad{\it step}() \\
+  &\left\{\,\begin{aligned}
+  &\bigl(
+    {\it state}=1 \* E_{\rm sz}=E'_{\rm sz}-1 \\
+  &\qquad\* 0\eto E_1 \* 1\eto E_2 \\
+  &\qquad\* c=c' \* i=i' \* j=j' \bigr) \\
+  &\quad\lor\bigl(
+    {\it state}=2 \* E_{\rm sz}=E'_{\rm sz}-2 \\
+  &\qquad\* 0\eto E_2 \* 1\eto E_3 \\
+  &\qquad\* c=c' \* i=i' \* j=E_{1,0} \bigr)
+  \end{aligned}\,\right\}
+\end{align*}
+
+
 \rg{Continue here.}
 
 \medskip
