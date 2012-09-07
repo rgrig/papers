@@ -402,26 +402,52 @@ becomes
   &\qquad\* c=c' \* i=i' \* j=E_{1,0} \bigr)
   \end{aligned}\,\right\}
 \end{align*}
+The whole footprint of~$E$ appears in the specification, in the precondition and in each disjunct of the postcondition.
+The reasoning is still local, because the whole queue is changed.
+The maximum number of logical variables~$E_k$ is twice the size of~$E$.
+The logical variables $E'_{\rm sz}$,~$i'$, $j'$, and~$c'$ record the old values of their respective program variables.
+In general there is a group~$\sigma'$ of logical variables that records the program store~$\sigma$.
 
+In general we redefine $P_q$,~$P_t$, and~$Q_t$ as follows:
+\begin{align*}
+P_q \quad=\quad &{\it state}=q \* E_{\rm sz}\ge{\it len}(q)
+  \* E'_{\rm sz}=E_{\rm sz} \* \sigma'=\sigma \* E(0) \\
+P_t \quad=\quad
+  &(e:=E_0)\circ g_0
+  \land (e:=E_0;a_0;e:=E_1)\circ g_1 \land \\
+  &\cdots
+  \land (e:=E_0;a_0;\ldots;e:=E_{n-2};a_{n-2};e:=E_{n-1})\circ g_{n-1} \\
+Q_t \quad=\quad
+  &{\it state}={\it tgt}(t) \* E_{\rm sz}=E'_{\rm sz}-n \* E(n) \\
+  &\* \sigma=((\sigma:=\sigma';e:=E_0;a_0;e:=E_1;a_1;\ldots;e:=E_{n-1};a_{n-1})\circ\sigma)
+\end{align*}
+where
+\begin{align*}
+n \quad=\quad &{\it len}(t) \\
+E(k) \quad=\quad &0\eto E_k \* 1\eto E_{k+1} \* \cdots \* (m-1)\eto E_{k+m-1} \\
+m \quad=\quad &\max_t {\it len}(t)
+\end{align*}
+(Thus, $m$~is the length of the queue~$E$, and $n$~is the length of the transition being considered.)
+These definitions assume that guards~$g_k$ and actions~$a_k$ refer to the current event by the variable~$e$.
+All the conjuncts containing~$\sigma$ are a shorthand.
+The conjunct $C(\sigma)$ really means the (separating product) $\Pi_{x\in\sigma} C(x)$.
+Consider for example a transition with exactly one action $c:=c+e$.
+Then the last conjunct of $Q_t$ implies $c=c'+E_0 \* i=i' \* j=j'$.
+
+The rules for composing the rollback triples for {\it step\/} remain the same.
+The rollback triples corresponding to state~$1$ in our running example are
+{\def\pq{{\it state}=1 \* E_{\rm sz}\ge2 \* E'_{\rm sz}=E_{\rm sz} * }
+\begin{align*}
+&\left\{\begin{aligned}
+s
+\end{aligned}\right\}
+\end{align*}}
 
 \rg{Continue here.}
 
 \medskip
 
-
-Let us now compose the last two statements of {\it emit}, a {\it step\/} followed by the assertion that the error state was not reached.
-First, we need to get rid of {\sf old}.
-
-\rg{Update:}
-We cannot frame the triple of {\it step\/} with ${\it state}\ne4$, because {\it state\/} is assignable by {\it step}.
-But, we can frame the triple of the assertion with $Q_{\rm step}$.
-The precondition $Q_{\rm step}*({\it state}\ne4)$ is in some cases equivalent to $Q_{\rm step}$, in some cases equivalent to {\it false\/}, and no other case is possible, because of the special form of~$Q_{\rm step}$, as synthesized above.
-Thus, we simply avoid synthesizing the postconditions of {\it step\/} that contain ${\it state}=4$.
-For all other cases the rule of composition gives the following triple.
-\[\3
-  {P_{\rm step}}
-  {E,\sigma,{\it state}:={\it step}(); {\sf assert}\;{\it state}\ne4}
-  {Q_{\rm step}} \]
+Let us now go back to composing the triples of {\it emit}.
 
 \end{document} %>>>
 % vim:fmr=<<<,>>>:
