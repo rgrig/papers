@@ -1,0 +1,198 @@
+First of all, we thank the reviewers for carefully reading the paper and
+for their feedback.
+
+
+
+Several reviewers are concerned about the expressivity of TOPL:
+  * "It is unclear whether TOPL can capture practical properties that other
+    formalisms cannot (a large number of useful properties and many that
+    the authors look at in their evaluation are single-object typestate)"
+  * "I feel that the general usefulness and applicability of (r)TOPL
+     automata is not so clear."
+  * "other formalisms proposed allow taking data into account and
+    seem to be able to express all properties proposed in this paper."
+  * "the authors do not show what a possible formalization of the example
+    properties would look like in other formalisms."
+
+Let us make three observations.
+
+1. Our precise result concerning expressivity is that it is the same as
+that of register automata, a formal model that predates all those mentioned
+in reviews.
+
+2. We chose examples (Section 6) that are not expressible in many other
+formalisms that are currently used for runtime verification.  For example,
+all properties that need re-binding (such as ListNotCyclic, IterateRopes,
+and TaintCheck) cannot be expressed by any formalism based on trace slicing
+(such as JavaMOP, tracematches, and quantified event automata).  We believe
+that TaintCheck is a realistic property, because there is a whole field of
+research dedicated to taint analysis.  It is fairly easy to see why slicing
+does not work.  Consider the following two families of traces, using the
+notation from the slicing literature:
+  A = { getList<x1> next<x1,x2> next<x2, x3> ... next<xn, x1> | P }
+  B = { getList<x1> next<x1,x2> ... next<x(n-1),xn> | P }
+where P is "n is natural, and x1, ..., xn are pairwise distinct values".
+The property ListNotCyclic fails on all traces in A, and does not fail on
+any of the traces in B.  However, given any parameter binding <b1,b2>, the
+corresponding slice is one of [], [next], or [getList next], which is not
+enough to distinguish between A and B.  In fact, a similar argument works
+even for the property SingletonPattern, which does not use re-binding.
+
+3. All properties expressible in JavaMOP with finite automata are also
+expressible in TOPL.  This is an easy consequence of Theorem 1 (point 8)
+together with our reductions.
+
+We believed that (2) and (3) are obvious consequences of what we said, and
+we wished to refrain from overly criticizing other people's work.
+
+
+
+"The main question is how many of these are actually needed in practice,
+i.e., what is the motivation to reduce to register automata ?"
+
+Our point of view is that these results are important in theory, rather
+than in practice.  Sure, expressivity and performance are important in
+practice.  But, theoretical connections between different models help us
+understand better what is going on.  And sometimes there are practical
+implications: see point (3) above and the answers to the next few
+questions.
+
+
+
+"For instance, point 6 [not closed under complementation and reversal], is
+that really needed when checking properties dynamically ?"
+
+Some existing systems, such as JavaMOP, allow properties to describe either
+good behavior or bad behavior.  This, however, is seen as a convenience.
+Point 6 provides evidence that the alternative is *necessary*, not just a
+convenience.
+
+
+
+"Or is combining properties useful ?"
+
+Probably, although we did not explore this direction in the paper.  For
+example, "A;B" could be a TOPL property if A and B are *names* of other
+TOPL properties.  This would enable principled way to reuse TOPL
+properties.
+
+
+
+"Perhaps there is a direct algorithm for working directly with the
+rollback automata and not converting the automata to a register one ?"
+
+The implementation works directly with rollback automata; that is, it
+follows closely Definition 6.  The reduction to register automata
+establishes an expressivity result, and enables the reuse of results known
+for register automata.  It is not used in the implementation of monitoring.
+
+
+
+"what would happen if we try to express the properties directly in TOPL ?"
+
+It is of course always possible to use simple TOPL, since there is a
+reduction.  We tried to make TOPL user-friendly as follows:  If one takes a
+path from start to error and lists the labels one below the other, then the
+result should look like a small Java program that exhibits the bug.  (We saw
+the same idea being used in PQL.)  Once you understand this principle, TOPL
+does feel friendlier.  However, this entails writing labels like
+  I := C.iterator()
+which strictly speaking refer to two moments in time that must happen one
+after the other.  The skip-semantics (which ignores irrelevant events)
+means that a desugaring into two unit transition won't do what is expected,
+in many situations.  Hence, rollback.
+
+Strictly speaking, Lemma 4 suggests cases where a TOPL property might be
+much longer than an rTOPL property.  But, these cases did not occur in our
+experience.
+
+
+
+"what about the relationship among the specification languages? which
+properties can be expressed in both systems?"
+
+Please see our note on expressivity in the beginning.
+
+
+
+"what do you do when the specification is not met?"
+
+We log an error message.  The input/output behavior of the program is
+otherwise not affected.  The resource usage is affected---it uses more
+memory and more time.
+
+
+
+"apparently for efficiency reason, the dynamic checking is not even sound:
+it can be the case that a trace does not respect the specifications and the
+monitor does not detect it."
+
+There is a setting of the parameters for which monitoring *is* sound: set
+the limit on active states to be infinity (or MAX_INT in our
+implementation).  The ability to trade soundness for efficiency is the main
+idea introduced by QVM, which we appreciate and reuse, albeit with a
+different underlying mechanism.
+
+
+
+"In particular, the "alphabet" used in TOPL properties basically coincides
+with "histories" "
+
+TODO
+
+
+
+"Another criticism to the paper is that one of the selling points of TOPL
+properties is the automatic re-binding of specification variables. This is
+achieved by introducing non-determinism in the automata"
+
+This is incorrect.  Re-binding and non-determinism are independent issues.
+There are deterministic automata that rebind values, and there are
+nondeterministic automata that do not rebind values.  Tracematches and
+JavaMOP (with finite automata), for example, are equally expressive to
+non-deterministic TOPL automata without re-binding (see beginning).
+Informally, in the setting of quantified event automata, re-binding is
+equivalent to having an infinite number of quantifiers.
+
+
+
+"I believe the paper does not clarify sufficiently how runtime checking is
+performed (not self-contained)."
+
+We respectfully disagree.  Looking at the code, which is online, will
+reveal that the implementation is essentially Definition 2, Definition 6,
+Section 5, and a library for handling Java bytecode.
+
+
+
+"A similar effect to this re-binding can be achieved by simply considering
+sets of objects."
+
+Sets are a good idea.  We are, in fact, investigating their use.  Our first
+step was to explore the theoretical implications.  Please skim
+http://arxiv.org/abs/1209.0680 to get a rough idea of what is involved.
+
+
+
+"Can you expand on why it is more natural to express properties as TOPL
+properties than as attribute grammars with sets or with Quantified Event
+Automata?"
+
+Strictly speaking, we cannot ‘expand’ on this, because we never made such a
+claim.  As a rule, we try to steer away from opinions that cannot be backed
+by proofs.  However, we can mention the main ingredient that makes us feel
+that TOPL properties are natural:  The concatenation of labels on a walk to
+‘error’ looks very much like a small Java program that violates the property.
+The same idea was used by PQL.  (We did not compare much with PQL because
+its formal foundation is quite unclear to us.  But, it certainly has some
+good ideas.)
+
+
+
+"How does the overhead in your approach compare to the overhead in other
+approaches for similar properties?"
+
+TODO
+
+
+vim:tw=75:fo+=t:spell:
