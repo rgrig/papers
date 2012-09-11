@@ -99,7 +99,7 @@ does feel friendlier.  However, this entails writing labels like
   I := C.iterator()
 which strictly speaking refer to two moments in time that must happen one
 after the other.  The skip-semantics (which ignores irrelevant events)
-means that a desugaring into two unit transition won't do what is expected,
+means that a desugaring into two unit transitions won't do what is expected,
 in many situations.  Hence, rollback.
 
 Strictly speaking, Lemma 4 suggests cases where a TOPL property might be
@@ -136,9 +136,14 @@ different underlying mechanism.
 
 
 "In particular, the "alphabet" used in TOPL properties basically coincides
-with "histories" "
+with "histories" [Jeffrey, Rathke, 2005]"
 
-TODO
+There must be some typo: There is no such thing as a ‘history’ in [Jeffrey,
+Rathke, 2005], which gives a fully abstract trace semantics for a Java-like
+language.  That is obviously orthogonal to our work, as we make no
+assumption on how traces are produced.  Moreover, we use the word
+‘alphabet’ in a completely standard sense, going back at least to [Rabin,
+Scott, 1959].
 
 
 
@@ -146,8 +151,8 @@ TODO
 properties is the automatic re-binding of specification variables. This is
 achieved by introducing non-determinism in the automata"
 
-This is incorrect.  Re-binding and non-determinism are independent issues.
-There are deterministic automata that rebind values, and there are
+This is incorrect.  Re-binding and non-determinism are orthogonal.  There
+are deterministic automata that rebind values, and there are
 nondeterministic automata that do not rebind values.  Tracematches and
 JavaMOP (with finite automata), for example, are equally expressive to
 non-deterministic TOPL automata without re-binding (see beginning).
@@ -192,7 +197,7 @@ good ideas.)
 "How does the overhead in your approach compare to the overhead in other
 approaches for similar properties?"
 
-TODO
+We do not have an efficient implementation.
 
 
 vim:tw=75:fo+=t:spell:
