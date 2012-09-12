@@ -17,8 +17,8 @@ Several reviewers are concerned about the expressivity of TOPL:
 Let us make three observations.
 
 1. Our precise result concerning expressivity is that it is the same as
-that of register automata, a formal model that predates all those mentioned
-in reviews.
+that of register automata, a formal model that predates those that underlie
+popular runtime verification tools.
 
 2. We chose examples (Section 6) that are not expressible in many other
 formalisms that are currently used for runtime verification.  For example,
@@ -43,48 +43,90 @@ expressible in TOPL.  This is an easy consequence of Theorem 1 (point 8)
 together with our reductions.
 
 We believed that (2) and (3) are obvious consequences of what we said, and
-we wished to refrain from overly criticizing other people's work.
+we wished to refrain from overly criticizing other people's work.  Here is
+what we did do in the paper:
+  * We remarked that rTOPL is as expressive as register automata.
+    (Remark 2 at the end of Section 4.2).
+  * We chose the examples of Section 6 such that most are not amenable to
+    methods based on trace slicing.
+  * We emphasized re-binding in Section 2.
+  * We remarked in Section 9, with regards to trace slicing approaches:
+    ‘Within such a framework, it seems difficult to express some of our
+    examples, which naturally use an unbounded number of registers.’
+    (Point 2 above elaborates on this remark.)
+  * We included point 8 in Theorem 8 precisely because it is the key
+    observation in relating to the expressivity of JavaMOP (with finite
+    automata).
 
 
 
 "The main question is how many of these are actually needed in practice,
-i.e., what is the motivation to reduce to register automata ?"
-
-Our point of view is that these results are important in theory, rather
-than in practice.  Sure, expressivity and performance are important in
-practice.  But, theoretical connections between different models help us
-understand better what is going on.  And sometimes there are practical
-implications: see point (3) above and the answers to the next few
-questions.
-
-
-
-"For instance, point 6 [not closed under complementation and reversal], is
+i.e., what is the motivation to reduce to register automata ?
+For instance, point 6 [not closed under complementation and reversal], is
 that really needed when checking properties dynamically ?"
 
-Some existing systems, such as JavaMOP, allow properties to describe either
-good behavior or bad behavior.  This, however, is seen as a convenience.
-Point 6 provides evidence that the alternative is *necessary*, not just a
-convenience.
+We believe that theoretical connections lead to better understanding.  They
+are, in a sense, more important than comparisons of performance and of
+subjective expressivity.  The Introduction states: ‘The formal
+correspondence between the properties and register automata defined in this
+paper gives a rigorous mathematical foundation to the approach and allows
+us to reuse many of the results for register automata on TOPL automata.’
+
+Each tool for runtime verification (of Java) seems to have its own formal
+foundations, with various degrees of rigour.  (One positive example in
+terms of rigor is [26].)  Register automata predate all these formalisms
+and they intuitively seemed to us as being adequate for the task.  We set
+out to validate this intuition.  However, an implementation in terms of
+register automata is cumbersome, which motivates TOPL automata.  Theorem 2
+lists several results on TOPL automata, inherited from register automata.
+Unfortunately, the language used in automata theory is rather different
+from the language used in runtime verification.  We tried to bridge the
+gap, but the reviewers still had questions about the relevance of certain
+parts to runtime verification.  Thus, let us restate Theorem 2 in the
+language of runtime verification:
+
+1. Runtime monitoring is possible.  Moreover it is possible to reliably
+detect properties that do not fail for any program, in order to provide a
+warning.
+2. It is possible to automatically verify the correctness of refactorings
+involving properties with at most one register.  In particular, for such
+properties it is possible to statically detect if they fail for all
+programs.
+3. For properties involving more than one register it is *not* possible to
+automatically validate refactorings.
+4. TOPL properties may be written as (extended) regular expressions, using
+the operations | (or) , & (and) , ; (seq), and * (repeat). (But not
+extended with negation.)
+5. If users would be able to use TOPL properties to specify good behavior
+(rather than just bad behavior), then they would be able to specify more
+scenarios.
+
+We emphasize that the statements above are exactly those in Theorem 2,
+except they are stated using a different vocabulary.
+
+(Note that point 5 in Theorem 1 is inherited from point 6 in Theorem 1, which
+is the point singled out by the reviewer in his/her question.)
 
 
 
 "Or is combining properties useful ?"
 
-Probably, although we did not explore this direction in the paper.  For
-example, "A;B" could be a TOPL property if A and B are *names* of other
-TOPL properties.  This would enable principled way to reuse TOPL
-properties.
+As above, combining properties means that TOPL properties may also be
+written in the form of regular expressions (extended, because letters are
+replaced with labels, and because intersection is supported).  It also
+means that TOPL properties could be reused by name.  For example "A;B"
+reuses big descriptions of properties A and B.
 
 
 
 "Perhaps there is a direct algorithm for working directly with the
 rollback automata and not converting the automata to a register one ?"
 
-The implementation works directly with rollback automata; that is, it
-follows closely Definition 6.  The reduction to register automata
-establishes an expressivity result, and enables the reuse of results known
-for register automata.  It is not used in the implementation of monitoring.
+That is why rollback TOPL automata are introduced:  They closely reflect
+how the implementation works.  Section 4 starts with: ‘We now gradually
+move towards a model that is better suited for runtime verification of Java
+programs.’  The core of the implementation of the monitors/checkers is
+Definition 6.
 
 
 
@@ -102,24 +144,24 @@ after the other.  The skip-semantics (which ignores irrelevant events)
 means that a desugaring into two unit transitions won't do what is expected,
 in many situations.  Hence, rollback.
 
-Strictly speaking, Lemma 4 suggests cases where a TOPL property might be
-much longer than an rTOPL property.  But, these cases did not occur in our
-experience.
+The relevant parts of the paper are the first paragraph of Section 4.2 and
+the paragraph in Section 5.2 starting with ‘Let us now consider the third
+label’.
 
 
 
 "what about the relationship among the specification languages? which
 properties can be expressed in both systems?"
 
-Please see our note on expressivity in the beginning.
+Please see our note on expressivity in the beginning of this response.
 
 
 
 "what do you do when the specification is not met?"
 
-We log an error message.  The input/output behavior of the program is
-otherwise not affected.  The resource usage is affected---it uses more
-memory and more time.
+Section 7 states: ‘The checker logs the property violations it detects.’
+The input/output behavior of the program is otherwise not affected.  The
+resource usage is affected---it uses more memory and more time.
 
 
 
@@ -143,7 +185,11 @@ Rathke, 2005], which gives a fully abstract trace semantics for a Java-like
 language.  That is obviously orthogonal to our work, as we make no
 assumption on how traces are produced.  Moreover, we use the word
 ‘alphabet’ in a completely standard sense, going back at least to [Rabin,
-Scott, 1959].
+Scott, 1959].  We did see ‘history’ being used to mean trace whose events
+have a certain structure and that also satisfy some extra condition.
+However, we really do work with plain traces: The structure of events is
+only relevant for the syntax we chose for TOPL, but does not affect
+semantics.
 
 
 
@@ -197,7 +243,8 @@ good ideas.)
 "How does the overhead in your approach compare to the overhead in other
 approaches for similar properties?"
 
-We do not have an efficient implementation.
+We do not have an efficient implementation.  Compared to JavaMOP, which is
+one of the fastest tools, our monitors take 30--40 times more time.
 
 
 vim:tw=75:fo+=t:spell:
