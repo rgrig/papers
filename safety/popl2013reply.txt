@@ -104,7 +104,7 @@ scenarios.
 We emphasize that the statements above are exactly those in Theorem 2,
 except they are stated using a different vocabulary.
 
-(Note that point 5 in Theorem 1 is inherited from point 6 in Theorem 1, which
+(Note that point 5 in Theorem 2 is inherited from point 6 in Theorem 1, which
 is the point singled out by the reviewer in his/her question.)
 
 
