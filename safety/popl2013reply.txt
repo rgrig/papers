@@ -54,7 +54,7 @@ what we did do in the paper:
     ‘Within such a framework, it seems difficult to express some of our
     examples, which naturally use an unbounded number of registers.’
     (Point 2 above elaborates on this remark.)
-  * We included point 8 in Theorem 8 precisely because it is the key
+  * We included point 8 in Theorem 1 precisely because it is the key
     observation in relating to the expressivity of JavaMOP (with finite
     automata).
 
