@@ -3,119 +3,65 @@ for their feedback.
 
 
 
-Several reviewers are concerned about the expressivity of TOPL:
-  * "It is unclear whether TOPL can capture practical properties that other
-    formalisms cannot (a large number of useful properties and many that
-    the authors look at in their evaluation are single-object typestate)"
-  * "I feel that the general usefulness and applicability of (r)TOPL
-     automata is not so clear."
-  * "other formalisms proposed allow taking data into account and
-    seem to be able to express all properties proposed in this paper."
-  * "the authors do not show what a possible formalization of the example
-    properties would look like in other formalisms."
+Several reviewers are concerned about the expressivity of TOPL.  We make
+two observations.
 
-Let us make three observations.
+a) Properties that need re-binding (such as ListNotCyclic, IterateRopes,
+and TaintCheck) cannot be expressed by formalisms based on trace slicing
+(such as JavaMOP, tracematches, and quantified event automata).  (This is
+not difficult to see, but we attach a short informal explanation of the end
+of this response for completeness.)
 
-1. Our precise result concerning expressivity is that it is the same as
-that of register automata, a formal model that predates those that underlie
-popular runtime verification tools.
+b) All properties expressible in JavaMOP with finite automata are also
+expressible in TOPL.  To see this, the key insight is point 8 of Theorem 1.
 
-2. We chose examples (Section 6) that are not expressible in many other
-formalisms that are currently used for runtime verification.  For example,
-all properties that need re-binding (such as ListNotCyclic, IterateRopes,
-and TaintCheck) cannot be expressed by any formalism based on trace slicing
-(such as JavaMOP, tracematches, and quantified event automata).  We believe
-that TaintCheck is a realistic property, because there is a whole field of
-research dedicated to taint analysis.  It is fairly easy to see why slicing
-does not work.  Consider the following two families of traces, using the
-notation from the slicing literature:
-  A = { getList<x1> next<x1,x2> next<x2, x3> ... next<xn, x1> | P }
-  B = { getList<x1> next<x1,x2> ... next<x(n-1),xn> | P }
-where P is "n is natural, and x1, ..., xn are pairwise distinct values".
-The property ListNotCyclic fails on all traces in A, and does not fail on
-any of the traces in B.  However, given any parameter binding <b1,b2>, the
-corresponding slice is one of [], [next], or [getList next], which is not
-enough to distinguish between A and B.  In fact, a similar argument works
-even for the property SingletonPattern, which does not use re-binding.
-
-3. All properties expressible in JavaMOP with finite automata are also
-expressible in TOPL.  This is an easy consequence of Theorem 1 (point 8)
-together with our reductions.
-
-We believed that (2) and (3) are obvious consequences of what we said, and
-we wished to refrain from overly criticizing other people's work.  Here is
-what we did do in the paper:
-  * We remarked that rTOPL is as expressive as register automata.
-    (Remark 2 at the end of Section 4.2).
+On the other hand:
   * We chose the examples of Section 6 such that most are not amenable to
-    methods based on trace slicing.
-  * We emphasized re-binding in Section 2.
-  * We remarked in Section 9, with regards to trace slicing approaches:
-    ‘Within such a framework, it seems difficult to express some of our
-    examples, which naturally use an unbounded number of registers.’
-    (Point 2 above elaborates on this remark.)
-  * We included point 8 in Theorem 1 precisely because it is the key
-    observation in relating to the expressivity of JavaMOP (with finite
-    automata).
+    methods based on trace slicing, and emphasized re-binding in Section 2.
+  * We remarked in Section 9 the difficulties in expressing some of our
+    examples using slicing approaches, and included point 8 in Theorem 1
+    precisely because it is the key observation in relating to the
+    expressivity of JavaMOP.
 
 
 
-"The main question is how many of these are actually needed in practice,
-i.e., what is the motivation to reduce to register automata ?
-For instance, point 6 [not closed under complementation and reversal], is
-that really needed when checking properties dynamically ?"
+Several reviewers are concerned about the relevance of Theorem 2.  Its
+immediate consequences are the following, point by point:
+  1.  Runtime monitoring is possible.  Moreover it is possible to reliably
+      detect properties that do not fail for any program, in order to
+      provide a warning.
+  2.  It is possible to automatically verify the correctness of
+      refactorings involving properties with at most one register.  In
+      particular, for such properties it is possible to statically detect
+      if they fail for all programs.
+  3.  For properties involving more than one register it is *not* possible
+      to automatically validate refactorings.
+  4.  TOPL properties may be written as (extended) regular expressions,
+      using the operations | (or) , & (and) , ; (seq), and * (repeat). (But
+      not extended with negation.)
+  5.  If users would be able to use TOPL properties to specify good behavior
+      (rather than just bad behavior), then they would be able to specify more
+      scenarios.
+Thus, it is relevant to runtime monitoring, the static analysis of the
+properties, and has some language design implications.
 
-We believe that theoretical connections lead to better understanding.  They
-are, in a sense, more important than comparisons of performance and of
-subjective expressivity.  The Introduction states: ‘The formal
-correspondence between the properties and register automata defined in this
-paper gives a rigorous mathematical foundation to the approach and allows
-us to reuse many of the results for register automata on TOPL automata.’
 
-Each tool for runtime verification (of Java) seems to have its own formal
-foundations, with various degrees of rigour.  (One positive example in
-terms of rigor is [26].)  Register automata predate all these formalisms
-and they intuitively seemed to us as being adequate for the task.  We set
-out to validate this intuition.  However, an implementation in terms of
-register automata is cumbersome, which motivates TOPL automata.  Theorem 2
-lists several results on TOPL automata, inherited from register automata.
-Unfortunately, the language used in automata theory is rather different
-from the language used in runtime verification.  We tried to bridge the
-gap, but the reviewers still had questions about the relevance of certain
-parts to runtime verification.  Thus, let us restate Theorem 2 in the
-language of runtime verification:
+--------------------------------------------------------------------------
+Reviewer A
 
-1. Runtime monitoring is possible.  Moreover it is possible to reliably
-detect properties that do not fail for any program, in order to provide a
-warning.
-2. It is possible to automatically verify the correctness of refactorings
-involving properties with at most one register.  In particular, for such
-properties it is possible to statically detect if they fail for all
-programs.
-3. For properties involving more than one register it is *not* possible to
-automatically validate refactorings.
-4. TOPL properties may be written as (extended) regular expressions, using
-the operations | (or) , & (and) , ; (seq), and * (repeat). (But not
-extended with negation.)
-5. If users would be able to use TOPL properties to specify good behavior
-(rather than just bad behavior), then they would be able to specify more
-scenarios.
+"[...] what is the motivation to reduce to register automata ?"
 
-We emphasize that the statements above are exactly those in Theorem 2,
-except they are stated using a different vocabulary.
-
-(Note that point 5 in Theorem 2 is inherited from point 6 in Theorem 1, which
-is the point singled out by the reviewer in his/her question.)
+Connections to a well-established model like register automata are
+important both from a foundational (we relate to a canonical paradigm) and
+an applied viewpoint (there is a wealth of results and constructions we can
+refer to).
 
 
 
-"Or is combining properties useful ?"
+"For instance, point 6, is that really needed when checking properties
+dynamically ? Or is combining properties useful ?"
 
-As above, combining properties means that TOPL properties may also be
-written in the form of regular expressions (extended, because letters are
-replaced with labels, and because intersection is supported).  It also
-means that TOPL properties could be reused by name.  For example "A;B"
-reuses big descriptions of properties A and B.
+Please see point 4 above.
 
 
 
@@ -150,12 +96,18 @@ label’.
 
 
 
+--------------------------------------------------------------------------
+Reviewer B:
+
 "what about the relationship among the specification languages? which
 properties can be expressed in both systems?"
 
 Please see our note on expressivity in the beginning of this response.
 
 
+
+--------------------------------------------------------------------------
+Reviewer C:
 
 "what do you do when the specification is not met?"
 
@@ -177,19 +129,17 @@ different underlying mechanism.
 
 
 
+--------------------------------------------------------------------------
+Reviewer D
+
 "In particular, the "alphabet" used in TOPL properties basically coincides
 with "histories" [Jeffrey, Rathke, 2005]"
 
-There must be some typo: There is no such thing as a ‘history’ in [Jeffrey,
-Rathke, 2005], which gives a fully abstract trace semantics for a Java-like
-language.  That is obviously orthogonal to our work, as we make no
-assumption on how traces are produced.  Moreover, we use the word
-‘alphabet’ in a completely standard sense, going back at least to [Rabin,
-Scott, 1959].  We did see ‘history’ being used to mean trace whose events
-have a certain structure and that also satisfy some extra condition.
-However, we really do work with plain traces: The structure of events is
-only relevant for the syntax we chose for TOPL, but does not affect
-semantics.
+The work of Jeffrey and Rathke is indeed fundamental in the semantics of
+Java; we do not refer to it only because our chosen model is a plain (not
+fully abstract) trace semantics. We thank the reviewer for the references
+to attribute grammars and Quantified Event Automata. We made some comments
+above on these, and we will include more in the final version of the paper.
 
 
 
@@ -229,23 +179,38 @@ http://arxiv.org/abs/1209.0680 to get a rough idea of what is involved.
 properties than as attribute grammars with sets or with Quantified Event
 Automata?"
 
-Strictly speaking, we cannot ‘expand’ on this, because we never made such a
-claim.  As a rule, we try to steer away from opinions that cannot be backed
-by proofs.  However, we can mention the main ingredient that makes us feel
-that TOPL properties are natural:  The concatenation of labels on a walk to
-‘error’ looks very much like a small Java program that violates the property.
-The same idea was used by PQL.  (We did not compare much with PQL because
-its formal foundation is quite unclear to us.  But, it certainly has some
-good ideas.)
+The main ingredient that makes us see TOPL properties as natural is that
+the concatenation of labels on a walk to ‘error’ looks very much like a
+small Java program that violates the property.
 
 
 
 "How does the overhead in your approach compare to the overhead in other
 approaches for similar properties?"
 
-We do not have an efficient implementation.  Compared to JavaMOP, which is
-one of the fastest tools, our monitors take 30--40 times more time.  See
-Table 1.
+We do not have an efficient implementation yet: compared to JavaMOP, which
+is one of the fastest tools, our monitors are indeed slower. However, this
+is somehow expected as our tool is still at prototype level. On the other
+hand, we can be more expressive than JavaMOP (and other tools based on
+trace slicing).
+
+
+
+--------------------------------------------------------------------------
+Some details
+
+Why slicing cannot express properties that use re-binding in an essential
+way: Consider the following two families of traces, using the notation from
+the slicing literature:
+  A = { getList<x1> next<x1,x2> next<x2, x3> ... next<xn, x1> | P }
+  B = { getList<x1> next<x1,x2> ... next<x(n-1),xn> | P }
+where P is "n is natural, and x1, ..., xn are pairwise distinct values".
+The property ListNotCyclic fails on all traces in A, and does not fail on
+any of the traces in B.  However, given any parameter binding <b1,b2>, the
+corresponding slice is one of [], [next], or [getList next], which is not
+enough to distinguish between A and B.  In fact, a similar argument works
+even for the property SingletonPattern, which does not use re-binding.
+
 
 
 vim:tw=75:fo+=t:spell:
