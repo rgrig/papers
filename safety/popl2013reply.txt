@@ -9,12 +9,13 @@ two observations.
 a) Properties that need re-binding (such as ListNotCyclic, IterateRopes,
 and TaintCheck) cannot be expressed by formalisms based on trace slicing
 (such as JavaMOP, tracematches, and quantified event automata).  (This is
-not difficult to see, but we attach a short informal explanation of the end
+not difficult to see, but we attach a short informal explanation at the end
 of this response for completeness.)
 
 b) All properties expressible in JavaMOP with finite automata are also
 expressible in TOPL.  To see this, the key insight is point 8 of Theorem 1.
 
+TODO: shorten, it was in the paper
 On the other hand:
   * We chose the examples of Section 6 such that most are not amenable to
     methods based on trace slicing, and emphasized re-binding in Section 2.
@@ -69,15 +70,13 @@ Please see point 4 above.
 rollback automata and not converting the automata to a register one ?"
 
 That is why rollback TOPL automata are introduced:  They closely reflect
-how the implementation works.  Section 4 starts with: ‘We now gradually
-move towards a model that is better suited for runtime verification of Java
-programs.’  The core of the implementation of the monitors/checkers is
-Definition 6.
+how the implementation works.
 
 
 
 "what would happen if we try to express the properties directly in TOPL ?"
 
+TODO: shorten
 It is of course always possible to use simple TOPL, since there is a
 reduction.  We tried to make TOPL user-friendly as follows:  If one takes a
 path from start to error and lists the labels one below the other, then the
@@ -111,8 +110,8 @@ Reviewer C:
 
 "what do you do when the specification is not met?"
 
-Section 7 states: ‘The checker logs the property violations it detects.’
-The input/output behavior of the program is otherwise not affected.  The
+The checker logs the property violations it detects (Section 7).  The
+input/output behavior of the program is otherwise not affected.  The
 resource usage is affected---it uses more memory and more time.
 
 
@@ -147,13 +146,11 @@ above on these, and we will include more in the final version of the paper.
 properties is the automatic re-binding of specification variables. This is
 achieved by introducing non-determinism in the automata"
 
-This is incorrect.  Re-binding and non-determinism are orthogonal.  There
-are deterministic automata that rebind values, and there are
-nondeterministic automata that do not rebind values.  Tracematches and
-JavaMOP (with finite automata), for example, are equally expressive to
-non-deterministic TOPL automata without re-binding (see beginning).
-Informally, in the setting of quantified event automata, re-binding is
-equivalent to having an infinite number of quantifiers.
+Re-binding and non-determinism are orthogonal.  There are deterministic
+automata that re-bind values, and there are nondeterministic automata that
+do not re-bind values.  Informally, in the setting of quantified event
+automata, re-binding is equivalent to having an infinite number of
+quantifiers.
 
 
 
