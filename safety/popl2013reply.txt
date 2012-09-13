@@ -17,7 +17,7 @@ b) All properties expressible in JavaMOP with finite automata are also
 expressible in TOPL.  To see this, the key insight is point 8 of Theorem 1.
 
 In the paper, we selected the examples, emphasized re-binding, and included
-point 8 in Theorem 8 in order to convey points (a) and (b) from above.  We
+point 8 in Theorem 1 in order to convey points (a) and (b) from above.  We
 could express these more directly.
 
 
