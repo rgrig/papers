@@ -3,7 +3,6 @@ for their feedback.  Below we address two concerns that are expressed by
 more than one reviewer, and afterwards we respond to individual remarks.
 
 
-
 Several reviewers are concerned about the expressivity of TOPL.  We make
 two observations.
 
@@ -21,12 +20,10 @@ point 8 in Theorem 1 in order to convey points (a) and (b) from above.  We
 could express these more directly.
 
 
-
 Several reviewers are concerned about the relevance of Theorem 2.  Its
 immediate consequences are the following, point by point:
-  1.  Runtime monitoring is possible.  Moreover it is possible to reliably
-      detect properties that do not fail for any program, in order to
-      provide a warning.
+  1.  Runtime monitoring is possible.  Moreover it is possible to detect
+      properties that could never fail, in order to provide a warning.
   2.  It is possible to automatically verify the correctness of
       refactorings involving properties with at most one register.  In
       particular, for such properties it is possible to statically detect
@@ -54,12 +51,10 @@ an applied viewpoint (there is a wealth of results and constructions we can
 refer to).
 
 
-
 "For instance, point 6, is that really needed when checking properties
 dynamically ? Or is combining properties useful ?"
 
 Please see point 4 above.
-
 
 
 "Perhaps there is a direct algorithm for working directly with the
@@ -67,7 +62,6 @@ rollback automata and not converting the automata to a register one ?"
 
 That is precisely why rollback TOPL automata are introduced:  They closely
 reflect how the implementation works.
-
 
 
 "what would happen if we try to express the properties directly in TOPL
@@ -79,6 +73,8 @@ return I" because in the latter case skip transitions may be taken
 in-between.  In turn, skip transitions are convenient in practice because
 without them almost every state would need several loops.
 
+Also, the reduction from rTOPL to TOPL suggests that in some cases is
+smaller.
 
 
 --------------------------------------------------------------------------
@@ -88,7 +84,6 @@ Reviewer B:
 properties can be expressed in both systems?"
 
 Please see our note on expressivity in the beginning of this response.
-
 
 
 --------------------------------------------------------------------------
@@ -101,7 +96,6 @@ input/output behavior of the program is otherwise not affected.  The
 resource usage is affected---it uses more memory and more time.
 
 
-
 "apparently for efficiency reason, the dynamic checking is not even sound:
 it can be the case that a trace does not respect the specifications and the
 monitor does not detect it."
@@ -111,7 +105,6 @@ the sense described by the reviewer): set the limit on active states to be
 infinity (or MAX_INT in our implementation).  The ability to trade
 soundness for efficiency is the main idea introduced by QVM, which we
 appreciate and reuse, albeit with a different underlying mechanism.
-
 
 
 --------------------------------------------------------------------------
@@ -127,7 +120,6 @@ to attribute grammars and Quantified Event Automata. We made some comments
 above on these, and we will include more in the final version of the paper.
 
 
-
 "Another criticism to the paper is that one of the selling points of TOPL
 properties is the automatic re-binding of specification variables. This is
 achieved by introducing non-determinism in the automata"
@@ -135,10 +127,9 @@ achieved by introducing non-determinism in the automata"
 Re-binding is present in register automata; it is not introduced by us.
 Moreover, it is orthogonal to nondeterminism.  There are deterministic
 automata that re-bind registers, and there are nondeterministic automata
-that do not re-bind values.  Informally, in the setting of quantified event
-automata, re-binding is equivalent to having an infinite number of
+that do not re-bind registers.  Informally, in the setting of quantified
+event automata, re-binding is equivalent to having an infinite number of
 quantifiers.
-
 
 
 "A similar effect to this re-binding can be achieved by simply considering
@@ -147,7 +138,6 @@ sets of objects."
 Sets are a good idea.  We are, in fact, investigating their use.  Our first
 step was to explore the theoretical implications.  Please skim
 http://arxiv.org/abs/1209.0680 to get a rough idea of what is involved.
-
 
 
 "Can you expand on why it is more natural to express properties as TOPL
@@ -159,7 +149,6 @@ the concatenation of labels on a path from ‘start’ to ‘error’ looks very
 much like a small Java program that violates the property.
 
 
-
 "How does the overhead in your approach compare to the overhead in other
 approaches for similar properties?"
 
@@ -168,7 +157,6 @@ is one of the fastest tools, our monitors are indeed slower. However, this
 is somehow expected as our tool is still at prototype level. On the other
 hand, we can be more expressive than JavaMOP (and other tools based on
 trace slicing).
-
 
 
 --------------------------------------------------------------------------
@@ -185,7 +173,3 @@ any of the traces in B.  However, given any parameter binding <b1,b2>, the
 corresponding slice is one of [], [next], or [getList next], which is not
 enough to distinguish between A and B.  In fact, a similar argument works
 even for the property SingletonPattern, which does not use re-binding.
-
-
-
-vim:tw=75:fo+=t:spell:
