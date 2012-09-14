@@ -73,8 +73,8 @@ return I" because in the latter case skip transitions may be taken
 in-between.  In turn, skip transitions are convenient in practice because
 without them almost every state would need several loops.
 
-Also, the reduction from rTOPL to TOPL suggests that in some cases is
-smaller.
+Also, the reduction from rTOPL to TOPL suggests that in some cases the rTOPL
+automaton is much smaller.
 
 
 --------------------------------------------------------------------------
