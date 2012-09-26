@@ -1313,8 +1313,8 @@ TOPL automata and slicing are not directly comparable.
 TOPL automata specify languages over infinite alphabets; that is, elements of~$\Sigma^*\to2$.
 Slicing is a fixed function that produces a language over infinite alphabets out of a language over finite alphabets; that is, slicing is a fixed element of $(C^*\to2)\to(\Sigma^*\to2)$.
 Thus, how TOPL automata and slicing compare depends on the method used to specify languages over finite alphabets.
-The language $L\subseteq C^*$ could be defined, for example, using a finite automaton, or a context free grammar.
-If $L$~is defined using a finite automaton, then ${\cal L}_\sigma$ is expressible by TOPL automata.
+The language $L\in C^*\to2$ could be defined, for example, using a finite automaton, or a context free grammar.
+If $L$~is defined using a finite automaton, then ${\cal L}_\sigma(L)$ is expressible by TOPL automata.
 
 \begin{lemma}[slicing to TOPL]\label{lemma:slicing-to-topl}
 Given a finite automaton~$\cal A$, there is an algorithm that constructs a TOPL automaton~${\cal A}'$ such that
@@ -1329,7 +1329,39 @@ Given states $Q$, we use states $Q\times(([n]\to2)\to2)$.
 But, there's an upper bound of $O(3^n)$}.
 \end{proof}
 
-\rg{TODO: Explain why for negative results we must be more careful with how we define `expressivity'.}
+Some TOPL languages are not definable by slicing, no matter how $L\subseteq C^*$ is chosen.
+Consider the language
+\begin{align*}
+\{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
+\end{align*}
+which is related to that of \autoref{ex:slicing_lang}.
+The projections $\pi_c(w\searrow\theta)$ are strings $11\ldots1$.
+The information whether slicing $w\searrow\theta$ retains the first letter of~$w$ is lost.
+Still, the language
+\begin{align*}
+\{\,(2,v_1)(1,v_2)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
+\end{align*}
+is definable by slicing.
+The membership problem for the first language is easily reduced to the membership problem for the second language.
+Morally, slicing can express such languages, even if it cannot define them.
+
+Formally, definable and expressible have different meanings.
+A language~$L$ is \emph{definable} if there exist a description~${\cal A}$ and a semantics~${\cal L}(\cdot)$ such that $L={\cal L}({\cal A})$.
+A class of languages is \emph{expressible} if there exists an easily computable function~$f$ such that for each language $L$ in the class, $f(L)$ is definable and $f(L)\cap f(\bar L)=\emptyset$.
+\rg{$\leftarrow$ is horrible.}
+For example, \autoref{lemma:topl-to-ra} and \autoref{lemma:rtopl-to-topl} used such functions~$f$.
+Negative results about expressivity, on the other hand, are possible only if the class of easily computable functions is made precise.
+
+
+\rg{TODO: We need to exhibit a class of TOPL languages for which there is no quick reduction of membership to membership in some slicing language.}
+
+Consider the TOPL language
+\begin{align*}
+{\sf Cycle} = \{\,(1,v_1,v_2)(1,v_2,v_3)\ldots(1,v_{k-1},v_k)(1,v_k,v_0)
+  \mid\text{$v_i\ne v_j$ for $i\ne j$} \,\}
+\end{align*}
+For any easily computable~$f$, the language $f({\sf Cycle}_k)$ is not definable by slicing.
+\rg{Now $\ldots$ I wonder how to prove this.}
 
 
 If $L$~is defined using a context free grammar, then ${\cal L}_\sigma$ could be not expressible by TOPL automata.
@@ -1338,17 +1370,6 @@ Choose $n=1$, so ${\cal L}_\sigma(L)=L$.
 After processing the prefix~$1^k$ each register of a TOPL automaton has either the initial value or the value~$1$.
 So, the $m$~registers store $m$~bits of information, which are insufficient to distinguish between all possible values of~$n$.
 \rg{The previous explanation may be too detailed.}
-
-Conversely, there are TOPL languages that are not expressible by slicing, no matter how $L\subseteq C^*$ is chosen.
-Consider the language
-\begin{align*}
-\{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
-\end{align*}
-which is related to that of \autoref{ex:slicing_lang}.
-The projections $\pi_c(w\searrow\theta)$ are simply strings $11\ldots1$, and there is no way to decide if the first letter was retained or not by slicing.
-\rg{This is not fair to slicing.}
-
-\rg{TODO: We need to exhibit a class of TOPL languages for which there is no quick reduction of membership to membership in some slicing language.}
 
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
