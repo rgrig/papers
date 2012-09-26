@@ -43,17 +43,6 @@
   \and  Nikos Tzevelekos\footnotemark[1] }
 \date{}
 
-%\authorinfo{Radu Grigore \and Dino Distefano}
-%           {Queen Mary, University of London}
-%           {\{rgrig,ddino\}@eecs.qmul.ac.uk}
-%\authorinfo{Rasmus Lerchedahl Petersen}
-%           {Microsoft Research}
-%           {a-rapete@microsoft.com}
-%\authorinfo{Nikos Tzevelekos}
-%           {Queen Mary, University of London}
-%           {nikost@eecs.qmul.ac.uk}
-
-
 \renewcommand{\sectionautorefname}{Section}
 \renewcommand{\subsectionautorefname}{\sectionautorefname}
 
@@ -234,9 +223,7 @@ kept finite.
 
 \begin{figure}[t] % first example <<<
 %\include{IncorrectIteratorUse}
-\begin{tiny}
 \include{Taint}
-\end{tiny}
 \caption{A first example: Java code}
 \label{fig:first.java}
 \end{figure}
@@ -1224,72 +1211,110 @@ The property produce an error is the object obtained by the method {\tt getInsta
 
 % >>>
 % >>>
-\section{Comparison with Trace Slicing} \label{sec:slicing} % <<<
+\section{Relation to Trace Slicing} \label{sec:slicing} % <<<
 
 Papers on runtime verification describe alternative methods to cope with infinite alphabets.
 In particular, Ro\comma{s}u and~Chen~\cite{dblp:journals/corr/abs-1112-5761} describe a formal model, known as \emph{trace slicing}, that is simple and compelling.
 The idea is to slice words over infinite alphabets into words over finite alphabets and then use some formalism that works with finite alphabets, such as a finite automaton.
 It is interesting to compare TOPL automata and trace slicing from the point of view of expressivity.
 
-In this section the alphabet is
+\subsection{Review of Trace Slicing} \label{sec:review_slicing} % <<<
+
+Trace slicing uses the alphabet
 \begin{align*}
-\Sigma = C \times V_\bot^{n-1}
+\Sigma &= C \times \Theta \\
+\Theta &= V_\bot^{n-1}
 \end{align*}
 where $C$ is a finite subset of~$V$.
-Each letter~$\ell\in\Sigma$ is a pair~$(c,\theta)$ of a \emph{constant}~$c\in C$ and a \emph{binding}~$\theta\in V_\bot^{n-1}$.
-Alternatively, a letter is an $n$-tuple $(v_1,\ldots,v_n)$ with $v_1\in C$ and $(v_2,\ldots,v_n)\in V_\bot^{n-1}$.
-A smaller binding is less specific, it is obtained by replacing some components with~$\bot$.
+Each letter~$\ell\in\Sigma$ is a pair~$(c,\theta)$ of a \emph{constant}~$c\in C$ and a \emph{binding}~$\theta\in\Theta$.
+Alternatively, a letter is an $n$-tuple $(v_1,\ldots,v_n)$ with $v_1\in C$ and $(v_2,\ldots,v_n)\in \Theta$.
+A smaller binding is less specific; it is obtained by replacing some components with~$\bot$.
 \begin{align*}
 (v_2,v_3,\ldots,v_n)\sqsubseteq(v'_2,v'_3,\ldots,v'_n) \iff
   \text{$v_i\in\{v'_i,\bot\}$ for all $i\in\{2,3,\ldots,n\}$}
 \end{align*}
 So, bindings are partially ordered.
-The slice~$w\searrow\theta$ retains the constants that are paired with bindings~$\sqsubseteq\theta$.
-For words of length~$1$ slicing gives an element of $C^0\cup C^1$.
+The corresponding lub (least upper bound) operation $\sqcup$ is defined as usual.
+
+The slice~$w\searrow\theta$ retains the letters with bindings~$\sqsubseteq\theta$.
+For words of length~$1$ slicing gives an element of $\Sigma^0\cup\Sigma^1$.
 \begin{align*}
 (c',\theta')\searrow\theta=\begin{cases}
-  c' & \text{if $\theta'\sqsubseteq\theta$} \\
+  (c',\theta') & \text{if $\theta'\sqsubseteq\theta$} \\
   \epsilon & \text{otherwise}
 \end{cases}
 \end{align*}
-Slicing is extended pointwise to words of arbitrary length.
+Slicing extends pointwise to words of arbitrary length.
+Similarly, the projections $\pi_c(c,\theta)=c$ and $\pi_\theta(c,\theta)=\theta$ extend to words of arbitrary length.
 \begin{align*}
-  \searrow &\in (C\times V_\bot^{n-1})^*\times V_\bot^n \to C^*
-\end{align*}
-Every slice is a word over the finite alphabet~$C^*$.
-
-\begin{example}
-Let $V$ be the set~$\{1,2,\ldots\,\}$ of positive integers, let $C=[4]$, and let $n=3$.
-\begin{align*}
-(1,\bot,\bot)(2,1,\bot)(3,\bot,1)(4,1,1)\searrow(1,1) &= 1\,2\,3\,4 \\
-(1,\bot,\bot)(2,1,\bot)(3,\bot,1)(4,1,1)\searrow(\bot,1) &= 1\,3
-\end{align*}
-\eoe
-\end{example}
-
-Each language $L \subseteq C^*$ determines a language ${\cal L}_\sigma(L) \subseteq \Sigma^*$:
-\begin{align*}
-w \in {\cal L}_\sigma(L)
-  \qquad\iff\qquad
-\text{$w\searrow\theta \in L$ for some binding~$\theta$}
+  \searrow &\in \Sigma^*\times \Theta \to \Sigma^* \\
+  \pi_c &\in \Sigma^*\to C^* \\
+  \pi_\theta &\in \Sigma^*\to\Theta^*
 \end{align*}
 
 \begin{example}\label{ex:slicing}
+Let $V$ be the set~$\{1,2,\ldots\,\}$ of positive integers, let $C=[3]$, and let $n=3$.
+Then,
+\begin{align*}
+(1,\bot,\bot)(2,1,\bot)(3,\bot,1)\searrow(1,1)
+  &= (1,\bot,\bot)(2,1,\bot)(3,\bot,1) \\
+(1,\bot,\bot)(2,1,\bot)(3,\bot,1)\searrow(2,1)
+  &= (1,\bot,\bot)(3,\bot,1) \\
+(1,\bot,\bot)(2,1,\bot)(3,\bot,1)\searrow(\bot,1)
+  &= (1,\bot,\bot)(3,\bot,1) \\
+\pi_\theta(1,\bot,\bot)(2,\bot,1) &= (\bot,\bot)(\bot,1) \\
+(\bot,\bot)\sqcup(\bot,1) &= (\bot,1) \\
+\pi_c(1,\bot,\bot)(3,\bot,1) &= 1\,3
+\end{align*}
+Note that slicing with different bindings can produce the same result.
+\eoe
+\end{example}
+
+Each language $L \subseteq C^*$ determines a language ${\cal L}_\sigma(L) \subseteq \Sigma^*$, defined as follows:
+\begin{align*}
+w \in {\cal L}_\sigma(L)
+  \qquad\iff\qquad
+\text{$\pi_c(w\searrow\theta)\in L$ for some binding~$\theta$}
+\end{align*}
+
+\begin{example}\label{ex:slicing_lang}
 Let $n=2$, let $C$ be the unit set~$\{1\}$, and let $L$ contain the words of length~$\ge2$ over~$C$.
 Then ${\cal L}_\sigma(L)$ is the language of words in which some second component appears twice.
 \begin{align*}
 {\cal L}_\sigma(L) = \{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_j$ for some $i$ and $j$}\,\}
 \end{align*}
-On the other hand, the related language
-\begin{align*}
-\{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
-\end{align*}
-is not definable by traces, although it is definable by TOPL automata.
 \eoe
 \end{example}
 
-If the language~$L$ is the regular language~${\cal L}({\cal A})$ of some finite automaton~$\cal A$, then ${\cal L}_\sigma(L)$ is recognizable by TOPL automata.
-In other words, TOPL automata are at least as expressive as slicing that uses finite automata as the underlying mechanism.
+
+Membership in ${\cal L}_\sigma(L)$ is decidable if membership in~$L$ is decidable.
+It is sufficient to enumerate the bindings $\sqcup\pi_\theta(w')$, for all subsequences~$w'$ of~$w$.
+Suppose a monitor for~$L$ is implemented as the triple $(\iota,\delta,\eta)$ of functions with the types
+\begin{align*}
+\begin{tikzpicture}[auto,node distance=7mm]
+\node (1) {$1$};
+\node (M) [right=of 1] {$M$};
+\node (MC) [above=of M] {$M\times C$};
+\node (2) [right=of M] {$2$};
+\path[->]
+  (1) edge node{$\iota$} (M)
+  (MC) edge node{$\delta$} (M)
+  (M) edge node{$\eta$} (2);
+\end{tikzpicture}
+\end{align*}
+for some set of monitor states~$M$.
+Then a monitor $(\iota_\sigma,\delta_\sigma,\eta_\sigma)$ for~${\cal L}_\sigma(L)$ can be built as follows.
+\rg{TODO: Describe the (naive) algorithm for parametric monitoring, because it is used in a proof later.}
+
+% >>>
+\subsection{Expressivity}
+
+TOPL automata and slicing are not directly comparable.
+TOPL automata specify languages over infinite alphabets; that is, elements of~$\Sigma^*\to2$.
+Slicing is a fixed function that produces a language over infinite alphabets out of a language over finite alphabets; that is, slicing is a fixed element of $(C^*\to2)\to(\Sigma^*\to2)$.
+Thus, how TOPL automata and slicing compare depends on the method used to specify languages over finite alphabets.
+The language $L\subseteq C^*$ could be defined, for example, using a finite automaton, or a context free grammar.
+If $L$~is defined using a finite automaton, then ${\cal L}_\sigma$ is expressible by TOPL automata.
 
 \begin{lemma}[slicing to TOPL]\label{lemma:slicing-to-topl}
 Given a finite automaton~$\cal A$, there is an algorithm that constructs a TOPL automaton~${\cal A}'$ such that
@@ -1298,13 +1323,32 @@ w\in{\cal L}_\sigma({\cal L}({\cal A})) \iff w\in{\cal L}({\cal A}')
 \end{align*}
 \end{lemma}
 \begin{proof}
-\rg{Use the states $Q\times([n]\to2)$, to keep track of which components of~$\theta$ are bound.
-Keep $\theta$ in registers.}
+The idea is to simulate the algorithm of \autoref{sec:review_slicing}, which constructs a monitor over infinite alphabets out of monitors over finite alphabets.
+\rg{TODO: Continue.
+Given states $Q$, we use states $Q\times(([n]\to2)\to2)$.
+But, there's an upper bound of $O(3^n)$}.
 \end{proof}
 
-In light of \autoref{lemma:slicing-to-topl} and \autoref{ex:slicing} it is tempting to conclude that TOPL automata are strictly more expressive than slicing with finite automata.
-The difference exhibited by \autoref{ex:slicing}, however, is technical rather than substantial.
-\rg{We need to exhibit a class of TOPL languages for which there is no quick reduction of membership to membership in some slicing language.}
+\rg{TODO: Explain why for negative results we must be more careful with how we define `expressivity'.}
+
+
+If $L$~is defined using a context free grammar, then ${\cal L}_\sigma$ could be not expressible by TOPL automata.
+Choose $L=\{\,1^k2^k\mid k\in\N \,\}$.
+Choose $n=1$, so ${\cal L}_\sigma(L)=L$.
+After processing the prefix~$1^k$ each register of a TOPL automaton has either the initial value or the value~$1$.
+So, the $m$~registers store $m$~bits of information, which are insufficient to distinguish between all possible values of~$n$.
+\rg{The previous explanation may be too detailed.}
+
+Conversely, there are TOPL languages that are not expressible by slicing, no matter how $L\subseteq C^*$ is chosen.
+Consider the language
+\begin{align*}
+\{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
+\end{align*}
+which is related to that of \autoref{ex:slicing_lang}.
+The projections $\pi_c(w\searrow\theta)$ are simply strings $11\ldots1$, and there is no way to decide if the first letter was retained or not by slicing.
+\rg{This is not fair to slicing.}
+
+\rg{TODO: We need to exhibit a class of TOPL languages for which there is no quick reduction of membership to membership in some slicing language.}
 
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
@@ -1431,7 +1475,7 @@ For each project there are two instrumented runs, one with a maximum of $3$~acti
 For properties involving only one object, such as {\tt HasNext}, a limit of $10$ means that at most that many objects are tracked \emph{at the same time}.
 
 
-\begin{table}[t]\tiny
+\begin{table}[t]
 \begin{center}
 \begin{tabular}{|l|r||r|r||r|r||r|r||r|r|} \hline
   & original  & \multicolumn{2}{|c||}{HasNext} & \multicolumn{2}{c||}{UnsafeIterator} &\multicolumn{2}{|c||}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
