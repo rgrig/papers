@@ -1276,6 +1276,8 @@ w \in {\cal L}_\sigma(L)
   \qquad\iff\qquad
 \text{$\pi_c(w\searrow\theta)\in L$ for some binding~$\theta$}
 \end{align*}
+Membership in ${\cal L}_\sigma(L)$ is decidable if membership in~$L$ is decidable.
+It is sufficient to enumerate the bindings $\sqcup\pi_\theta(w')$, for all subsequences~$w'$ of~$w$.
 
 \begin{example}\label{ex:slicing_lang}
 Let $n=2$, let $C$ be the unit set~$\{1\}$, and let $L$ contain the words of length~$\ge2$ over~$C$.
@@ -1286,90 +1288,49 @@ Then ${\cal L}_\sigma(L)$ is the language of words in which some second componen
 \eoe
 \end{example}
 
-
-Membership in ${\cal L}_\sigma(L)$ is decidable if membership in~$L$ is decidable.
-It is sufficient to enumerate the bindings $\sqcup\pi_\theta(w')$, for all subsequences~$w'$ of~$w$.
-Suppose a monitor for~$L$ is implemented as the triple $(\iota,\delta,\eta)$ of functions with the types
-\begin{align*}
-\begin{tikzpicture}[auto,node distance=7mm]
-\node (1) {$1$};
-\node (M) [right=of 1] {$M$};
-\node (MC) [above=of M] {$M\times C$};
-\node (2) [right=of M] {$2$};
-\path[->]
-  (1) edge node{$\iota$} (M)
-  (MC) edge node{$\delta$} (M)
-  (M) edge node{$\eta$} (2);
-\end{tikzpicture}
-\end{align*}
-for some set of monitor states~$M$.
-Then a monitor $(\iota_\sigma,\delta_\sigma,\eta_\sigma)$ for~${\cal L}_\sigma(L)$ can be built as follows.
-\rg{TODO: Describe the (naive) algorithm for parametric monitoring, because it is used in a proof later.}
-
 % >>>
 \subsection{Expressivity}
 
-TOPL automata and slicing are not directly comparable.
-TOPL automata specify languages over infinite alphabets; that is, elements of~$\Sigma^*\to2$.
-Slicing is a fixed function that produces a language over infinite alphabets out of a language over finite alphabets; that is, slicing is a fixed element of $(C^*\to2)\to(\Sigma^*\to2)$.
-Thus, how TOPL automata and slicing compare depends on the method used to specify languages over finite alphabets.
-The language $L\in C^*\to2$ could be defined, for example, using a finite automaton, or a context free grammar.
-If $L$~is defined using a finite automaton, then ${\cal L}_\sigma(L)$ is expressible by TOPL automata.
+Registers and slicing are methods to transform recognizers over finite alphabets into recognizers over infinite alphabets.
+To compare registers with slicing, a mechanism for finite alphabets must first be fixed.
+This section takes that mechanism to be a finite automaton, and compares TOPL automata with slicing applied to regular languages.
 
-\begin{lemma}[slicing to TOPL]\label{lemma:slicing-to-topl}
-Given a finite automaton~$\cal A$, there is an algorithm that constructs a TOPL automaton~${\cal A}'$ such that
+Let $n=2$, let $C=\{1\}$, and let $v_1\ldots v_k$ abbreviate the word $(1,v_1)\ldots(1,v_k)$.
+The following languages definable by at most one of the two methods, registers and slicing.
 \begin{align*}
-w\in{\cal L}_\sigma({\cal L}({\cal A})) \iff w\in{\cal L}({\cal A}')
+L_1 &= \{\, v_1\ldots v_k\mid\text{$v_1=v_i$ for some $i\ne1$}\,\} \\
+L_2 &= \{\, v_1\ldots v_k\mid\text{$v_1=v_i$ for all $i\ne1$}\,\} \\
+L_3 &= \{\, v_1\ldots v_{2k}\mid\text{$v_{2i}=v_{2i+1}$ for $i\ne k$, and $v_1=v_{2k}$}\,\} \\
+L_4 &= \{\, v_1\ldots v_k\mid\text{there is a $j$ such that $v_i\ne v_j$ for all $i\ne j$}\,\} \\
+L_5 &= \{\, v_1\ldots v_k\mid\text{$v_i\ne v_k$ for all $i\ne k$}\,\}
 \end{align*}
-\end{lemma}
-\begin{proof}
-The idea is to simulate the algorithm of \autoref{sec:review_slicing}, which constructs a monitor over infinite alphabets out of monitors over finite alphabets.
-\rg{TODO: Continue.
-Given states $Q$, we use states $Q\times(([n]\to2)\to2)$.
-But, there's an upper bound of $O(3^n)$}.
-\end{proof}
+Languages $L_1$,~$L_2$, and~$L_3$ are definable by TOPL automata, but not by slicing.
+Language $L_4$ is definable by slicing, but not by TOPL automata.
+Language $L_5$ is not definable by TOPL automata or by slicing.
 
-Some TOPL languages are not definable by slicing, no matter how $L\subseteq C^*$ is chosen.
-Consider the language
+Each word~$w$ has a set of slice projections $\{\,\pi_c(w\searrow\theta)\mid\theta\in\Theta\,\}$.
+If two words $w\in L$ and $w'\notin L$ have the same set of slice projections, then the language $L$ is not definable by slicing.
+Recall that $1\,1\,2$ abbreviates the word $(1,1)(1,1)(1,2)$.
 \begin{align*}
-\{\,(1,v_1)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
+  && &w \in L &&w'\notin L && \{\,\pi_c(w\searrow\theta)\mid\theta\in\Theta\,\}\\
+&L_1, L_5 &&1\,1\,2 &&1\,2\,2 &&\{1, 1\,1\} \\
+&L_2 &&1 &&1\,2 && \{1\}\\
+&L_3 &&1\,2\,2\,1 &&1\,1\,2\,2 &&\{1\,1\}
 \end{align*}
-which is related to that of \autoref{ex:slicing_lang}.
-The projections $\pi_c(w\searrow\theta)$ are strings $11\ldots1$.
-The information whether slicing $w\searrow\theta$ retains the first letter of~$w$ is lost.
-Still, the language
-\begin{align*}
-\{\,(2,v_1)(1,v_2)\ldots(1,v_n)\mid\text{$v_i=v_1$ for some $i>1$}\,\}
-\end{align*}
-is definable by slicing.
-The membership problem for the first language is easily reduced to the membership problem for the second language.
-Morally, slicing can express such languages, even if it cannot define them.
 
-Formally, definable and expressible have different meanings.
-A language~$L$ is \emph{definable} if there exist a description~${\cal A}$ and a semantics~${\cal L}(\cdot)$ such that $L={\cal L}({\cal A})$.
-A class of languages is \emph{expressible} if there exists an easily computable function~$f$ such that for each language $L$ in the class, $f(L)$ is definable and $f(L)\cap f(\bar L)=\emptyset$.
-\rg{$\leftarrow$ is horrible.}
-For example, \autoref{lemma:topl-to-ra} and \autoref{lemma:rtopl-to-topl} used such functions~$f$.
-Negative results about expressivity, on the other hand, are possible only if the class of easily computable functions is made precise.
+To show that $L_5$ is not definable by TOPL automata
 
+\rg{TODO: TOPL languages are closed under prefix, because emptiness is decidable.
+Thus, $L_5$ not definable implies $L_4$ not definable.}
 
-\rg{TODO: We need to exhibit a class of TOPL languages for which there is no quick reduction of membership to membership in some slicing language.}
+Language $L_2$ is essentially the same as {\tt SingletonPattern} from \autoref{sec:examples}.
+Language $L_3$ embodies a pattern, namely chaining of values, which occurs in {\tt ListNotCyclic}, {\tt IterateRopes}, and {\tt TaintCheck}.
 
-Consider the TOPL language
-\begin{align*}
-{\sf Cycle} = \{\,(1,v_1,v_2)(1,v_2,v_3)\ldots(1,v_{k-1},v_k)(1,v_k,v_0)
-  \mid\text{$v_i\ne v_j$ for $i\ne j$} \,\}
-\end{align*}
-For any easily computable~$f$, the language $f({\sf Cycle}_k)$ is not definable by slicing.
-\rg{Now $\ldots$ I wonder how to prove this.}
+In conclusion, registers and slicing are complementary methods\,---\,neither subsumes the other.
+Several realistic properties that are definable by registers but not by slicing.
 
-
-If $L$~is defined using a context free grammar, then ${\cal L}_\sigma$ could be not expressible by TOPL automata.
-Choose $L=\{\,1^k2^k\mid k\in\N \,\}$.
-Choose $n=1$, so ${\cal L}_\sigma(L)=L$.
-After processing the prefix~$1^k$ each register of a TOPL automaton has either the initial value or the value~$1$.
-So, the $m$~registers store $m$~bits of information, which are insufficient to distinguish between all possible values of~$n$.
-\rg{The previous explanation may be too detailed.}
+We conjecture that a certain generalization of TOPL automata subsumes slicing applied to regular languages.
+This generalized model, history TOPL automata, have a special kind of register that holds sets of values, rather than values.
 
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
