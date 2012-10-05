@@ -442,11 +442,10 @@ These results have analogues for TOPL automata.
 
 \subsection{Extended Automata}
 
-\autoref{sec:topl_automata} introduces another instance of $t$-automata, namely TOPL automata.
-Each TOPL automaton has an equivalent register automaton, which may be very complicated.
+The notion of extended $t$-automata, which is defined here, simplifies the reductions from \autoref{sec:topl_automata}.
+An extended $t$-automaton is an algorithm that describes a $t$-automaton.
+The reductions in \autoref{sec:topl_automata} are simpler because they describe algorithms for constructing extended $t$-automata, rather than describing algorithms for constructing $t$-automata.
 
-
-\rg{TODO: Talk about extended $t$-automata, and prove they are equivalent to $t$-automata.}
 
 %>>>
 \section{TOPL Automata}\label{sec:topl_automata} % <<<
@@ -1318,7 +1317,7 @@ In conclusion, registers and slicing are complementary methods\,---\,neither sub
 Several realistic properties that are definable by registers but not by slicing.
 
 We conjecture that a certain generalization of TOPL automata subsumes slicing applied to regular languages.
-This generalized model, history TOPL automata, have a special kind of register that holds sets of values, rather than values.
+This generalized model, history TOPL automata, have a special kind of register that holds sets of values, rather than single values.
 
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
