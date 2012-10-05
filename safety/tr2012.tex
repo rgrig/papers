@@ -306,7 +306,7 @@ However, decidable problems do not necessarily have the same complexity for the 
 \begin{figure}[th]\centering\small
 \begin{tikzpicture}[auto,node distance=4mm]
   \node (lang) {TOPL properties};
-  \node (rtopl) [right=of lang] {rollback TOPL automata};
+  \node (rtopl) [below=of lang] {rollback TOPL automata};
   \node (topl) [below=of rtopl] {simple TOPL automata};
   \node (ra) [below=of topl] {register automata};
   \path[draw,->,>=latex]
@@ -321,7 +321,9 @@ However, decidable problems do not necessarily have the same complexity for the 
 We review here register automata and several results about them.
 Together with the reductions presented later, these results imply similar results about TOPL automata.
 
-We begin by defining a generic automaton, of which both TOPL and register automata are instances.
+\subsection{Generic Automata}
+
+Both register automata and TOPL automata are special cases of a generic automaton that this section defines.
 A \emph{letter} $\ell$ is an $n$-tuple $(v_1,\ldots,v_n)$ of \emph{values} from a possibly infinite set~$V$;
 we denote the \emph{alphabet} by~$\Sigma=V^n$.
 A \emph{store} $s$ is an $m$-tuple $(u_1,\ldots,u_m)$ of values;
@@ -331,83 +333,79 @@ the set of registers is $[m]=\{1,2,\ldots,m\}$.
 A \emph{guard} $g$ is a formula in some logic interpreted over pairs of letters and stores;
 we write $(s,\ell)\models g$ to denote that store $s\in S$ and the letter $\ell\in\Sigma$ satisfy the guard~$g$, and we denote the set of guards by~$G$.
 An \emph{action} $a$ is a small program acting on stores, which has relational semantics;
-we denote the set of actions by $A=\Sigma\to(S\times S)$.
+we denote the set of actions by $A=\Sigma\to(S\times S\to 2)$.
 Thus, an action applied to a letter $a(\ell)$ is a relation on stores.
-We will later specialize to specific and simple logics (for guards) and programming languages (for actions).
 A \emph{label} $\lambda$ is a pair $(g,a)$ of a guard~$g$ and an action~$a$;
 we denote the set of labels by $\Lambda=G\times A$.
 
 \begin{definition}\label{def:automaton}
-An \emph{automaton}~${\cal A}$ with $m$~registers over $n$-tuples of values from the set~$V$ consists of
+Let $\Lambda_t\subset\Lambda$ be a countable set of labels.
+A \emph{$t$-automaton}~${\cal A}$ with $m$~registers over $n$-tuples of values from the set~$V$ consists of
 \begin{itemize}
 \item a finite set~$Q$ of states
 \item an initial state $q_0\in Q$
 \item an initial store $s_0\in S$
 \item a set $F\subseteq Q$ of final states
-\item a finite transition relation $\delta\subseteq Q\times\Lambda\times Q$
+\item a finite transition relation $\delta\subseteq Q\times\Lambda_t\times Q$
 \end{itemize}
 \end{definition}
+The definition is parametric in the set~$\Lambda_t$.
+This set is required to be countable so that automata are finitely representable.
+Register automata correspond to~$\Lambda_{\rm R}$,
+TOPL automata correspond to~$\Lambda_{\rm TOPL}$.
+Both $\Lambda_{\rm R}$~and~$\Lambda_{\rm TOPL}$ are defined later.
 
 A \emph{configuration}~$x$ is a pair~$(q,s)$ of a state~$q$ and a store~$s$;
 we denote the set of configurations by $X=Q\times S$.
 The \emph{initial} configuration is $(q_0,s_0)$.
 A configuration is \emph{final} when its state is final.
-The configuration graph of the automaton is a subset of $X\times\Sigma\times X$.
+The configuration graph of the $t$-automaton is a subset of $X\times\Sigma\times X$.
 We write \[x_1\stackrel{\ell}{\to}_{\cal A}x_2\] to mean that $(x_1,\ell,x_2)$ is in the configuration graph of~${\cal A}$.
-If the automaton is clear from the context, we omit the subscript.
+If the $t$-automaton is clear from the context, we omit the subscript.
 
 \begin{definition}\label{def:cgraph}
-The \emph{configuration graph} of an automaton consists of exactly those configuration transitions \[ (q_1,s_1) \stackrel{\ell}{\to} (q_2,s_2) \] for which there exists an automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(s_1,\ell)\models g$ and $(s_1,s_2)\in a(\ell)$.
+The \emph{configuration graph} of a $t$-automaton consists of exactly those configuration transitions \[ (q_1,s_1) \stackrel{\ell}{\to} (q_2,s_2) \] for which there exists a $t$-automaton transition $(q_1,(g,a),q_2)\in\delta$ such that $(s_1,\ell)\models g$ and $(s_1,s_2)\in a(\ell)$.
 \end{definition}
-An automaton is \emph{nondeterministic} when its configuration graph contains two distinct transitions that have the same source~$x_1$ and are labeled by the same letter~$\ell$:
+A $t$-automaton is \emph{nondeterministic} when its configuration graph contains two distinct transitions that have the same source~$x_1$ and are labeled by the same letter~$\ell$:
 \[ \text{$x_1\stackrel\ell\to x_2$ and $x_1\stackrel\ell\to x_3$,\quad with $x_2\ne x_3$} \]
-Otherwise, the automaton is \emph{deterministic}.
+Otherwise, the $t$-automaton is \emph{deterministic}.
 
-The \emph{language}~${\cal L}({\cal A})$ of an automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration:
+The \emph{language}~${\cal L}({\cal A})$ of a $t$-automaton~${\cal A}$ is the set of words that label walks from the initial configuration to some final configuration:
 \[ {\cal L}({\cal A}) =
   \{\,\ell_1\ldots\ell_k\mid \text{$x_0$ initial,
   $x_{i-1}\stackrel{\ell_i}\to_{\cal A} x_i$ for $i\in[k]$,
   $x_k$ final}\,\}\]
 Being a walk rather than a path, the configurations $x_0$,~$x_1$, \dots,~$x_k$ need not be distinct.
 
-\smallskip
+\subsection{Register Automata}
 
-Given a number~$m$ of registers, an arity~$n$ for letters, and a countable set~$V$ of values, the set $A=\Sigma\to(S\times S)$ of actions is uncountable.
-Therefore we must focus on a subset of $A$ if we want our automata to be finitely representable.
-We will only consider actions that are sequences of assignments.
-The assignment $({\sf set}\,i:=j)$ is defined as follows:
-\[ \bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr)\in
-  ({\sf set}\,i:=j)\bigl((u_1,\ldots,u_n)\bigr) \]
-if and only if $v'_k=v_k$ for all~$k$, except that $v'_i=u_j$.
-The sequence operator~$;$ is defined by saying that the relation $(a_1;a_2)(\ell)$ is the composition of the relations $a_1(\ell)$ and $a_2(\ell)$, for all~$\ell$.
-The identity action ${\sf nop}$ satisfies ${\sf nop}(\ell)=\{\,(s,s)\mid s\in S\,\}$ for all~$\ell$.
-
-Register automata work with arity $n=1$, that is $\Sigma=V$.
-In this case we write $({\sf set}\,i)$ as a shorthand for $({\sf set}\,i:=1)$.
-The syntax of guards for register automata is the following:
-\begin{align*}
-G_{\rm RA} &\;::=\; {\sf fresh} \mid {\sf eq}\,i
-\end{align*}
-They are interpreted as follows:
+\emph{Register automata} are $t$-automata with $n=1$ and labels from~$\Lambda_{\rm R}$.
+Labels in $\Lambda_{\rm R}$ use two kinds of guards, interpreted as follows:
 \begin{align*}
 \bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf fresh}
-  &&\text{iff $u_i\ne v$ for all $i$} \\
+  &&\iff &&\text{$u_i\ne v$ for all $i$} \\
 \bigl((u_1,\ldots,u_m),v\bigr)&\models{\sf eq}\,i
-  &&\text{iff $u_i=v$}
+  &&\iff &&\text{$u_i=v$}
 \end{align*}
-
-With these notations we can fix a definition for register automata.
-
-\begin{definition}
-A \emph{register automaton} with $m$~registers is an automaton over the alphabet $\Sigma=V$ whose labels are given by $\Lambda=\{\,({\sf fresh},{\sf set}\,i)\mid i\in[m]\,\}\cup\{\, ({\sf eq}\,i, {\sf nop})  \mid i\in[m] \,\}$.
-\label{def:ra}
-\end{definition}
+Labels in~$\Lambda_{\rm R}$ use two kinds of actions, defined as follows:
+\begin{align*}
+\bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr) &\in ({\sf nop})(u)
+  &&\iff &&\text{$v'_k=v_k$ for all~$k$} \\
+\bigl((v_1,\ldots,v_m),(v'_1,\ldots,v'_m)\bigr) &\in ({\sf set}\,i)(u)
+  &&\iff && v'_k=\begin{cases}u&\text{if $k=i$}\\v_k&\text{if $k\ne i$}\end{cases}
+\end{align*}
+The labels of a register automaton are
+\begin{align*}
+\Lambda_{\rm R} =
+       \{\,({\sf fresh},{\sf set}\,i)\mid i\in[m]\,\}
+  \cup \{\,({\sf eq}\,i,{\sf nop})\mid i\in[m]\,\}
+\end{align*}
 
 There are several variants of definitions for register automata in the literature.
 Our variant corresponds directly to what Neven et al~\cite{dblp:conf/mfcs/nevensv01} call 1N-RA (for `one-way non-deterministic register automata').
 
 \begin{example}\label{ex:ra1}
-The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}$ is recognized by the following register automaton with $3$~registers over the alphabet $\Sigma=V\cup\{\bot\}$:
+The language $\{\,abc\mid\text{$a\ne c$ and $b\ne c$}\,\}\subset V^*$ is recognized by the following register automaton with $3$~registers over the alphabet $\Sigma=V\cup\{\bot\}$:
 \begin{itemize}
 \item $Q=\{1,2,3,4\}$
   and $q_0=1$
@@ -434,32 +432,21 @@ The following properties of register automata are known:
 \item The inclusion, equivalence, and universality problems are decidable for $2$~registers~\cite{dblp:conf/focs/kaminskif90,dblp:conf/mfcs/nevensv01}.
 \item The inclusion, equivalence, and universality problems are undecidable in general~\cite{dblp:conf/mfcs/nevensv01}.
 \item Register automata are closed under union, intersection, concatenation, and Kleene star~\cite{dblp:conf/focs/kaminskif90}.
-\rlp{Not completely sure if we are talking about the full class.}
 \item Register automata are \emph{not} closed under complementation and reversal~\cite{dblp:conf/focs/kaminskif90}.
-\rlp{ditto}
 \item Nondeterministic register automata are strictly more expressive than deterministic register automata~\cite{dblp:conf/focs/kaminskif90}.
-\rlp{ditto\ldots}
 \item The language ${\cal L}({\cal A})\cap C^*$ is regular for any register automaton~${\cal A}$ and any finite subset $C\subset V$ of values~\cite{dblp:conf/focs/kaminskif90}.
 \end{enumerate}
 \end{theorem}
 
-Some of these properties contrast with analogues for finite alphabets, which are better known.
-For example with finite alphabets automata are closed under complementation and reversal, and nondeterminism does not increase expressivity.
-These results differ for infinite alphabets because registers can be re-bound to different values an unbounded number of times.
-On the other hand, once the alphabet is `sliced' to a finite subset, the resulting language is regular in the standard sense.
-
 These results have analogues for TOPL automata.
-The details depend on what exactly the arrows from \autoref{fig:concepts} are.
-The gist will generally be a transformation of the following kind:
-From an automaton~${\cal A}$ in one model, construct an automaton~${\cal A}'$ in another model such that
-\begin{align*}
-\ell_1\ldots \ell_k \in {\cal L}({\cal A})
-  \iff
-f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}')
-\end{align*}
-for some fixed $f$ that is easily computable.
-The interesting ideas will be in how ${\cal A}'$~is built;
-$f$~handles technicalities.
+
+\subsection{Extended Automata}
+
+\autoref{sec:topl_automata} introduces another instance of $t$-automata, namely TOPL automata.
+Each TOPL automaton has an equivalent register automaton, which may be very complicated.
+
+
+\rg{TODO: Talk about extended $t$-automata, and prove they are equivalent to $t$-automata.}
 
 %>>>
 \section{TOPL Automata}\label{sec:topl_automata} % <<<
@@ -1318,10 +1305,11 @@ Recall that $1\,1\,2$ abbreviates the word $(1,1)(1,1)(1,2)$.
 &L_3 &&1\,2\,2\,1 &&1\,1\,2\,2 &&\{1\,1\}
 \end{align*}
 
-To show that $L_5$ is not definable by TOPL automata
+The language $L_5$ is not definable by TOPL automata because the number of values held in registers is bounded.
+The registers of a TOPL automaton store $\le m$ values out of $v_1\ldots v_{k-1}$.
+Thus, it is not possible in general to decide if $v_k$ is among $v_1\ldots v_{k-1}$.
+The language $L_4$ is not definable by TOPL automata for a similar reason.
 
-\rg{TODO: TOPL languages are closed under prefix, because emptiness is decidable.
-Thus, $L_5$ not definable implies $L_4$ not definable.}
 
 Language $L_2$ is essentially the same as {\tt SingletonPattern} from \autoref{sec:examples}.
 Language $L_3$ embodies a pattern, namely chaining of values, which occurs in {\tt ListNotCyclic}, {\tt IterateRopes}, and {\tt TaintCheck}.
