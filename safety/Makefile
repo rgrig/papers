@@ -1,5 +1,5 @@
 # vim:noet:
-MAIN=biabduction fool notes popl2012 tr2012
+MAIN=biabduction fool notes popl2012 tr2012 tacas2013
 INP=.:../lib:fig_code:
 
 PDF=$(addsuffix .pdf,$(MAIN))
@@ -8,6 +8,8 @@ JAVATEX=$(patsubst %.java,%.tex,$(JAVA))
 JAVACLASS=$(patsubst %.java,%.class,$(JAVA))
 
 build: $(PDF)
+
+tacas2013.pdf: tacas2013.tex safety.bib Taint.tex
 
 tr2012.pdf: tr2012.tex safety.bib FMAtoTOPL.tex IncorrectIteratorUse.tex Taint.tex Completeness.tex
 
