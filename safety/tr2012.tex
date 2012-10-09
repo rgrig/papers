@@ -10,6 +10,7 @@
 \usepackage{booktabs}
 \usepackage{fancyvrb}
 \usepackage{graphics}
+\usepackage{mathtools}
 \usepackage{microtype}  % do not remove
 \usepackage{multirow}
 \usepackage{proof}
@@ -521,9 +522,9 @@ Second, register~$i$ is simulated by register~$r(i)$, where $r\in[m]\to[m]$ is e
 Third, locally fresh values are written to an extra register, because register automata never ignore such values.
 
 On its own, the second ingredient is the same as the proof of Kaminski and Francez~\cite{dblp:journals/tcs/kaminskif94} that their M-automata are equally expressive to register automata.
-In the proof below the first two ingredients (unpacking tuples and ensuring that values do not repeat) are blended to improve the bounds.
+In the proof below, however, the first two ingredients (unpacking tuples and ensuring that values do not repeat) are blended to improve the bounds.
 The encoding of the function~$r$ leads to a $m^m$ expansion, in the worst case.
-It turns out that a similar function is needed for unpacking tuples, which would lead to another similar expansion, if the first two ingredients would not be mixed.
+It turns out that a similar function is needed for unpacking tuples, which would lead to another similar expansion if the first two ingredients would not be mixed.
 
 Consider the label $({\sf eq}\,1=2,{\sf set}\,1:=1)$, with the alphabet~$V^2$.
 When tuples are unpacked, it would be tempting to replace it by the two labels, $({\sf true},{\sf set}\,1)$ and $({\sf eq}\,1,{\sf nop})$, one for each component of the tuple.
@@ -534,7 +535,15 @@ The solution is to add extra registers and a function similar to~$r$ that keeps 
 There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a register automaton~${\cal A}'$ such that ${\cal L}({\cal A}')=f({\cal L}({\cal A}))$, where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n$ extends to languages over tuples in the natural way.
 \end{lemma}
 \begin{proof}
-
+Each state~$q$ of~${\cal A}$ is encoded by $(2m)^m$ states $(q,r)$ of~${\cal A}'$, one for each $r\in[m]\to[2m]$.
+While in a state~$(q, r)$, register~$r(i)$ of~${\cal A}'$ simulates register~$i$ of~${\cal A}$.
+Each transition $(q,(g,a),q')$ in~${\cal A}$ is encoded by paths
+\begin{align*}
+(q_0,r_0)\xrightarrow{(g_1,a_1)}(q_1,r_1)\xrightarrow{(g_2,a_2)}\cdots\xrightarrow{(g_n,a_n)}(q_n,r_n)
+\end{align*}
+with $q_0=q$ and $q_n=q'$.
+There is one set of paths for each~$r_0$.
+Each set looks like a tree with branching factor $2m+1$.
 \end{proof}
 
 
