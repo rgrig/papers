@@ -515,13 +515,29 @@ All other guards and actions remain unchanged.
 \end{proof}
 
 It is relatively harder to establish that TOPL automata are at most as expressive as register automata.
+There are three main ingredients in the proof.
+First, tuples $(v_1,\ldots,v_n)$ are unpacked into words $v_1\ldots v_n$; correspondingly, transitions $q\to q'$ become paths $q\to q_1\to\cdots\to q_{n-1}\to q'$.
+Second, register~$i$ is simulated by register~$r(i)$, where $r\in[m]\to[m]$ is encoded in the state, such that values are not repeated in registers, as required by register automata.
+Third, locally fresh values are written to an extra register, because register automata never ignore such values.
+
+On its own, the second ingredient is the same as the proof of Kaminski and Francez~\cite{dblp:journals/tcs/kaminskif94} that their M-automata are equally expressive to register automata.
+In the proof below the first two ingredients (unpacking tuples and ensuring that values do not repeat) are blended to improve the bounds.
+The encoding of the function~$r$ leads to a $m^m$ expansion, in the worst case.
+It turns out that a similar function is needed for unpacking tuples, which would lead to another similar expansion, if the first two ingredients would not be mixed.
+
+Consider the label $({\sf eq}\,1=2,{\sf set}\,1:=1)$, with the alphabet~$V^2$.
+When tuples are unpacked, it would be tempting to replace it by the two labels, $({\sf true},{\sf set}\,1)$ and $({\sf eq}\,1,{\sf nop})$, one for each component of the tuple.
+But, this would be incorrect, as the second component should be compared to the old value of register~$1$.
+The solution is to add extra registers and a function similar to~$r$ that keeps track of which register simulates which register.
 
 \begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
-There exists an algorithm that, given a TOPL automaton~${\cal A}$ over the alphabet~$V^n$, with $m$~registers, $|Q|$~states, and $|\delta|$~transitions, builds a register automaton~${\cal A}'$ over the alphabet $V'$, with $m+1$~registers, $O(n\,m^{m+1}|Q|)$~states, and $O(n\,m^{m+2}|\delta|)$~transitions such that
-\[\ell_1\ldots \ell_k\in{\cal L}({\cal A}) \iff
-  f(\ell_1)\ldots f(\ell_k)\in{\cal L}({\cal A}') \]
-where $f\bigl((v_1,\ldots,v_n)\bigr)$ is $v_1\ldots v_n$ repeated $m+1$ times, and $V'$ is~$V$ with up to $m-1$ extra dummy values.
+There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a register automaton~${\cal A}'$ such that ${\cal L}({\cal A}')=f({\cal L}({\cal A}))$, where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n$ extends to languages over tuples in the natural way.
 \end{lemma}
+\begin{proof}
+
+\end{proof}
+
+
 \begin{proof}
 We describe an encoding chain ${\cal A}_1\to{\cal A}_2\to{\cal A}_3\to{\cal A}_4$ that goes from a TOPL automaton~${\cal A}_1$ to a register automaton~${\cal A}_4$.
 The encoding ${\cal A}_2\to{\cal A}_3$ is more difficult than the other two.
