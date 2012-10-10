@@ -826,7 +826,7 @@ At this point the values in the $m$~registers of~${\cal A}$ together with the cu
 %But, that alternative is slightly more complex.)
 First we encode the transitions outgoing from~$q_\rho$,
 \[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
-  \qquad\text{with $d'<d$} \]\rlp{$d'-1\mapsto d'$?}
+  \qquad\text{with $d'\leqd$} \]
 and later we will encode the skip configuration transition.
 
 Consider an assignment $({\sf set}\,i:=j)$ that appears in~$a_{k'}$.
@@ -837,16 +837,17 @@ After the assignment is executed, the distribution of values is given by
   r'(\iota(k+k',j)) & \text{if $i'=i$} \\
   r'(i') & \text{otherwise}
 \end{cases}\]
-Thus, it is possible to find the register distribution function after each of the $d'$~steps.
+Thus, it is possible to find the register distribution function after each of the $d'-1$~steps.
 Let us write $r_{k'}$ for the distribution function just before step~$k'$; in particular, $r_0=r$, where $r$~is given by the state~$q$ of~${\cal A}$.
 Suppose now that $g_{k'}$ contains the conjunct $({\sf eq}\,i=j)$.
 We can evaluate this conjunct statically by checking whether $r_{k'}(i)=r_{k'}(\iota(k+k',j))$.
 Similarly, we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-2}$.
 If some guard does not hold, then the encoding is nothing since the original transition would not be taken.
-If all guards hold, then the original transition would be taken if $g_{d-1}$ holds given the current letter and $r_{d-1}$. Thus we add outgoing transitions to reflect this.
-These transitions must evaluate a version $g'_{d-1}$ of $g_{d-1}$ which refers to $r_{d-1}$ and take appropriate action $a'_{d'-1}$.
+If all guards hold, then the original transition would be taken if $g_{d'-1}$ holds given the current letter and $r_{d'-1}$. Thus we add outgoing transitions to reflect this.
+These transitions must evaluate a version $g'_{d'-1}$ of $g_{d'-1}$ which refers to $r_{d'-1}$ and take appropriate action $a'_{d'-1}$.
+\rlp{Describe g'_{d'-1} and a'_{d'-1}.}
 
-These transitions must also save the current letter, so the whole process from {\it Case $h<d$} is repeated.
+These transitions must also save the current letter, so the whole process from {\it Case $h<d-1$} is repeated.
 However, that process is applied as if the starting state has the value distribution function $r_{d'-1}$, rather than~$r$; as if the history is $h' = h-(d'-1)$, rather than~$h$; and as if the reference point is $k' = (k+d'-1)\bmod d$, rather than~$k$.
 This process results in $g_p$, $a_p$ and $r_p$.
 The added transiton is then
@@ -855,19 +856,17 @@ The added transiton is then
 \]
 where $a_p;a'_{d'-1}$ is an action that simulates applying first $a_p$ and then $a'_{d'-1}$ and $r'_p$ is the resulting distribution function.
 
-
-If the state $q=(q_\rho,d,k,r)$ has no outgoing transitions at this point, it is because none of the outgoing transitions of~$q_\rho$ have guards that all hold.
-In this case, we must simulate a skip transition.
-This is done as in {\it Case $h<d$}, except we first simulate removing the letter to which $k$ points.
+We must also simulate a skip transition, but only to be taken in case none of the other transitions are.
+Guards to ensure this are generated using the same construction employed in the proof of Lemma \ref{lemma:topl-to-rtopl}.
+These are then combined with reading the current letter.
+This is done as in {\it Case $h<d-1$}, except we first simulate removing the letter to which $k$ points.
 We do so by incrementing~$k$ and decrementing~$h$ and
  replacing the distribution function~$r$ by one that is undefined at $\iota(k,i')$ for $i'\in[n]$.
 
-If the state does have outgoing transitions, we must also simulate a skip transition, but only to be taken in case none of the other transitions are.
-This is done using the same construction employed in the proof of Lemma \ref{lemma:topl-to-rtopl}.
 
 \smallskip
-Finally, we add one final state, and transitions to it from the states with $h=d$.
-These transitions have a guard that requires all $d$ saved letters to be~$\ell_\bot$.
+Finally, we add one final state, and transitions to it from the states $(q_\rho, h, k, r)$ where $q_r_rho$ is final in ${\cal A}_\rho$ and $h=0$.
+These transitions have a true guard and no action.
 \end{proof}
 
 \begin{remark}
