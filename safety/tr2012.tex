@@ -825,7 +825,7 @@ At this point the values in the $m$~registers of~${\cal A}$ together with the cu
 %(Note that we could use the current letter and decide one step earlier, when $h=d-1$, which transitions to take.
 %But, that alternative is slightly more complex.)
 First we encode the rollback transitions corresponding to the automata
-transtitons in ${\cal A}$ outgoing from~$q_\rho$,
+transtitons in ${\cal A}_\rho$ outgoing from~$q_\rho$,
 \[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
   \qquad\text{with $d'\leq d$} \]
 and later we will encode the skip configuration transition.
@@ -838,20 +838,24 @@ After the assignment is executed, the distribution of values is given by
   r'(\iota(k+k',j)) & \text{if $i'=i$} \\
   r'(i') & \text{otherwise}
 \end{cases}\]
-Thus, it is possible to find the register distribution function after each of the $d'-1$~steps.
+Thus, it is possible to statically find the register distribution function after
+each of the $d'-1$~steps (to find it after the $d'$th step we need to
+look at the current letter).
+
 Let us write $r_{k'}$ for the distribution function just before step~$k'$; in particular, $r_0=r$, where $r$~is given by the state~$q$ of~${\cal A}$.
 Suppose now that $g_{k'}$ contains the conjunct $({\sf eq}\,i=j)$.
 We can evaluate this conjunct statically by checking whether $r_{k'}(i)=r_{k'}(\iota(k+k',j))$.
-Similarly, we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-2}$.
+Similarly, we can evaluate $({\sf neq}\,i\ne j)$ by checking whether $r_{k'}(i)\ne r_{k'}(\iota(k+k',j))$ as the store is injective.
+Thus we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-2}$.
 If some guard does not hold, then the encoding is nothing since the original transition would not be taken.
-If all guards hold, then the original transition would be taken if $g_{d'-1}$ holds given the current letter and $r_{d'-1}$. Thus we add outgoing transitions to reflect this.
+If all guards hold, then the original transition would be taken if $g_{d'-1}$ holds given the current letter and $r_{d'-1}$. We add outgoing transitions to reflect this.
 These transitions must evaluate a version $g'_{d'-1}$ of $g_{d'-1}$ which refers to $r_{d'-1}$ and take appropriate action $a'_{d'-1}$.
 
 The guard $g'_{d'-1}$ is constructed as follows:
 For all conjuncts ${\sf eq}\,i=j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf eq}\,r_{d'-1}(i)=j$ and
 for all conjuncts ${\sf neq}\,i\ne j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf neq}\,r_{d'-1}(i)\ne j$.
-\rlp{Write this as $<g_{d'-1}>r_{d'-1}$ or similar?}
-$a'_{d'-1}$ will be described in a moment.
+\rlp{Write this as $g_{d'-1}\diamond r_{d'-1}$ and similar for actions?}
+% $a'_{d'-1}$ will be described in a moment.
 
 These transitions must also save the current letter, so the whole process from {\it Case $h<d-1$} is repeated.
 However, that process is applied as if the starting state has the value distribution function $r_{d'-1}$, rather than~$r$; as if the history is $h' = h-(d'-1)$, rather than~$h$; and as if the reference point is $k' = (k+d'-1)\bmod d$, rather than~$k$.
@@ -861,7 +865,8 @@ The added transiton is then
  (q_\rho,h,k,r),\;(g_p \land g'_{d'-1},a_p;a'_{d'-1}),\;(q'_\rho,h',k',r'_p)
 \]
 where $a'_{d'-1}$ is a version of $a_{d'-1}$ which refers to $r_p$ and $r'_p$ is the resulting distribution function.
-\rlp{Describe $a'_{d'-1}$.}
+%That is, for each assignments 
+\rlp{Describe $a'_{d'-1}$ and $r'_p$.}
 
 We must also simulate a skip transition, but only to be taken in case none of the other transitions are.
 Guards to ensure this are generated using the same construction employed in the proof of Lemma \ref{lemma:topl-to-rtopl}.
@@ -869,7 +874,6 @@ These are then combined with reading the current letter.
 This is done as in {\it Case $h<d-1$}, except we first simulate removing the letter to which $k$ points.
 We do so by incrementing~$k$ and decrementing~$h$ and
  replacing the distribution function~$r$ by one that is undefined at $\iota(k,i')$ for $i'\in[n]$.
-
 
 \smallskip
 Finally, we add one final state, and transitions to it from the states $(q_\rho, h, k, r)$ where $q_\rho$ is final in ${\cal A}_\rho$ and $h=0$.
