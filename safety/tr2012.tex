@@ -522,7 +522,7 @@ Second, register~$i$ is simulated by register~$r(i)$, where $r\in[m]\to[m]$ is e
 Third, locally fresh values are written to an extra register, because register automata never ignore such values.
 
 On its own, the second ingredient is the same as the proof of Kaminski and Francez~\cite{dblp:journals/tcs/kaminskif94} that their M-automata are equally expressive to register automata.
-In the proof below, however, the first two ingredients (unpacking tuples and ensuring that values do not repeat) are blended to improve the bounds.
+In the proof below, however, the first two ingredients (unpacking tuples and ensuring that values do not repeat) are blended together to improve the bounds.
 The encoding of the function~$r$ leads to a $m^m$ expansion, in the worst case.
 It turns out that a similar function is needed for unpacking tuples, which would lead to another similar expansion if the first two ingredients would not be mixed.
 
@@ -532,7 +532,10 @@ But, this would be incorrect, as the second component should be compared to the 
 The solution is to add extra registers and a function similar to~$r$ that keeps track of which register simulates which register.
 
 \begin{lemma}[TOPL to RA]\label{lemma:topl-to-ra}
-There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a register automaton~${\cal A}'$ such that ${\cal L}({\cal A}')=f({\cal L}({\cal A}))$, where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n$ extends to languages over tuples in the natural way.
+There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a register automaton~${\cal A}'$ such that ${\cal L}({\cal A}')=f({\cal L}({\cal A}))$, where $f\bigl((v_1,\ldots,v_n)\bigr)=v_1\ldots v_n$ extends to languages as follows
+\begin{align*}
+f({\cal L}({\cal A})) = \{\,f(v_1)\ldots f(v_k)\mid v_1\ldots v_k\in{\cal L}({\cal A})\,\}
+\end{align*}
 \end{lemma}
 \begin{proof}
 Each state~$q$ of~${\cal A}$ is encoded by $(2m)^m$ states $(q,r)$ of~${\cal A}'$, one for each $r\in[m]\to[2m]$.
@@ -542,8 +545,41 @@ Each transition $(q,(g,a),q')$ in~${\cal A}$ is encoded by paths
 (q_0,r_0)\xrightarrow{(g_1,a_1)}(q_1,r_1)\xrightarrow{(g_2,a_2)}\cdots\xrightarrow{(g_n,a_n)}(q_n,r_n)
 \end{align*}
 with $q_0=q$ and $q_n=q'$.
-There is one set of paths for each~$r_0$.
-Each set looks like a tree with branching factor $2m+1$.
+There is one such path for each $r_0\in[m]\to[2m]$.
+The following invariants are maintained along the path.
+The values held by registers~$r_0([m])$ are not changed -- they simulate the values that ${\cal A}$~holds in state~$q$.
+The guards~$g_j$ use only the current letter and the registers~$r_0([m])$.
+The values held by registers~$r_n([m])$ in state~$(q_n,r_n)$ are the values that ${\cal A}$~holds in state~$q'$.
+In intermediate states~$(q_j,r_j)$, the registers~$r_j([m])$ hold a mixture of the values held by~$r_0([m])$ and those held by~$r_n([m])$ in state~$(q_n,r_n)$.
+A more precise description of the mixture follows:
+Let the action~$a_{(\le j)}$ be obtained from the original action~$a$ by filtering out assignments $({\sf set}\,i':=j')$ with $j<j'$.
+Then registers~$r_j([m])$ in state~$(q_j,r_j)$ simulate what the registers of~${\cal A}$ would be in state~$q'$ if $a$ would be replaced by~$a_{(\le j)}$.
+
+The invariants mentioned in the previous paragraph are maintained by constructing the guards~$g_j$ and the actions~$a_j$ as follows.
+
+Suppose $g$ contains the conjuncts ${\sf eq}\,i=j$ for $i\in I$, the conjuncts ${\sf neq}\,i\ne j$ for $i\in I'$, and no other conjunct that refers to component~$j$.
+If $|r_0(I)|\ge2$ or $|r_0(I)\cap r_0(I')|\ge1$, then the path from $(q_0,r_0)$ is discarded from the construction of~${\cal A}'$.
+If $r_0(I)=\{i\}$, then $g_j$ is ${\sf eq}\,i$.
+If $r_0(I)=\emptyset$, then $g_j$ is {\sf fresh}.
+
+\rg{Fix what follows.}
+
+\paragraph{Case ${\sf eq}\,i'$.}
+In this case the value of the current letter is already in register~$i'$.
+The action $a_j$ is {\sf nop}.
+The function $r_j$ is computed from~$r_{j-1}$:
+\begin{align*}
+r_j(i) = \begin{cases}
+  i' &\text{if ${\sf set}\,i:=j$ occurs in $a$} \\
+  r_{j-1}(i) &\text{otherwise}
+\end{cases}
+\end{align*}
+
+\paragraph{Case ${\sf fresh}$.}
+TODO.
+
+At this point the guards are 
+
 \end{proof}
 
 
