@@ -826,7 +826,7 @@ At this point the values in the $m$~registers of~${\cal A}$ together with the cu
 %But, that alternative is slightly more complex.)
 First we encode the transitions outgoing from~$q_\rho$,
 \[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
-  \qquad\text{with $d'\leqd$} \]
+  \qquad\text{with $d'\leq d$} \]
 and later we will encode the skip configuration transition.
 
 Consider an assignment $({\sf set}\,i:=j)$ that appears in~$a_{k'}$.
@@ -845,7 +845,7 @@ Similarly, we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-2}$.
 If some guard does not hold, then the encoding is nothing since the original transition would not be taken.
 If all guards hold, then the original transition would be taken if $g_{d'-1}$ holds given the current letter and $r_{d'-1}$. Thus we add outgoing transitions to reflect this.
 These transitions must evaluate a version $g'_{d'-1}$ of $g_{d'-1}$ which refers to $r_{d'-1}$ and take appropriate action $a'_{d'-1}$.
-\rlp{Describe g'_{d'-1} and a'_{d'-1}.}
+\rlp{Describe $g'_{d'-1}$ and $a'_{d'-1}$.}
 
 These transitions must also save the current letter, so the whole process from {\it Case $h<d-1$} is repeated.
 However, that process is applied as if the starting state has the value distribution function $r_{d'-1}$, rather than~$r$; as if the history is $h' = h-(d'-1)$, rather than~$h$; and as if the reference point is $k' = (k+d'-1)\bmod d$, rather than~$k$.
@@ -865,7 +865,7 @@ We do so by incrementing~$k$ and decrementing~$h$ and
 
 
 \smallskip
-Finally, we add one final state, and transitions to it from the states $(q_\rho, h, k, r)$ where $q_r_rho$ is final in ${\cal A}_\rho$ and $h=0$.
+Finally, we add one final state, and transitions to it from the states $(q_\rho, h, k, r)$ where $q_\rho$ is final in ${\cal A}_\rho$ and $h=0$.
 These transitions have a true guard and no action.
 \end{proof}
 
