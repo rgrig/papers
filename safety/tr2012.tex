@@ -533,6 +533,7 @@ There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a regi
 \begin{align*}
 f({\cal L}({\cal A})) = \{\,f(v_1)\ldots f(v_k)\mid v_1\ldots v_k\in{\cal L}({\cal A})\,\}
 \end{align*}
+If $\cal A$~has $m$~registers, $|Q|$~states, $|\delta|$~transitions, and works over $n$-tuples, then ${\cal A}'$~has $2m+1$ registers, $O(?)$~states, and $O(?)$~transitions.
 \end{lemma}
 \begin{proof}
 Each state~$q$ of~${\cal A}$ is encoded by $(2m)^m$ states $(q,r)$ of~${\cal A}'$, one for each $r\in[m]\to[2m]$.
@@ -553,16 +554,18 @@ A more precise description of the mixture follows:
 Let the action~$a_{(\le j)}$ be obtained from the original action~$a$ by filtering out assignments $({\sf set}\,i':=j')$ with $j<j'$.
 Then registers~$r_j([m])$ in state~$(q_j,r_j)$ simulate what the registers of~${\cal A}$ would be in state~$q'$ if $a$ would be replaced by~$a_{(\le j)}$.
 
+\smallskip
 The invariants mentioned in the previous paragraph are maintained by constructing the guards~$g_j$ and the actions~$a_j$ as follows.
 
 Let $I_g$ be the set $\{\,i\mid\text{${\sf eq}\,i=j$ occurs in~$g$}\,\}$ of registers that must equal the current component~$j$; similarly, let $I'_g=\{\,i\mid\text{${\sf neq}\,i\ne j$ occurs in~$g$}\,\}$.
 If $|r_0(I_g)|\ge2$ or $|r_0(I_g)\cap r_0(I'_g)|\ge1$, then $(q_{j-1},r_{j-1})$~has no successor.
 If $r_0(I_g)=\{i\}$, then $(q_{j-1},r_{j-1})$ has exactly one successor, and the guard~$g_j$ is ${\sf eq}\,i$.
-If $r_0(I_g)=\emptyset$, then $(q_{j-1},r_{j-1})$ has $|[2m]-I'|+1$ successors with the guards {\sf fresh} and, respectively, ${\sf eq}\,i$ for $i\in[2m]-I'$.
+If $r_0(I_g)=\emptyset$, then $(q_{j-1},r_{j-1})$ has $|[2m]-r_0(I'_g)|+1$ successors with the guards {\sf fresh} and, respectively, ${\sf eq}\,i$ for $i\in[2m]-r_0(I'_g)$.
 
 The action~$a_j$ and the function~$r_j$ are computed from the original action~$a$, the previous function~$r_{j-1}$, and from the guard~$g_j$, which is described in the previous paragraph.
 Let $I_a=\{\,i\mid\text{$a$~writes component~$j$ to register~$i$}\,\}$.
-First a target is picked, and then the saving of component~$j$ in registers~$I_a$ is simulated.
+\rg{Introduce a normalize operation on acitons when they are defined.}
+First a target register in~${\cal A}'$ is picked, and then the saving of component~$j$ in registers~$I_a$ is simulated.
 The target~$k\in[2m]$, which is needed only if $I_a\ne\emptyset$, is picked as follows:
 \begin{align*}
 k=\begin{cases}
@@ -587,96 +590,9 @@ r_j(i) =\begin{cases}
 
 At this point the labels have the form $({\sf eq}\,i,{\sf nop})$ or $({\sf fresh},{\sf set}\,i)$ or $({\sf fresh},{\sf nop})$.
 Only the latter is disallowed by the definition of register automata.
-
-\end{proof}
-
-
-\begin{proof}
-We describe an encoding chain ${\cal A}_1\to{\cal A}_2\to{\cal A}_3\to{\cal A}_4$ that goes from a TOPL automaton~${\cal A}_1$ to a register automaton~${\cal A}_4$.
-The encoding ${\cal A}_2\to{\cal A}_3$ is more difficult than the other two.
-
-\paragraph{Step ${\cal A}_1\to{\cal A}_2$.}
-The automaton~${\cal A}_2$ works over the alphabet~$V$, while ${\cal A}_1$ may work on an alphabet~$V^n$ with $n>1$.
-The number of registers is preserved.
-Each letter $(v_1,\ldots,v_n)$ is transformed into the word $v_1\ldots v_n$ repeated $m+1$ times.
-Each transition $\bigl(q_1,(g,a),q_2\bigr)$ is encoded with a path from~$q_1$ to~$q_2$ of length $(m+1)n$.
-The first $n$~transitions encode the guard~$g$ -- they are labeled $(g_1,{\sf nop})$, \dots, $(g_n,{\sf nop})$.
-The guard~$g_j$ contains the conjunct ${\sf eq}\,i$ if and only if $g$~contains the conjunct ${\sf eq}\,i=j$; similarly for ${\sf neq}$.
-The following $mn$~transitions encode the action~$a$ -- they are labeled $({\sf true}, a_1)$, \dots, $({\sf true}, a_{mn})$.
-If the last assignment of~$a$ to register~$i$ is ${\sf set}\,i:=j$, then $a_{(i-1)m+j}$ is ${\sf set}\,i$.
-Otherwise, if $a$ does not assign at all to register~$i$, then $a_{(i-1)m+1}$ is ${\sf nop}$.
-
-The labels of~${\cal A}_2$ have one of the following shapes:
-\begin{itemize}
-\item $({\sf eq}\,i_1\mathrel{\sf and}{\sf eq}\,i_2\ldots
-  \mathrel{\sf and}{\sf neq}\,i'_1\mathrel{\sf and}{\sf neq}\,i'_2\ldots,\;
-  {\sf nop})$
-\item $({\sf true},\;{\sf set}\,i)$
-\item $({\sf true},\;{\sf nop})$
-\end{itemize}
-If automaton~${\cal A}_1$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_2$ has $O(mn|Q|)$~states and $O(mn|\delta|)$~transitions.
-
-\paragraph{Step ${\cal A}_2\to{\cal A}_3$.}
-Again, the number of registers is preserved. For this step, the
-transformation of letters is the identity.
-The automaton~${\cal A}_3$ uses guards from~$G_{\rm RA}$, while ${\cal A}_2$ uses guards from~$G_{\rm TOPL}$.
-Observe that a register automaton never stores a value twice, because assignments are guarded by ${\sf fresh}$.
-This is the main obstacle.
-The key idea of the encoding ${\cal A}_2\to{\cal A}_3$ is the following:
-\emquote{Encode a function $r\in[m]\to[m]$ in the state itself such that $r(i)$ is the register of~${\cal A}_3$ that currently simulates the register~$i$ of~${\cal A}_2$.
-If two registers $i\ne j$ of~${\cal A}_2$ hold the same value, they are simulated by the same register $r(i)=r(j)$ of~${\cal A}_3$.}
-Let us develop the idea in some detail.
-Let $m$~and~$Q$ denote the count of registers and, respectively, the set of states of~${\cal A}_2$.
-The set of states of~${\cal A}_3$ is~$Q\times([m]\to[m])$.
-Each state~$q$ of~${\cal A}_2$ is encoded with $m^m$ states $(q,r)$ of~${\cal A}_3$.
-The configuration $\bigl((q,r),(u_1,\ldots,u_m)\bigr)$ of~${\cal A}_3$ simulates the configuration $\bigl(q,(v_1,\ldots,v_m)\bigr)$ of~${\cal A}_2$ with $v_i=u_{r(i)}$.
-Moreover, we ensure that no two registers of~${\cal A}_3$ hold the same value;
-that is, the stores of~${\cal A}_3$ are injective, $u_i\ne u_j$ if $i\ne j$.
-To ensure that the initial store of~${\cal A}_3$ is injective we may need to use up to $m-1$ dummy values.
-
-Each transition $\bigl(q_1,(g,a),q_2\bigr)$ of~${\cal A}_2$ is encoded into several transitions $\bigl((q_1,r),(g',a'),(q_2,r')\bigr)$ of~${\cal A}_3$.
-Here $r$ takes all $m^m$ possible values, and $g'$,~$a'$, and~$r'$ are chosen depending on $g$,~$a$, and~$r$, as described below.
-
-\smallskip
-Consider a transition $\bigl(q_1,({\sf eq}\,i_1\mathrel{\sf and}{\sf eq}\,i_2\mathrel{\sf and}\ldots\mathrel{\sf and}{\sf neq}\,i'_1\mathrel{\sf and}{\sf neq}\,i'_2\mathrel{\sf and}\ldots,{\sf nop}),q_2\bigr)$.
-Let $I=\{\,i_1,i_2,\ldots\,\}$ and $I'=\{\,i'_1,i'_2,\ldots\,\}$.
-Note that transitions labeled by $({\sf true},{\sf nop})$ are a special case.
-We analyze separately the cases $I=\emptyset$ and $I\ne\emptyset$.
-
-\emph{Case $I=\emptyset$}.\quad
-The guard requires the current letter~$\ell$ to be different from the values in the set~$I'$ of registers of~${\cal A}_2$.
-So, $\ell$~must be different from the values held in the set~$r(I')$ of registers of~${\cal A}_3$.
-Because the stores of~${\cal A}_3$ have no repeated value, $\ell$ may be either fresh, or equal to a register outside of the set~$r(I')$.
-Thus, the encoding consists of several parallel transitions from~$(q_1,r)$ to~$(q_2,r)$.
-One is labeled $({\sf fresh},{\sf nop})$, and several are labeled $({\sf eq}\,j,{\sf nop})$ for each $j\in[m]-r(I')$.
-
-\emph{Case $I\ne\emptyset$.}\quad
-The guard also requires that the current letter equals the value in the set~$I$ of registers of~${\cal A}_2$.
-This cannot be true if $|r(I)|>1$ or $r(I)\cap r(I')\ne\emptyset$: The encoding in this case is no transition.
-Otherwise, $r(I)=\{i\}$ for some~$i$, and the encoding is a transition from~$(q_1,r)$ to~$(q_2,r)$ labeled by $({\sf eq}\,i,{\sf nop})$.
-
-\smallskip
-Consider a transition $\bigl(q_1,({\sf true},{\sf set}\,i),q_2\bigr)$.
-Either the current letter is in some register or it is in none.
-To account for the first case, the encoding contains parallel transitions from~$(q_1,r)$ to $(q_2,r'_j)$ labeled by $({\sf eq}\,j,{\sf nop})$, for all $j\in[m]$.
-Here $r'_j$~is the same as~$r$ except that $r'_j(i)=j$.
-To account for the second case, the encoding contains a transition from~$(q_1,r)$ to~$(q_2,r'_j)$ labeled by $({\sf fresh},{\sf set}\,j)$, for one~$j$ chosen as follows.
-If $r$ is a permutation then $j=r(i)$; otherwise $j$ is any element of $[m]-r([m])$.
-
-\smallskip
-If automaton~${\cal A}_2$ has $|Q|$~states and $|\delta|$~transitions, then ${\cal A}_3$ has $O(m^m|Q|)$~states and $O(m^{m+1}|\delta|)$~transitions.
-
-\paragraph{Step ${\cal A}_3\to{\cal A}_4$.}
-Transitions labeled by $({\sf fresh},{\sf nop})$, which are produced by the encoding described so far, are not allowed in register automata.
-They can be handled by adding one register, without significantly increasing the number of transitions.
-First, each label $({\sf fresh},{\sf nop})$ is transformed into $({\sf fresh},{\sf set}\,m+1)$.
-Second, for each transition labeled $({\sf fresh},a)$, we add a parallel transition labeled $({\sf eq}\,m+1,a)$.
-Again, the transformation of letters is the identity.
-
-If the automaton~${\cal A}_3$ has $m$~registers and $|\delta|$~transitions, then ${\cal A}_4$~has $m+1$~registers and $O(|\delta|)$ transitions.
-
-\smallskip
-This completes the proof.
+It can be handled by adding one register, without significantly increasing the number of transitions.
+First, each label $({\sf fresh},{\sf nop})$ is transformed into $({\sf fresh},{\sf set}\,2m+1)$.
+Second, for each transition labeled $({\sf fresh},a)$, we add a parallel transition labeled $({\sf eq}\,2m+1,a)$.
 \end{proof}
 
 \begin{remark}
