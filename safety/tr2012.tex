@@ -832,6 +832,10 @@ Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~
 We consider in turn each state $q=(q_\rho,h,k,r)$.
 Its outgoing transitions are determined by the outgoing transitions of~$q_\rho$.
 
+We must cater for two situtaions: Either more letters are arriving and we should simulate storing them in the queue and possibly make a state transition or no more letters are arriving and we should simulate emptying the queue to see if we end up in an accepting state. Crucially, enough information is available to statically simulate receiving all the letters in the queue.
+
+To treat the first situation, we add transitions in one of two ways described below. The first description goes into detail about why it is possible to simulate ${\cal A}_\rho$ from a state in ${\cal A}$.
+
 {\it Case $h<d-1$}.
 In this case all outgoing transitions of~$q$ simply record the current letter $\ell=(v_1,\ldots,v_n)$.
 To maintain the injectivity of stores, only those components of~$\ell$ that are not already in some register must be stored.
@@ -912,8 +916,8 @@ We do so by incrementing~$k$ and decrementing~$h$ and
  replacing the distribution function~$r$ by one that is undefined at $\iota(k,i')$ for $i'\in[n]$.
 
 \smallskip
-Finally, we add one final state, and transitions to it from the states $(q_\rho, h, k, r)$ where $q_\rho$ is final in ${\cal A}_\rho$ and $h=0$.
-These transitions have a true guard and no action.
+Finally, for each state, we statically compute if emptying the queue would lead to a final state. If it would then that state is marked as final.
+(A special case of this is the states with $h=0$.)
 \end{proof}
 
 \begin{remark}
