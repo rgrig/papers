@@ -137,12 +137,12 @@ Runtime verification is a technique where the behaviour of programs is monitored
 can violate certain safety properties.
 Systems for runtime verification stand somehow in between classic verification and testing: they work on the actual system (as testing) but check violations of temporal properties as, for example, it is done in model checking. Compared to traditional formal verification techniques, runtime verification systems check only certain program executions, however, the error reports are accurate and detected violations represent real bugs in the program.
 
-In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, and techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example, either   in terms of  language expressivity, or in the ability to express concisely properties of the interaction of several objects 
+In the context of object-oriented programming  leading runtime verification techniques include JavaMOP~\cite{dblp:journals/sttt/meredithjgcr12}, QVM~\cite{arnold:2008}, Tracematches~\cite{dblp:conf/oopsla/allanachklmsst05}, and techniques based on typestate~\cite{strom1986,dblp:conf/oopsla/bierhoffa07,dblp:conf/oopsla/naeeml08,disney2011,ball2002}. Although powerful,  these methods present some limitations. For example, either   in terms of  language expressivity, or in the ability to express concisely properties of the interaction of several objects
 over time (typestate), or in concisely expressing  properties requiring an unbounded number of different object re-bindings (sometimes called parameters in the runtime verification community).
 
 Register Automata~\cite{dblp:conf/focs/kaminskif90} are automata where
 a number of registers are used to store and compare data. The values
-of registers can be updated over time, and data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal 
+of registers can be updated over time, and data can be taken from unbounded domains (e.g., the set of object references). Thus register automata provide a powerful device for reasoning about temporal
 relations of a (possibly unbounded) number of objects in a finite manner. They have been studied extensively from the theoretical point of
 view and essential results for their analysis have been established (e.g., decidability of emptiness, closure under intersection, and so forth).
 
@@ -152,39 +152,39 @@ exploit the flexibility and the power of registers to
 address certain properties not easily dealt with in other approaches.
 On the formal side, we started from register automata and have extended them driven by typical properties required in real-world object-oriented systems.
 The extension has been careful crafted to be able to define the precise mathematical connection with register automata, and yet,
-make it easy for programmers to express properties of their code. This process has resulted in the definition of two new classes of 
-automata: a high-level and a low-level one. In the high-level automata, temporal properties about programs are naturally expressed. Low-level automata, 
-on the other hand, simplify the formal correspondence with  register automata. 
-Finally we defined a formal language -- called TOPL (Temporal Object Property Language) -- mapping directly on the 
+make it easy for programmers to express properties of their code. This process has resulted in the definition of two new classes of
+automata: a high-level and a low-level one. In the high-level automata, temporal properties about programs are naturally expressed. Low-level automata,
+on the other hand, simplify the formal correspondence with  register automata.
+Finally we defined a formal language -- called TOPL (Temporal Object Property Language) -- mapping directly on the
 high-level automata.
 
 We complement the theoretical construction with a practical tool.
-We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmers to express rigorous temporal 
+We have implemented TOPL  in a runtime parametric verification framework that can be used by Java programmers to express rigorous temporal
 properties about their programs. These properties will then be automatically checked by the system.
 The formal correspondence between the properties and register automata
 defined in this paper gives a rigorous mathematical foundation to
-the approach and allows us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can decide whether its language is empty.  The formal development is completely hidden from 
-the programmer.  
-Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a number of parameters. 
+the approach and allows us to reuse many of the results for register automata on TOPL automata. For example, given a TOPL property, we can decide whether its language is empty.  The formal development is completely hidden from
+the programmer.
+Our system can be tuned  in terms of coverage,  overhead, and trace reporting by means of a number of parameters.
 
 \paragraph{Contributions.}
 In summary, the contributions of this paper are:
 \begin{itemize}
 \item We define TOPL, a formal specification language tailored to express properties involving object interactions over time in a way that is familiar to object-oriented programmers.
 \item We define a precise formal semantics for TOPL, making it suitable for program analysis, both static and dynamic.
-\item We define a precise formal correspondence between TOPL automata and register automata. 
+\item We define a precise formal correspondence between TOPL automata and register automata.
 In particular we prove that they are equally expressive. As our proof is constructive, this implies that the decidability results for register automata hold also for TOPL automata. Consequently we can decide several features of TOPL specifications (e.g., language emptiness).
 \item We have implemented our parametric framework  in a tool that automatically check at runtime violations of TOPL properties in Java programs. A number of parameters are used to tune the precision of the system.
 
 \item We report on experiments of running our tool on large open-source projects. The results are encouraging (e.g., we have found
-an interesting and previously unknown  concurrency bug in the DaCapo suite). 
+an interesting and previously unknown  concurrency bug in the DaCapo suite).
 \end{itemize}
 
 
 The paper is organized as follows.
 \autoref{sec:motivating-examples} gives some example properties motivating TOPL.
 \autoref{sec:overview} provides background of register automata and defines the basis of our formalism.
-\autoref{sec:topl_automata} introduces TOPL automata and proves the equivalence with register automata. 
+\autoref{sec:topl_automata} introduces TOPL automata and proves the equivalence with register automata.
 \autoref{sec:topl} defines the TOPL property language and its semantics.
 \autoref{sec:examples} describes several example properties using TOPL\null.
 \autoref{sec:implementation} describes  the implementation of the runtime  verification system.
@@ -200,12 +200,12 @@ Consider for example  Java collections. A typical property one would want to sta
 The formalization of the above constraint is non-trivial since it needs to keep track of {\em several objects} (at least two iterators, and one collection) and their {\em interaction over time}.
 
 A slightly more complex scenario is described by classes in Figure~\ref{fig:first.java}.
-Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface. 
-Class {\tt Concat} is used to concatenate two object of type {\tt Str}. Also {\tt Concat} implements  
- {\tt Str}. 
-Consider the case where {\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.} 
-Rope's operations like insert, concat, delete may update the shape of the tree and references to its root. 
-In this case we may have two (or more) collections {\em sharing} some elements. Consequently iterators operating on these different collections may invalidate each other. We need to modify~\eqref{q:concur-it} increasing its complexity: 
+Class {\tt CharArray} manipulates an array of chars and implements the {\tt Str} interface.
+Class {\tt Concat} is used to concatenate two object of type {\tt Str}. Also {\tt Concat} implements
+ {\tt Str}.
+Consider the case where {\tt Concat} is used to implement a  {\em rope} data structure.\footnote{ A rope is a binary tree shaped data structure for efficiently storing and manipulating very long strings~\cite{DBLP:journals/spe/BoehmAP95}.}
+Rope's operations like insert, concat, delete may update the shape of the tree and references to its root.
+In this case we may have two (or more) collections {\em sharing} some elements. Consequently iterators operating on these different collections may invalidate each other. We need to modify~\eqref{q:concur-it} increasing its complexity:
 \eqquote{If one iterator modifies its collection, then other existing iterators of collections sharing some elements become invalid, which means they cannot be used further.}{q:concur-it2}
 
 \paragraph{Re-binding of specification variables.}
@@ -214,13 +214,13 @@ property:
 \eqquote{Any value introduced by the {\tt input()} method should not
   reach the  {\tt sink()} method without first passing through the {\tt sanitizer()} method.}{q:concur-it3}
 This property is at first sight simple. However, it's difficulty can vary depending on the context. Consider in fact the case where
-the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}. 
+the input is constructed by concatenating strings from the web form, by for example, using ropes implemented with class {\tt Concat}.
 The number of user inputs, and therefore of concatenations, is not known a priori and in general unbounded.
-Consequently we will have a possibly unbounded number of tainted objects. 
+Consequently we will have a possibly unbounded number of tainted objects.
 In a temporal specification, we would then need either different logical variables for each different tainted objects or
 the ability to {\em re-bind} (or {\em update}) variables in the temporal specification in a way that, at the semantic level, we capture all the tainted objects. For an unbounded number of object, re-binding specification variables with
 different values during the computation helps the specification to be
-kept finite. 
+kept finite.
 
 \begin{figure}[t] % first example <<<
 %\include{IncorrectIteratorUse}
@@ -230,8 +230,8 @@ kept finite.
 \end{figure}
 %
 
-The need for rebinding of variables in the specification arises also in other contexts. For example, 
-when  reasoning about the evolving shape of dynamically allocated data-structures. 
+The need for rebinding of variables in the specification arises also in other contexts. For example,
+when  reasoning about the evolving shape of dynamically allocated data-structures.
 Consider the following loop using a list:
  \begin{verbatim}
   while (l.next()!=null) {
@@ -249,12 +249,12 @@ would want to check the following property:\footnote{Of course, one
   defined, these kind of explicit checks become cumbersome and error
   prone.}
 \eqquote{The shape of the list should be neither circular nor pan-handle.}{q:concur-it4}
-We will see in Section~\ref{sec:examples} that also the encoding of properties of this kind requires the ability to update the 
-value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach an element we have seen before. 
+We will see in Section~\ref{sec:examples} that also the encoding of properties of this kind requires the ability to update the
+value of the specification variables.  This is because the way to encode the property is by detecting, when using the list, that we reach an element we have seen before.
 
 %The following TOPL properties test the shape of a linked list and
 %reports an error if it is cyclic or it has the pan-handle shape (i.e.,
-%there is a lasso at some point). 
+%there is a lasso at some point).
 %Directives are omitted.
 %%
 %\delimitVerbatim
@@ -459,12 +459,9 @@ TOPL automata work with the alphabet $\Sigma=V^n$ for some~$n\in\N$, unlike regi
 It is then natural to consider different guards and actions, which handle specific components of the letters.
 TOPL guards are the following:
 \begin{align*}
-G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \mid 
-%G_{\rm TOPL} &\;::=\; 
+G_{\rm TOPL} &\;::=\; {\sf eq}\,i=j \mid
 {\sf neq}\,i\ne j \mid
-%G_{\rm TOPL} &\;::=\;
- {\sf true} \mid 
-%G_{\rm TOPL} &\;::=\; 
+ {\sf true} \mid
 G_{\rm TOPL} \mathrel{\sf and} G_{\rm TOPL}
 \end{align*}
 If $n=1$, we write $({\sf eq}\,i)$ instead of $({\sf eq}\,i=1)$, and $({\sf neq}\,i)$ instead of $({\sf neq}\,i\ne1)$.
@@ -545,7 +542,8 @@ Each transition $(q,(g,a),q')$ in~${\cal A}$ is encoded by paths
 (q_0,r_0)\xrightarrow{(g_1,a_1)}(q_1,r_1)\xrightarrow{(g_2,a_2)}\cdots\xrightarrow{(g_n,a_n)}(q_n,r_n)
 \end{align*}
 with $q_0=q$ and $q_n=q'$.
-There is one such path for each $r_0\in[m]\to[2m]$.
+For each~$r_0$ there are at most $(2m+1)^n$ such paths, because each $(q_j,r_j)$ has at most $2m+1$ successors, as described below.
+
 The following invariants are maintained along the path.
 The values held by registers~$r_0([m])$ are not changed -- they simulate the values that ${\cal A}$~holds in state~$q$.
 The guards~$g_j$ use only the current letter and the registers~$r_0([m])$.
@@ -557,28 +555,38 @@ Then registers~$r_j([m])$ in state~$(q_j,r_j)$ simulate what the registers of~${
 
 The invariants mentioned in the previous paragraph are maintained by constructing the guards~$g_j$ and the actions~$a_j$ as follows.
 
-Suppose $g$ contains the conjuncts ${\sf eq}\,i=j$ for $i\in I$, the conjuncts ${\sf neq}\,i\ne j$ for $i\in I'$, and no other conjunct that refers to component~$j$.
-If $|r_0(I)|\ge2$ or $|r_0(I)\cap r_0(I')|\ge1$, then the path from $(q_0,r_0)$ is discarded from the construction of~${\cal A}'$.
-If $r_0(I)=\{i\}$, then $g_j$ is ${\sf eq}\,i$.
-If $r_0(I)=\emptyset$, then $g_j$ is {\sf fresh}.
+Let $I_g$ be the set $\{\,i\mid\text{${\sf eq}\,i=j$ occurs in~$g$}\,\}$ of registers that must equal the current component~$j$; similarly, let $I'_g=\{\,i\mid\text{${\sf neq}\,i\ne j$ occurs in~$g$}\,\}$.
+If $|r_0(I_g)|\ge2$ or $|r_0(I_g)\cap r_0(I'_g)|\ge1$, then $(q_{j-1},r_{j-1})$~has no successor.
+If $r_0(I_g)=\{i\}$, then $(q_{j-1},r_{j-1})$ has exactly one successor, and the guard~$g_j$ is ${\sf eq}\,i$.
+If $r_0(I_g)=\emptyset$, then $(q_{j-1},r_{j-1})$ has $|[2m]-I'|+1$ successors with the guards {\sf fresh} and, respectively, ${\sf eq}\,i$ for $i\in[2m]-I'$.
 
-\rg{Fix what follows.}
-
-\paragraph{Case ${\sf eq}\,i'$.}
-In this case the value of the current letter is already in register~$i'$.
-The action $a_j$ is {\sf nop}.
-The function $r_j$ is computed from~$r_{j-1}$:
+The action~$a_j$ and the function~$r_j$ are computed from the original action~$a$, the previous function~$r_{j-1}$, and from the guard~$g_j$, which is described in the previous paragraph.
+Let $I_a=\{\,i\mid\text{$a$~writes component~$j$ to register~$i$}\,\}$.
+First a target is picked, and then the saving of component~$j$ in registers~$I_a$ is simulated.
+The target~$k\in[2m]$, which is needed only if $I_a\ne\emptyset$, is picked as follows:
 \begin{align*}
-r_j(i) = \begin{cases}
-  i' &\text{if ${\sf set}\,i:=j$ occurs in $a$} \\
-  r_{j-1}(i) &\text{otherwise}
+k=\begin{cases}
+i &\text{if $g_j$ is ${\sf eq}\,i$} \\
+\min \bigl([2m]-r_0([m])-r_{j-1}([m]-I_a)\bigr) &\text{if $g_j$ is {\sf fresh}}
+\end{cases}
+\end{align*}
+The action~$a_j$ depends on~$g_j$ and on~$I_a$.
+\begin{align*}
+a_j=\begin{cases}
+  {\sf nop} &\text{if $g_j$ is ${\sf eq}\,i$, or $I_a=\emptyset$} \\
+  {\sf set}\,k &\text{if $g_j$ is {\sf fresh}, and $I_a\ne\emptyset$}
+\end{cases}
+\end{align*}
+Finally, the repartition function is updated to reflect that registers~$I_a$ are now simulated by~$k$.
+\begin{align*}
+r_j(i) =\begin{cases}
+  k &\text{if $i\in I_a$} \\
+  r_{j-1}(i) &\text{if $i\notin I_a$}
 \end{cases}
 \end{align*}
 
-\paragraph{Case ${\sf fresh}$.}
-TODO.
-
-At this point the guards are 
+At this point the labels have the form $({\sf eq}\,i,{\sf nop})$ or $({\sf fresh},{\sf set}\,i)$ or $({\sf fresh},{\sf nop})$.
+Only the latter is disallowed by the definition of register automata.
 
 \end{proof}
 
@@ -1241,7 +1249,7 @@ The property~\eqref{q:concur-it2} from Section~\ref{sec:motivating-examples} can
 \end{Verbatim}
 \delimitVerbatim}%
 The re-binding in the self-loop {\tt a -> a} combined with {\tt a->a: *} ensure that iterators of sub-collections in the rope are tracked. Therefore,
-of two different iterators of two collections sharing some object invalidating `h the error state. 
+of two different iterators of two collections sharing some object invalidating `h the error state.
 \\dd{are there other permutation missed by the property?}
 
 %>>>
@@ -1263,8 +1271,8 @@ TOPL specification:
 \delimitVerbatim}%
 The specification takes care to track  any tainted substring $x$ used in the rope and report an error if $x$ reaches the sink method.
 
-\paragraph{Singleton Pattern.} 
-The last property we present concerns 
+\paragraph{Singleton Pattern.}
+The last property we present concerns
 the singleton pattern where the instantiation of a class is restricted to one object. It is used when exactly one object is needed to coordinate actions across the system. It can be enforced by the following.
 {\small
 \delimitVerbatim
@@ -1402,7 +1410,7 @@ This generalized model, history TOPL automata, have a special kind of register t
 
 % >>>
 \section{Implementation} \label{sec:implementation} % <<<
-We have implemented the formal framework in a tool\footnote{\url{http://rgrig.github.com/topl}} for checking whether a Java program violates 
+We have implemented the formal framework in a tool\footnote{\url{http://rgrig.github.com/topl}} for checking whether a Java program violates
 TOPL properties.
 The tool consists of two parts: a compiler and a checker.
 The TOPL compiler ({\tt toplc}) instruments Java bytecode;
@@ -1418,7 +1426,7 @@ The TOPL checker (class {\tt topl.Checker}) monitors the execution and reports v
 \end{figure}
 
 \paragraph{The TOPL Checker.} % <<<
-The checker logs the property violations it detects. 
+The checker logs the property violations it detects.
 Internally it  maintains a set of active states.
 New states are  produced by applying an action to an existing state (called the parent).
 For error reporting, each state keeps track of its parent.
@@ -1437,8 +1445,8 @@ The solution we implemented tries to better address the average case.
 We remember the number~$m$ of states seen by a BFS, and perform the next BFS after $\sim m$~new states were created.
 
 The set of active states in nondeterministic automata can be unbounded.
-Therefore, as for the case of trace lengths, we impose a bound on the number of active states. 
-The bound can be configured by the user  in the {\tt Property.java}  file.  
+Therefore, as for the case of trace lengths, we impose a bound on the number of active states.
+The bound can be configured by the user  in the {\tt Property.java}  file.
 The  strategy for forgetting states can also be chosen among: {\em random}, {\em newest}, and {\em oldest}.
 Newest\slash oldest refer to a time attached to states.
 The time  of a state is the number of transitions  taken to reach that state.
@@ -1449,20 +1457,20 @@ The compiler takes as input a Java project and a set of TOPL properties.
 The Java project is defined to be all files in a given directory, recursively descending into jar and zip files as well as  subdirectories.
 The compiler produces (1)~a copy of the Java project with the class files instrumented, and (2)~a TOPL automaton.
 %The bytecode instrumentation and the construction of the TOPL automaton are intertwined.
-Only the Java methods relevant to the given TOPL properties are instrumented, but taking into consideration 
+Only the Java methods relevant to the given TOPL properties are instrumented, but taking into consideration
  the inheritance tree of  project.
 For example, suppose that a TOPL property mentions the method {\tt next} from the interface {\tt Iterator}.
 Then all the methods that implement {\tt Iterator.next} are instrumented and  matched by the automaton.
 %
 More in details the compiler execute  five phases.
 %\begin{enumerate}
-First, TOPL properties are converted into a simpler, intermediate format. 
+First, TOPL properties are converted into a simpler, intermediate format.
 Second, the compiler  {\em staticically checks}  that the property is well-formed (e.g., variables writes must precede reads). We plan to also statically check whether the automaton can never fail.
 %
 Third,  all properties are merged into one automaton that is  dumped into the file {\tt Property.text}.
 %
-Fourth, the compiler generates the checker configurations in 
-the file {\tt Property.java}. This file contains 
+Fourth, the compiler generates the checker configurations in
+the file {\tt Property.java}. This file contains
 info used by the TOPL property and code configuring the checker.
 Configuration parameters include:
 \begin{itemize}
@@ -1474,11 +1482,11 @@ Configuration parameters include:
 
 \item \emph{Collect call stacks} is a flag for including/excluding  call stacks in violation reports.
 %
-\item {\em Approximantion method} gives different ways in which the history informations are forgotten when  the max amount of info 
+\item {\em Approximantion method} gives different ways in which the history informations are forgotten when  the max amount of info
 allowed is reached.
 \end{itemize}
 %
-Fifth, the compiler instruments methods' bytecode.\footnote{To instrument Java bytecode we use a fork of the library 
+Fifth, the compiler instruments methods' bytecode.\footnote{To instrument Java bytecode we use a fork of the library
 Barista~\cite{barista}.}
 
 % >>>
@@ -1499,7 +1507,7 @@ We measured both time and space overhead. It turns out that space
 overhead is negligible, below the variance caused by the randomness of garbage collection.
 So, we only report time overhead, in Tables~\ref{table:experiments}~and~\ref{table:overhead}.
 %
-All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and 
+All experiments are performed on an Intel i5 machine with $4$~cores at $3.33\rm\,GHz$ with  $4\rm\,GiB$ of memory and
 running Linux~2.6.32 and Java VM~1.6.0\_20.
 
 \subsection{JDK Properties} % <<<
@@ -1531,36 +1539,36 @@ For properties involving only one object, such as {\tt HasNext}, a limit of $10$
   & original  & \multicolumn{2}{|c||}{HasNext} & \multicolumn{2}{c||}{UnsafeIterator} &\multicolumn{2}{|c||}{UnsafeMapIterator} & \multicolumn{2}{|c|}{UnsafeFileWriter}
 %  & orig.  & \multicolumn{2}{|c|}{$P_1$} & \multicolumn{2}{c|}{$P_2$} &\multicolumn{2}{|c|}{$P_3$} & \multicolumn{2}{|c|}{$P_4$}
   \\ \hline
-  & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 
+  & & st=3 & st=10 & st=3 & st=10 & st=3 & st=10 & st=3 & st=10
   \\ \hline \hline
- avrora  & 8.1 & 27.8 & 60.5 & 163.3 & 323.1 & 194.5  & 179.9 & 8.3 & 5.9 
+ avrora  & 8.1 & 27.8 & 60.5 & 163.3 & 323.1 & 194.5  & 179.9 & 8.3 & 5.9
  \\ \hline
- batik     &  1.2  & 18.1 &    3.0 & 3.8 &  3.8  & 3.1 &  3.3 & 1.3  &  1.2 
+ batik     &  1.2  & 18.1 &    3.0 & 3.8 &  3.8  & 3.1 &  3.3 & 1.3  &  1.2
  \\ \hline
-eclipse   &  15.6  &  22.4 &  12.2X & 27.0 &  149.9X & 27.56 &  12.8X & 21.6 &  23.4 
+eclipse   &  15.6  &  22.4 &  12.2X & 27.0 &  149.9X & 27.56 &  12.8X & 21.6 &  23.4
 \\ \hline
 fop    &   0.3   &  0.9 &  1.9 & 3.5  &  3.6   & 2.7 &   2.7 & 0.3 &   0.3
 \\ \hline
-h2     &    6.2  &  5.9 &  6.8   & 8.3    & 20.0  & 13.5 & 11.2   & 6.4 & 6.0  
+h2     &    6.2  &  5.9 &  6.8   & 8.3    & 20.0  & 13.5 & 11.2   & 6.4 & 6.0
 \\ \hline
-jython    &  1.9  & 19.8 &  46.1 &  81.5   & 83.0  &  62.8 &       62.7    & 1.9 & 1.8 
+jython    &  1.9  & 19.8 &  46.1 &  81.5   & 83.0  &  62.8 &       62.7    & 1.9 & 1.8
 \\ \hline
-luindex     &  0.8   & 0.8 &   0.8    & 0.8 & 0.9  & 1.0  &   0.9 & 0.8 & 0.9 
+luindex     &  0.8   & 0.8 &   0.8    & 0.8 & 0.9  & 1.0  &   0.9 & 0.8 & 0.9
 \\ \hline
-lusearch    &  1.5  &  1.5 &   1.5 & 15.0 &  16.0    & 13.8  &  12.8    & 1.5 & 1.7 
+lusearch    &  1.5  &  1.5 &   1.5 & 15.0 &  16.0    & 13.8  &  12.8    & 1.5 & 1.7
 \\ \hline
-pmd        &   3.1    & 19.9 & 42.6  &  93.5 & 240.3   & 102.6 &       105.6  & 3.2 &           3.3 
+pmd        &   3.1    & 19.9 & 42.6  &  93.5 & 240.3   & 102.6 &       105.6  & 3.2 &           3.3
 \\ \hline
-sunflow    &  3.9   & 3.8 &  3.9  &  4.0 & 3.8    & 3.9 &        3.9     & 3.9 &         4.3 
+sunflow    &  3.9   & 3.8 &  3.9  &  4.0 & 3.8    & 3.9 &        3.9     & 3.9 &         4.3
 \\ \hline
-tomcat     &   2.5    & 4.2 & 8.3   & 22.9 & 50.9   & 30.0 &        31.0   & 2.6 &          2.7 
+tomcat     &   2.5    & 4.2 & 8.3   & 22.9 & 50.9   & 30.0 &        31.0   & 2.6 &          2.7
 \\ \hline
-%tradebeans  &  5475  &  XX &     XX  & XX &    XX     & XX &          XX    & XX &           XX 
+%tradebeans  &  5475  &  XX &     XX  & XX &    XX     & XX &          XX    & XX &           XX
 %\\ \hline
-%tradesoap   & 6937   &  XX &    XX    & XX &  XX       & XX &       XX       & XX &        XX   
+%tradesoap   & 6937   &  XX &    XX    & XX &  XX       & XX &       XX       & XX &        XX
 %\\ \hline
-xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  1.5 & 1.2 
-\\ \hline  
+xalan      &    1.5   &  14.5      & 7.1 & 425.0  & 360.9 &  272.0   & 276.5 &  1.5 & 1.2
+\\ \hline
 \end{tabular}
 \end{center}
 \caption{Experiment on small properties run on the DaCapo benchmarks
@@ -1577,7 +1585,7 @@ All three benchmarks are large open-source projects with many users and active d
 The versions were current in 2009 when DaCapo-9.12 was released.
 
 \paragraph{Tomcat 6.0.20.}
-Tomcat is a highly concurrent servlet server. 
+Tomcat is a highly concurrent servlet server.
 Servlets are Java programs running in a webserver, extracting data from {\tt ServletRequest}s , and sending data to {\tt ServletResponse}s.
 A response has two associated incoming channels: a stream and a writer. Both should not be used concurrently.
 %Property~\eqref{eq:prop-ws-strong} is a strong interpretation of this constraint;
@@ -1625,7 +1633,7 @@ This indicates that we instrumented a simple method that runs often.
   &\multicolumn{2}{c}{$\le10^1$}
   &\multicolumn{2}{c}{$\le10^2$}
 %  &\multicolumn{2}{c}{$\le10^3$}
-%  &\multicolumn{2}{c}{$\le10^4$} 
+%  &\multicolumn{2}{c}{$\le10^4$}
 \\ \midrule
 tomcat
   & $5.3$ & $\pm0.1$
@@ -1633,7 +1641,7 @@ tomcat
   & $5.6$ & $\pm0.2$
   & $9.0$ & $\pm0.3$
 %  & $43.5$ & $\pm1.2$
-%  & $43.9$ & $\pm1.0$ 
+%  & $43.9$ & $\pm1.0$
 \\
 pmd
   & $5.2$ & $\pm0.4$
@@ -1778,7 +1786,7 @@ Here, the specifications are function-centered, though, and again, capturing int
 
 % >>>
 \section{Conclusions and Future Work}\label{sec:conclusions} %<<<
-In this paper we have introduced TOPL a new runtime verification system aimed at checking temporal safety properties of object-oriented programs. 
+In this paper we have introduced TOPL a new runtime verification system aimed at checking temporal safety properties of object-oriented programs.
 For TOPL we have defined solid formal foundations based on register automata. Moreover we have studied the formal correspondence between TOPL automata and register automata proving that they are equally expressive.
 TOPL has been implemented in a practical tool that we have applied  to a variety of programs including large open source Java projects.
 %
