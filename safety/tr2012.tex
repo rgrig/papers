@@ -533,7 +533,7 @@ There exists an algorithm that, given a TOPL automaton~${\cal A}$, builds a regi
 \begin{align*}
 f({\cal L}({\cal A})) = \{\,f(v_1)\ldots f(v_k)\mid v_1\ldots v_k\in{\cal L}({\cal A})\,\}
 \end{align*}
-If $\cal A$~has $m$~registers, $|Q|$~states, $|\delta|$~transitions, and works over $n$-tuples, then ${\cal A}'$~has $2m+1$ registers, $O(?)$~states, and $O(?)$~transitions.
+If $\cal A$~has $m$~registers, $|\delta|$~transitions, $|Q|$~states, and works over $n$-tuples, then ${\cal A}'$~has $2m+1$ registers, $|\delta'|=O(n(2m)^{2m}|\delta|)$ transitions, and  $O((2m)^m|Q|+|\delta'|)$~states.
 \end{lemma}
 \begin{proof}
 Each state~$q$ of~${\cal A}$ is encoded by $(2m)^m$ states $(q,r)$ of~${\cal A}'$, one for each $r\in[m]\to[2m]$.
