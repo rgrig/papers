@@ -873,6 +873,13 @@ $g'_{d-1}$ and $a'_{d-1}$ are versions of $g_{d-1}$ and $a_{d-1}$
 modified to refer to $r_{d-1}$ and $r'$ is a version of $r_d$ which is
 undefined on all indices pointing into the queue.
 
+The guard $g'_{d'-1}$ is constructed as follows:
+For all conjuncts ${\sf eq}\,i=j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf eq}\,r_{d'-1}(i)=j$ and
+for all conjuncts ${\sf neq}\,i\ne j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf neq}\,r_{d'-1}(i)\ne j$.
+\rlp{Describe $a'_{d'-1}$?}
+%\rlp{Write this as $g_{d'-1}\diamond r_{d'-1}$ and similar for actions?}
+% $a'_{d'-1}$ will be described in a moment.
+
 Finally, we must also simulate a skip transition, but only to be taken in case none of the other transitions are.
 That is, if any of the short transitions are taken, we have no skip
 transition. If none of the short transitions are taken, we construct a
