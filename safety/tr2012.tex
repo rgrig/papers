@@ -730,14 +730,14 @@ But, we can ensure that the stores are injective (as in the translation from TOP
 Actions simply translate to substitutions into latter guards on the same transition.
 
 \begin{lemma}[rTOPL to TOPL]\label{lemma:rtopl-to-topl}
-There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$ over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$, builds a simple TOPL automaton~${\cal A}$ with $m=m_\rho+dn$ registers, $O(d(d+1) (m+1)^m|Q_\rho|)$ states, and $O(d(d+1) (m+1)^{(m+n)}|\delta_\rho|)$ transitions such that
-\[ w\in{\cal L}_\rho({\cal A}_\rho) \iff w
-%\underbrace{\ell_\bot\ldots\ell_\bot}_{\text{$d+1$~times}}
-\in{\cal L}({\cal A})\]
-%where $\ell_\bot$ is an extra dummy letter.
+There exists an algorithm that, given a rollback TOPL automaton~${\cal A}_\rho$, builds a simple TOPL automaton~${\cal A}$ such that
+$ {\cal L}_\rho({\cal A}_\rho) = {\cal L}({\cal A})$.
+
+If ${\cal A}_\rho$ is over the alphabet~$V_\rho^n$ with $m_\rho$~registers, $|Q_\rho|$~states, and $|\delta_\rho|$~transitions of length~$\le d$,
+then ${\cal A}$ is over the alphabet $V_\rho$ with $m=m_\rho+(d-1)n$ registers, $O(d^2 (m+1)^m|Q_\rho|)$ states, and $O(d^2 (m+1)^{(m+n)}|\delta_\rho|)$ transitions.
 \end{lemma}
 \begin{proof}
-The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d\}\times\{0,\ldots,d-1\}\times\bigl([m]\pmap[m]\bigr)\]
+The set of states of~${\cal A}$ is \[Q=Q_\rho\times\{0,\ldots,d-1\}\times\{0,\ldots,d-1\}\times\bigl([m]\pmap[m]\bigr)\]
 When the rollback configuration
 \[ \bigl(q_\rho,(v_1,\ldots,v_{m_\rho})\bigr),\ell_0\ldots\ell_{h-1}\]
 of~${\cal A}_\rho$ is reached, one of the simple configurations
@@ -756,9 +756,64 @@ Here $h$~is the length of the remembered history, while $k$,~$r$, $u_1$, \dots,~
 We consider in turn each state $q=(q_\rho,h,k,r)$.
 Its outgoing transitions are determined by the outgoing transitions of~$q_\rho$.
 
-We must cater for two situtaions: Either more letters are arriving and we should simulate storing them in the queue and possibly make a state transition or no more letters are arriving and we should simulate emptying the queue to see if we end up in an accepting state. Crucially, enough information is available to statically simulate receiving all the letters in the queue.
+We must cater for two situtaions: Either more letters are arriving and
+we should simulate storing them in the queue and possibly make a state
+transition, or no more letters are arriving and we should simulate
+emptying the queue to see if we end up in an accepting state.
 
-To treat the first situation, we add transitions in one of two ways described below. The first description goes into detail about why it is possible to simulate ${\cal A}_\rho$ from a state in ${\cal A}$.
+Crucially, enough information is available to statically simulate receiving all the letters in the queue.
+To see this, consider a transition in ${\cal A}_\rho$ out of ~$q_\rho$,
+\[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
+  \qquad\text{with $d'\leq h$} \]
+We can assume $d'\leq h$ as only transitions short enough to be
+evaluated with the received letters may be taken.
+
+Consider an assignment $({\sf set}\,i:=j)$ that appears in~$a_{k'}$.
+Suppose that the distribution of values just before this assignment is given by~$r'$.
+This means that the register~$i$ of~${\cal A}_\rho$ is simulated by $r'(i)$, and that the $j$th component of letter~$\ell_{k'}$ is simulated by $r'(\iota(k+k',j))$.
+After the assignment is executed, the distribution of values is given by
+\[r''(i') = \begin{cases}
+  r'(\iota(k+k',j)) & \text{if $i'=i$} \\
+  r'(i') & \text{otherwise}
+\end{cases}\]
+Thus, it is possible to statically find the register distribution function after
+each of the $d'$~steps.
+
+Let us write $r_{k'}$ for the distribution function just before step~$k'$; in particular, $r_0=r$, where $r$~is given by the state~$q$ of~${\cal A}$.
+Suppose now that $g_{k'}$ contains the conjunct $({\sf eq}\,i=j)$.
+We can evaluate this conjunct statically by checking whether $r_{k'}(i)=r_{k'}(\iota(k+k',j))$.
+Similarly, we can evaluate $({\sf neq}\,i\ne j)$ by checking whether $r_{k'}(i)\ne r_{k'}(\iota(k+k',j))$ as the store is injective.
+Thus we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-1}$.
+
+If one of the guards is not true, we know that the transition would
+not be taken, if the queue were to be emptied. If all guards are true,
+we know that the resulting state is $(q'\rho, h-d',( k+d')\bmod
+d,r_{d'})$.
+If $h-d' > 0$ then we carry on simulating. If $h-d' = 0$ then we note
+if $q'_\rho$ is final in ${\cal A}_\rho$.
+
+If we find that no transitions are taken, then we must compute the
+result of a skip transition. This can also be done statically by
+incrementing~$k$, decrementing~$h$ and
+ replacing the distribution function by one that is undefined at
+ $\iota(k,i')$ for $i'\in[n]$. If $k-1 > 0$, we carry on simulating and
+ if $k-1 = 0$, we note
+if $q_\rho$ is final in ${\cal A}_\rho$.
+
+ If any of these simulations thus notices a final state,
+then $(q_\rho, h, k, r)$ is final in ${\cal A}$.
+
+Now to handle the case of more incoming letters, we need to add transtions.
+We treat three cases: Firstly, if the queue is not full ($h < d-1$) then we
+simply store the current letter in the queue. Secondly, if the queue
+is full ($h=d-1$) and
+none of the transitions in ${\cal A}_\rho$ out of $q_\rho$ has maximal
+length (length $d$), then we can statically determine if we need to simulate a
+rollback transition or a skip transition and what the resulting states
+would be. Thirdly, if the queue is full, and there is a transition of
+maximal length, then we need to dynamically look at the current letter
+to determine if that transition is taken and where it leads. Note
+that this also determines whether a skip transition should be simulated.
 
 {\it Case $h<d-1$}.
 In this case all outgoing transitions of~$q$ simply record the current letter $\ell=(v_1,\ldots,v_n)$.
@@ -783,65 +838,49 @@ Also
   r(\iota(k',i')) &\text{otherwise}
 \end{cases}\]
 
+{\it Case $h=d-1$, no outgoing transitions of length $d$}.
+At this point the values in the $m$~registers of~${\cal A}$ are enough
+to decide whether to simulate a rollback or a skip transition
+of~${\cal A}_\rho$.
+The construction above is used to add transitions which save the
+current letter. However, each such transition is added a number of
+times, one for each outgoing transition in ${\cal A}_\rho$. The
+targets of these transitions are modified to reflect the effect of
+taking the transition. This can be determined statically as described
+above. Specifically, it is known at this point if any of the transitions
+can be taken. We only add the ones that would (we cannot determine a
+target for the others anyway). If no transitions can be taken, we
+simulate a rollback transition. This is again done by storing the
+current letter, but we also drop the letter at the front of the queue
+(by incrementing~$k$ and decrementing~$h$ and
+ replacing the distribution function by one that is undefined at $\iota(k,i')$ for $i'\in[n]$).
 
-{\it Case $h=d-1$}.
-At this point the values in the $m$~registers of~${\cal A}$ together with the current letter are enough to decide whether to simulate a rollback or a skip transition of~${\cal A}_\rho$.
-%(Note that we could use the current letter and decide one step earlier, when $h=d-1$, which transitions to take.
-%But, that alternative is slightly more complex.)
-First we encode the rollback transitions corresponding to the automata
-transtitons in ${\cal A}_\rho$ outgoing from~$q_\rho$,
-\[ (q_\rho, [(g_0,a_0),\ldots,(g_{d'-1},a_{d'-1})], q'_\rho)
-  \qquad\text{with $d'\leq d$} \]
-and later we will encode the skip configuration transition.
+{\it Case $h=d-1$, ${\cal A}_\rho$ has an outgoing transition of length $d$}.
+At this point the values in the $m$~registers of~${\cal A}$ together
+with the current letter are needed to decide whether to simulate a
+rollback or a skip transition of~${\cal A}_\rho$.
 
-Consider an assignment $({\sf set}\,i:=j)$ that appears in~$a_{k'}$.
-Suppose that the distribution of values just before this assignment is given by~$r'$.
-This means that the register~$i$ of~${\cal A}_\rho$ is simulated by $r'(i)$, and that the $j$th component of letter~$\ell_{k'}$ is simulated by $r'(\iota(k+k',j))$.
-After the assignment is executed, the distribution of values is given by
-\[r''(i') = \begin{cases}
-  r'(\iota(k+k',j)) & \text{if $i'=i$} \\
-  r'(i') & \text{otherwise}
-\end{cases}\]
-Thus, it is possible to statically find the register distribution function after
-each of the $d'-1$~steps (to find it after the $d'$th step we need to
-look at the current letter).
+As in the case above, we can statically evaluate all transitions of
+length shorter than $d$ and add transitions for them. But we cannot
+add the encoding of a skip transition because it should only be taken
+if no rollback transitions are. For each rollback transition of length
+$d$
+\[ (q_\rho, [(g_0,a_0),\ldots,(g_{d-1},a_{d-1})], q'_\rho), \]
+we can statically evaluate up to the point right before the final
+guard $g_{d-1}$. Thus we can add an automata transition to ${\cal A}$
+with $(g'_{d-1}, a'_{d-1})$ on it and target $(q'_\rho, 0, 0, r')$, where
+$g'_{d-1}$ and $a'_{d-1}$ are versions of $g_{d-1}$ and $a_{d-1}$
+modified to refer to $r_{d-1}$ and $r'$ is a version of $r_d$ which is
+undefined on all indices pointing into the queue.
 
-Let us write $r_{k'}$ for the distribution function just before step~$k'$; in particular, $r_0=r$, where $r$~is given by the state~$q$ of~${\cal A}$.
-Suppose now that $g_{k'}$ contains the conjunct $({\sf eq}\,i=j)$.
-We can evaluate this conjunct statically by checking whether $r_{k'}(i)=r_{k'}(\iota(k+k',j))$.
-Similarly, we can evaluate $({\sf neq}\,i\ne j)$ by checking whether $r_{k'}(i)\ne r_{k'}(\iota(k+k',j))$ as the store is injective.
-Thus we can evaluate all guards $g_0$,~$g_1$, \dots,~$g_{d'-2}$.
-If some guard does not hold, then the encoding is nothing since the original transition would not be taken.
-If all guards hold, then the original transition would be taken if $g_{d'-1}$ holds given the current letter and $r_{d'-1}$. We add outgoing transitions to reflect this.
-These transitions must evaluate a version $g'_{d'-1}$ of $g_{d'-1}$ which refers to $r_{d'-1}$ and take appropriate action $a'_{d'-1}$.
-
-The guard $g'_{d'-1}$ is constructed as follows:
-For all conjuncts ${\sf eq}\,i=j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf eq}\,r_{d'-1}(i)=j$ and
-for all conjuncts ${\sf neq}\,i\ne j$ in $g_{d'-1}$, $g'_{d'-1}$ contains ${\sf neq}\,r_{d'-1}(i)\ne j$.
-\rlp{Write this as $g_{d'-1}\diamond r_{d'-1}$ and similar for actions?}
-% $a'_{d'-1}$ will be described in a moment.
-
-These transitions must also save the current letter, so the whole process from {\it Case $h<d-1$} is repeated.
-However, that process is applied as if the starting state has the value distribution function $r_{d'-1}$, rather than~$r$; as if the history is $h' = h-(d'-1)$, rather than~$h$; and as if the reference point is $k' = (k+d'-1)\bmod d$, rather than~$k$.
-This process results in $g_p$, $a_p$ and $r_p$.
-The added transiton is then
-\[
- (q_\rho,h,k,r),\;(g_p \land g'_{d'-1},a_p;a'_{d'-1}),\;(q'_\rho,h',k',r'_p)
-\]
-where $a'_{d'-1}$ is a version of $a_{d'-1}$ which refers to $r_p$ and $r'_p$ is the resulting distribution function.
-%That is, for each assignments 
-\rlp{Describe $a'_{d'-1}$ and $r'_p$.}
-
-We must also simulate a skip transition, but only to be taken in case none of the other transitions are.
-Guards to ensure this are generated using the same construction employed in the proof of Lemma \ref{lemma:topl-to-rtopl}.
-These are then combined with reading the current letter.
-This is done as in {\it Case $h<d-1$}, except we first simulate removing the letter to which $k$ points.
-We do so by incrementing~$k$ and decrementing~$h$ and
- replacing the distribution function~$r$ by one that is undefined at $\iota(k,i')$ for $i'\in[n]$.
-
-\smallskip
-Finally, for each state, we statically compute if emptying the queue would lead to a final state. If it would then that state is marked as final.
-(A special case of this is the states with $h=0$.)
+Finally, we must also simulate a skip transition, but only to be taken in case none of the other transitions are.
+That is, if any of the short transitions are taken, we have no skip
+transition. If none of the short transitions are taken, we construct a
+guard that is true if none of the final guards for the maximal length
+transitions are. Guards to ensure this are generated using the same
+construction employed in the proof of Lemma
+\ref{lemma:topl-to-rtopl}. These are then combined with the
+construction in the previous case.
 \end{proof}
 
 \begin{remark}
