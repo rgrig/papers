@@ -1,22 +1,27 @@
 \documentclass{article}
 
 \usepackage[all]{xy}
-%\xyoption{pdf}
+\usepackage{microtype}
+\usepackage{xcolor}
 
 \title{Understanding Biabduction}
-\author{Radu Grigore, Rasmus Lerchedahl Petersen}
+\author{Radu Grigore \and Rasmus Lerchedahl Petersen}
 
-\newcommand{\ts}{\vdash}
+\newcommand{\note}[2]{\textcolor{teal}{[\textcolor{red}{#1}: #2]}}
+\newcommand{\rg}[1]{\note{rg}{#1}}
+\newcommand{\rlp}[1]{\note{rlp}{#1}}
+
 \newcommand{\hoare}[3]{\{#1\}#2\{#3\}}
 \newcommand{\set}[2]{\{#1 \mid #2\}}
+\newcommand{\ts}{\vdash} % rg: What is ts?
 
 \begin{document}
 \maketitle
 \section{Introduction}\label{sec:intro}
-We shll attempt to give a clear account of the technique for symbolic
+We shell attempt to give a clear account of the technique for symbolic
 execution known as biabduction, suitable for a graduate student. We
 will assume access to an abductive theorem prover, i.e. that we can
-ask questions of the form $P * ?A \ts Q *?F$, where $P$ and $Q$ are
+ask questions of the form $P * A^? \ts Q * F^?$, where $P$ and $Q$ are
 known and $A$ (the abducted anti-frame) and $F$ (the abducted frame)
 are synthesized. Thus the pair $(A, F)$ constitutes the answer to the
 question.
@@ -27,18 +32,19 @@ another interesting challenge which we might address at a later stage.
 \subsection{Idea}\label{sec:symbexe:idea}
 We maintain a symbolic state while (symbolically) executing each
 statement. Statements are represented as Hoare triples, a pre- and a
-post condition.
+post-condition.
 
 For biabduction, the state consists of a pair of heaps $(H, L)$. The
 semantics of this pair is that ``if $L$ is provided at the beginning,
 then $H$ is available now''.
 
 Thus, to execute $\hoare P C Q$ from the state $(H, L)$, we first ask
-the abductive question $H * ?A \ts P * ?F$. If we get back the answer
+the abductive question $H * A^? \ts P * F^?$. If we get back the answer
 $(A, F)$, we know that adding $A$ to the current heap will allow us to
 execute $C$. We cannot add anything to the current heap, but we could
 have added more than $L$ in the beginning. The frame rule will then
-ensure, that it is available now.
+ensure, that it is available now. \rg{I suppose that we have to check
+the side condition of the frame rule. Right?}
 
 In that case, we can execute $C$ from $P * F$ and use the frame rule
 again to conclude that the resulting state will be $Q * F$.
@@ -58,8 +64,9 @@ As a diagram:
 \]
 When we reach the final statement, we have obtained a specification
 for the procedure. Because we know that if $L$ is provided in the
-beginning then $H$ will be available in the end. Thus the procedure
-satisfies the Hoare triple $\hoare L - H$.
+beginning then $H$ will be available in the end. Thus the procedure~$C$
+satisfies the Hoare triple $\hoare L C H$.
+
 \subsection{Base case}\label{sec:symbexe:base}
 The base case is slightly more complicated than the idea described
 above, because each statement can potentially be reached in more than
@@ -78,9 +85,11 @@ heaps).
 {\vdots} & {\vdots} & {\vdots}
 }
 \]
+
 \subsection{Loops}\label{sec:symbexe:loops}
-Lopps require a fixed point calculation. We can detect back edges via
+Loops require a fixed point calculation. We can detect back edges via
 a depth first search and insert abstraction nodes.
+
 \subsection{Abstraction}\label{sec:symbexe:abstraction}
 For each abstraction node, we over approximate the inflows by the single outflow
 \[
