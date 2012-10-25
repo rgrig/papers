@@ -18,9 +18,9 @@
 \begin{document}
 \maketitle
 \section{Introduction}\label{sec:intro}
-We shell attempt to give a clear account of the technique for symbolic
+We shall attempt to give a clear account of the technique for symbolic
 execution known as biabduction, suitable for a graduate student. We
-will assume access to an abductive theorem prover, i.e. that we can
+will assume access to an abductive theorem prover, i.e.~that we can
 ask questions of the form $P * A^? \ts Q * F^?$, where $P$ and $Q$ are
 known and $A$ (the abducted anti-frame) and $F$ (the abducted frame)
 are synthesized. Thus the pair $(A, F)$ constitutes the answer to the
@@ -38,18 +38,19 @@ For biabduction, the state consists of a pair of heaps $(H, L)$. The
 semantics of this pair is that ``if $L$ is provided at the beginning,
 then $H$ is available now''.
 
-Thus, to execute $\hoare P C Q$ from the state $(H, L)$, we first ask
-the abductive question $H * A^? \ts P * F^?$. If we get back the answer
-$(A, F)$, we know that adding $A$ to the current heap will allow us to
-execute $C$. We cannot add anything to the current heap, but we could
-have added more than $L$ in the beginning. The frame rule will then
-ensure, that it is available now. \rg{I suppose that we have to check
-the side condition of the frame rule. Right?}
+Thus, to execute $\hoare P C Q$ from the state $(H, L)$, we first
+ask the abductive question $H * A^? \ts P * F^?$. If we get back
+the answer $(A, F)$, we know that adding $A$ to the current heap
+will allow us to execute $C$. We cannot add anything to the
+current heap, but we could have added more than $L$ in the
+beginning.  Provided that $A$~mentions only logical variables
+(see below), the frame rule ensures that adding it to the
+precondition will make it available now, in addition to~$H$.
 
 In that case, we can execute $C$ from $P * F$ and use the frame rule
 again to conclude that the resulting state will be $Q * F$.
 
-So after the staement $C$, we have the symbolic state $(Q * F, L *
+So after the statement $C$, we have the symbolic state $(Q * F, L *
 A)$, because if $L * A$ is provided in the beginning, then $H * A$ is
 available to $C$ which will then execute to reach $Q * F$.
 
@@ -66,6 +67,17 @@ When we reach the final statement, we have obtained a specification
 for the procedure. Because we know that if $L$ is provided in the
 beginning then $H$ will be available in the end. Thus the procedure~$C$
 satisfies the Hoare triple $\hoare L C H$.
+
+\smallskip
+It remains to show how to rewrite~$A$ so that its free variables
+are all logical variables.  Suppose the set of program variables
+is $\{x,y\}$.  The initial state $(H,L)$ is set to be
+$(x=x_0*y=y_0,{\bf emp})$, where $x_0$~and~$y_0$ are fresh
+logical variables.  If the prover answers the first biabductive
+question with a formula~$A$ that mentions $x$~or~$y$, then we
+apply the substitutions $[x_0/x][y_0/y]$.  In general, we must
+ensure that $H$~contains always equalities $x=E_x*y=E_y$, where
+$E_x$~and~$E_y$ mention only logical variables.
 
 \subsection{Base case}\label{sec:symbexe:base}
 The base case is slightly more complicated than the idea described
